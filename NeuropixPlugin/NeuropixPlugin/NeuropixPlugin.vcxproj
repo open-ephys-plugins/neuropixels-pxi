@@ -46,7 +46,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{136F1FC3-BF86-4F1E-A5A0-1BB533410F57}</ProjectGuid>
     <RootNamespace>NeuropixPlugin</RootNamespace>
-    <ProjectName>NeuropixPlugin3b</ProjectName>
+    <ProjectName>NeuropixPluginPXI</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
