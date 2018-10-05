@@ -49,7 +49,7 @@ extern "C" EXPORT int getPluginInfo(int index, Plugin::PluginInfo* info)
 	case 0:
 		info->type = Plugin::PLUGIN_TYPE_DATA_THREAD;
 		info->dataThread.name = "Neuropix-PXI";
-		info->dataThread.creator = &createDataThread<Neuropix::NeuropixThread>;
+		info->dataThread.creator = &createDataThread<NeuropixThread>;
 		break;
 	default:
 		return -1;

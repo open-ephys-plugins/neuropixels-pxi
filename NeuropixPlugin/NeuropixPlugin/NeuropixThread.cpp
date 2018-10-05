@@ -24,8 +24,6 @@
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
 
-using namespace Neuropix;
-
 DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 {
 	return new NeuropixThread(sn);
@@ -36,7 +34,7 @@ GenericEditor* NeuropixThread::createEditor(SourceNode* sn)
     return new NeuropixEditor(sn, this, true);
 }
 
-NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvailable(false)
+NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvailable(false), probesInitialized(false)
 {
 
 	slotID = 0; // for testing only
@@ -83,112 +81,95 @@ NeuropixThread::~NeuropixThread()
     closeConnection();
 }
 
+
+void NeuropixThread::checkSlots()
+{
+	for (unsigned char basestation = 0; basestation < 7; basestation++)
+	{
+		errorCode = openBS(basestation); // establishes a data connection with the basestation
+
+		std::cout << "Opening basestation " << int(basestation) << ", error code : " << errorCode << std::endl;
+
+		if (errorCode == SUCCESS)
+		{
+			connected_basestations.push_back(basestation);
+
+			std::cout << "  Success." << std::endl;
+		}
+	}
+
+	std::cout << " " << std::endl;
+}
+
+
+void NeuropixThread::checkProbes()
+{
+
+	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
+	{
+		std::cout << "Checking for probes on slot " << int(connected_basestations[this_basestation]) << std::endl;
+
+		std::vector<int> probes_for_basestation;
+
+		for (signed char port = 1; port < 5; port++)
+		{
+			errorCode = openProbe(connected_basestations[this_basestation], port);
+
+			std::cout << "Opening probe " << int(port) << ", error code : " << errorCode << std::endl;
+
+			if (errorCode == SUCCESS)
+			{
+				probes_for_basestation.push_back(port);
+				baseStationAvailable = true;
+
+				std::cout << "  Success." << std::endl;
+			}
+		}
+
+		std::cout << " " << std::endl;
+
+		connected_probes.push_back(probes_for_basestation);
+	}
+
+	std::cout << " " << std::endl;
+}
+
 void NeuropixThread::openConnection()
 {
-	const char* ip_address = "10.2.0.0";
 
-	// open up the basestation connection
-	// - sets up the TCP/IP configuration link
-	// - resets the BS FPGA
-	// - enables checking for BSC, BS, and API versions
+	// open up the basestation connection and checks for probes
 	// - does not initialize the probe or headstage
-	NP_ErrorCode errorCode = neuropix.openBS(ip_address); // establishes a data connection with the basestation
 
-	if (errorCode == SUCCESS)
+	checkSlots();
+
+	checkProbes();
+
+}
+
+
+void NeuropixThread::closeProbes()
+{
+	// closing things
+	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
 	{
-		std::cout << "Basestation open success!" << std::endl;
-	}
-	else {
-		CoreServices::sendStatusMessage("Failure with error code " + String(errorCode));
-		std::cout << "Failure with error code " << String(errorCode) << std::endl;
-		baseStationAvailable = false;
-		return;
-	}
+		std::cout << "Closing slot " << int(connected_basestations[this_basestation]) << std::endl;
 
-	baseStationAvailable = true;
-	internalTrigger = true;
-	sendLfp = true;
-	sendAp = true;
-	recordToNpx = false;
-	recordingNumber = 0;
-
-	//char * pn;
-	uint64_t sn;
-
-	//neuropix.readBSCPN(slotID, pn);
-	neuropix.readBSCSN(slotID, sn);
-
-	//std::cout << "Basestation part number: " << pn << std::endl;
-	std::cout << "Basestation serial number: " << sn << std::endl;
-
-	// open the probe
-	// - enables the power supply on the cable to the headstage
-	// - configures the serializer/deserializer registers
-	// - enables heartbeat signal to the HS
-	// - sets the BS FPGA for this port into electrode mode
-	// - enables data zeroing on BS FPGA
-	/*for (unsigned char sID = 0; sID < 10; sID++)
-	{
-		for (signed char pID = 0; pID < 4; pID++)
+		for (int this_probe = 0; this_probe < connected_probes[this_basestation].size(); this_probe++)
 		{
-			errorCode = neuropix.openProbe(sID, pID); // establishes a data connection with the basestation
-			std::cout << int(sID) << ":" << int(pID) << " - " << errorCode << std::endl;
+			std::cout << " Closing probe " << int(connected_probes[this_basestation][this_probe]) << std::endl;
+			errorCode = close(connected_basestations[this_basestation], connected_probes[this_basestation][this_probe]);
 		}
-	}*/
-	errorCode = neuropix.openProbe(slotID, port); // establishes a data connection with the basestation
 
-	if (errorCode == SUCCESS)
-	{
-		std::cout << "Probe open success!" << std::endl;
-	}
-	else {
-		CoreServices::sendStatusMessage("Failure with error code " + String(errorCode));
-		std::cout << "Failure with error code " << String(errorCode) << std::endl;
-		baseStationAvailable = false;
-		return;
+		errorCode = closeBS(connected_basestations[this_basestation]);
 	}
 
-	// Get probe info
-	errorCode = neuropix.readId(slotID, port, probeId);
-
-	std::cout << "Probe ID number: " << probeId << std::endl;
-
-	// initialize probe
-	// default settings:
-	// - all electrodes are disconnected
-	// - all channels are set to use external reference
-	// - all channels are programmed for AP gain of 1000 and LFP gain of 50
-	// - all channels are active and in default AP bandwidth setting (300 Hz)
-	// - probe is set to recording mode via the REC bit in OP_MODE register
-	// - ADC calibration/gain settings are NOT overwritten
-	// - heartbeat signal is turned off
-	errorCode = neuropix.init(slotID, port);
-
-	errorCode = neuropix.setTriggerSource(slotID, 0); // software trigger
-
-	calibrateFromCsv(); // run the gain calibration
-
-	setAllGains(3, 2); // 500x AP, 250x LFP
-
-	for (int i = 0; i < 384; i++) // enable electrodes
-	{
-		if (i != 191)
-		{
-			selectElectrode(i, 0, true);
-		}
-	}
-
-	setAllReferences(0);
-
-	neuropix.writeProbeConfiguration(slotID, port, false);
-
-	std::cout << "Trigger source error code: " << errorCode << std::endl;
+	std::cout << " " << std::endl;
 
 }
 
 void NeuropixThread::closeConnection()
 {
-    neuropix.close(slotID, port); // closes the data and configuration link 
+	closeProbes();
 }
 
 /** Returns true if the data source is connected, false otherwise.*/
@@ -221,22 +202,22 @@ void NeuropixThread::getInfo(String& probeInfo, String& hsInfo, String& bscInfo,
 	unsigned char bs_fpga_version_major;
 	unsigned char bs_fpga_version_minor;
 
-	errorCode = neuropix.readId(slotID, port, probe_id);
-	errorCode = neuropix.readProbePN(slotID, port, probe_part_number);
-	errorCode = neuropix.getFlexVersion(slotID, port, flex_version_major, flex_version_minor);
+	//errorCode = neuropix.readId(slotID, port, probe_id);
+	//errorCode = neuropix.readProbePN(slotID, port, probe_part_number);
+	//errorCode = neuropix.getFlexVersion(slotID, port, flex_version_major, flex_version_minor);
 
-	errorCode = neuropix.readHSSN(slotID, port, hs_id);
-	errorCode = neuropix.readHSPN(slotID, port, hs_part_number);
-	errorCode = neuropix.getHSVersion(slotID, port, hs_version_major, hs_version_minor);
+	//errorCode = neuropix.readHSSN(slotID, port, hs_id);
+	//errorCode = neuropix.readHSPN(slotID, port, hs_part_number);
+	//errorCode = neuropix.getHSVersion(slotID, port, hs_version_major, hs_version_minor);
 
-	errorCode = neuropix.readBSCSN(slotID, bsc_id);
-	errorCode = neuropix.readBSCPN(slotID, bsc_part_number);
-	errorCode = neuropix.getBSCVersion(slotID, bsc_version_major, bsc_version_major);
+	//errorCode = neuropix.readBSCSN(slotID, bsc_id);
+	//errorCode = neuropix.readBSCPN(slotID, bsc_part_number);
+	//errorCode = neuropix.getBSCVersion(slotID, bsc_version_major, bsc_version_major);
 
-	errorCode = neuropix.getBSCBootVersion(slotID, bsc_fpga_version_major, bsc_fpga_version_minor);
-	errorCode = neuropix.getBSBootVersion(slotID, bs_fpga_version_major, bs_fpga_version_minor);
+	//errorCode = neuropix.getBSCBootVersion(slotID, bsc_fpga_version_major, bsc_fpga_version_minor);
+	//errorCode = neuropix.getBSBootVersion(slotID, bs_fpga_version_major, bs_fpga_version_minor);
 
-	errorCode = neuropix.getAPIVersion(api_version_major, api_version_minor);
+	//errorCode = neuropix.getAPIVersion(api_version_major, api_version_minor);
 
 	probeInfo = "SN" + String(probe_id) + "\n" + String(probe_part_number) + ", v" + String(flex_version_minor) + "." + String(flex_version_minor) + "\n";
 	hsInfo = "SN" + String(hs_id) + "\n" + String(hs_part_number) + ", v" + String(hs_version_major) + "." + String(hs_version_minor) + "\n";
@@ -271,22 +252,54 @@ void NeuropixThread::timerCallback()
 
     stopTimer();
 
-	NP_ErrorCode errorCode;
+	// loop through probes
+	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
+	{
+		std::cout << " Checking slot " << int(connected_basestations[this_basestation]) << std::endl;
 
-	errorCode = neuropix.stopInfiniteStream(slotID);
+		const size_t probe_count = connected_probes[this_basestation].size();
 
-    // start data stream
-    errorCode = neuropix.arm(slotID);
+		if (probe_count == 0)
+			break;
 
-	std::cout << "Arm error code: " << errorCode << std::endl;
+		if (!probesInitialized)
+		{
 
-	errorCode = neuropix.startInfiniteStream(slotID);
+			errorCode = setTriggerInput(connected_basestations[this_basestation], TRIGIN_SW);
 
-	std::cout << "Streaming error code: " << errorCode << std::endl;
+			for (int this_probe = 0; this_probe < probe_count; this_probe++)
+			{
+				std::cout << " Initializing probe " << int(connected_probes[this_basestation][this_probe]) << std::endl;
 
-	errorCode = neuropix.setSWTrigger(slotID);
+				errorCode = init(connected_basestations[this_basestation], connected_probes[this_basestation][this_probe]);
+				errorCode = setOPMODE(connected_basestations[this_basestation], connected_probes[this_basestation][this_probe], RECORDING);
+				errorCode = setHSLed(connected_basestations[this_basestation], connected_probes[this_basestation][this_probe], false);
 
-	std::cout << "SW trigger error code: " << errorCode << std::endl;
+				if (errorCode == SUCCESS)
+				{
+					std::cout << "     Probe initialized." << std::endl;
+				}
+				else {
+					std::cout << "     Failed with error code " << errorCode << std::endl;
+				}
+
+			}
+
+			std::cout << " Arming basestation " << int(connected_basestations[this_basestation]) << std::endl;
+
+			//setFileStream(connected_basestations[this_basestation], "test.npx2");
+
+			errorCode = arm(connected_basestations[this_basestation]);
+
+			std::cout << "     Basestation armed." << std::endl;
+
+			probesInitialized = true;
+		}
+
+		//enableFileStream(connected_basestations[this_basestation], true);
+		errorCode = setSWTrigger(connected_basestations[this_basestation]);
+
+	}
 
     startThread();
 
@@ -302,7 +315,8 @@ bool NeuropixThread::stopAcquisition()
         signalThreadShouldExit();
     }
 
-	
+	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
+		errorCode = arm(connected_basestations[this_basestation]);
 
     return true;
 }
@@ -334,15 +348,6 @@ bool NeuropixThread::usesCustomNames() const
 	return true;
 }
 
-void NeuropixThread::toggleApData(bool state)
-{
-     sendAp = state;
-}
-
-void NeuropixThread::toggleLfpData(bool state)
-{
-     sendLfp = state;
-}
 
 /** Returns the number of virtual subprocessors this source can generate */
 unsigned int NeuropixThread::getNumSubProcessors() const
@@ -407,7 +412,7 @@ float NeuropixThread::getBitVolts(const DataChannel* chan) const
 void NeuropixThread::selectElectrode(int chNum, int connection, bool transmit)
 {
 
-    neuropix.selectElectrode(slotID, port, chNum, connection);
+    //neuropix.selectElectrode(slotID, port, chNum, connection);
   
     //std::cout << "Connecting input " << chNum << " to channel " << connection << "; error code = " << scec << std::endl;
 
@@ -417,31 +422,31 @@ void NeuropixThread::setAllReferences(int refId)
 {
  
 	NP_ErrorCode ec;
-	ChannelReference reference;
+	//ChannelReference reference;
 	unsigned char intRefElectrodeBank;
 
 	if (refId == 0) // external reference
 	{
-		reference = EXT_REF;
+		//reference = EXT_REF;
 		intRefElectrodeBank = 0;
 	}
 	else if (refId == 1) // tip reference
 	{
-		reference = TIP_REF;
+		//reference = TIP_REF;
 		intRefElectrodeBank = 0;
 	}
 	else if (refId > 1) // internal reference
 	{
-		reference = INT_REF;
+		//reference = INT_REF;
 		intRefElectrodeBank = refId - 2;
 	}
 
 	for (int i = 0; i < 384; i++)
 	{
-		ec = neuropix.setReference(slotID, port, i, reference, intRefElectrodeBank);
+		//ec = neuropix.setReference(slotID, port, i, reference, intRefElectrodeBank);
 	}
 
-	neuropix.writeProbeConfiguration(slotID, port, false);
+	//neuropix.writeProbeConfiguration(slotID, port, false);
 
 	std::cout << "Set all references to " << refId << "; error code = " << ec << std::endl;
 }
@@ -452,12 +457,12 @@ void NeuropixThread::setAllGains(unsigned char apGain, unsigned char lfpGain)
 
 	for (int i = 0; i < 384; i++)
 	{
-		ec = neuropix.setGain(slotID, port, i, apGain, lfpGain);
+		//ec = neuropix.setGain(slotID, port, i, apGain, lfpGain);
 		apGains.set(i, apGain);
 		lfpGains.set(i, lfpGain);
 	}
 
-	neuropix.writeProbeConfiguration(slotID, port, false);
+	//neuropix.writeProbeConfiguration(slotID, port, false);
 
     std::cout << "Set gains to " << gains[int(apGain)] << " and " << gains[int(lfpGain)] << "; error code = " << ec << std::endl;
    
@@ -467,10 +472,10 @@ void NeuropixThread::setFilter(bool filterState)
 {
 	NP_ErrorCode ec;
 
-	for (int i = 0; i < 384; i++)
-	  ec = neuropix.setAPCornerFrequency(slotID, port, i, !filterState); // true = disabled, false = enabled
+	//for (int i = 0; i < 384; i++)
+	//  ec = neuropix.setAPCornerFrequency(slotID, port, i, !filterState); // true = disabled, false = enabled
 
-	neuropix.writeProbeConfiguration(slotID, port, false);
+	//neuropix.writeProbeConfiguration(slotID, port, false);
 
     std::cout << "Set filter to " << filterState << "; error code = " << ec << std::endl;
 }
@@ -545,7 +550,7 @@ void NeuropixThread::calibrateFromCsv()
 
 	NP_ErrorCode errorCode;
 
-	errorCode = neuropix.setADCCalibration(slotID, port, adcFile.toRawUTF8());
+	//errorCode = neuropix.setADCCalibration(slotID, port, adcFile.toRawUTF8());
 
 	if (errorCode == SUCCESS)
 	{
@@ -555,7 +560,7 @@ void NeuropixThread::calibrateFromCsv()
 		std::cout << "Problem with ADC calibration, error code = " << errorCode << std::endl;
 	}
 	
-	errorCode = neuropix.setGainCalibration(slotID, port, gainFile.toRawUTF8());
+	//errorCode = neuropix.setGainCalibration(slotID, port, gainFile.toRawUTF8());
 
 	if (errorCode == SUCCESS)
 	{
@@ -574,59 +579,94 @@ bool NeuropixThread::updateBuffer()
 	unsigned int requestedNumPackets = 250;
 
 	//std::cout << "Attempting data read. " << std::endl;
-	NP_ErrorCode errorCode = neuropix.readElectrodeData(slotID, port, packetBuffer, actualNumPackets, requestedNumPackets);
-	//std::cout << "Data read. " << std::endl;
 
-    if (errorCode == SUCCESS)
-    {
+	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
+	{
+		//std::cout << " Checking slot " << int(connected_basestations[this_basestation]) << std::endl;
 
-		//std::cout << "Got data. " << std::endl;
-        float data[384];
-        float data2[384];
+		const size_t probe_count = connected_probes[this_basestation].size();
 
-		for (int packetNum = 0; packetNum < actualNumPackets; packetNum++)
+		for (int this_probe = 0; this_probe < probe_count; this_probe++)
 		{
-			for (int i = 0; i < 12; i++)
+			size_t count = SAMPLECOUNT;
+
+			errorCode = readElectrodeData(
+				connected_basestations[this_basestation],
+				connected_probes[this_basestation][this_probe],
+				&packet[0],
+				&count,
+				count);
+
+			if (errorCode == SUCCESS && count > 0 && this_probe == 0)
 			{
-				eventCode = (uint64)packetBuffer[packetNum].aux[i]; // AUX_IO<0:13>
-				//std::cout << "Read event data. " << std::endl;
 
-				for (int j = 0; j < 384; j++)
+				//std::cout << "Got data. " << std::endl;
+				float data[384];
+				float data2[384];
+
+				for (int packetNum = 0; packetNum < count; packetNum++)
 				{
-					data[j] = float(packetBuffer[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[apGains[j]]; // *-1000000.0f; // convert to microvolts
+					for (int i = 0; i < 12; i++)
+					{
+						eventCode = 0; packet[packetNum].SYNC[i]; // AUX_IO<0:13>
+						//std::cout << "Read event data. " << std::endl;
 
-					if (i == 0 && sendLfp)
-						data2[j] = float(packetBuffer[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[lfpGains[j]]; // *-1000000.0f; // convert to microvolts
+						for (int j = 0; j < 384; j++)
+						{
+							data[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[apGains[j]]; // *-1000000.0f; // convert to microvolts
+
+							if (i == 0) // && sendLfp)
+								data2[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[lfpGains[j]]; // *-1000000.0f; // convert to microvolts
+						}
+
+						sourceBuffers[0]->addToBuffer(data, &timestampAp, &eventCode, 1);
+						timestampAp += 1;
+						//std::cout << "Added AP data to buffer. " << std::endl;
+					}
+
+					eventCode = 0;
+
+					sourceBuffers[1]->addToBuffer(data2, &timestampLfp, &eventCode, 1);
+					timestampLfp += 1;
 				}
 
-				sourceBuffers[0]->addToBuffer(data, &timestampAp, &eventCode, 1);
-				timestampAp += 1;
-				//std::cout << "Added AP data to buffer. " << std::endl;
+				//std::cout << "READ SUCCESS!" << std::endl;  
+
 			}
+			else if (errorCode != SUCCESS)
+			{
+				std::cout << "Error code: " << errorCode << std::endl;
+			}// dump data
+		} // loop through probes
+	} //loop through basestations
 
-			eventCode = 0;
 
-			sourceBuffers[1]->addToBuffer(data2, &timestampLfp, &eventCode, 1);
-			timestampLfp += 1;
+	if (timestampAp % 60000 == 0)
+	{
+		size_t packetsAvailable;
+		size_t headroom;
+
+		for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
+		{
+			//std::cout << " Checking slot " << int(connected_basestations[this_basestation]) << std::endl;
+
+			const size_t probe_count = connected_probes[this_basestation].size();
+
+			for (int this_probe = 0; this_probe < probe_count; this_probe++)
+			{
+
+				getElectrodeDataFifoState(
+					connected_basestations[this_basestation],
+					connected_probes[this_basestation][this_probe],
+					&packetsAvailable,
+					&headroom);
+
+				std::cout << "  FIFO filling  " << this_probe << ": " << packetsAvailable << std::endl;
+			}
 		}
 
-		//std::cout << "READ SUCCESS!" << std::endl;  
-        
-    }
-    else {
-		//std::cout << "ERROR CODE: " << errorCode << std::endl;
-    }
-
-	unsigned char fifoFillPercentage;
-	errorCode = neuropix.fifoFilling(slotID, port, 0, fifoFillPercentage);
-
-	if (fifoFillPercentage > 10)
-	{
-		std::cout << "Fifo warning: " << int(fifoFillPercentage) << "% full" << std::endl;
+		std::cout << "  " << std::endl;
 	}
 
-	bool overflow;
-	errorCode = neuropix.hadOverflow(overflow);
-     
     return true;
 }

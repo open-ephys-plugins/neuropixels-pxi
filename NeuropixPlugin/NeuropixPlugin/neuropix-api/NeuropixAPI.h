@@ -17,10 +17,22 @@ extern "C" {
 
 struct electrodePacket {
 	uint32_t timestamp[PROBE_SUPERFRAMESIZE];
-	uint16_t apData[PROBE_SUPERFRAMESIZE][PROBE_CHANNEL_COUNT];
-	uint16_t lfpData[PROBE_CHANNEL_COUNT];
+	int16_t apData[PROBE_SUPERFRAMESIZE][PROBE_CHANNEL_COUNT];
+	int16_t lfpData[PROBE_CHANNEL_COUNT];
 	uint16_t Trigger[PROBE_SUPERFRAMESIZE];
 	uint16_t SYNC[PROBE_SUPERFRAMESIZE];
+};
+
+struct ADC_Calib {
+	int ADCnr;
+	int CompP;
+	int CompN;
+	int Slope;
+	int Coarse;
+	int Fine;
+	int Cfix;
+	int offset;
+	int threshold;
 };
 
 /**
@@ -67,6 +79,7 @@ typedef enum {
 	WRONG_PROBESN = 36,
 	WRONG_TRIGGERLINE = 37,
 	PROGRAMMINGABORTED = 38, /**<  the flash programming was aborted */
+	VALUE_INVALID = 39, /**<  The parameter value is invalid */
 	NOTSUPPORTED = 0xFE,/**<  the function is not supported */
 	NOTIMPLEMENTED = 0xFF/**<  the function is not implemented */
 }NP_ErrorCode;
@@ -129,7 +142,8 @@ typedef enum {
 	TRIGIN_PXI6 = 8, /**< PXI signal line 6 selected as input */
 	TRIGIN_PXI7 = 9, /**< PXI signal line 7 selected as input */
 	
-	TRIGIN_USER0 = 10, /**< User trigger 0 (FUTURE) */
+	TRIGIN_SYNC  = 10, /**< Internal SYNC clock */
+
 	TRIGIN_USER1 = 11, /**< User trigger 1 (FUTURE) */
 	TRIGIN_USER2 = 12, /**< User trigger 2 (FUTURE) */
 	TRIGIN_USER3 = 13, /**< User trigger 3 (FUTURE) */
@@ -162,7 +176,6 @@ struct np_diagstats {
 	uint32_t err_serdes;		 /**< incremented if a deserializer error (hardware pin) occured during receiption of this frame this flag is raised */
 	uint32_t err_lock;			 /**< incremented if a deserializer loss of lock (hardware pin) occured during receiption of this frame this flag is raised */
 	uint32_t err_pop;			 /**< incremented whenever the ‘next blocknummer’ round-robin FiFo is flagged empty during request of the next value (for debug purpose only, irrelevant for end-user software) */
-	uint32_t err_push;			 /**< incremented whenever the PSB back-pressure FiFo is full when committing the next packet. -> data will be lost! */
 	uint32_t err_sync;			 /**< Front-end receivers are out of sync. => frame is invalid. */
 };
 
@@ -181,6 +194,19 @@ typedef struct {
 
 }pckhdr_t;
 
+
+/********************* Parameter configuration functions ****************************/
+#define MINSTREAMBUFFERSIZE (1024*32)
+#define MAXSTREAMBUFFERSIZE (1024*1024*32)
+#define MINSTREAMBUFFERCOUNT (2)
+#define MAXSTREAMBUFFERCOUNT (1024)
+typedef enum {
+	NP_PARAM_BUFFERSIZE  = 1,
+	NP_PARAM_BUFFERCOUNT = 2
+}np_parameter_t;
+
+NP_EXPORT NP_ErrorCode NP_APIC np_setparameter(np_parameter_t paramid, int value);
+NP_EXPORT NP_ErrorCode NP_APIC np_getparameter(np_parameter_t paramid, int* value);
 
 /********************* Opening and initialization functions ****************************/
 /**
@@ -230,7 +256,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC closeBS(unsigned char slotID);
 * The ‘openProbe’ function should execute fast (<500ms), such that the user can use the ‘openProbe’ function to quickly query if a port has hardware connected.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: which HS/probe (valid range 0 to 3)
+* @param port: which HS/probe (valid range 1 to 4)
 * @return SUCCESS if successful, TIMEOUT if no I2C acknowledgement is received, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, NO_LOCK if no clock signal arrives at the deserializer (=missing or malfunctioning cable, HS or probe, ALREADY_OPEN if function called twice.).
 */
 NP_EXPORT	NP_ErrorCode NP_APIC openProbe(unsigned char slotID, signed char port);
@@ -247,7 +273,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC openProbe(unsigned char slotID, signed char port)
 * - Set the PSB_F bit in the REC_MOD register in the memory map to high (ref. 3.1.3).
 *
 * @param slotID which slot in the PXI chassis (valid range depends on the chassis)
-* @param port which HS/probe (valid range 0 to 3)
+* @param port which HS/probe (valid range 1 to 4)
 * @return SUCCESS if successful, TIMEOUT if no I2C acknowledgement is received, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, NO_LOCK if no clock signal arrives at the deserializer (=missing or malfunctioning cable, HS or probe).
 */
 NP_EXPORT	NP_ErrorCode NP_APIC init(unsigned char slotID, signed char port);
@@ -268,7 +294,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC init(unsigned char slotID, signed char port);
 * The name of the file is: [ASIC’s serial number]_ADC_Calibration.csv
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param filename: the filename to read from (.csv)
 * @returns: SUCCESS if successful, TIMEOUT if no I2C acknowledgement is received, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, NO_LOCK if no clock signal arrives at the deserializer (=missing or malfunctioning cable, HS or probe). WRONG_PROBESN is the Probe serial number does not match
 */
@@ -283,7 +309,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC setADCCalibration(unsigned char slotID, signed ch
 *    - 10th to 17th column: LFP gain correction factors for LFP gains x50 to 3000 (ref. chapter 5.7.6: ‘lfp_gain’ parameter values 0 to 7).
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @returns: SUCCESS if successful, TIMEOUT if no I2C acknowledgement is received, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, NO_LOCK if no clock signal arrives at the deserializer (=missing or malfunctioning cable, HS or probe).
 */
 NP_EXPORT	NP_ErrorCode NP_APIC setGainCalibration(unsigned char slotID, signed char port, const char* filename);
@@ -302,7 +328,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC close(unsigned char slotID, signed char port);
 * The log is saved in separate text files per serdes port and per PXI slot. The log file name contains the serdes port number and PXI slot number.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param enable: enable (true) or disable (false) the logging
 * @returns SUCCESS if successful, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered.
 */
@@ -337,7 +363,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC readBSCMM(unsigned char slotID, uint32_t address,
 * Writing more than 1 byte to the probes’ memory map is only applicable for register addresses related to the shift registers. For all other register addresses only 1 byte should be written.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param device: the device address (slave) to write to
 * @param register: the register address to write to
 * @param data: the date to write
@@ -350,7 +376,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC writeI2C(unsigned char slotID, signed char port, 
 * This functions reads N data bytes from a specified address on a slave device
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param device: the device address (slave) to read from
 * @param register: the register address to read from
 * @param data: vector containing the data read over the I2C bus
@@ -364,7 +390,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC readI2C(unsigned char slotID, signed char port, u
 /* @brief Read the Head Stage version from EEPROM memory
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param version_major: the HS board version number
 * @param version_build: the HS board build number (NULL allowed)
 * @returns SUCCESS correct acknowledgment byte returned by the slave, TIMEOUT if no I2C acknowledgement is received, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, NO_LOCK if no clock signal arrives at the deserializer (=missing or malfunctioning cable, HS or probe).
@@ -423,7 +449,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC getBSCVersion(unsigned char slotID, unsigned char
 * The probe ID is stored on the EEPROM memory on the flex. The probe ID is a 16 digit number.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param id: the probe ID code to return
 * @returns NO_LINK if no datalink, TIMEOUT if no I2C acknowledgement is received, SUCCESS if successful, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, NO_LOCK if no clock signal arrives at the deserializer (=missing or malfunctioning cable, HS or probe).
 */
@@ -439,7 +465,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC readFlexPN(unsigned char slotID, signed char port
 /**
 * @brief Get the headstage serial number
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param id: the probe ID code to return
 * @returns NO_LINK if no datalink, TIMEOUT if no I2C acknowledgement is received, SUCCESS if successful, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, NO_LOCK if no clock signal arrives at the deserializer (=missing or malfunctioning cable, HS or probe).
 */
@@ -479,7 +505,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC writeBSCPN(unsigned char slotID, const char* pn);
 * The function sets the GPIO1 signal from the serializer (serializer register 0x0E and 0x0F, ref. [HS]). This makes the heartbeat signal visible on the HS.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param enable: enable (true) or disable (false) HS heartbeat LED
 * @returns SUCCESS if successful, TIMEOUT if no I2C acknowledgement is received, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, NO_LOCK if no clock signal arrives at the deserializer (=missing or malfunctioning cable, HS or probe).
 */
@@ -512,7 +538,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC getTemperature(unsigned char slotID, float* tempe
 * The function sets the OSC_STDB bit in the CAL_MOD register of the probe memory map. Asserting the bit enables the test signal.
 *
 @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-@param port: for which HS (valid range 0 to 3)
+@param port: for which HS (valid range 1 to 4)
 @param enable: enable (true) or disable (false) the test signal.
 @returns SUCCESS if successful, TIMEOUT if no I2C acknowledgement is received, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered.
 */
@@ -528,7 +554,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC setTestSignal(unsigned char slotID, signed char p
 *   - Digital test: the data transmitted over the PSB bus is a fixed data pattern. Set the DIG_TEST and REC bit in the OPMODE register to activate this mode. All the other bits in the OP_MODE register are set low.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param mode: the selected probe operation mode.
 * @returns SUCCESS if successful, TIMEOUT if no I2C acknowledgement is received , NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered.
 */
@@ -542,7 +568,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC setOPMODE(unsigned char slotID, signed char port,
 *   - Channel: the HS test signal is connected to the channel inputs. Set the CH_CAL bit in the CAL_MOD register to activate this mode. All other bits in the CAL_MOD register are set low.
 *   - None: All bits in the CAL_MOD register are set low.
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param mode: the selected test signal mode
 * @returns SUCCESS if successful, TIMEOUT if no I2C acknowledgement is received , NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered.
 */
@@ -562,7 +588,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC setREC_NRESET(unsigned char slotID, signed char p
 * @brief Set which electrode is connected to a channel.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param channel: the channel number (valid range: 0 to 383, excluding 191)
 * @param electrode_bank: the electrode bank number to connect to (valid range: 0 to 2 or 0xFF to disconnect)
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, WRONG_CHANNEL in case a channel number outside the range is entered, WRONG_BANK in case an electrode bank number outside the range is entered.
@@ -573,7 +599,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC selectElectrode(unsigned char slotID, signed char
 * @brief Set the channel reference of the given channel.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param channel: the channel number (valid range: 0 to 383)
 * @param reference: the sleected reference input (valid range: 0 to 2)
 * @param intRefElectrodeBank: the selected internal reference electrode (valid range: 0 to 2)
@@ -585,7 +611,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC setReference(unsigned char slotID, signed char po
 * @brief Set the AP and LFP gain of the given channel.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param channel: the channel number (valid range: 0 to 383)
 * @param ap_gain: the AP gain value (valid range: 0 to 7)
 * @param lfp_gain: the LFP gain value (valid range: 0 to 7)
@@ -597,7 +623,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC setGain(unsigned char slotID, signed char port, u
 * @brief Get the AP and LFP gain of the given channel.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param channel: the channel number (valid range: 0 to 383)
 * @param ap_gain: the AP gain value (valid range: 0 to 7)
 * @param lfp_gain: the LFP gain value (valid range: 0 to 7)
@@ -610,7 +636,7 @@ NP_EXPORT  NP_ErrorCode NP_APIC getGain(uint8_t slotID, int8_t port, int channel
 * The function checks whether the input parameters ‘slotID’ and ‘port’ are valid and updates the base configuration register variable in the API. The function does not transmit the base configuration shift register to the memory map of the probe.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param channel: the channel number (valid range: 0 to 383)
 * @param disableHighPass: the highpass cut-off frequency of the AP channels
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, WRONG_CHANNEL in case a channel number outside the valid range is entered.
@@ -622,7 +648,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC setAPCornerFrequency(unsigned char slotID, signed
 * The function checks whether the input parameters ‘slotID’ and ‘port’ are valid and updates the base configuration register variable in the API. The function does not transmit the base configuration shift register to the memory map of the probe.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param channel: the channel number (valid range: 0 to 383)
 * @param standby: the standby value to write
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, WRONG_CHANNEL in case a channel number outside the valid range is entered.
@@ -633,7 +659,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC setStdb(unsigned char slotID, signed char port, u
 * @brief Write probe configuration settings to the probe.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param readCheck : if enabled, read the configuration shift registers back to check
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered, WRONG_PORT in case a port number outside the range is entered, WRONG_CHANNEL in case a channel number outside the valid range is entered.
 */
@@ -671,6 +697,20 @@ NP_EXPORT  NP_ErrorCode NP_APIC setTriggerEdge(unsigned char slotID, bool rising
 */
 NP_EXPORT	NP_ErrorCode NP_APIC setSWTrigger(unsigned char slotID);
 
+/**
+* \brief Set the sync clock frequency
+* @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
+* @param freq_Hz: the sync clock frequency in Hz. (clips to range = 0.1Hz..10Hz)
+* @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered.
+*/
+NP_EXPORT	NP_ErrorCode NP_APIC setSyncClockFrequency(unsigned char slotID, double freq_Hz);
+/**
+* \brief Get the sync clock frequency
+* @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
+* @param freq_Hz: returns the sync clock frequency in Hz.
+* @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the chassis range is entered.
+*/
+NP_EXPORT	NP_ErrorCode NP_APIC getSyncClockFrequency(unsigned char slotID, double* freq_Hz);
 
 
 /********************* Built In Self Test ****************************/
@@ -690,7 +730,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC bistBS(unsigned char slotID);
 * The presence of a heartbeat signal acknowledges the functionality of the power supplies on the headstage for serializer and probe, the POR signal, the presence of the master clock signal on the probe, the functionality of the clock divider on the probe, an basic communication over the serdes link.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the valid range is entered, WRONG_PORT in case a port number outside the valid range is entered.
 */
 NP_EXPORT	NP_ErrorCode NP_APIC bistHB(unsigned char slotID, signed char port);
@@ -699,7 +739,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC bistHB(unsigned char slotID, signed char port);
 * @brief Start Serdes PRBS test
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the valid range is entered, WRONG_PORT in case a port number outside the valid range is entered.
 */
 NP_EXPORT	NP_ErrorCode NP_APIC bistStartPRBS(unsigned char slotID, signed char port);
@@ -708,7 +748,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC bistStartPRBS(unsigned char slotID, signed char p
 * @brief Stop Serdes PRBS test
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @param prbs_err: the number of prbs errors
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the valid range is entered, WRONG_PORT in case a port number outside the valid range is entered.
 */
@@ -718,7 +758,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC bistStopPRBS(unsigned char slotID, signed char po
 * @brief Test I2C memory map access
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the valid range is entered, WRONG_PORT in case a port number outside the valid range is entered, NO_ACK in case no acknowledgment is received, READBACK_ERROR in case the written and readback word are not the same.
 */
 NP_EXPORT	NP_ErrorCode NP_APIC bistI2CMM(unsigned char slotID, signed char port);
@@ -727,7 +767,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC bistI2CMM(unsigned char slotID, signed char port)
 * @brief Test all EEPROMs (Flex, headstage, BSC). by verifying a write/readback cycle on an unused memory location
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the valid range is entered, WRONG_PORT in case a port number outside the valid range is entered, NO_ACK_FLEX in case no acknowledgment is received from the flex eeprom, READBACK_ERROR_FLEX in case the written and readback word are not the same from the flex eeprom, NO_ACK_HS in case no acknowledgment is received from the HS eeprom, READBACK_ERROR_HS in case the written and readback word are not the same from the HS eeprom, NO_ACK_BSC in case no acknowledgment is received from the BSC eeprom, READBACK_ERROR_BSC in case the written and readback word are not the same from the BSC eeprom.
 */
 NP_EXPORT	NP_ErrorCode NP_APIC bistEEPROM(unsigned char slotID, signed char port);
@@ -738,7 +778,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC bistEEPROM(unsigned char slotID, signed char port
 * This test verifies the functionality of the shank and base shift registers (SR_CHAIN 1 to 3). The function configures the shift register two times with the same code. After the 2nd write cycle the SR_OUT_OK bit in the STATUS register is read. If OK, the shift register configuration was successful. The test is done for all 3 registers. The configuration code used for the test is a dedicated code (to make sure the bits are not all 0 or 1).
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the valid range is entered, WRONG_PORT in case a port number outside the valid range is entered, ERROR_SR_CHAIN_1 in case the SR_OUT_OK bit is not ok when writing SR_CHAIN_1, ERROR_SR_CHAIN_2 in case the SR_OUT_OK bit is not ok when writing SR_CHAIN_2, ERROR_SR_CHAIN_3 in case the SR_OUT_OK bit is not ok when writing SR_CHAIN_3.
 */
 NP_EXPORT	NP_ErrorCode NP_APIC bistSR(unsigned char slotID, signed char port);
@@ -748,7 +788,7 @@ NP_EXPORT	NP_ErrorCode NP_APIC bistSR(unsigned char slotID, signed char port);
 * A test mode is implemented on the probe which enables the transmission of a known data pattern over the PSB bus. The following function sets the probe in this test mode, records a small data set, and verifies whether the acquired data matches the known data pattern.
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)
+* @param port: for which HS (valid range 1 to 4)
 * @returns SUCCESS if successful, NO_LINK if no datalink, NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, WRONG_SLOT in case a slot number outside the valid range is entered, WRONG_PORT in case a port number outside the valid range is entered.
 */
 NP_EXPORT	NP_ErrorCode NP_APIC bistPSB(unsigned char slotID, signed char port);
@@ -802,7 +842,7 @@ NP_EXPORT	uint64_t NP_APIC streamTell(np_streamhandle_t stream);
 *    uint32_t timestamps[SAMPLECOUNT];
 *
 *    np_streamhandle_t sh;
-*    streamOpenFile("myrecording.bin",0, false, &sh);
+*    streamOpenFile("myrecording.bin",1, false, &sh);
 *    streamRead(sh, timestamps, interleaveddata, SAMPLECOUNT);
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
@@ -834,7 +874,7 @@ NP_EXPORT NP_ErrorCode NP_APIC streamReadPacket(
 *    readAPFifo(0,0, timestamps, interleaveddata, SAMPLECOUNT);
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)* @param channelindex: the channel index to read data from
+* @param port: for which HS (valid range 1 to 4)
 * @param timestamps: Optional timestamps buffer (NULL if not used). size should be 'samplecount'
 * @param data: buffer of size samplecount*384. The buffer will be populated with channel interleaved, 16 bit per sample data.
 * @returns amount of actual time stamps read.
@@ -852,19 +892,61 @@ NP_EXPORT size_t NP_APIC readAPFifo(uint8_t slotid, uint8_t port, uint32_t* time
 *    readAPFifo(0,0, timestamps, interleaveddata, SAMPLECOUNT);
 *
 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
-* @param port: for which HS (valid range 0 to 3)* @param channelindex: the channel index to read data from
+* @param port: for which HS (valid range 1 to 4)
 * @param timestamps: Optional timestamps buffer (NULL if not used). size should be 'samplecount'
 * @param data: buffer of size samplecount*384. The buffer will be populated with channel interleaved, 16 bit per sample data.
 * @returns amount of actual time stamps read.
 */
-NP_EXPORT size_t NP_APIC readLFPFifo(uint8_t slotid, uint8_t port, uint32_t* timestamps, int16_t* data, int samplecount);
+NP_EXPORT size_t NP_APIC readLFPFifo(unsigned char slotid, signed char port, uint32_t* timestamps, int16_t* data, int samplecount);
 
-NP_EXPORT size_t NP_APIC readADCFifo(uint8_t slotid, uint8_t portid, uint32_t* timestamps, int16_t* data, int samplecount);
+NP_EXPORT size_t NP_APIC readADCFifo(unsigned char slotid, signed char port, uint32_t* timestamps, int16_t* data, int samplecount);
+
+/**
+* @brief Blocking live read from the electrode data Fifo.
+* Example:
+
+*    #define SAMPLECOUNT 128
+*    struct electrodePacket[SAMPLECOUNT];
+*    size_t count = SAMPLECOUNT;
+*    readElectrodeData(1,1, &electrodePacket[0], &count, count);
+*
+* @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
+* @param port: for which HS (valid range 1 to 4)
+* @param packets: read buffer to copy the packets from the fifo to.
+* @param actualAmount: actual amount of packets read from the fifo.
+* @param requestedAmount: amount of packets to try to read from the fifo.
+*/
+NP_EXPORT NP_ErrorCode NP_APIC readElectrodeData(
+										unsigned char slotid, 
+										signed char port, 
+										struct electrodePacket* packets, 
+										size_t* actualAmount, 
+										size_t requestedAmount);
+
+/**
+* @brief Get the filling state of the ElectrodeDataFifo.
+*
+* @param slotid: which slot in the PXI chassis (valid range depends on the chassis)
+* @param port: for which HS (valid range 1 to 4)
+* @param packetsavailable: returns the amount unread of packets in the fifo. NULL allowed for no return.
+* @param headroom: returns the amount of space left in the fifo. NULL allowed for no return.
+*/
+NP_EXPORT NP_ErrorCode NP_APIC getElectrodeDataFifoState(
+										unsigned char slotid, 
+										signed char port, 
+										size_t* packetsavailable, 
+										size_t* headroom);
+
+/********************* Firmware update functions ****************************/
+NP_EXPORT NP_ErrorCode NP_APIC qbsc_update(unsigned char  slotID, const char* filename, int(*callback)(size_t byteswritten));
+NP_EXPORT NP_ErrorCode NP_APIC bs_update(unsigned char  slotID, const char* filename, int(*callback)(size_t byteswritten));
 
 /********************* Stream API ****************************/
-NP_EXPORT NP_ErrorCode NP_APIC setFileStream(uint8_t slotID, const char* filename);
-NP_EXPORT NP_ErrorCode NP_APIC enableFileStream(uint8_t slotID, bool enable);
+NP_EXPORT NP_ErrorCode NP_APIC setFileStream(unsigned char  slotID, const char* filename);
+NP_EXPORT NP_ErrorCode NP_APIC enableFileStream(unsigned char  slotID, bool enable);
 
+NP_EXPORT NP_ErrorCode NP_APIC getADCparams(unsigned char slotID, signed char port, int adcnr, struct ADC_Calib* data);
+NP_EXPORT NP_ErrorCode NP_APIC setADCparams(unsigned char slotID, signed char port, const struct ADC_Calib* data);
 
 NP_EXPORT const char* np_GetErrorMessage(NP_ErrorCode code);
 

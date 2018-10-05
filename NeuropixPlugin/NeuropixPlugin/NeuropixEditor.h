@@ -36,239 +36,236 @@ User interface for the RHD2000 source module.
 */
 class SourceNode;
 
-namespace Neuropix {
+class NeuropixCanvas;
+class NeuropixInterface;
+class Annotation;
+class ColorSelector;
 
-	class NeuropixCanvas;
-	class NeuropixInterface;
-	class Annotation;
-	class ColorSelector;
+class NeuropixEditor : public VisualizerEditor, public ComboBox::Listener
+{
+public:
+	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread, bool useDefaultParameterEditors);
+	virtual ~NeuropixEditor();
 
-	class NeuropixEditor : public VisualizerEditor, public ComboBox::Listener
-	{
-	public:
-	    NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread, bool useDefaultParameterEditors);
-	    virtual ~NeuropixEditor();
+	void comboBoxChanged(ComboBox* comboBox);
+	void buttonCallback(Button* button);
 
-	    void comboBoxChanged(ComboBox* comboBox);
-	    void buttonCallback(Button* button);
+	void saveEditorParameters(XmlElement*);
+	void loadEditorParameters(XmlElement*);
 
-	    void saveEditorParameters(XmlElement*);
-	    void loadEditorParameters(XmlElement*);
+	Visualizer* createNewCanvas(void);
 
-	    Visualizer* createNewCanvas(void);
+private:
 
-	private:
+	ScopedPointer<UtilityButton> apButton;
+	ScopedPointer<UtilityButton> lfpButton;
 
-		ScopedPointer<UtilityButton> apButton;
-		ScopedPointer<UtilityButton> lfpButton;
+	ScopedPointer<UtilityButton> triggerTypeButton;
+	ScopedPointer<Label> triggerTypeLabel;
+	ScopedPointer<UtilityButton> restartButton;
+	ScopedPointer<Label> restartLabel;
+	Viewport* viewport;
+	NeuropixCanvas* canvas;
+	NeuropixThread* thread;
 
-		ScopedPointer<UtilityButton> triggerTypeButton;
-	    ScopedPointer<Label> triggerTypeLabel;
-		ScopedPointer<UtilityButton> restartButton;
-		ScopedPointer<Label> restartLabel;
-	    Viewport* viewport;
-	    NeuropixCanvas* canvas;
-	    NeuropixThread* thread;
+	bool internalTrigger;
+	bool autoRestart;
+	bool sendAp;
+	bool sendLfp;
 
-	    bool internalTrigger;
-		bool autoRestart;
-		bool sendAp;
-		bool sendLfp;
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixEditor);
 
-	    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixEditor);
+};
 
-	};
+class NeuropixCanvas : public Visualizer, public Button::Listener
+{
+public:
+	NeuropixCanvas(GenericProcessor* p, NeuropixThread* thread);
+	~NeuropixCanvas();
 
-	class NeuropixCanvas : public Visualizer, public Button::Listener
-	{
-	public:
-		NeuropixCanvas(GenericProcessor* p, NeuropixThread* thread);
-		~NeuropixCanvas();
+	void paint(Graphics& g);
 
-		void paint(Graphics& g);
+	void refresh();
 
-		void refresh();
+	void beginAnimation();
+	void endAnimation();
 
-		void beginAnimation();
-		void endAnimation();
+	void refreshState();
+	void update();
 
-		void refreshState();
-		void update();
+	void setParameter(int, float);
+	void setParameter(int, int, int, float);
+	void buttonClicked(Button* button);
 
-		void setParameter(int, float);
-	    void setParameter(int, int, int, float);
-	    void buttonClicked(Button* button);
+	void saveVisualizerParameters(XmlElement* xml);
+	void loadVisualizerParameters(XmlElement* xml);
 
-	    void saveVisualizerParameters(XmlElement* xml);
-		void loadVisualizerParameters(XmlElement* xml);
+	void resized();
 
-		void resized();
+	SourceNode* processor;
+	ScopedPointer<Viewport> neuropixViewport;
+	ScopedPointer<NeuropixInterface> neuropixInterface;
 
-		SourceNode* processor;
-		ScopedPointer<Viewport> neuropixViewport;
-		ScopedPointer<NeuropixInterface> neuropixInterface;
+	int option;
 
-		int option;
+};
 
-	};
+class NeuropixInterface : public Component, public Button::Listener, public ComboBox::Listener, public Label::Listener, public Timer
+{
+public:
+	NeuropixInterface(NeuropixThread*, NeuropixEditor*);
+	~NeuropixInterface();
 
-	class NeuropixInterface : public Component, public Button::Listener, public ComboBox::Listener, public Label::Listener, public Timer
-	{
-	public:
-		NeuropixInterface(NeuropixThread*, NeuropixEditor*);
-		~NeuropixInterface();
+	void paint(Graphics& g);
 
-		void paint(Graphics& g);
+	void mouseMove(const MouseEvent& event);
+	void mouseDown(const MouseEvent& event);
+	void mouseDrag(const MouseEvent& event);
+	void mouseUp(const MouseEvent& event);
+	void mouseWheelMove(const MouseEvent&  event, const MouseWheelDetails&   wheel) ;
+	MouseCursor getMouseCursor();
 
-		void mouseMove(const MouseEvent& event);
-	    void mouseDown(const MouseEvent& event);
-	    void mouseDrag(const MouseEvent& event);
-	    void mouseUp(const MouseEvent& event);
-	    void mouseWheelMove(const MouseEvent&  event, const MouseWheelDetails&   wheel) ;
-	    MouseCursor getMouseCursor();
+	void buttonClicked(Button*);
+	void comboBoxChanged(ComboBox*);
+	void labelTextChanged(Label* l);
 
-	    void buttonClicked(Button*);
-	    void comboBoxChanged(ComboBox*);
-	    void labelTextChanged(Label* l);
+	void saveParameters(XmlElement* xml);
+	void loadParameters(XmlElement* xml);
 
-		void saveParameters(XmlElement* xml);
-		void loadParameters(XmlElement* xml);
+	void setAnnotationLabel(String, Colour);
+	void updateInfoString();
 
-	    void setAnnotationLabel(String, Colour);
-		void updateInfoString();
+	void timerCallback();
 
-		void timerCallback();
-
-	private:
+private:
 	
-		NeuropixThread* thread;
-		NeuropixEditor* editor;
-		DataBuffer* inputBuffer;
-		AudioSampleBuffer displayBuffer;
+	NeuropixThread* thread;
+	NeuropixEditor* editor;
+	DataBuffer* inputBuffer;
+	AudioSampleBuffer displayBuffer;
 
-		ScopedPointer<ComboBox> lfpGainComboBox;
-		ScopedPointer<ComboBox> apGainComboBox;
-		ScopedPointer<ComboBox> referenceComboBox;
-		ScopedPointer<ComboBox> filterComboBox;
+	ScopedPointer<ComboBox> lfpGainComboBox;
+	ScopedPointer<ComboBox> apGainComboBox;
+	ScopedPointer<ComboBox> referenceComboBox;
+	ScopedPointer<ComboBox> filterComboBox;
 
-		ScopedPointer<UtilityButton> enableButton;
-		ScopedPointer<UtilityButton> selectAllButton;
+	ScopedPointer<UtilityButton> enableButton;
+	ScopedPointer<UtilityButton> selectAllButton;
 
-		ScopedPointer<Label> infoLabel;
-		ScopedPointer<Label> lfpGainLabel;
-		ScopedPointer<Label> apGainLabel;
-		ScopedPointer<Label> referenceLabel;
-		ScopedPointer<Label> filterLabel;
-		ScopedPointer<Label> outputLabel;
-		ScopedPointer<Label> annotationLabelLabel;
-		ScopedPointer<Label> annotationLabel;
+	ScopedPointer<Label> infoLabel;
+	ScopedPointer<Label> lfpGainLabel;
+	ScopedPointer<Label> apGainLabel;
+	ScopedPointer<Label> referenceLabel;
+	ScopedPointer<Label> filterLabel;
+	ScopedPointer<Label> outputLabel;
+	ScopedPointer<Label> annotationLabelLabel;
+	ScopedPointer<Label> annotationLabel;
 
-		ScopedPointer<UtilityButton> enableViewButton;
-		ScopedPointer<UtilityButton> lfpGainViewButton;
-		ScopedPointer<UtilityButton> apGainViewButton;
-		ScopedPointer<UtilityButton> referenceViewButton;
-		ScopedPointer<UtilityButton> outputOnButton;
-		ScopedPointer<UtilityButton> outputOffButton;
-		ScopedPointer<UtilityButton> annotationButton;
-		ScopedPointer<UtilityButton> calibrationButton;
-		ScopedPointer<UtilityButton> calibrationButton2;
-		ScopedPointer<UtilityButton> calibrationButton3;
+	ScopedPointer<UtilityButton> enableViewButton;
+	ScopedPointer<UtilityButton> lfpGainViewButton;
+	ScopedPointer<UtilityButton> apGainViewButton;
+	ScopedPointer<UtilityButton> referenceViewButton;
+	ScopedPointer<UtilityButton> outputOnButton;
+	ScopedPointer<UtilityButton> outputOffButton;
+	ScopedPointer<UtilityButton> annotationButton;
+	ScopedPointer<UtilityButton> calibrationButton;
+	ScopedPointer<UtilityButton> calibrationButton2;
+	ScopedPointer<UtilityButton> calibrationButton3;
 
-		ScopedPointer<ColorSelector> colorSelector;
+	ScopedPointer<ColorSelector> colorSelector;
 		
-		Array<int> channelStatus;
-		Array<int> channelReference;
-		Array<int> channelApGain;
-		Array<int> channelLfpGain;
-		Array<int> channelOutput;
-		Array<int> channelSelectionState;
+	Array<int> channelStatus;
+	Array<int> channelReference;
+	Array<int> channelApGain;
+	Array<int> channelLfpGain;
+	Array<int> channelOutput;
+	Array<int> channelSelectionState;
 
-		Array<Colour> channelColours;
+	Array<Colour> channelColours;
 
-		bool isOverZoomRegion;
-		bool isOverUpperBorder;
-		bool isOverLowerBorder;
-		bool isOverChannel;
+	bool isOverZoomRegion;
+	bool isOverUpperBorder;
+	bool isOverLowerBorder;
+	bool isOverChannel;
 
-		int zoomHeight;
-		int zoomOffset;
-		int initialOffset;
-		int initialHeight;
-		int lowerBound;
-		int dragZoneWidth;
+	int zoomHeight;
+	int zoomOffset;
+	int initialOffset;
+	int initialHeight;
+	int lowerBound;
+	int dragZoneWidth;
 
-		int lowestChan;
-		int highestChan;
+	int lowestChan;
+	int highestChan;
 
-		float channelHeight;
+	float channelHeight;
 
-		int visualizationMode;
+	int visualizationMode;
 
-		Rectangle<int> selectionBox;
-		bool isSelectionActive;
+//		Rectangle<int> selectionBox;
+	bool isSelectionActive;
 
-		MouseCursor::StandardCursorType cursorType;
+	MouseCursor::StandardCursorType cursorType;
 
-		Path shankPath;
+	Path shankPath;
 
-		String channelInfoString;
+	String channelInfoString;
 
-		Colour getChannelColour(int chan);
-		int getNearestChannel(int x, int y);
-		String getChannelInfoString(int chan);
+	Colour getChannelColour(int chan);
+	int getNearestChannel(int x, int y);
+	String getChannelInfoString(int chan);
 
-		void drawLegend(Graphics& g);
-		void drawAnnotations(Graphics& g);
+	void drawLegend(Graphics& g);
+	void drawAnnotations(Graphics& g);
 
-		Array<Annotation> annotations;
+	Array<Annotation> annotations;
 
-		Array<int> getSelectedChannels();
+	Array<int> getSelectedChannels();
 
-		int getChannelForElectrode(int);
-		int getConnectionForChannel(int);
+	int getChannelForElectrode(int);
+	int getConnectionForChannel(int);
 
-	};
+};
 
-	class Annotation
-	{
-	public:
-		Annotation(String text, Array<int> channels, Colour c);
-		~Annotation();
+class Annotation
+{
+public:
+	Annotation(String text, Array<int> channels, Colour c);
+	~Annotation();
 
-		Array<int> channels;
-		String text;
+	Array<int> channels;
+	String text;
 
-		float currentYLoc;
+	float currentYLoc;
 
-		bool isMouseOver;
-		bool isSelected;
+	bool isMouseOver;
+	bool isSelected;
 
-		Colour colour;
+	Colour colour;
 
-	};
+};
 
-	class ColorSelector : public Component, public ButtonListener
-	{
-	public:
-		ColorSelector(NeuropixInterface* np);
-		~ColorSelector();
+class ColorSelector : public Component, public ButtonListener
+{
+public:
+	ColorSelector(NeuropixInterface* np);
+	~ColorSelector();
 
-		Array<Colour> standardColors;
-		Array<Colour> hoverColors;
-		StringArray strings;
+	Array<Colour> standardColors;
+	Array<Colour> hoverColors;
+	StringArray strings;
 
-		OwnedArray<ShapeButton> buttons;
+	OwnedArray<ShapeButton> buttons;
 
-		void buttonClicked(Button* button);
+	void buttonClicked(Button* button);
 
-		void updateCurrentString(String s);
+	void updateCurrentString(String s);
 
-		Colour getCurrentColour();
+	Colour getCurrentColour();
 
-		NeuropixInterface* npi;
+	NeuropixInterface* npi;
 
-		int activeButton;
+	int activeButton;
 
-	};
 };
 #endif  // __RHD2000EDITOR_H_2AD3C591__

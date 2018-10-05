@@ -24,8 +24,6 @@
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
 
-using namespace Neuropix;
-
 NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, bool useDefaultParameterEditors)
  : VisualizerEditor(parentNode, useDefaultParameterEditors)
 {
@@ -142,13 +140,13 @@ void NeuropixEditor::buttonCallback(Button* button)
         {
             sendAp = !sendAp;
             apButton->setToggleState(sendAp, dontSendNotification);
-            thread->toggleApData(sendAp);
+           // thread->toggleApData(sendAp);
         }
         else if (button == lfpButton)
         {
             sendLfp = !sendLfp;
             lfpButton->setToggleState(sendLfp, dontSendNotification);
-            thread->toggleLfpData(sendLfp);
+           // thread->toggleLfpData(sendLfp);
         }
     }
     else {
@@ -1096,7 +1094,7 @@ void NeuropixInterface::mouseDrag(const MouseEvent& event)
             y = y + h; h = -h;
         }
 
-        selectionBox = Rectangle<int>(x, y, w, h);
+//        selectionBox = Rectangle<int>(x, y, w, h);
         isSelectionActive = true;
 
         //if (x < 225)
@@ -1292,7 +1290,7 @@ void NeuropixInterface::paint(Graphics& g)
     if (isSelectionActive)
     {
         g.setColour(Colours::white.withAlpha(0.5f));
-        g.drawRect(selectionBox);
+//        g.drawRect(selectionBox);
     }
 
     if (isOverChannel)

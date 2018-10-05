@@ -35,49 +35,21 @@
     <ClInclude Include="NeuropixThread.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="neuropix-api\ADCPacket.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\BaseConfiguration.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\CsvFile.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\dll_import_export.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\ElectrodePacket.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\I2CDeviceAddresses.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\IicDriver.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
     <ClInclude Include="neuropix-api\NeuropixAPI.h">
       <Filter>Source Files\neuropix-api</Filter>
     </ClInclude>
-    <ClInclude Include="neuropix-api\NP_ErrorCode.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\ShankConfiguration.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\ShiftRegister.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\SuperBaseConfiguration.h">
-      <Filter>Source Files\neuropix-api</Filter>
-    </ClInclude>
-    <ClInclude Include="neuropix-api\VciInterface.h">
+    <ClInclude Include="neuropix-api\NeuropixAPI_private.h">
       <Filter>Source Files\neuropix-api</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="resources\libNeuropixAPI_msvc_V5_1.lib">
+    <Library Include="resources\NeuropixAPI.lib">
       <Filter>Resource Files</Filter>
     </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\NeuropixAPI.dll">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

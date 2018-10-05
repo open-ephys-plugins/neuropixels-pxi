@@ -77,6 +77,8 @@ extern "C" {
 	NP_EXPORT NP_ErrorCode NP_APIC dbg_disablescale(uint8_t slotID, bool disable);
 	NP_EXPORT NP_ErrorCode NP_APIC dbg_headstageReadRegister(uint8_t slotID, int8_t port, uint8_t address, uint8_t* value);
 	NP_EXPORT NP_ErrorCode NP_APIC dbg_headstageWriteRegister(uint8_t slotID, int8_t port, uint8_t address, uint8_t value);
+	NP_EXPORT NP_ErrorCode NP_APIC dbg_setchannelgain(uint8_t slotID, int8_t port, int channel, double gainAP, double gainLFP);
+	NP_EXPORT NP_ErrorCode NP_APIC dbg_getchannelgain(uint8_t slotID, int8_t port, int channel, double* gainAP, double* gainLFP);
 
 	/* @brief Set the offset correction data
 	* ADC offset correction can be programmed per channel.
@@ -113,6 +115,11 @@ extern "C" {
 	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_ReadAP(uint8_t slotID, int8_t portID, struct probechannelstatistics* stats, int firstchannel, int count);
 	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_ReadADC(uint8_t slotID, int8_t portID, struct probechannelstatistics* stats, int firstchannel, int count);
 
+
+	/*
+	  Set the state to prevents the QBSC to reboot into normal image when openBS is called.
+	*/
+	NP_EXPORT	NP_ErrorCode NP_APIC dbg_preventQBSCnormalboot(int state);
 
 #ifdef __cplusplus
 }
