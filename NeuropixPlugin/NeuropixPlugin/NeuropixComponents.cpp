@@ -64,7 +64,7 @@ void BasestationConnectBoard::getInfo()
 	unsigned char version_minor;
 	uint16_t version_build;
 
-	errorCode = getBSCBootVersion(basestation.slot, &version_major, &version_minor, &version_build);
+	errorCode = getBSCBootVersion(basestation->slot, &version_major, &version_minor, &version_build);
 
 	boot_version = String(version_major) + "." + String(version_minor);
 
@@ -72,14 +72,14 @@ void BasestationConnectBoard::getInfo()
 		boot_version += ".";
 		boot_version += String(version_build);
 
-	errorCode = getBSCVersion(basestation.slot, &version_major, &version_minor);
+	errorCode = getBSCVersion(basestation->slot, &version_major, &version_minor);
 
 	version = String(version_major) + "." + String(version_minor);
 
-	errorCode = readBSCSN(basestation.slot, &serial_number);
+	errorCode = readBSCSN(basestation->slot, &serial_number);
 
 	char pn[MAXLEN];
-	readBSCPN(basestation.slot, pn, MAXLEN);
+	readBSCPN(basestation->slot, pn, MAXLEN);
 
 	part_number = String(pn);
 
@@ -91,14 +91,14 @@ void Headstage::getInfo()
 	unsigned char version_major;
 	unsigned char version_minor;
 
-	errorCode = getHSVersion(probe.basestation.slot, probe.port, &version_major, &version_minor);
+	errorCode = getHSVersion(probe->basestation->slot, probe->port, &version_major, &version_minor);
 
 	version = String(version_major) + "." + String(version_minor);
 
-	errorCode = readHSSN(probe.basestation.slot, probe.port, &serial_number);
+	errorCode = readHSSN(probe->basestation->slot, probe->port, &serial_number);
 
 	char pn[MAXLEN];
-	errorCode = readHSPN(probe.basestation.slot, probe.port, pn, MAXLEN);
+	errorCode = readHSPN(probe->basestation->slot, probe->port, pn, MAXLEN);
 
 	part_number = String(pn);
 
@@ -111,12 +111,12 @@ void Flex::getInfo()
 	unsigned char version_major;
 	unsigned char version_minor;
 
-	errorCode = getFlexVersion(probe.basestation.slot, probe.port, &version_major, &version_minor);
+	errorCode = getFlexVersion(probe->basestation->slot, probe->port, &version_major, &version_minor);
 
 	version = String(version_major) + "." + String(version_minor);
 
 	char pn[MAXLEN];
-	errorCode = readFlexPN(probe.basestation.slot, probe.port, pn, MAXLEN);
+	errorCode = readFlexPN(probe->basestation->slot, probe->port, pn, MAXLEN);
 
 	part_number = String(pn);
 
@@ -126,20 +126,39 @@ void Flex::getInfo()
 void Probe::getInfo()
 {
 
-	errorCode = readId(basestation.slot, port, &serial_number);
+	errorCode = readId(basestation->slot, port, &serial_number);
 
 	char pn[MAXLEN];
-	errorCode = readHSPN(basestation.slot, port, pn, MAXLEN);
+	errorCode = readHSPN(basestation->slot, port, pn, MAXLEN);
 
 	part_number = String(pn);
 }
 
-Probe::Probe(Basestation bs, signed char port_) : basestation(bs), port(port_)
+Probe::Probe(Basestation* bs, signed char port_) : basestation(bs), port(port_)
 {
+	getInfo();
 
+	flex = new Flex(this);
+	headstage = new Headstage(this);
 }
 
-Basestation::Basestation(int slot_number)
+Headstage::Headstage(Probe* probe_) : probe(probe_)
+{
+	getInfo();
+}
+
+Flex::Flex(Probe* probe_) : probe(probe_)
+{
+	getInfo();
+}
+
+BasestationConnectBoard::BasestationConnectBoard(Basestation* bs) : basestation(bs)
+{
+	getInfo();
+}
+
+
+Basestation::Basestation(int slot_number) : probesInitialized(false)
 {
 	slot = (unsigned char)slot_number;
 
@@ -149,6 +168,9 @@ Basestation::Basestation(int slot_number)
 	{
 		std::cout << "  Opened BS on slot " << int(slot) << std::endl;
 
+		getInfo();
+		basestationConnectBoard = new BasestationConnectBoard(this);
+
 		for (signed char port = 1; port < 5; port++)
 		{
 			errorCode = openProbe(slot, port);
@@ -157,7 +179,7 @@ Basestation::Basestation(int slot_number)
 
 			if (errorCode == SUCCESS)
 			{
-				probes.add(new Probe(port));
+				probes.add(new Probe(this, port));
 				std::cout << "  Success." << std::endl;
 			}
 		}
@@ -166,12 +188,65 @@ Basestation::Basestation(int slot_number)
 	else {
 		std::cout << "  Opening BS on slot " << int(slot) << " failed with error code : " << errorCode << std::endl;
 	}
+}
 
+Basestation::~Basestation()
+{
+	for (int i = 0; i < probes.size(); i++)
+	{
+		errorCode = close(slot, probes[i]->port);
+	}
 
+	errorCode = closeBS(slot);
+}
+
+int Basestation::getProbeCount()
+{
+	return probes.size();
 }
 
 void Basestation::makeSyncMaster()
 {
 	errorCode = setParameter(NP_PARAM_SYNCSOURCE, TRIGIN_SMA);
 	errorCode = setParameter(NP_PARAM_SYNCMASTER, slot);
+}
+
+void Basestation::initializeProbes()
+{
+	if (!probesInitialized)
+	{
+		errorCode = setTriggerInput(slot, TRIGIN_SW);
+
+		for (int i = 0; i < probes.size(); i++)
+		{
+			errorCode = init(slot, probes[i]->port);
+			errorCode = setOPMODE(slot, probes[i]->port, RECORDING);
+			errorCode = setHSLed(slot, probes[i]->port, false);
+
+			if (errorCode == SUCCESS)
+			{
+				std::cout << "     Probe initialized." << std::endl;
+			}
+			else {
+				std::cout << "     Failed with error code " << errorCode << std::endl;
+			}
+
+		}
+
+		probesInitialized = true;
+	}
+
+	errorCode = arm(slot);
+	
+}
+
+void Basestation::startAcquisition()
+{
+	
+	errorCode = setSWTrigger(slot);
+}
+
+void Basestation::stopAcquisition()
+{
+	errorCode = arm(slot);
 }

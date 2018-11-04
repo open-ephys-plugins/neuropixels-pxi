@@ -96,7 +96,7 @@ void NeuropixThread::openConnection()
 		}
 	}
 
-	for (int i = 0; i < basestations.size; i++)
+	for (int i = 0; i < basestations.size(); i++)
 	{
 		if (basestations[i]->getProbeCount() > 0)
 			baseStationAvailable = true;
@@ -105,64 +105,9 @@ void NeuropixThread::openConnection()
 }
 
 
-void NeuropixThread::checkProbes()
-{
-
-	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
-	{
-		std::cout << "Checking for probes on slot " << int(connected_basestations[this_basestation]) << std::endl;
-
-		std::vector<int> probes_for_basestation;
-
-		for (signed char port = 1; port < 5; port++)
-		{
-			errorCode = openProbe(connected_basestations[this_basestation], port);
-
-			std::cout << "Opening probe " << int(port) << ", error code : " << errorCode << std::endl;
-
-			if (errorCode == SUCCESS)
-			{
-				probes_for_basestation.push_back(port);
-				baseStationAvailable = true;
-
-				std::cout << "  Success." << std::endl;
-			}
-		}
-
-		std::cout << " " << std::endl;
-
-		connected_probes.push_back(probes_for_basestation);
-	}
-
-	std::cout << " " << std::endl;
-}
-
-
-
-
-void NeuropixThread::closeProbes()
-{
-	// closing things
-	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
-	{
-		std::cout << "Closing slot " << int(connected_basestations[this_basestation]) << std::endl;
-
-		for (int this_probe = 0; this_probe < connected_probes[this_basestation].size(); this_probe++)
-		{
-			std::cout << " Closing probe " << int(connected_probes[this_basestation][this_probe]) << std::endl;
-			errorCode = close(connected_basestations[this_basestation], connected_probes[this_basestation][this_probe]);
-		}
-
-		errorCode = closeBS(connected_basestations[this_basestation]);
-	}
-
-	std::cout << " " << std::endl;
-
-}
-
 void NeuropixThread::closeConnection()
 {
-	closeProbes();
+
 }
 
 /** Returns true if the data source is connected, false otherwise.*/
@@ -245,57 +190,14 @@ void NeuropixThread::timerCallback()
 
     stopTimer();
 
-	
-
-	// loop through probes
-	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
+	for (int i = 0; i < basestations.size(); i++)
 	{
-		std::cout << " Checking slot " << int(connected_basestations[this_basestation]) << std::endl;
+		basestations[i]->initializeProbes();
+	}
 
-		const size_t probe_count = connected_probes[this_basestation].size();
-
-		if (probe_count == 0)
-			break;
-
-		if (!probesInitialized)
-		{
-
-			errorCode = setTriggerInput(connected_basestations[this_basestation], TRIGIN_SW);
-
-			for (int this_probe = 0; this_probe < probe_count; this_probe++)
-			{
-				std::cout << " Initializing probe " << int(connected_probes[this_basestation][this_probe]) << std::endl;
-
-				errorCode = init(connected_basestations[this_basestation], connected_probes[this_basestation][this_probe]);
-				errorCode = setOPMODE(connected_basestations[this_basestation], connected_probes[this_basestation][this_probe], RECORDING);
-				errorCode = setHSLed(connected_basestations[this_basestation], connected_probes[this_basestation][this_probe], false);
-
-				if (errorCode == SUCCESS)
-				{
-					std::cout << "     Probe initialized." << std::endl;
-				}
-				else {
-					std::cout << "     Failed with error code " << errorCode << std::endl;
-				}
-
-			}
-
-			std::cout << " Arming basestation " << int(connected_basestations[this_basestation]) << std::endl;
-
-			setFileStream(connected_basestations[this_basestation], "test2.npx");
-
-			errorCode = arm(connected_basestations[this_basestation]);
-
-			std::cout << "     Basestation armed." << std::endl;
-
-			probesInitialized = true;
-
-			
-		}
-
-		//enableFileStream(connected_basestations[this_basestation], true);
-		errorCode = setSWTrigger(connected_basestations[this_basestation]);
-
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		basestations[i]->startAcquisition();
 	}
 
     startThread();
@@ -312,8 +214,10 @@ bool NeuropixThread::stopAcquisition()
         signalThreadShouldExit();
     }
 
-	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
-		errorCode = arm(connected_basestations[this_basestation]);
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		basestations[i]->stopAcquisition();
+	}
 
     return true;
 }
@@ -574,24 +478,22 @@ bool NeuropixThread::updateBuffer()
 
 	//std::cout << "Attempting data read. " << std::endl;
 
-	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
+	for (int bs = 0; bs < basestations.size(); bs++)
 	{
 		//std::cout << " Checking slot " << int(connected_basestations[this_basestation]) << std::endl;
 
-		const size_t probe_count = connected_probes[this_basestation].size();
-
-		for (int this_probe = 0; this_probe < probe_count; this_probe++)
+		for (int probe_num = 0; probe_num < basestations[bs]->getProbeCount(); probe_num++)
 		{
 			size_t count = SAMPLECOUNT;
 
 			errorCode = readElectrodeData(
-				connected_basestations[this_basestation],
-				connected_probes[this_basestation][this_probe],
+				basestations[bs]->slot,
+				basestations[bs]->probes[probe_num]->port,
 				&packet[0],
 				&count,
 				count);
 
-			if (errorCode == SUCCESS && count > 0 && this_probe == 0)
+			if (errorCode == SUCCESS && count > 0 && probe_num == 0)
 			{
 
 				//std::cout << "Got data. " << std::endl;
@@ -646,7 +548,7 @@ bool NeuropixThread::updateBuffer()
 		size_t packetsAvailable;
 		size_t headroom;
 
-		for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
+		/*for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
 		{
 			//std::cout << " Checking slot " << int(connected_basestations[this_basestation]) << std::endl;
 
@@ -664,7 +566,7 @@ bool NeuropixThread::updateBuffer()
 				std::cout << "  FIFO filling  " << this_probe << ": " << packetsAvailable << std::endl;
 			}
 			
-		}
+		}*/
 
 		std::cout << "Current event code: " << eventCode << std::endl;
 

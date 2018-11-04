@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="NeuropixComponents.cpp" />
     <ClCompile Include="NeuropixEditor.cpp" />
     <ClCompile Include="NeuropixThread.cpp" />
     <ClCompile Include="OpenEphysLib.cpp" />
@@ -30,6 +31,7 @@
     <ClInclude Include="neuropix-api\NeuropixAPI_private.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="NeuropixComponents.h" />
     <ClInclude Include="NeuropixEditor.h" />
     <ClInclude Include="NeuropixThread.h" />
   </ItemGroup>

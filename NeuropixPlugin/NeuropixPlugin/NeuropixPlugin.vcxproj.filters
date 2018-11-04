@@ -27,6 +27,9 @@
     <ClCompile Include="OpenEphysLib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NeuropixComponents.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NeuropixEditor.h">
@@ -40,6 +43,9 @@
     </ClInclude>
     <ClInclude Include="neuropix-api\NeuropixAPI_private.h">
       <Filter>Source Files\neuropix-api</Filter>
+    </ClInclude>
+    <ClInclude Include="NeuropixComponents.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

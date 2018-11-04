@@ -1,3 +1,26 @@
+/*
+------------------------------------------------------------------
+
+This file is part of the Open Ephys GUI
+Copyright (C) 2018 Allen Institute for Brain Science and Open Ephys
+
+------------------------------------------------------------------
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #ifndef __NEUROPIXCOMPONENTS_H_2C4C2D67__
 #define __NEUROPIXCOMPONENTS_H_2C4C2D67__
 
@@ -7,11 +30,15 @@
 
 #include "neuropix-api/NeuropixAPI.h"
 
+class BasestationConnectBoard;
+class Flex;
+class Headstage;
+class Probe;
+
 class NeuropixComponent
 {
 public:
 	NeuropixComponent();
-	~NeuropixComponent();
 
 	String version;
 	uint64_t serial_number;
@@ -38,23 +65,31 @@ public:
 
 	String boot_version;
 
-	BasestationConnectBoard basestationConnectBoard;
+	ScopedPointer<BasestationConnectBoard> basestationConnectBoard;
 
 	OwnedArray<Probe> probes;
+
+	void initializeProbes();
 
 	float getTemperature();
 
 	void getInfo();
 	void makeSyncMaster();
+
+	void startAcquisition();
+	void stopAcquisition();
+
+private:
+	bool probesInitialized;
 };
 
 class BasestationConnectBoard : public NeuropixComponent
 {
 public:
-	
+	BasestationConnectBoard(Basestation*);
 	String boot_version;
 
-	Basestation basestation;
+	Basestation* basestation;
 
 	void getInfo();
 };
@@ -62,14 +97,13 @@ public:
 class Probe : public NeuropixComponent
 {
 public:
-	Probe(Basestation bs, signed char port);
-	~Probe();
+	Probe(Basestation* bs, signed char port);
 
-	Basestation basestation;
+	Basestation* basestation;
 	signed char port;
 
-	Headstage headstage;
-	Flex flex;
+	ScopedPointer<Headstage> headstage;
+	ScopedPointer<Flex> flex;
 
 	int reference;
 	int ap_gain;
@@ -91,14 +125,16 @@ public:
 class Headstage : public NeuropixComponent
 {
 public:
-	Probe probe;
+	Headstage::Headstage(Probe*);
+	Probe* probe;
 	void getInfo();
 };
 
 class Flex : public NeuropixComponent
 {
 public:
-	Probe probe;
+	Flex::Flex(Probe*);
+	Probe* probe;
 	void getInfo();
 };
 

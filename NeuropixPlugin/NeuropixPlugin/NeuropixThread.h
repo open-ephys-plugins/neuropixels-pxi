@@ -91,17 +91,6 @@ public:
 	/** Used to override default channel names.*/
 	bool usesCustomNames() const override;
 
-	// Neuropix Methods
-
-	/** Check for connected basestations in PXI slots*/
-	void checkSlots();
-
-	/** Check for connected probes on each basestation*/
-	void checkProbes();
-
-	/** Close connection to the PXI system*/
-	void closeProbes();
-
 	/** Selects which electrode is connected to each channel. */
 	void selectElectrode(int chNum, int connection, bool transmit);
 
