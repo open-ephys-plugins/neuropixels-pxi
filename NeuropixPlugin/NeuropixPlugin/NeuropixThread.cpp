@@ -37,8 +37,7 @@ GenericEditor* NeuropixThread::createEditor(SourceNode* sn)
 NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvailable(false), probesInitialized(false)
 {
 
-	slotID = 0; // for testing only
-	port = 0; // for testing only
+	api.getInfo();
 
 	sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
 	sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
@@ -81,24 +80,28 @@ NeuropixThread::~NeuropixThread()
     closeConnection();
 }
 
-
-void NeuropixThread::checkSlots()
+void NeuropixThread::openConnection()
 {
-	for (unsigned char basestation = 0; basestation < 7; basestation++)
+
+	uint32_t availableslotmask;
+
+	scanPXI(&availableslotmask);
+
+	for (int slot = 0; slot < 32; slot++)
 	{
-		errorCode = openBS(basestation); // establishes a data connection with the basestation
-
-		std::cout << "Opening basestation " << int(basestation) << ", error code : " << errorCode << std::endl;
-
-		if (errorCode == SUCCESS)
+		//std::cout << "Slot " << i << " available: " << ((availableslotmask >> i) & 1) << std::endl;
+		if ((availableslotmask >> slot) & 1)
 		{
-			connected_basestations.push_back(basestation);
-
-			std::cout << "  Success." << std::endl;
+			basestations.add(new Basestation(slot));
 		}
 	}
 
-	std::cout << " " << std::endl;
+	for (int i = 0; i < basestations.size; i++)
+	{
+		if (basestations[i]->getProbeCount() > 0)
+			baseStationAvailable = true;
+	}
+
 }
 
 
@@ -134,17 +137,7 @@ void NeuropixThread::checkProbes()
 	std::cout << " " << std::endl;
 }
 
-void NeuropixThread::openConnection()
-{
 
-	// open up the basestation connection and checks for probes
-	// - does not initialize the probe or headstage
-
-	checkSlots();
-
-	checkProbes();
-
-}
 
 
 void NeuropixThread::closeProbes()
@@ -252,6 +245,8 @@ void NeuropixThread::timerCallback()
 
     stopTimer();
 
+	
+
 	// loop through probes
 	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
 	{
@@ -287,13 +282,15 @@ void NeuropixThread::timerCallback()
 
 			std::cout << " Arming basestation " << int(connected_basestations[this_basestation]) << std::endl;
 
-			//setFileStream(connected_basestations[this_basestation], "test.npx2");
+			setFileStream(connected_basestations[this_basestation], "test2.npx");
 
 			errorCode = arm(connected_basestations[this_basestation]);
 
 			std::cout << "     Basestation armed." << std::endl;
 
 			probesInitialized = true;
+
+			
 		}
 
 		//enableFileStream(connected_basestations[this_basestation], true);
@@ -575,9 +572,6 @@ void NeuropixThread::calibrateFromCsv()
 bool NeuropixThread::updateBuffer()
 {
 
-	unsigned int actualNumPackets;
-	unsigned int requestedNumPackets = 250;
-
 	//std::cout << "Attempting data read. " << std::endl;
 
 	for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
@@ -608,8 +602,14 @@ bool NeuropixThread::updateBuffer()
 				{
 					for (int i = 0; i < 12; i++)
 					{
-						eventCode = 0; packet[packetNum].SYNC[i]; // AUX_IO<0:13>
+						uint64 oldeventcode = eventCode;
+						eventCode = 1 - (packet[packetNum].Trigger[i] && 64); // AUX_IO<0:13>
+						//if (ec != 64)
+						//	std::cout << "Got nonzero event code: " << ec << std::endl;
 						//std::cout << "Read event data. " << std::endl;
+
+						if (eventCode != oldeventcode)
+							std::cout << "event code: " << eventCode << std::endl;
 
 						for (int j = 0; j < 384; j++)
 						{
@@ -624,9 +624,9 @@ bool NeuropixThread::updateBuffer()
 						//std::cout << "Added AP data to buffer. " << std::endl;
 					}
 
-					eventCode = 0;
+					uint64 lfpeventCode = 0;
 
-					sourceBuffers[1]->addToBuffer(data2, &timestampLfp, &eventCode, 1);
+					sourceBuffers[1]->addToBuffer(data2, &timestampLfp, &lfpeventCode, 1);
 					timestampLfp += 1;
 				}
 
@@ -663,7 +663,10 @@ bool NeuropixThread::updateBuffer()
 
 				std::cout << "  FIFO filling  " << this_probe << ": " << packetsAvailable << std::endl;
 			}
+			
 		}
+
+		std::cout << "Current event code: " << eventCode << std::endl;
 
 		std::cout << "  " << std::endl;
 	}

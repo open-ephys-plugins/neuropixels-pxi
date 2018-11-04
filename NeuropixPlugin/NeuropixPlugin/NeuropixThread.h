@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "neuropix-api/NeuropixAPI.h"
+#include "NeuropixComponents.h"
 
 # define SAMPLECOUNT 64
 
@@ -179,17 +180,15 @@ private:
 	int numRefs;
 	int totalChans;
 
-	unsigned char slotID; // basestation / PXIe slot number
-	signed char port; // probe number (0-3 for each slot)
-
-
+	OwnedArray<Basestation> basestations;
 
 	NP_ErrorCode errorCode;
-	std::vector<unsigned char> connected_basestations;
-	std::vector<std::vector<int>> connected_probes;
+	NeuropixAPI api;
+
+	//std::vector<unsigned char> connected_basestations;
+	//std::vector<std::vector<int>> connected_probes;
 	electrodePacket packet[SAMPLECOUNT];
 
 };
-
 
 #endif  // __NEUROPIXTHREAD_H_2C4CBD67__
