@@ -24,6 +24,113 @@
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
 
+void EditorBackground::paint(Graphics& g)
+{
+	
+
+	for (int i = 0; i < 4; i++)
+	{
+		g.setColour(Colours::lightgrey);
+		g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 3);
+		g.setColour(Colours::darkgrey);
+		g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 1);
+
+		g.setColour(Colours::darkgrey);
+		g.setFont(20);
+		g.drawText(String(i + 1), 90 * i + 72, 15, 10, 10, Justification::centred);
+		g.setFont(8);
+		g.drawText(String("0"), 90 * i + 87, 100, 50, 10, Justification::centredLeft);
+		g.drawText(String("100"), 90 * i + 87, 60, 50, 10, Justification::centredLeft);
+		g.drawText(String("%"), 90 * i + 87, 80, 50, 10, Justification::centredLeft);
+
+		for (int j = 0; j < 4; j++)
+		{
+			g.setFont(10);
+			g.drawText(String(j + 1), 90 * i + 22, 90 - j * 22, 10, 10, Justification::centredLeft);
+		}
+	}
+}
+
+FifoMonitor::FifoMonitor(int id_) : id(id_)
+{
+
+}
+
+void FifoMonitor::setSlot(unsigned char slot_)
+{
+	slot = slot_;
+}
+
+void FifoMonitor::setFillPercentage(float fill_)
+{
+	fillPercentage = fill_;
+
+	repaint();
+}
+
+void FifoMonitor::paint(Graphics& g)
+{
+	g.setColour(Colours::grey);
+	g.fillRoundedRectangle(0, 0, this->getWidth(), this->getHeight(), 4);
+	g.setColour(Colours::lightslategrey);
+	g.fillRoundedRectangle(2, 2, this->getWidth()-4, this->getHeight()-4, 2);
+}
+
+ProbeButton::ProbeButton(int id_) : id(id_)
+{
+	connected = false;
+	selected = false;
+
+	setRadioGroupId(979);
+}
+
+void ProbeButton::setSlotAndPort(unsigned char slot_, signed char port_)
+{
+	slot = slot_;
+	port = port_;
+
+	std::cout << "Setting button " << id << " to " << int(slot) << ":" << int(port) << std::endl;
+
+	if (slot == 255 || port == -1)
+		connected = false;
+	else
+		connected = true;
+}
+
+void ProbeButton::setSelectedState(bool state)
+{
+	selected = state;
+}
+
+void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
+{
+	g.setColour(Colours::darkgrey);
+	g.fillEllipse(0, 0, 15, 15);
+
+	if (connected)
+	{
+		if (selected)
+		{
+			if (isMouseOver)
+				g.setGradientFill(ColourGradient(Colours::green, 0, 0, Colours::lightgreen, 10,10, true));
+			else
+				g.setColour(Colours::blue);
+		}
+		else {
+			if (isMouseOver)
+				g.setColour(Colours::lightgreen);
+			else
+				g.setColour(Colours::green);
+		}
+	}
+	else {
+		g.setColour(Colours::lightgrey);
+	}
+		
+	g.fillEllipse(2, 2, 11, 11);
+}
+
+
 NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, bool useDefaultParameterEditors)
  : VisualizerEditor(parentNode, useDefaultParameterEditors)
 {
@@ -31,62 +138,47 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
     thread = t;
     canvas = nullptr;
 
-    desiredWidth = 200;
+    desiredWidth = 400;
     tabText = "Neuropix PXI";
 
-    triggerTypeButton = new UtilityButton("INTERNAL", Font("Small Text", 13, Font::plain));
-    triggerTypeButton->setRadius(3.0f);
-    triggerTypeButton->setBounds(20,70,85,22);
-    triggerTypeButton->addListener(this);
-    triggerTypeButton->setTooltip("Switch between external and internal triggering");
-    triggerTypeButton->setToggleState(true, dontSendNotification);
-    addAndMakeVisible(triggerTypeButton);
+	for (int i = 0; i < 16; i++)
+	{
+		int slotIndex = i % 4;
+		int portIndex = i / 4 + 1;
+		int x_pos = slotIndex * 90 + 40;
+		int y_pos = 125 - portIndex * 22;
 
-    internalTrigger = true;
+		ProbeButton* p = new ProbeButton(i);
+		p->setBounds(x_pos, y_pos, 15, 15);
+		p->addListener(this);
+		addAndMakeVisible(p);
+		probeButtons.add(p);
 
-    triggerTypeLabel = new Label("Trigger", "Trigger");
-    triggerTypeLabel->setFont(Font("Small Text", 13, Font::plain));
-    triggerTypeLabel->setBounds(105,71,100,20);
-    triggerTypeLabel->setColour(Label::textColourId, Colours::darkgrey);
-    addAndMakeVisible(triggerTypeLabel);
+		p->setSlotAndPort(thread->getSlotForIndex(slotIndex, portIndex), thread->getPortForIndex(slotIndex, portIndex));
+	}
 
-    restartButton = new UtilityButton("YES", Font("Small Text", 13, Font::plain));
-	restartButton->setRadius(3.0f);
-	restartButton->setBounds(20, 100, 34, 22);
-	restartButton->addListener(this);
-	restartButton->setTooltip("Auto-restart if probe stops sending data");
-	restartButton->setToggleState(true, dontSendNotification);
-	addAndMakeVisible(restartButton);
+	for (int i = 0; i < 4; i++)
+	{
+		int x_pos = i * 90 + 70;
+		int y_pos = 50;
 
-	autoRestart = true;
+		UtilityButton* b = new UtilityButton("C:\\", Font("Small Text", 13, Font::plain));
+		b->setBounds(x_pos, y_pos, 30, 20);
+		b->addListener(this);
+		addAndMakeVisible(b);
+		directoryButtons.add(b);
 
-    lfpButton = new UtilityButton("LFP", Font("Small Text", 13, Font::plain));
-    lfpButton->setRadius(3.0f);
-    lfpButton->setBounds(20, 35, 34, 22);
-    lfpButton->addListener(this);
-    lfpButton->setTooltip("Toggle LFP data output");
-    lfpButton->setToggleState(true, dontSendNotification);
-    //   addAndMakeVisible(lfpButton);
+		FifoMonitor* f = new FifoMonitor(i);
+		f->setBounds(x_pos + 2, 75, 12, 50);
+		addAndMakeVisible(f);
+		f->setSlot(thread->getSlotForIndex(0, 0));
+	}
 
-    sendLfp = true;
-
-    apButton = new UtilityButton("AP", Font("Small Text", 13, Font::plain));
-    apButton->setRadius(3.0f);
-    apButton->setBounds(65, 35, 34, 22);
-    apButton->addListener(this);
-    apButton->setTooltip("Toggle AP data output");
-    apButton->setToggleState(true, dontSendNotification);
-    //addAndMakeVisible(apButton);
-
-    sendAp = true;
-
-    restartLabel = new Label("Auto restart", "Auto restart");
-	restartLabel->setFont(Font("Small Text", 13, Font::plain));
-	restartLabel->setBounds(55, 101, 200, 20);
-	restartLabel->setColour(Label::textColourId, Colours::darkgrey);
-	addAndMakeVisible(restartLabel);
-
-    
+	background = new EditorBackground();
+	background->setBounds(0, 15, 500, 150);
+	addAndMakeVisible(background);
+	background->toBack();
+	background->repaint();
 }
 
 NeuropixEditor::~NeuropixEditor()
@@ -94,63 +186,24 @@ NeuropixEditor::~NeuropixEditor()
 
 }
 
-void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
-{
-   
-}
 
 void NeuropixEditor::buttonCallback(Button* button)
 {
+
+	if (probeButtons.contains((ProbeButton*) button))
+	{
+		ProbeButton* probe = (ProbeButton*)button;
+		probe->setSelectedState(true);
+		thread->setSelectedProbe(probe->slot, probe->port);
+	}
+
     if (!acquisitionIsActive)
     {
-    
-        if (button == triggerTypeButton)
-        {
-            internalTrigger = !internalTrigger;
-
-            if (internalTrigger)
-            {
-                triggerTypeButton->setLabel("INTERNAL");
-                triggerTypeButton->setToggleState(true, dontSendNotification);
-            } else {
-                triggerTypeButton->setLabel("EXTERNAL");
-                triggerTypeButton->setToggleState(false, dontSendNotification);
-            }
-
-            thread->setTriggerMode(internalTrigger);
+		if (directoryButtons.contains((UtilityButton*)button))
+		{
+			// open file chooser to select the saving location for this basestation
+		}
         
-        }
-		else if (button == restartButton)
-        {
-			autoRestart = !autoRestart;
-
-			if (autoRestart)
-            {
-				restartButton->setLabel("YES");
-                restartButton->setToggleState(true, dontSendNotification);
-            }
-            else {
-                restartButton->setLabel("NO");
-				restartButton->setToggleState(false, dontSendNotification);
-            }
-
-			thread->setAutoRestart(autoRestart);
-        } 
-        else if (button == apButton)
-        {
-            sendAp = !sendAp;
-            apButton->setToggleState(sendAp, dontSendNotification);
-           // thread->toggleApData(sendAp);
-        }
-        else if (button == lfpButton)
-        {
-            sendLfp = !sendLfp;
-            lfpButton->setToggleState(sendLfp, dontSendNotification);
-           // thread->toggleLfpData(sendLfp);
-        }
-    }
-    else {
-        CoreServices::sendStatusMessage("Cannot update parameters while acquisition is active.");
     }
 }
 

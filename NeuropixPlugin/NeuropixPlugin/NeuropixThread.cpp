@@ -99,9 +99,56 @@ void NeuropixThread::openConnection()
 	for (int i = 0; i < basestations.size(); i++)
 	{
 		if (basestations[i]->getProbeCount() > 0)
+		{
 			baseStationAvailable = true;
+			selectedSlot = basestations[0]->slot;
+			selectedPort = basestations[0]->probes[0]->port;
+		}
+			
 	}
 
+}
+
+bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
+{
+	if (basestations.size() <= slotIndex)
+	{
+		return false;
+	}
+	else {
+		bool foundPort = false;
+		for (int i = 0; i < basestations[slotIndex]->probes.size(); i++)
+		{
+			if (basestations[slotIndex]->probes[i]->port == (signed char)portIndex)
+			{
+				foundPort = true;
+			}
+
+		}
+		return foundPort;
+	}
+}
+
+unsigned char NeuropixThread::getSlotForIndex(int slotIndex, int portIndex)
+{
+	if (checkSlotAndPortCombo(slotIndex, portIndex))
+	{
+		return basestations[slotIndex]->slot;
+	}
+	else {
+		return -1;
+	}
+}
+
+signed char NeuropixThread::getPortForIndex(int slotIndex, int portIndex)
+{
+	if (checkSlotAndPortCombo(slotIndex, portIndex))
+	{
+		return (signed char)portIndex;
+	}
+	else {
+		return -1;
+	}
 }
 
 
@@ -220,6 +267,12 @@ bool NeuropixThread::stopAcquisition()
 	}
 
     return true;
+}
+
+void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
+{
+	selectedSlot = slot;
+	selectedPort = port;
 }
 
 void NeuropixThread::setDefaultChannelNames()
@@ -493,7 +546,10 @@ bool NeuropixThread::updateBuffer()
 				&count,
 				count);
 
-			if (errorCode == SUCCESS && count > 0 && probe_num == 0)
+			if (errorCode == SUCCESS && 
+				count > 0 && 
+				basestations[bs]->slot == selectedSlot &&
+				basestations[bs]->probes[probe_num]->port == selectedPort)
 			{
 
 				//std::cout << "Got data. " << std::endl;

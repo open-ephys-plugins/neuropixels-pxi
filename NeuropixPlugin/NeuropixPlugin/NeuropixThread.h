@@ -136,6 +136,12 @@ public:
 
 	GenericEditor* createEditor(SourceNode* sn);
 
+	void setSelectedProbe(unsigned char slot, signed char probe);
+
+	bool checkSlotAndPortCombo(int slotIndex, int portIndex);
+	unsigned char getSlotForIndex(int slotIndex, int portIndex);
+	signed char getPortForIndex(int slotIndex, int portIndex);
+
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 
 private:
@@ -173,6 +179,9 @@ private:
 
 	NP_ErrorCode errorCode;
 	NeuropixAPI api;
+
+	unsigned char selectedSlot;
+	signed char selectedPort;
 
 	//std::vector<unsigned char> connected_basestations;
 	//std::vector<std::vector<int>> connected_probes;

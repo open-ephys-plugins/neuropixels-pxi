@@ -41,13 +41,54 @@ class NeuropixInterface;
 class Annotation;
 class ColorSelector;
 
-class NeuropixEditor : public VisualizerEditor, public ComboBox::Listener
+class EditorBackground : public Component
+{
+private:
+	void paint(Graphics& g);
+};
+
+class ProbeButton : public ToggleButton
+{
+public:
+	ProbeButton(int id);
+
+	void setSlotAndPort(unsigned char, signed char);
+	void setSelectedState(bool);
+
+	unsigned char slot;
+	signed char port;
+
+private:
+	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
+
+	int id;
+	bool connected;
+	bool selected;
+};
+
+class FifoMonitor : public Component
+{
+public:
+	FifoMonitor(int id);
+
+	void setSlot(unsigned char);
+
+	void setFillPercentage(float percentage);
+
+	unsigned char slot;
+private:
+	void paint(Graphics& g);
+
+	float fillPercentage;
+	int id;
+};
+
+class NeuropixEditor : public VisualizerEditor
 {
 public:
 	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread, bool useDefaultParameterEditors);
 	virtual ~NeuropixEditor();
 
-	void comboBoxChanged(ComboBox* comboBox);
 	void buttonCallback(Button* button);
 
 	void saveEditorParameters(XmlElement*);
@@ -57,21 +98,15 @@ public:
 
 private:
 
-	ScopedPointer<UtilityButton> apButton;
-	ScopedPointer<UtilityButton> lfpButton;
+	OwnedArray<ProbeButton> probeButtons;
+	OwnedArray<UtilityButton> directoryButtons;
+	OwnedArray<FifoMonitor> fifoMonitors;
 
-	ScopedPointer<UtilityButton> triggerTypeButton;
-	ScopedPointer<Label> triggerTypeLabel;
-	ScopedPointer<UtilityButton> restartButton;
-	ScopedPointer<Label> restartLabel;
+	ScopedPointer<EditorBackground> background;
+
 	Viewport* viewport;
 	NeuropixCanvas* canvas;
 	NeuropixThread* thread;
-
-	bool internalTrigger;
-	bool autoRestart;
-	bool sendAp;
-	bool sendLfp;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixEditor);
 
