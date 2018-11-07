@@ -203,9 +203,6 @@ private:
 	ScopedPointer<UtilityButton> outputOnButton;
 	ScopedPointer<UtilityButton> outputOffButton;
 	ScopedPointer<UtilityButton> annotationButton;
-	ScopedPointer<UtilityButton> calibrationButton;
-	ScopedPointer<UtilityButton> calibrationButton2;
-	ScopedPointer<UtilityButton> calibrationButton3;
 
 	ScopedPointer<ColorSelector> colorSelector;
 		

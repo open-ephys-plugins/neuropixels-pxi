@@ -60,7 +60,7 @@ public:
 	bool foundInputSource();
 
 	/** Returns version info for hardware and API.*/
-	void getInfo(String& probeInfo, String& hsInfo, String& bscInfo, String& bsInfo, String& apiInfo);
+	String getInfoString();
 
 	/** Initializes data transfer.*/
 	bool startAcquisition() override;
@@ -111,18 +111,6 @@ public:
 
 	/** Toggles between auto-restart setting. */
 	void setAutoRestart(bool restart);
-
-	/** Loads all calibration settings stored on EEPROM. */
-	void calibrateProbe();
-
-	/** Loads ADC calibration settings stored on EEPROM. */
-	void calibrateADCs();
-
-	/** Loads gain calibration settings stored on EEPROM. */
-	void calibrateGains();
-
-	/** Loads calibration settings from CSV. */
-	void calibrateFromCsv();
 
 	/** Starts data acquisition after a certain time.*/
 	void timerCallback();

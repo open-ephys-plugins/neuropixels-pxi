@@ -202,6 +202,11 @@ void NeuropixEditor::buttonCallback(Button* button)
 		if (directoryButtons.contains((UtilityButton*)button))
 		{
 			// open file chooser to select the saving location for this basestation
+			FileChooser fileChooser("Select directory for NPX file.");
+			fileChooser.browseForDirectory();
+
+			File directory = fileChooser.getResult();
+
 		}
         
     }
@@ -439,24 +444,6 @@ NeuropixInterface::NeuropixInterface(NeuropixThread* t, NeuropixEditor* e) : thr
     annotationButton->addListener(this);
     annotationButton->setTooltip("Add annotation to selected channels");
 
-    calibrationButton = new UtilityButton("ADC CALIBRATION", Font("Small Text", 12, Font::plain));
-    calibrationButton->setRadius(3.0f);
-    calibrationButton->setBounds(400, 520, 150, 24);
-    calibrationButton->addListener(this);
-    calibrationButton->setTooltip("Load adc calibration settings from EEPROM");
-
-    calibrationButton2 = new UtilityButton("GAIN CALIBRATION", Font("Small Text", 12, Font::plain));
-    calibrationButton2->setRadius(3.0f);
-    calibrationButton2->setBounds(570, 520, 150, 24);
-    calibrationButton2->addListener(this);
-    calibrationButton2->setTooltip("Load gain calibration settings from EEPROM");
-
-	calibrationButton3 = new UtilityButton("CALIBRATE FROM FILE", Font("Small Text", 12, Font::plain));
-	calibrationButton3->setRadius(3.0f);
-	calibrationButton3->setBounds(400, 560, 200, 24);
-	calibrationButton3->addListener(this);
-	calibrationButton3->setTooltip("Load calibration settings from file");
-
     addAndMakeVisible(lfpGainComboBox);
     addAndMakeVisible(apGainComboBox);
     addAndMakeVisible(referenceComboBox);
@@ -471,15 +458,12 @@ NeuropixInterface::NeuropixInterface(NeuropixThread* t, NeuropixEditor* e) : thr
     addAndMakeVisible(lfpGainViewButton);
     addAndMakeVisible(apGainViewButton);
     addAndMakeVisible(referenceViewButton);
-    addAndMakeVisible(annotationButton);
-    //addAndMakeVisible(calibrationButton);
-    //addAndMakeVisible(calibrationButton2);
-	//addAndMakeVisible(calibrationButton3);
+	addAndMakeVisible(annotationButton);
 
     
     infoLabel = new Label("INFO", "INFO");
     infoLabel->setFont(Font("Small Text", 13, Font::plain));
-    infoLabel->setBounds(550, 10, 300, 250);
+    infoLabel->setBounds(550, 10, 750, 500);
     infoLabel->setColour(Label::textColourId, Colours::grey);
     addAndMakeVisible(infoLabel);
 
@@ -582,26 +566,7 @@ NeuropixInterface::~NeuropixInterface()
 
 void NeuropixInterface::updateInfoString()
 {
-	String probeInfo;
-	String hsInfo;
-	String bscInfo;
-	String bsInfo;
-	String apiInfo;
-
-	thread->getInfo(probeInfo, hsInfo, bscInfo, bsInfo, apiInfo);
-	String labelString = "Probe: ";
-	labelString += probeInfo;
-	labelString += "\n\nHeadstage: ";
-	labelString += hsInfo;
-	labelString += "\n\nBasestation: ";
-	labelString += bscInfo;
-	labelString += "\n\nFPGA: ";
-	labelString += bsInfo; // option
-	labelString += "\n\API: ";
-	labelString += apiInfo;
-
-    infoLabel->setText(labelString, dontSendNotification);
-
+	infoLabel->setText(thread->getInfoString(), dontSendNotification);
 }
 
 void NeuropixInterface::labelTextChanged(Label* label)
@@ -807,37 +772,6 @@ void NeuropixInterface::buttonClicked(Button* button)
 
         repaint();
     }
-    else if (button == calibrationButton)
-    {
-        if (!editor->acquisitionIsActive)
-        {
-            std::cout << "Calibrating ADCs..." << std::endl;
-            thread->calibrateADCs();
-            std::cout << "Calibration settings loaded." << std::endl;
-			calibrationButton->setToggleState(true, dontSendNotification);
-        }
-    }
-    else if (button == calibrationButton2)
-    {
-        if (!editor->acquisitionIsActive)
-        {
-
-			std::cout << "Calibrating gain..." << std::endl;
-			thread->calibrateGains();
-			std::cout << "Calibration settings loaded." << std::endl;
-			calibrationButton2->setToggleState(true, dontSendNotification);
-        }
-	}
-	else if (button == calibrationButton3)
-	{
-		if (!editor->acquisitionIsActive)
-		{
-
-			thread->calibrateFromCsv();
-			calibrationButton3->setToggleState(true, dontSendNotification);
-			std::cout << "Done." << std::endl;
-		}
-	}
     
 }
 

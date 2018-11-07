@@ -129,7 +129,7 @@ void Probe::getInfo()
 	errorCode = readId(basestation->slot, port, &serial_number);
 
 	char pn[MAXLEN];
-	errorCode = readHSPN(basestation->slot, port, pn, MAXLEN);
+	errorCode = readProbePN(basestation->slot, port, pn, MAXLEN);
 
 	part_number = String(pn);
 }
@@ -140,6 +140,36 @@ Probe::Probe(Basestation* bs, signed char port_) : basestation(bs), port(port_)
 
 	flex = new Flex(this);
 	headstage = new Headstage(this);
+}
+
+void Probe::calibrate()
+{
+	File baseDirectory = File::getCurrentWorkingDirectory().getFullPathName();
+	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
+	File probeDirectory = calibrationDirectory.getChildFile(String(serial_number));
+
+	if (probeDirectory.exists())
+	{
+		String adcFile = probeDirectory.getChildFile(String(serial_number) + "_ADCCalibration.csv").getFullPathName();
+		String gainFile = probeDirectory.getChildFile(String(serial_number) + "_gainCalValues.csv").getFullPathName();
+		std::cout << adcFile << std::endl;
+		
+		errorCode = setADCCalibration(basestation->slot, port, adcFile.toRawUTF8());
+
+		if (errorCode == 0)
+			std::cout << "Successful ADC calibration." << std::endl;
+		else
+			std::cout << "Unsuccessful ADC calibration, failed with error code: " << errorCode << std::endl;
+
+		std::cout << gainFile << std::endl;
+		
+		errorCode = setGainCalibration(basestation->slot, port, gainFile.toRawUTF8());
+
+		if (errorCode == 0)
+			std::cout << "Successful gain calibration." << std::endl;
+		else
+			std::cout << "Unsuccessful gain calibration, failed with error code: " << errorCode << std::endl;
+	}
 }
 
 Headstage::Headstage(Probe* probe_) : probe(probe_)
@@ -222,6 +252,8 @@ void Basestation::initializeProbes()
 			errorCode = init(slot, probes[i]->port);
 			errorCode = setOPMODE(slot, probes[i]->port, RECORDING);
 			errorCode = setHSLed(slot, probes[i]->port, false);
+
+			probes[i]->calibrate();
 
 			if (errorCode == SUCCESS)
 			{

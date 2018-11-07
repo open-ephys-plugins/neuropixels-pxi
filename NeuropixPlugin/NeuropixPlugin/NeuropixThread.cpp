@@ -163,53 +163,72 @@ bool NeuropixThread::foundInputSource()
     return baseStationAvailable;
 }
 
-void NeuropixThread::getInfo(String& probeInfo, String& hsInfo, String& bscInfo, String& bsInfo, String& apiInfo)
+String NeuropixThread::getInfoString()
 {
 
-	NP_ErrorCode errorCode;
+	String infoString;
 
-	uint64_t probe_id;
-	uint64_t hs_id;
-	uint64_t bsc_id;
-	char probe_part_number[50];
-	char hs_part_number[50];
-	char bsc_part_number[50];
-	unsigned char flex_version_major;
-	unsigned char flex_version_minor;
-	unsigned char hs_version_major;
-	unsigned char hs_version_minor;
-	unsigned char bsc_version_major;
-	unsigned char bsc_version_minor;
-	unsigned char api_version_major;
-	unsigned char api_version_minor;
-	unsigned char bsc_fpga_version_major;
-	unsigned char bsc_fpga_version_minor;
-	unsigned char bs_fpga_version_major;
-	unsigned char bs_fpga_version_minor;
+	infoString += "API Version: ";
+	infoString += api.version;
+	infoString += "\n";
+	infoString += "\n";
+	infoString += "\n";
 
-	//errorCode = neuropix.readId(slotID, port, probe_id);
-	//errorCode = neuropix.readProbePN(slotID, port, probe_part_number);
-	//errorCode = neuropix.getFlexVersion(slotID, port, flex_version_major, flex_version_minor);
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		infoString += "Basestation ";
+		infoString += String(i + 1);
+		infoString += "\n";
+		infoString += "  Firmware version: ";
+		infoString += basestations[i]->boot_version;
+		infoString += "\n";
+		infoString += "  BSC firmware version: ";
+		infoString += basestations[i]->basestationConnectBoard->boot_version;
+		infoString += "\n";
+		infoString += "  BSC part number: ";
+		infoString += basestations[i]->basestationConnectBoard->part_number;
+		infoString += "\n";
+		infoString += "  BSC serial number: ";
+		infoString += String(basestations[i]->basestationConnectBoard->serial_number);
+		infoString += "\n";
+		infoString += "\n";
+		
+		for (int j = 0; j < basestations[i]->getProbeCount(); j++)
+		{
+			infoString += "    Port ";
+			infoString += String(basestations[i]->probes[j]->port);
+			infoString += "\n";
+			infoString += "\n";
+			infoString += "    Probe serial number: ";
+			infoString += String(basestations[i]->probes[j]->serial_number);
+			infoString += "\n";
+			infoString += "\n";
+			infoString += "    Headstage serial number: ";
+			infoString += String(basestations[i]->probes[j]->headstage->serial_number);
+			infoString += "\n";
+			infoString += "    Headstage part number: ";
+			infoString += basestations[i]->probes[j]->headstage->part_number;
+			infoString += "\n";
+			infoString += "    Headstage version: ";
+			infoString += basestations[i]->probes[j]->headstage->version;
+			infoString += "\n";
+			infoString += "\n";
+			infoString += "    Flex part number: ";
+			infoString += basestations[i]->probes[j]->flex->part_number;
+			infoString += "\n";
+			infoString += "    Flex version: ";
+			infoString += basestations[i]->probes[j]->flex->version;
+			infoString += "\n";
+			infoString += "\n";
+			infoString += "\n";
 
-	//errorCode = neuropix.readHSSN(slotID, port, hs_id);
-	//errorCode = neuropix.readHSPN(slotID, port, hs_part_number);
-	//errorCode = neuropix.getHSVersion(slotID, port, hs_version_major, hs_version_minor);
+		}
+		infoString += "\n";
+		infoString += "\n";
+	}
 
-	//errorCode = neuropix.readBSCSN(slotID, bsc_id);
-	//errorCode = neuropix.readBSCPN(slotID, bsc_part_number);
-	//errorCode = neuropix.getBSCVersion(slotID, bsc_version_major, bsc_version_major);
 
-	//errorCode = neuropix.getBSCBootVersion(slotID, bsc_fpga_version_major, bsc_fpga_version_minor);
-	//errorCode = neuropix.getBSBootVersion(slotID, bs_fpga_version_major, bs_fpga_version_minor);
-
-	//errorCode = neuropix.getAPIVersion(api_version_major, api_version_minor);
-
-	probeInfo = "SN" + String(probe_id) + "\n" + String(probe_part_number) + ", v" + String(flex_version_minor) + "." + String(flex_version_minor) + "\n";
-	hsInfo = "SN" + String(hs_id) + "\n" + String(hs_part_number) + ", v" + String(hs_version_major) + "." + String(hs_version_minor) + "\n";
-	bscInfo = "SN" + String(bsc_id) + "\n" + String(bsc_part_number) + ", v" + String(bsc_version_major) + "." + String(bsc_version_major)
-		+ ", firmware v" + String(bsc_fpga_version_major) + "." + String(bsc_fpga_version_minor) + "\n";
-	bsInfo = "firmware v" + String(bs_fpga_version_major) + "." + String(bs_fpga_version_minor) + "\n";
-	apiInfo = "v" + String(api_version_major) + "." + String(api_version_minor);
+	return infoString;
 
 }
 
@@ -451,80 +470,6 @@ void NeuropixThread::setAutoRestart(bool restart)
 	autoRestart = restart;
 }
 
-
-void NeuropixThread::calibrateProbe()
-{
-
-    std::cout << "Applying ADC calibration..." << std::endl;
-    //neuropix.neuropix_applyAdcCalibrationFromEeprom();
-    std::cout << "Applying gain correction settings..." << std::endl;
-    //neuropix.neuropix_applyGainCalibrationFromEeprom();
-    std::cout << "Done." << std::endl;
-
-}
-
-void NeuropixThread::calibrateADCs()
-{
-
-	//std::cout << "Applying ADC calibration..." << std::endl;
-	//ErrorCode e = neuropix.neuropix_applyAdcCalibrationFromEeprom();
-	//std::cout << "Finished with error code " << e << std::endl;
-
-}
-
-void NeuropixThread::calibrateGains()
-{
-
-	//std::cout << "Applying gain correction settings..." << std::endl;
-	//ErrorCode e = neuropix.neuropix_applyGainCalibrationFromEeprom();
-	//std::cout << "Finished with error code " << e << std::endl;
-
-}
-
-void NeuropixThread::calibrateFromCsv()
-{
-
-	//Read from csv and apply to API and read from API
-	//std::cout << "Reading files from " << directory.getFullPathName() << std::endl;
-
-	//File comparatorCsv = directory.getChildFile("Comparator_calibration.csv");
-	//File offsetCsv = directory.getChildFile("Offset_calibration.csv");
-	//File slopeCsv = directory.getChildFile("Slope_calibration.csv");
-	//File gainCsv = directory.getChildFile("Gain_calibration.csv");
-
-	File baseDirectory = File::getCurrentWorkingDirectory().getFullPathName();
-	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
-	File probeDirectory = calibrationDirectory.getChildFile(String(probeId));
-	String adcFile = probeDirectory.getChildFile(String(probeId) + "_ADCCalibration.csv").getFullPathName();
-	String gainFile = probeDirectory.getChildFile(String(probeId) + "_gainCalValues.csv").getFullPathName();
-
-
-    std::cout << adcFile << std::endl;
-	std::cout << gainFile << std::endl;
-
-	NP_ErrorCode errorCode;
-
-	//errorCode = neuropix.setADCCalibration(slotID, port, adcFile.toRawUTF8());
-
-	if (errorCode == SUCCESS)
-	{
-		std::cout << "Successful ADC calibration" << std::endl;
-	}
-	else {
-		std::cout << "Problem with ADC calibration, error code = " << errorCode << std::endl;
-	}
-	
-	//errorCode = neuropix.setGainCalibration(slotID, port, gainFile.toRawUTF8());
-
-	if (errorCode == SUCCESS)
-	{
-		std::cout << "Successful gain calibration" << std::endl;
-	}
-	else {
-		std::cout << "Problem with gain calibration, error code = " << errorCode << std::endl;
-	}
-
-}
 
 bool NeuropixThread::updateBuffer()
 {
