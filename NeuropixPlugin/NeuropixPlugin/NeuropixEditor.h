@@ -89,7 +89,7 @@ public:
 	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread, bool useDefaultParameterEditors);
 	virtual ~NeuropixEditor();
 
-	void buttonCallback(Button* button);
+	void buttonEvent(Button* button);
 
 	void saveEditorParameters(XmlElement*);
 	void loadEditorParameters(XmlElement*);
@@ -203,6 +203,7 @@ private:
 	ScopedPointer<UtilityButton> outputOnButton;
 	ScopedPointer<UtilityButton> outputOffButton;
 	ScopedPointer<UtilityButton> annotationButton;
+
 
 	ScopedPointer<ColorSelector> colorSelector;
 		

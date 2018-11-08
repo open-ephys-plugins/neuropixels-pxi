@@ -187,7 +187,7 @@ NeuropixEditor::~NeuropixEditor()
 }
 
 
-void NeuropixEditor::buttonCallback(Button* button)
+void NeuropixEditor::buttonEvent(Button* button)
 {
 
 	if (probeButtons.contains((ProbeButton*) button))
@@ -199,13 +199,15 @@ void NeuropixEditor::buttonCallback(Button* button)
 
     if (!acquisitionIsActive)
     {
+
 		if (directoryButtons.contains((UtilityButton*)button))
 		{
 			// open file chooser to select the saving location for this basestation
-			FileChooser fileChooser("Select directory for NPX file.");
-			fileChooser.browseForDirectory();
-
-			File directory = fileChooser.getResult();
+			int slotIndex = directoryButtons.indexOf((UtilityButton*)button);
+			File currentDirectory = thread->getDirectoryForSlot(slotIndex);
+			FileChooser fileChooser("Select directory for NPX file.", currentDirectory);
+			if (fileChooser.browseForDirectory())
+				thread->setDirectoryForSlot(slotIndex, fileChooser.getResult());
 
 		}
         
@@ -448,18 +450,13 @@ NeuropixInterface::NeuropixInterface(NeuropixThread* t, NeuropixEditor* e) : thr
     addAndMakeVisible(apGainComboBox);
     addAndMakeVisible(referenceComboBox);
     addAndMakeVisible(filterComboBox);
-    //addAndMakeVisible(activityViewComboBox);
 
     addAndMakeVisible(enableButton);
-    //addAndMakeVisible(selectAllButton);
-    //addAndMakeVisible(outputOnButton);
-    //addAndMakeVisible(outputOffButton);
     addAndMakeVisible(enableViewButton);
     addAndMakeVisible(lfpGainViewButton);
     addAndMakeVisible(apGainViewButton);
     addAndMakeVisible(referenceViewButton);
 	addAndMakeVisible(annotationButton);
-
     
     infoLabel = new Label("INFO", "INFO");
     infoLabel->setFont(Font("Small Text", 13, Font::plain));

@@ -169,6 +169,8 @@ void Probe::calibrate()
 			std::cout << "Successful gain calibration." << std::endl;
 		else
 			std::cout << "Unsuccessful gain calibration, failed with error code: " << errorCode << std::endl;
+
+		errorCode = writeProbeConfiguration(basestation->slot, port, false);
 	}
 }
 
@@ -193,6 +195,8 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 	slot = (unsigned char)slot_number;
 
 	errorCode = openBS(slot);
+
+	savingDirectory = File::getCurrentWorkingDirectory();
 
 	if (errorCode == SUCCESS)
 	{
@@ -268,6 +272,8 @@ void Basestation::initializeProbes()
 		probesInitialized = true;
 	}
 
+	
+
 	errorCode = arm(slot);
 	
 }
@@ -281,4 +287,53 @@ void Basestation::startAcquisition()
 void Basestation::stopAcquisition()
 {
 	errorCode = arm(slot);
+}
+
+void Basestation::setApFilterState(bool filterState)
+{
+	for (int i = 0; i < probes.size(); i++)
+	{
+		for (int channel = 0; channel < 384; channel++)
+			setAPCornerFrequency(slot, probes[i]->port, channel, filterState);
+
+		errorCode = writeProbeConfiguration(slot, probes[i]->port, false);
+	}
+
+	std::cout << "Set all filters to " << int(filterState) << std::endl;
+}
+
+void Basestation::setGains(unsigned char apGain, unsigned char lfpGain)
+{
+	for (int i = 0; i < probes.size(); i++)
+	{
+		for (int channel = 0; channel < 384; channel++)
+			setGain(slot, probes[i]->port, channel, apGain, lfpGain);
+
+		errorCode = writeProbeConfiguration(slot, probes[i]->port, false);
+	}
+
+	std::cout << "Set all gains to " << int(apGain) << ":" << int(lfpGain) << std::endl;
+}
+
+void Basestation::setReferences(channelreference_t refId, unsigned char refElectrodeBank)
+{
+	for (int i = 0; i < probes.size(); i++)
+	{
+		for (int channel = 0; channel < 384; channel++)
+			setReference(slot, probes[i]->port, channel, refId, refElectrodeBank);
+
+		errorCode = writeProbeConfiguration(slot, probes[i]->port, false);
+	}
+
+	std::cout << "Set all references to " << refId << ":" << int(refElectrodeBank) << std::endl;
+}
+
+void Basestation::setSavingDirectory(File directory)
+{
+	savingDirectory = directory;
+}
+
+File Basestation::getSavingDirectory()
+{
+	return savingDirectory;
 }

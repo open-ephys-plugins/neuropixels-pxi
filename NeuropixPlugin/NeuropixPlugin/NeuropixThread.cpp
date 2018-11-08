@@ -34,7 +34,7 @@ GenericEditor* NeuropixThread::createEditor(SourceNode* sn)
     return new NeuropixEditor(sn, this, true);
 }
 
-NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvailable(false), probesInitialized(false)
+NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvailable(false), probesInitialized(false), recordingNumber(0), isRecording(false)
 {
 
 	api.getInfo();
@@ -246,16 +246,6 @@ bool NeuropixThread::startAcquisition()
     eventCode = 0;
     maxCounter = 0;
     
-    startTimer(100);
-   
-    return true;
-}
-
-void NeuropixThread::timerCallback()
-{
-
-    stopTimer();
-
 	for (int i = 0; i < basestations.size(); i++)
 	{
 		basestations[i]->initializeProbes();
@@ -266,10 +256,61 @@ void NeuropixThread::timerCallback()
 		basestations[i]->startAcquisition();
 	}
 
-    startThread();
+	startThread();
+   
+    return true;
+}
+
+void NeuropixThread::timerCallback()
+{
+
+    stopTimer();
+
+	startRecording();
 
 }
 
+void NeuropixThread::startRecording()
+{
+	recordingNumber++;
+
+	File rootFolder = CoreServices::RecordNode::getRecordingPath();
+	String pathName = rootFolder.getFileName();
+	
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		if (basestations[i]->getProbeCount() > 0)
+		{
+			File savingDirectory = basestations[i]->getSavingDirectory();
+			File fullPath = savingDirectory.getChildFile(pathName);
+
+			if (!fullPath.exists())
+			{
+				fullPath.createDirectory();
+			}
+
+			File npxFileName = fullPath.getChildFile("recording_slot" + String(basestations[i]->slot) + "_" + String(recordingNumber) + ".npx2");
+
+			setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
+			enableFileStream(basestations[i]->slot, true);
+		}
+	}
+
+	std::cout << "NeuropixThread started recording." << std::endl;
+
+}
+
+void NeuropixThread::stopRecording()
+{
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		enableFileStream(basestations[i]->slot, false);
+	}
+
+	isRecording = false;
+
+	std::cout << "NeuropixThread stopped recording." << std::endl;
+}
 
 /** Stops data transfer.*/
 bool NeuropixThread::stopAcquisition()
@@ -395,62 +436,48 @@ void NeuropixThread::setAllReferences(int refId)
 {
  
 	NP_ErrorCode ec;
-	//ChannelReference reference;
+	channelreference_t reference;
 	unsigned char intRefElectrodeBank;
 
 	if (refId == 0) // external reference
 	{
-		//reference = EXT_REF;
+		reference = EXT_REF;
 		intRefElectrodeBank = 0;
 	}
 	else if (refId == 1) // tip reference
 	{
-		//reference = TIP_REF;
+		reference = TIP_REF;
 		intRefElectrodeBank = 0;
 	}
 	else if (refId > 1) // internal reference
 	{
-		//reference = INT_REF;
+		reference = INT_REF;
 		intRefElectrodeBank = refId - 2;
 	}
 
-	for (int i = 0; i < 384; i++)
-	{
-		//ec = neuropix.setReference(slotID, port, i, reference, intRefElectrodeBank);
-	}
+	for (int i = 0; i < basestations.size(); i++)
+		basestations[i]->setReferences(reference, intRefElectrodeBank);
 
-	//neuropix.writeProbeConfiguration(slotID, port, false);
-
-	std::cout << "Set all references to " << refId << "; error code = " << ec << std::endl;
 }
 
 void NeuropixThread::setAllGains(unsigned char apGain, unsigned char lfpGain)
 {
-	NP_ErrorCode ec;
 
-	for (int i = 0; i < 384; i++)
+	for (int i = 0; i < basestations.size(); i++)
+		basestations[i]->setGains(apGain, lfpGain);
+
+	for (int ch = 0; ch < 384; ch++)
 	{
-		//ec = neuropix.setGain(slotID, port, i, apGain, lfpGain);
-		apGains.set(i, apGain);
-		lfpGains.set(i, lfpGain);
+		apGains.set(ch, apGain);
+		lfpGains.set(ch, lfpGain);
 	}
-
-	//neuropix.writeProbeConfiguration(slotID, port, false);
-
-    std::cout << "Set gains to " << gains[int(apGain)] << " and " << gains[int(lfpGain)] << "; error code = " << ec << std::endl;
    
 }
 
 void NeuropixThread::setFilter(bool filterState)
 {
-	NP_ErrorCode ec;
-
-	//for (int i = 0; i < 384; i++)
-	//  ec = neuropix.setAPCornerFrequency(slotID, port, i, !filterState); // true = disabled, false = enabled
-
-	//neuropix.writeProbeConfiguration(slotID, port, false);
-
-    std::cout << "Set filter to " << filterState << "; error code = " << ec << std::endl;
+	for (int i = 0; i < basestations.size(); i++)
+		basestations[i]->setApFilterState(filterState);
 }
 
 void NeuropixThread::setTriggerMode(bool trigger)
@@ -470,9 +497,39 @@ void NeuropixThread::setAutoRestart(bool restart)
 	autoRestart = restart;
 }
 
+void NeuropixThread::setDirectoryForSlot(int slotIndex, File directory)
+{
+	if (slotIndex < basestations.size())
+	{
+		basestations[slotIndex]->setSavingDirectory(directory);
+	}
+}
+
+File NeuropixThread::getDirectoryForSlot(int slotIndex)
+{
+	if (slotIndex < basestations.size())
+	{
+		return basestations[slotIndex]->getSavingDirectory();
+	}
+	else {
+		return File::getCurrentWorkingDirectory();
+	}
+}
 
 bool NeuropixThread::updateBuffer()
 {
+
+	bool shouldRecord = CoreServices::getRecordingStatus();
+
+	if (!isRecording && shouldRecord)
+	{
+		isRecording = true;
+		startTimer(500);
+	}
+	else if (isRecording && !shouldRecord)
+	{
+		stopRecording();
+	}
 
 	//std::cout << "Attempting data read. " << std::endl;
 
@@ -549,29 +606,29 @@ bool NeuropixThread::updateBuffer()
 		size_t packetsAvailable;
 		size_t headroom;
 
-		/*for (int this_basestation = 0; this_basestation < connected_basestations.size(); this_basestation++)
+		for (int this_basestation = 0; this_basestation < basestations.size(); this_basestation++)
 		{
 			//std::cout << " Checking slot " << int(connected_basestations[this_basestation]) << std::endl;
 
-			const size_t probe_count = connected_probes[this_basestation].size();
-
-			for (int this_probe = 0; this_probe < probe_count; this_probe++)
+			for (int this_probe = 0; this_probe < basestations[this_basestation]->getProbeCount(); this_probe++)
 			{
 
 				getElectrodeDataFifoState(
-					connected_basestations[this_basestation],
-					connected_probes[this_basestation][this_probe],
+					basestations[this_basestation]->slot,
+					basestations[this_basestation]->probes[this_probe]->port,
 					&packetsAvailable,
 					&headroom);
 
-				std::cout << "  FIFO filling  " << this_probe << ": " << packetsAvailable << std::endl;
+				basestations[this_basestation]->probes[this_probe]->fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+
+				//std::cout << "  FIFO filling  " << this_probe << ": " << packetsAvailable << std::endl;
 			}
 			
-		}*/
+		}
 
-		std::cout << "Current event code: " << eventCode << std::endl;
+		//std::cout << "Current event code: " << eventCode << std::endl;
 
-		std::cout << "  " << std::endl;
+		//std::cout << "  " << std::endl;
 	}
 
     return true;

@@ -109,11 +109,23 @@ public:
 	/** Toggles between saving to NPX file. */
 	void setRecordMode(bool record);
 
+	/** Select directory for saving NPX files. */
+	void setDirectoryForSlot(int slotIndex, File directory);
+
+	/** Select directory for saving NPX files. */
+	File getDirectoryForSlot(int slotIndex);
+
 	/** Toggles between auto-restart setting. */
 	void setAutoRestart(bool restart);
 
 	/** Starts data acquisition after a certain time.*/
 	void timerCallback();
+
+	/** Starts recording.*/
+	void startRecording();
+
+	/** Stops recording.*/
+	void stopRecording();
 
 	CriticalSection* getMutex()
 	{
@@ -138,6 +150,8 @@ private:
 	bool internalTrigger;
 	bool recordToNpx;
 	bool autoRestart;
+
+	bool isRecording;
 
 	long int counter;
 	int recordingNumber;

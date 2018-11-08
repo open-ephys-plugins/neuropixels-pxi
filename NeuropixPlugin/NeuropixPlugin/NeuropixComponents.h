@@ -73,14 +73,23 @@ public:
 
 	float getTemperature();
 
+	void setReferences(channelreference_t refId, unsigned char electrodeBank);
+	void setGains(unsigned char apGain, unsigned char lfpGain);
+	void setApFilterState(bool filterState);
+
 	void getInfo();
 	void makeSyncMaster();
 
 	void startAcquisition();
 	void stopAcquisition();
 
+	void setSavingDirectory(File);
+	File getSavingDirectory();
+
 private:
 	bool probesInitialized;
+
+	File savingDirectory;
 };
 
 class BasestationConnectBoard : public NeuropixComponent
@@ -117,6 +126,8 @@ public:
 	void getInfo();
 
 	int channel_count;
+
+	float fifoFillPercentage;
 
 	String name;
 
