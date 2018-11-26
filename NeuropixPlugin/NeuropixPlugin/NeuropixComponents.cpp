@@ -57,6 +57,7 @@ void Basestation::getInfo()
 
 }
 
+
 void BasestationConnectBoard::getInfo()
 {
 
@@ -134,7 +135,7 @@ void Probe::getInfo()
 	part_number = String(pn);
 }
 
-Probe::Probe(Basestation* bs, signed char port_) : basestation(bs), port(port_)
+Probe::Probe(Basestation* bs, signed char port_) : basestation(bs), port(port_), fifoFillPercentage(0.0f)
 {
 	getInfo();
 
@@ -238,6 +239,22 @@ int Basestation::getProbeCount()
 {
 	return probes.size();
 }
+
+float Basestation::getFillPercentage()
+{
+	float perc = 0.0;
+
+	for (int i = 0; i < getProbeCount(); i++)
+	{
+		//std::cout << "Percentage for probe " << i << ": " << probes[i]->fifoFillPercentage << std::endl;
+
+		if (probes[i]->fifoFillPercentage > perc)
+			perc = probes[i]->fifoFillPercentage;
+	}
+
+	return perc;
+}
+
 
 void Basestation::makeSyncMaster()
 {

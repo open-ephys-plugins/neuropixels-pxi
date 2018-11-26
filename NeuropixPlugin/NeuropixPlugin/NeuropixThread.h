@@ -142,6 +142,8 @@ public:
 	unsigned char getSlotForIndex(int slotIndex, int portIndex);
 	signed char getPortForIndex(int slotIndex, int portIndex);
 
+	float getFillPercentage(unsigned char slot);
+
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 
 private:
@@ -176,6 +178,8 @@ private:
 	int maxCounter;
 	int numRefs;
 	int totalChans;
+
+	Array<float> fillPercentage;
 
 	OwnedArray<Basestation> basestations;
 

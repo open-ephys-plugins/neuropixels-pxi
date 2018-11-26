@@ -51,10 +51,21 @@ void EditorBackground::paint(Graphics& g)
 	}
 }
 
-FifoMonitor::FifoMonitor(int id_) : id(id_)
+FifoMonitor::FifoMonitor(int id_, NeuropixThread* thread_) : id(id_), thread(thread_), fillPercentage(0.0)
 {
-
+	startTimer(10000); // update fill percentage every 10 seconds
 }
+
+void FifoMonitor::timerCallback()
+{
+	//std::cout << "Checking fill percentage for monitor " << id << ", slot " << int(slot) << std::endl;
+
+	if (slot != 255)
+	{
+		setFillPercentage(thread->getFillPercentage(slot));
+	}
+}
+
 
 void FifoMonitor::setSlot(unsigned char slot_)
 {
@@ -74,6 +85,10 @@ void FifoMonitor::paint(Graphics& g)
 	g.fillRoundedRectangle(0, 0, this->getWidth(), this->getHeight(), 4);
 	g.setColour(Colours::lightslategrey);
 	g.fillRoundedRectangle(2, 2, this->getWidth()-4, this->getHeight()-4, 2);
+	
+	g.setColour(Colours::yellow);
+	float barHeight = (this->getHeight() - 4) * fillPercentage;
+	g.fillRoundedRectangle(2, this->getHeight()-2-barHeight, this->getWidth() - 4, barHeight, 2);
 }
 
 ProbeButton::ProbeButton(int id_) : id(id_)
@@ -107,14 +122,16 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 	g.setColour(Colours::darkgrey);
 	g.fillEllipse(0, 0, 15, 15);
 
+	///g.setGradientFill(ColourGradient(Colours::lightcyan, 0, 0, Colours::lightskyblue, 10,10, true));
+
 	if (connected)
 	{
 		if (selected)
 		{
 			if (isMouseOver)
-				g.setGradientFill(ColourGradient(Colours::green, 0, 0, Colours::lightgreen, 10,10, true));
+				g.setColour(Colours::lightblue);
 			else
-				g.setColour(Colours::blue);
+				g.setColour(Colours::lightblue);
 		}
 		else {
 			if (isMouseOver)
@@ -162,16 +179,19 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 		int x_pos = i * 90 + 70;
 		int y_pos = 50;
 
-		UtilityButton* b = new UtilityButton("C:\\", Font("Small Text", 13, Font::plain));
+		UtilityButton* b = new UtilityButton("C:", Font("Small Text", 13, Font::plain));
 		b->setBounds(x_pos, y_pos, 30, 20);
 		b->addListener(this);
 		addAndMakeVisible(b);
 		directoryButtons.add(b);
 
-		FifoMonitor* f = new FifoMonitor(i);
+		savingDirectories.add(File::getCurrentWorkingDirectory());
+
+		FifoMonitor* f = new FifoMonitor(i, thread);
 		f->setBounds(x_pos + 2, 75, 12, 50);
 		addAndMakeVisible(f);
-		f->setSlot(thread->getSlotForIndex(0, 0));
+		f->setSlot(thread->getSlotForIndex(i, -1));
+		fifoMonitors.add(f);
 	}
 
 	background = new EditorBackground();
@@ -179,6 +199,8 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	addAndMakeVisible(background);
 	background->toBack();
 	background->repaint();
+
+	
 }
 
 NeuropixEditor::~NeuropixEditor()
@@ -187,11 +209,16 @@ NeuropixEditor::~NeuropixEditor()
 }
 
 
+
 void NeuropixEditor::buttonEvent(Button* button)
 {
 
 	if (probeButtons.contains((ProbeButton*) button))
 	{
+		for (int i = 0; i < probeButtons.size(); i++)
+		{
+			probeButtons[i]->setSelectedState(false);
+		}
 		ProbeButton* probe = (ProbeButton*)button;
 		probe->setSelectedState(true);
 		thread->setSelectedProbe(probe->slot, probe->port);
@@ -207,7 +234,15 @@ void NeuropixEditor::buttonEvent(Button* button)
 			File currentDirectory = thread->getDirectoryForSlot(slotIndex);
 			FileChooser fileChooser("Select directory for NPX file.", currentDirectory);
 			if (fileChooser.browseForDirectory())
-				thread->setDirectoryForSlot(slotIndex, fileChooser.getResult());
+			{
+				File result = fileChooser.getResult();
+				String pathName = result.getFullPathName();
+				thread->setDirectoryForSlot(slotIndex, result);
+
+				savingDirectories.set(slotIndex, result);
+				UtilityButton* ub = (UtilityButton*)button;
+				ub->setLabel(pathName.substring(0, 3));
+			}
 
 		}
         
@@ -217,12 +252,35 @@ void NeuropixEditor::buttonEvent(Button* button)
 
 void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 {
+	std::cout << "Saving Neuropix editor." << std::endl;
+
+	XmlElement* xmlNode = xml->createNewChildElement("NEUROPIXELS_EDITOR");
+
+	for (int slot = 0; slot < 4; slot++)
+	{
+		String directory_name = savingDirectories[slot].getFullPathName();
+		if (directory_name.length() == 2)
+			directory_name += "\\\\";
+		xmlNode->setAttribute("Slot" + String(slot) + "Directory", directory_name);
+	}
 
 }
 
 void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 {
-
+	forEachXmlChildElement(*xml, xmlNode)
+	{
+		if (xmlNode->hasTagName("NEUROPIXELS_EDITOR"))
+		{
+			for (int slot = 0; slot < 4; slot++)
+			{
+				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
+				thread->setDirectoryForSlot(slot, directory);
+				directoryButtons[slot]->setLabel(directory.getFullPathName().substring(0, 2));
+				savingDirectories.set(slot, directory);
+			}
+		}
+	}
 }
 
 Visualizer* NeuropixEditor::createNewCanvas(void)
@@ -457,12 +515,17 @@ NeuropixInterface::NeuropixInterface(NeuropixThread* t, NeuropixEditor* e) : thr
     addAndMakeVisible(apGainViewButton);
     addAndMakeVisible(referenceViewButton);
 	addAndMakeVisible(annotationButton);
+
+	infoLabelView = new Viewport("INFO");
+	infoLabelView->setBounds(550, 20, 750, 500);
+	addAndMakeVisible(infoLabelView);
     
     infoLabel = new Label("INFO", "INFO");
+	infoLabelView->setViewedComponent(infoLabel, false);
     infoLabel->setFont(Font("Small Text", 13, Font::plain));
-    infoLabel->setBounds(550, 10, 750, 500);
+    infoLabel->setBounds(0, 0, 750, 1500);
     infoLabel->setColour(Label::textColourId, Colours::grey);
-    addAndMakeVisible(infoLabel);
+    //addAndMakeVisible(infoLabel);
 
     lfpGainLabel = new Label("LFP GAIN","LFP GAIN");
     lfpGainLabel->setFont(Font("Small Text", 13, Font::plain));
@@ -1138,7 +1201,7 @@ void NeuropixInterface::mouseDrag(const MouseEvent& event)
 void NeuropixInterface::mouseWheelMove(const MouseEvent&  event, const MouseWheelDetails&   wheel)
 {
 
-    if (event.x > 100 && event.x < 450)
+    if (event.x > 100 && event.x < 350)
     {
 
         if (wheel.deltaY > 0)
@@ -1610,6 +1673,7 @@ int NeuropixInterface::getConnectionForChannel(int ch)
 
 void NeuropixInterface::saveParameters(XmlElement* xml)
 {
+	editor->saveEditorParameters(xml);
 
 	std::cout << "Saving Neuropix display." << std::endl;
 
@@ -1649,6 +1713,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
 void NeuropixInterface::loadParameters(XmlElement* xml)
 {
+	editor->loadEditorParameters(xml);
 
 	forEachXmlChildElement(*xml, xmlNode)
 	{

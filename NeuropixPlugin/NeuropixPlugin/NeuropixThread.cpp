@@ -50,6 +50,9 @@ NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvai
         outputOn.add(true);
     }
 
+	for (int i = 0; i < 16; i++)
+		fillPercentage.add(0.0);
+
     gains.add(50.0f);
     gains.add(125.0f);
     gains.add(250.0f);
@@ -96,13 +99,24 @@ void NeuropixThread::openConnection()
 		}
 	}
 
+	std::cout << "Basestations initialized" << std::endl;
+
+	bool foundSync = false;
+
 	for (int i = 0; i < basestations.size(); i++)
 	{
 		if (basestations[i]->getProbeCount() > 0)
 		{
 			baseStationAvailable = true;
-			selectedSlot = basestations[0]->slot;
-			selectedPort = basestations[0]->probes[0]->port;
+			selectedSlot = basestations[i]->slot;
+			selectedPort = basestations[i]->probes[0]->port;
+
+			if (!foundSync)
+			{
+				basestations[i]->makeSyncMaster();
+				foundSync = true;
+			}
+				
 		}
 			
 	}
@@ -116,21 +130,31 @@ bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
 		return false;
 	}
 	else {
-		bool foundPort = false;
-		for (int i = 0; i < basestations[slotIndex]->probes.size(); i++)
-		{
-			if (basestations[slotIndex]->probes[i]->port == (signed char)portIndex)
-			{
-				foundPort = true;
-			}
 
+		if (portIndex > -1)
+		{
+			bool foundPort = false;
+			for (int i = 0; i < basestations[slotIndex]->probes.size(); i++)
+			{
+				if (basestations[slotIndex]->probes[i]->port == (signed char)portIndex)
+				{
+					foundPort = true;
+				}
+
+			}
+			return foundPort;
 		}
-		return foundPort;
+		else {
+			return true;
+		}
+		
 	}
 }
 
 unsigned char NeuropixThread::getSlotForIndex(int slotIndex, int portIndex)
 {
+	// if portIndex = -1, return the slot number; otherwise, only return if a probe is connected
+
 	if (checkSlotAndPortCombo(slotIndex, portIndex))
 	{
 		return basestations[slotIndex]->slot;
@@ -162,6 +186,7 @@ bool NeuropixThread::foundInputSource()
 {
     return baseStationAvailable;
 }
+
 
 String NeuropixThread::getInfoString()
 {
@@ -516,6 +541,24 @@ File NeuropixThread::getDirectoryForSlot(int slotIndex)
 	}
 }
 
+float NeuropixThread::getFillPercentage(unsigned char slot)
+{
+
+	//std::cout << "  Thread checking fill percentage for slot " << int(slot) << std::endl;
+
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		if (basestations[i]->slot == slot)
+		{
+			//std::cout << "  Found match!" << std::endl;
+			return basestations[i]->getFillPercentage();
+		}
+			
+	}
+
+	return 0.0f;
+}
+
 bool NeuropixThread::updateBuffer()
 {
 
@@ -568,8 +611,8 @@ bool NeuropixThread::updateBuffer()
 						//	std::cout << "Got nonzero event code: " << ec << std::endl;
 						//std::cout << "Read event data. " << std::endl;
 
-						if (eventCode != oldeventcode)
-							std::cout << "event code: " << eventCode << std::endl;
+						//if (eventCode != oldeventcode)
+						//	std::cout << "event code: " << eventCode << std::endl;
 
 						for (int j = 0; j < 384; j++)
 						{
@@ -590,6 +633,8 @@ bool NeuropixThread::updateBuffer()
 					timestampLfp += 1;
 				}
 
+				
+
 				//std::cout << "READ SUCCESS!" << std::endl;  
 
 			}
@@ -601,10 +646,12 @@ bool NeuropixThread::updateBuffer()
 	} //loop through basestations
 
 
-	if (timestampAp % 60000 == 0)
+	if (timestampAp % 60000 == 0) // update fifo filling every 2 seconds
 	{
 		size_t packetsAvailable;
 		size_t headroom;
+
+		//sleep(500);
 
 		for (int this_basestation = 0; this_basestation < basestations.size(); this_basestation++)
 		{
@@ -621,14 +668,14 @@ bool NeuropixThread::updateBuffer()
 
 				basestations[this_basestation]->probes[this_probe]->fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
 
-				//std::cout << "  FIFO filling  " << this_probe << ": " << packetsAvailable << std::endl;
+				//std::cout << "  FIFO filling  " << this_probe << ": " << float(packetsAvailable) / float(packetsAvailable + headroom) << std::endl;
 			}
 			
 		}
 
 		//std::cout << "Current event code: " << eventCode << std::endl;
 
-		//std::cout << "  " << std::endl;
+		std::cout << "  " << std::endl;
 	}
 
     return true;

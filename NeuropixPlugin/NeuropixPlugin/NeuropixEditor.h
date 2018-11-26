@@ -66,20 +66,23 @@ private:
 	bool selected;
 };
 
-class FifoMonitor : public Component
+class FifoMonitor : public Component, public Timer
 {
 public:
-	FifoMonitor(int id);
+	FifoMonitor(int id, NeuropixThread* thread);
 
 	void setSlot(unsigned char);
 
 	void setFillPercentage(float percentage);
+
+	void timerCallback();
 
 	unsigned char slot;
 private:
 	void paint(Graphics& g);
 
 	float fillPercentage;
+	NeuropixThread* thread;
 	int id;
 };
 
@@ -101,6 +104,8 @@ private:
 	OwnedArray<ProbeButton> probeButtons;
 	OwnedArray<UtilityButton> directoryButtons;
 	OwnedArray<FifoMonitor> fifoMonitors;
+
+	Array<File> savingDirectories;
 
 	ScopedPointer<EditorBackground> background;
 
@@ -187,6 +192,7 @@ private:
 	ScopedPointer<UtilityButton> enableButton;
 	ScopedPointer<UtilityButton> selectAllButton;
 
+	ScopedPointer<Viewport> infoLabelView;
 	ScopedPointer<Label> infoLabel;
 	ScopedPointer<Label> lfpGainLabel;
 	ScopedPointer<Label> apGainLabel;

@@ -86,6 +86,8 @@ public:
 	void setSavingDirectory(File);
 	File getSavingDirectory();
 
+	float getFillPercentage();
+
 private:
 	bool probesInitialized;
 
