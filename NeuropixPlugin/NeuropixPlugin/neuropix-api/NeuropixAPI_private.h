@@ -6,6 +6,14 @@
 extern "C" {
 #endif	
 
+	typedef enum
+	{
+		ChannelType_None = 0,
+		ChannelType_LFP = (1 << 0),
+		ChannelType_AP = (1 << 1),
+		ChannelType_ADC = (1 << 2)
+	}channeltype_t;
+
 	struct probechannelstatistics {
 		uint32_t channelnr;
 		uint32_t samplecount;
@@ -109,13 +117,16 @@ extern "C" {
 
 
 
-	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_Reset(uint8_t slotID, int8_t portID);
-	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_Start(uint8_t slotID, int8_t portID);
-	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_Stop(uint8_t slotID, int8_t portID);
+	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_Reset(uint8_t slotID, int8_t portID, channeltype_t channels);
+	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_Start(uint8_t slotID, int8_t portID, channeltype_t channels, int maxsamplecount);
+	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_Stop(uint8_t slotID, int8_t portID, channeltype_t channels);
 	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_ReadLFP(uint8_t slotID, int8_t portID, struct probechannelstatistics* stats, int firstchannel, int count);
 	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_ReadAP(uint8_t slotID, int8_t portID, struct probechannelstatistics* stats, int firstchannel, int count);
 	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_ReadADC(uint8_t slotID, int8_t portID, struct probechannelstatistics* stats, int firstchannel, int count);
 
+
+	NP_EXPORT NP_ErrorCode NP_APIC bist_fft(uint8_t slotID, int8_t port, double* real, size_t samplecount, size_t channelcount);
+	NP_EXPORT NP_ErrorCode NP_APIC bist_fftpeakdetect(uint8_t slotID, int8_t port, double* peakfreq, double* peakampl, size_t samplecount, size_t channelcount);
 
 	/*
 	  Set the state to prevents the QBSC to reboot into normal image when openBS is called.

@@ -113,6 +113,11 @@ public:
 	Basestation* basestation;
 	signed char port;
 
+	DataBuffer* apBuffer;
+	DataBuffer* lfpBuffer;
+
+	int64 timestamp;
+
 	ScopedPointer<Headstage> headstage;
 	ScopedPointer<Flex> flex;
 

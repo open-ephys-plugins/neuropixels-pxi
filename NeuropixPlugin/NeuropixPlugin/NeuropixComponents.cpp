@@ -272,9 +272,9 @@ void Basestation::initializeProbes()
 		{
 			errorCode = init(slot, probes[i]->port);
 			errorCode = setOPMODE(slot, probes[i]->port, RECORDING);
-			errorCode = setHSLed(slot, probes[i]->port, false);
+			//errorCode = setHSLed(slot, probes[i]->port, false);
 
-			probes[i]->calibrate();
+			//probes[i]->calibrate();
 
 			if (errorCode == SUCCESS)
 			{
@@ -297,7 +297,15 @@ void Basestation::initializeProbes()
 
 void Basestation::startAcquisition()
 {
-	
+	for (int i = 0; i < probes.size(); i++)
+	{
+		std::cout << "Probe " << int(probes[i]->port) << " setting timestamp to 0" << std::endl;
+		probes[i]->timestamp = 0;
+		//std::cout << "... and clearing buffers" << std::endl;
+		probes[i]->apBuffer->clear();
+		probes[i]->lfpBuffer->clear();
+	}
+
 	errorCode = setSWTrigger(slot);
 }
 

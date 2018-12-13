@@ -39,8 +39,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvai
 
 	api.getInfo();
 
-	sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
-	sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
+	//sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
+	//sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
 
     for (int i = 0; i < 384; i++)
     {
@@ -69,8 +69,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvai
     refs.add(960);
 
     counter = 0;
-    timestampAp = 0;
-	timestampLfp = 0;
+
     eventCode = 0;
     maxCounter = 0;
 
@@ -87,6 +86,7 @@ void NeuropixThread::openConnection()
 {
 
 	uint32_t availableslotmask;
+	totalProbes = 0;
 
 	scanPXI(&availableslotmask);
 
@@ -107,6 +107,8 @@ void NeuropixThread::openConnection()
 	{
 		if (basestations[i]->getProbeCount() > 0)
 		{
+			totalProbes += basestations[i]->getProbeCount();
+
 			baseStationAvailable = true;
 			selectedSlot = basestations[i]->slot;
 			selectedPort = basestations[i]->probes[0]->port;
@@ -116,11 +118,23 @@ void NeuropixThread::openConnection()
 				basestations[i]->makeSyncMaster();
 				foundSync = true;
 			}
+
+			// set up data buffers
+			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
+			{
+				std::cout << "Creating buffers for slot " << int(basestations[i]->slot) << ", probe " << int(basestations[i]->probes[probe_num]->port) << std::endl;
+				sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
+
+				basestations[i]->probes[probe_num]->apBuffer = sourceBuffers.getLast();
+
+				sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
+
+				basestations[i]->probes[probe_num]->lfpBuffer = sourceBuffers.getLast();
+			}
 				
 		}
 			
 	}
-
 }
 
 bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
@@ -262,12 +276,12 @@ bool NeuropixThread::startAcquisition()
 {
 
     // clear the internal buffer
-	sourceBuffers[0]->clear();
-	sourceBuffers[1]->clear();
+	//for (int i = 0; i < sourceBuffers.size(); i++)
+	//{
+	//	sourceBuffers[i]->clear();
+	//}
 
     counter = 0;
-    timestampAp = 0;
-	timestampLfp = 0;
     eventCode = 0;
     maxCounter = 0;
     
@@ -291,7 +305,7 @@ void NeuropixThread::timerCallback()
 
     stopTimer();
 
-	startRecording();
+	//startRecording();
 
 }
 
@@ -365,33 +379,39 @@ void NeuropixThread::setDefaultChannelNames()
 
 	//std::cout << "Setting channel bitVolts to 0.195" << std::endl;
 
-	for (int i = 0; i < 384; i++)
+	for (int bs_num = 0; bs_num < basestations.size(); bs_num++)
 	{
-		ChannelCustomInfo info;
-		info.name = "AP" + String(i + 1);
-		info.gain = 0.1950000f;
-		channelInfo.set(i, info);
+		for (int i = 0; i < 384; i++)
+		{
+			ChannelCustomInfo info;
+			info.name = "AP" + String(i + 1);
+			info.gain = 0.1950000f;
+			channelInfo.set(i, info);
+		}
+
+		for (int i = 0; i < 384; i++)
+		{
+			ChannelCustomInfo info;
+			info.name = "LFP" + String(i + 1);
+			info.gain = 0.1950000f;
+			channelInfo.set(384 + i, info);
+		}
 	}
 
-	for (int i = 0; i < 384; i++)
-	{
-		ChannelCustomInfo info;
-		info.name = "LFP" + String(i + 1);
-		info.gain = 0.1950000f;
-		channelInfo.set(384 + i, info);
-	}
+	
 }
 
 bool NeuropixThread::usesCustomNames() const
 {
-	return true;
+	return false;
 }
 
 
 /** Returns the number of virtual subprocessors this source can generate */
 unsigned int NeuropixThread::getNumSubProcessors() const
 {
-	return 2;
+
+	return 2 * totalProbes;
 }
 
 /** Returns the number of continuous headstage channels the data source can provide.*/
@@ -400,9 +420,9 @@ int NeuropixThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int su
 
 	int numChans;
 
-	if (type == DataChannel::DataChannelTypes::HEADSTAGE_CHANNEL && subProcessorIdx == 0)
+	if (type == DataChannel::DataChannelTypes::HEADSTAGE_CHANNEL && subProcessorIdx % 2 == 0)
 		numChans = 384;
-	else if (type == DataChannel::DataChannelTypes::HEADSTAGE_CHANNEL && subProcessorIdx == 1)
+	else if (type == DataChannel::DataChannelTypes::HEADSTAGE_CHANNEL && subProcessorIdx % 2 == 1)
 		numChans = 384;
 	else
 		numChans = 0;
@@ -415,9 +435,9 @@ int NeuropixThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int su
 /** Returns the number of TTL channels that each subprocessor generates*/
 int NeuropixThread::getNumTTLOutputs(int subProcessorIdx) const 
 {
-	if (subProcessorIdx == 0)
+	if (subProcessorIdx % 2 == 0)
 	{
-		return 16;
+		return 1;
 	}
 	else {
 		return 0;
@@ -430,7 +450,7 @@ float NeuropixThread::getSampleRate(int subProcessorIdx) const
 
 	float rate;
 
-	if (subProcessorIdx == 0)
+	if (subProcessorIdx % 2 == 0)
 		rate = 30000.0f;
 	else
 		rate = 2500.0f;
@@ -578,10 +598,12 @@ bool NeuropixThread::updateBuffer()
 
 	for (int bs = 0; bs < basestations.size(); bs++)
 	{
-		//std::cout << " Checking slot " << int(connected_basestations[this_basestation]) << std::endl;
+		//std::cout << " Checking slot " << int(basestations[bs]->slot) << std::endl;
 
 		for (int probe_num = 0; probe_num < basestations[bs]->getProbeCount(); probe_num++)
 		{
+			//std::cout << " Checking probe " << int(basestations[bs]->probes[probe_num]->port) << std::endl;
+
 			size_t count = SAMPLECOUNT;
 
 			errorCode = readElectrodeData(
@@ -592,20 +614,23 @@ bool NeuropixThread::updateBuffer()
 				count);
 
 			if (errorCode == SUCCESS && 
-				count > 0 && 
-				basestations[bs]->slot == selectedSlot &&
-				basestations[bs]->probes[probe_num]->port == selectedPort)
+				count > 0)// && 
+				//basestations[bs]->slot == selectedSlot &&
+				//basestations[bs]->probes[probe_num]->port == selectedPort)
 			{
 
 				//std::cout << "Got data. " << std::endl;
-				float data[384];
-				float data2[384];
+				float apSamples[384];
+				float lfpSamples[384];
+
+				int64* timestamp = &basestations[bs]->probes[probe_num]->timestamp;
 
 				for (int packetNum = 0; packetNum < count; packetNum++)
 				{
 					for (int i = 0; i < 12; i++)
 					{
 						uint64 oldeventcode = eventCode;
+
 						eventCode = 1 - (packet[packetNum].Trigger[i] && 64); // AUX_IO<0:13>
 						//if (ec != 64)
 						//	std::cout << "Got nonzero event code: " << ec << std::endl;
@@ -616,21 +641,34 @@ bool NeuropixThread::updateBuffer()
 
 						for (int j = 0; j < 384; j++)
 						{
-							data[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[apGains[j]]; // *-1000000.0f; // convert to microvolts
+							apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[apGains[j]]; // *-1000000.0f; // convert to microvolts
 
 							if (i == 0) // && sendLfp)
-								data2[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[lfpGains[j]]; // *-1000000.0f; // convert to microvolts
+								lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[lfpGains[j]]; // *-1000000.0f; // convert to microvolts
 						}
 
-						sourceBuffers[0]->addToBuffer(data, &timestampAp, &eventCode, 1);
-						timestampAp += 1;
-						//std::cout << "Added AP data to buffer. " << std::endl;
+						*timestamp += 1;
+
+						basestations[bs]->probes[probe_num]->apBuffer->addToBuffer(apSamples, timestamp, &eventCode, 1);
+
+						if (*timestamp % 60000 == 0) // check fifo filling
+						{
+							size_t packetsAvailable;
+							size_t headroom;
+
+							getElectrodeDataFifoState(
+								basestations[bs]->slot,
+								basestations[bs]->probes[probe_num]->port,
+								&packetsAvailable,
+								&headroom);
+
+							basestations[bs]->probes[probe_num]->fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+						}
+						
 					}
 
-					uint64 lfpeventCode = 0;
+					basestations[bs]->probes[probe_num]->lfpBuffer->addToBuffer(lfpSamples, timestamp, &eventCode, 1);
 
-					sourceBuffers[1]->addToBuffer(data2, &timestampLfp, &lfpeventCode, 1);
-					timestampLfp += 1;
 				}
 
 				
@@ -644,39 +682,6 @@ bool NeuropixThread::updateBuffer()
 			}// dump data
 		} // loop through probes
 	} //loop through basestations
-
-
-	if (timestampAp % 60000 == 0) // update fifo filling every 2 seconds
-	{
-		size_t packetsAvailable;
-		size_t headroom;
-
-		//sleep(500);
-
-		for (int this_basestation = 0; this_basestation < basestations.size(); this_basestation++)
-		{
-			//std::cout << " Checking slot " << int(connected_basestations[this_basestation]) << std::endl;
-
-			for (int this_probe = 0; this_probe < basestations[this_basestation]->getProbeCount(); this_probe++)
-			{
-
-				getElectrodeDataFifoState(
-					basestations[this_basestation]->slot,
-					basestations[this_basestation]->probes[this_probe]->port,
-					&packetsAvailable,
-					&headroom);
-
-				basestations[this_basestation]->probes[this_probe]->fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
-
-				//std::cout << "  FIFO filling  " << this_probe << ": " << float(packetsAvailable) / float(packetsAvailable + headroom) << std::endl;
-			}
-			
-		}
-
-		//std::cout << "Current event code: " << eventCode << std::endl;
-
-		std::cout << "  " << std::endl;
-	}
 
     return true;
 }

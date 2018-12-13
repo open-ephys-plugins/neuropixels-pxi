@@ -172,12 +172,11 @@ private:
 	void openConnection();
 	void closeConnection();
 
-	int64 timestampAp;
-	int64 timestampLfp;
 	uint64 eventCode;
 	int maxCounter;
 	int numRefs;
 	int totalChans;
+	int totalProbes;
 
 	Array<float> fillPercentage;
 
