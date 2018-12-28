@@ -36,14 +36,8 @@
     <ClInclude Include="NeuropixThread.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="resources\NeuropixAPI.lib">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <DeploymentContent>false</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-    </Library>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="resources\NeuropixAPI.dll" />
+    <Library Include="resources\NeuropixAPI_x64_1_8.lib" />
+    <Library Include="resources\NeuropixAPI_x86_1_8.lib" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{136F1FC3-BF86-4F1E-A5A0-1BB533410F57}</ProjectGuid>
@@ -108,7 +102,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\Debug\bin;resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NeuropixAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NeuropixAPI_x86_1_6.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -116,11 +110,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\joshs\Documents\GitHub\plugin-GUI\Source\Plugins\Headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Source\Plugins\Headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\joshs\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\Debug\bin;resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\Debug\bin;resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,11 +127,11 @@
       <AdditionalIncludeDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\JuceLibraryCode;C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\JuceLibraryCode\modules;C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Source\Plugins\Headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\Release\bin;C:\Users\svc_neuropix\Documents\GitHub\neuropixels-pxi\NeuropixPlugin\NeuropixPlugin\resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NeuropixAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NeuropixAPI_x86_1_8.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,14 +141,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\JuceLibraryCode;C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\JuceLibraryCode\modules;C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Source\Plugins\Headers;C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Source\Plugins\CommonLibs</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>OEPLUGIN;_WINDOWS;JUCE_API=__declspec(dllimport);JUCER_VS2013_78A5020=1;JUCE_APP_VERSION=0.4.2;JUCE_APP_VERSION_HEX=0x402;NDEBUG</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\JuceLibraryCode;C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\JuceLibraryCode\modules;C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Source\Plugins\Headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\Release\bin;resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\x64\Release64\bin;resources</AdditionalLibraryDirectories>
+      <AdditionalDependencies>NeuropixAPI_x64_1_8.lib; open-ephys.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -57,12 +57,13 @@ public:
 
 	unsigned char slot;
 	signed char port;
+	bool connected;
 
 private:
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
 	int id;
-	bool connected;
+	
 	bool selected;
 };
 
@@ -137,6 +138,8 @@ public:
 	void setParameter(int, int, int, float);
 	void buttonClicked(Button* button);
 
+	void setSelectedProbe(int, int);
+
 	void saveVisualizerParameters(XmlElement* xml);
 	void loadVisualizerParameters(XmlElement* xml);
 
@@ -144,7 +147,7 @@ public:
 
 	SourceNode* processor;
 	ScopedPointer<Viewport> neuropixViewport;
-	ScopedPointer<NeuropixInterface> neuropixInterface;
+	OwnedArray<NeuropixInterface> neuropixInterfaces;
 
 	int option;
 
@@ -153,7 +156,7 @@ public:
 class NeuropixInterface : public Component, public Button::Listener, public ComboBox::Listener, public Label::Listener, public Timer
 {
 public:
-	NeuropixInterface(NeuropixThread*, NeuropixEditor*);
+	NeuropixInterface(XmlElement info_, int slot_, int port, NeuropixThread*, NeuropixEditor*);
 	~NeuropixInterface();
 
 	void paint(Graphics& g);
@@ -177,6 +180,9 @@ public:
 
 	void timerCallback();
 
+	int slot;
+	int port;
+
 private:
 	
 	NeuropixThread* thread;
@@ -184,10 +190,15 @@ private:
 	DataBuffer* inputBuffer;
 	AudioSampleBuffer displayBuffer;
 
+	
+	XmlElement neuropix_info;
+
 	ScopedPointer<ComboBox> lfpGainComboBox;
 	ScopedPointer<ComboBox> apGainComboBox;
 	ScopedPointer<ComboBox> referenceComboBox;
 	ScopedPointer<ComboBox> filterComboBox;
+
+	ScopedPointer<ComboBox> bistComboBox;
 
 	ScopedPointer<UtilityButton> enableButton;
 	ScopedPointer<UtilityButton> selectAllButton;
@@ -199,6 +210,7 @@ private:
 	ScopedPointer<Label> referenceLabel;
 	ScopedPointer<Label> filterLabel;
 	ScopedPointer<Label> outputLabel;
+	ScopedPointer<Label> bistLabel;
 	ScopedPointer<Label> annotationLabelLabel;
 	ScopedPointer<Label> annotationLabel;
 
@@ -209,6 +221,7 @@ private:
 	ScopedPointer<UtilityButton> outputOnButton;
 	ScopedPointer<UtilityButton> outputOffButton;
 	ScopedPointer<UtilityButton> annotationButton;
+	ScopedPointer<UtilityButton> bistButton;
 
 
 	ScopedPointer<ColorSelector> colorSelector;

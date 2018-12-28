@@ -34,6 +34,19 @@
 
 # define SAMPLECOUNT 64
 
+enum BISTS {
+	BIST_SIGNAL = 1,
+	BIST_NOISE = 2,
+	BIST_PSB = 3,
+	BIST_SR = 4,
+	BIST_EEPROM = 5,
+	BIST_I2C = 6,
+	BIST_SERDES = 7,
+	BIST_HB = 8,
+	BIST_BS = 9
+	
+};
+
 class SourceNode;
 
 /**
@@ -43,6 +56,8 @@ class SourceNode;
 	@see DataThread, SourceNode
 
 */
+
+
 
 class NeuropixThread : public DataThread, public Timer
 {
@@ -59,8 +74,11 @@ public:
 	/** Returns true if the data source is connected, false otherwise.*/
 	bool foundInputSource();
 
-	/** Returns version info for hardware and API.*/
+	/** Returns version and serial number info for hardware and API as a string.*/
 	String getInfoString();
+
+	/** Returns version and serial number info for hardware and API as XML.*/
+	XmlElement getInfoXml();
 
 	/** Initializes data transfer.*/
 	bool startAcquisition() override;
@@ -95,13 +113,13 @@ public:
 	void selectElectrode(int chNum, int connection, bool transmit);
 
 	/** Selects which reference is used for each channel. */
-	void setAllReferences(int refId);
+	void setAllReferences(unsigned char slot, signed char port, int refId);
 
 	/** Sets the gain for each channel. */
-	void setAllGains(unsigned char apGain, unsigned char lfpGain);
+	void setAllGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
 
 	/** Sets the filter for all channels. */
-	void setFilter(bool filterState);
+	void setFilter(unsigned char slot, signed char port, bool filterState);
 
 	/** Toggles between internal and external triggering. */
 	void setTriggerMode(bool trigger);
@@ -142,6 +160,8 @@ public:
 	unsigned char getSlotForIndex(int slotIndex, int portIndex);
 	signed char getPortForIndex(int slotIndex, int portIndex);
 
+	bool runBist(unsigned char slot, signed char port, int bistIndex);
+
 	float getFillPercentage(unsigned char slot);
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
@@ -161,8 +181,6 @@ private:
 	CriticalSection displayMutex;
 
 	Array<int> gains;
-	Array<int> apGains;
-	Array<int> lfpGains;
 	Array<int> channelMap;
 	Array<bool> outputOn;
 	Array<int> refs;
@@ -178,6 +196,8 @@ private:
 	int totalChans;
 	int totalProbes;
 
+	uint32_t last_npx_timestamp;
+
 	Array<float> fillPercentage;
 
 	OwnedArray<Basestation> basestations;
@@ -191,6 +211,7 @@ private:
 	//std::vector<unsigned char> connected_basestations;
 	//std::vector<std::vector<int>> connected_probes;
 	electrodePacket packet[SAMPLECOUNT];
+	bistElectrodeStats stats[960];
 
 };
 

@@ -49,13 +49,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="resources\NeuropixAPI.lib">
+    <Library Include="resources\NeuropixAPI_x64_1_8.lib">
       <Filter>Resource Files</Filter>
     </Library>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="resources\NeuropixAPI.dll">
+    <Library Include="resources\NeuropixAPI_x86_1_8.lib">
       <Filter>Resource Files</Filter>
-    </None>
+    </Library>
   </ItemGroup>
 </Project>

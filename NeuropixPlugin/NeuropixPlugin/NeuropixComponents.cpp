@@ -141,6 +141,12 @@ Probe::Probe(Basestation* bs, signed char port_) : basestation(bs), port(port_),
 
 	flex = new Flex(this);
 	headstage = new Headstage(this);
+
+	for (int i = 0; i < 384; i++)
+	{
+		apGains.add(3); // default = 500
+		lfpGains.add(2); // default = 250
+	}
 }
 
 void Probe::calibrate()
@@ -174,6 +180,36 @@ void Probe::calibrate()
 		errorCode = writeProbeConfiguration(basestation->slot, port, false);
 	}
 }
+
+void Probe::setApFilterState(bool filterState)
+{
+	for (int channel = 0; channel < 384; channel++)
+		setAPCornerFrequency(basestation->slot, port, channel, filterState);
+
+	errorCode = writeProbeConfiguration(basestation->slot, port, false);
+}
+
+void Probe::setGains(unsigned char apGain, unsigned char lfpGain)
+{
+	for (int channel = 0; channel < 384; channel++)
+	{
+		setGain(basestation->slot, port, channel, apGain, lfpGain);
+		apGains.set(channel, int(apGain));
+		lfpGains.set(channel, int(lfpGain));
+	}
+		
+	errorCode = writeProbeConfiguration(basestation->slot, port, false);
+}
+
+
+void Probe::setReferences(channelreference_t refId, unsigned char refElectrodeBank)
+{
+	for (int channel = 0; channel < 384; channel++)
+		setReference(basestation->slot, port, channel, refId, refElectrodeBank);
+
+	errorCode = writeProbeConfiguration(basestation->slot, port, false);
+}
+
 
 Headstage::Headstage(Probe* probe_) : probe(probe_)
 {
@@ -272,9 +308,9 @@ void Basestation::initializeProbes()
 		{
 			errorCode = init(slot, probes[i]->port);
 			errorCode = setOPMODE(slot, probes[i]->port, RECORDING);
-			//errorCode = setHSLed(slot, probes[i]->port, false);
+			errorCode = setHSLed(slot, probes[i]->port, false);
 
-			//probes[i]->calibrate();
+			probes[i]->calibrate();
 
 			if (errorCode == SUCCESS)
 			{
@@ -302,8 +338,8 @@ void Basestation::startAcquisition()
 		std::cout << "Probe " << int(probes[i]->port) << " setting timestamp to 0" << std::endl;
 		probes[i]->timestamp = 0;
 		//std::cout << "... and clearing buffers" << std::endl;
-		probes[i]->apBuffer->clear();
-		probes[i]->lfpBuffer->clear();
+		//probes[i]->apBuffer->clear();
+		//probes[i]->lfpBuffer->clear();
 	}
 
 	errorCode = setSWTrigger(slot);
@@ -314,43 +350,52 @@ void Basestation::stopAcquisition()
 	errorCode = arm(slot);
 }
 
-void Basestation::setApFilterState(bool filterState)
+void Basestation::setApFilterState(unsigned char slot_, signed char port, bool filterState)
 {
-	for (int i = 0; i < probes.size(); i++)
+	if (slot == slot_)
 	{
-		for (int channel = 0; channel < 384; channel++)
-			setAPCornerFrequency(slot, probes[i]->port, channel, filterState);
-
-		errorCode = writeProbeConfiguration(slot, probes[i]->port, false);
+		for (int i = 0; i < probes.size(); i++)
+		{
+			if (probes[i]->port == port)
+			{
+				probes[i]->setApFilterState(filterState);
+				std::cout << "Set all filters to " << int(filterState) << std::endl;
+			}
+		}
 	}
-
-	std::cout << "Set all filters to " << int(filterState) << std::endl;
+	
 }
 
-void Basestation::setGains(unsigned char apGain, unsigned char lfpGain)
+void Basestation::setGains(unsigned char slot_, signed char port, unsigned char apGain, unsigned char lfpGain)
 {
-	for (int i = 0; i < probes.size(); i++)
+	if (slot == slot_)
 	{
-		for (int channel = 0; channel < 384; channel++)
-			setGain(slot, probes[i]->port, channel, apGain, lfpGain);
-
-		errorCode = writeProbeConfiguration(slot, probes[i]->port, false);
+		for (int i = 0; i < probes.size(); i++)
+		{
+			if (probes[i]->port == port)
+			{
+				probes[i]->setGains(apGain, lfpGain);
+				std::cout << "Set all gains to " << int(apGain) << ":" << int(lfpGain) << std::endl;
+			}
+		}
 	}
-
-	std::cout << "Set all gains to " << int(apGain) << ":" << int(lfpGain) << std::endl;
+	
 }
 
-void Basestation::setReferences(channelreference_t refId, unsigned char refElectrodeBank)
+void Basestation::setReferences(unsigned char slot_, signed char port, channelreference_t refId, unsigned char refElectrodeBank)
 {
-	for (int i = 0; i < probes.size(); i++)
+	if (slot == slot_)
 	{
-		for (int channel = 0; channel < 384; channel++)
-			setReference(slot, probes[i]->port, channel, refId, refElectrodeBank);
-
-		errorCode = writeProbeConfiguration(slot, probes[i]->port, false);
+		for (int i = 0; i < probes.size(); i++)
+		{
+			if (probes[i]->port == port)
+			{
+				probes[i]->setReferences(refId, refElectrodeBank);
+				std::cout << "Set all references to " << refId << ":" << int(refElectrodeBank) << std::endl;
+			}
+		}
 	}
 
-	std::cout << "Set all references to " << refId << ":" << int(refElectrodeBank) << std::endl;
 }
 
 void Basestation::setSavingDirectory(File directory)

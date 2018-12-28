@@ -39,13 +39,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvai
 
 	api.getInfo();
 
-	//sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
-	//sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
-
     for (int i = 0; i < 384; i++)
     {
-        lfpGains.add(0); // default setting = 50x
-        apGains.add(4); // default setting = 1000x
         channelMap.add(i);
         outputOn.add(true);
     }
@@ -110,27 +105,30 @@ void NeuropixThread::openConnection()
 			totalProbes += basestations[i]->getProbeCount();
 
 			baseStationAvailable = true;
-			selectedSlot = basestations[i]->slot;
-			selectedPort = basestations[i]->probes[0]->port;
 
 			if (!foundSync)
 			{
 				basestations[i]->makeSyncMaster();
+				selectedSlot = basestations[i]->slot;
+				selectedPort = basestations[i]->probes[0]->port;
 				foundSync = true;
 			}
 
 			// set up data buffers
-			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
-			{
-				std::cout << "Creating buffers for slot " << int(basestations[i]->slot) << ", probe " << int(basestations[i]->probes[probe_num]->port) << std::endl;
-				sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
+			sourceBuffers.add(new DataBuffer(384, 10000));
+			sourceBuffers.add(new DataBuffer(384, 10000));
 
-				basestations[i]->probes[probe_num]->apBuffer = sourceBuffers.getLast();
+			//for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
+			//{
+			//	std::cout << "Creating buffers for slot " << int(basestations[i]->slot) << ", probe " << int(basestations[i]->probes[probe_num]->port) << std::endl;
+			//	sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
 
-				sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
+			//	basestations[i]->probes[probe_num]->apBuffer = sourceBuffers.getLast();
 
-				basestations[i]->probes[probe_num]->lfpBuffer = sourceBuffers.getLast();
-			}
+			//	sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
+
+			//	basestations[i]->probes[probe_num]->lfpBuffer = sourceBuffers.getLast();
+			//}
 				
 		}
 			
@@ -202,6 +200,49 @@ bool NeuropixThread::foundInputSource()
 }
 
 
+XmlElement NeuropixThread::getInfoXml()
+{
+
+	XmlElement neuropix_info("NEUROPIX-PXI");
+
+	XmlElement* api_info = new XmlElement("API");
+	api_info->setAttribute("version", api.version);
+	neuropix_info.addChildElement(api_info);
+
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		XmlElement* basestation_info = new XmlElement("BASESTATION");
+		basestation_info->setAttribute("index", i + 1);
+		basestation_info->setAttribute("slot", int(basestations[i]->slot));
+		basestation_info->setAttribute("firmware_version", basestations[i]->boot_version);
+		basestation_info->setAttribute("bsc_firmware_version", basestations[i]->basestationConnectBoard->boot_version);
+		basestation_info->setAttribute("bsc_part_number", basestations[i]->basestationConnectBoard->part_number);
+		basestation_info->setAttribute("bsc_serial_number", String(basestations[i]->basestationConnectBoard->serial_number));
+
+		for (int j = 0; j < basestations[i]->getProbeCount(); j++)
+		{
+			XmlElement* probe_info = new XmlElement("PROBE");
+			probe_info->setAttribute("port", int(basestations[i]->probes[j]->port));
+			probe_info->setAttribute("probe_serial_number", String(basestations[i]->probes[j]->serial_number));
+			probe_info->setAttribute("hs_serial_number", String(basestations[i]->probes[j]->headstage->serial_number));
+			probe_info->setAttribute("hs_part_number", basestations[i]->probes[j]->headstage->part_number);
+			probe_info->setAttribute("hs_version", basestations[i]->probes[j]->headstage->version);
+			probe_info->setAttribute("flex_part_number", basestations[i]->probes[j]->flex->part_number);
+			probe_info->setAttribute("flex_version", basestations[i]->probes[j]->flex->version);
+
+			basestation_info->addChildElement(probe_info);
+
+		}
+
+		neuropix_info.addChildElement(basestation_info);
+
+	}
+
+	return neuropix_info;
+
+}
+
+
 String NeuropixThread::getInfoString()
 {
 
@@ -231,7 +272,7 @@ String NeuropixThread::getInfoString()
 		infoString += String(basestations[i]->basestationConnectBoard->serial_number);
 		infoString += "\n";
 		infoString += "\n";
-		
+
 		for (int j = 0; j < basestations[i]->getProbeCount(); j++)
 		{
 			infoString += "    Port ";
@@ -295,6 +336,8 @@ bool NeuropixThread::startAcquisition()
 		basestations[i]->startAcquisition();
 	}
 
+	last_npx_timestamp = 0;
+
 	startThread();
    
     return true;
@@ -305,7 +348,7 @@ void NeuropixThread::timerCallback()
 
     stopTimer();
 
-	//startRecording();
+	startRecording();
 
 }
 
@@ -411,7 +454,7 @@ bool NeuropixThread::usesCustomNames() const
 unsigned int NeuropixThread::getNumSubProcessors() const
 {
 
-	return 2 * totalProbes;
+	return 2; // *totalProbes;
 }
 
 /** Returns the number of continuous headstage channels the data source can provide.*/
@@ -477,7 +520,7 @@ void NeuropixThread::selectElectrode(int chNum, int connection, bool transmit)
 
 }
 
-void NeuropixThread::setAllReferences(int refId)
+void NeuropixThread::setAllReferences(unsigned char slot, signed char port, int refId)
 {
  
 	NP_ErrorCode ec;
@@ -501,28 +544,23 @@ void NeuropixThread::setAllReferences(int refId)
 	}
 
 	for (int i = 0; i < basestations.size(); i++)
-		basestations[i]->setReferences(reference, intRefElectrodeBank);
-
+	{
+		basestations[i]->setReferences(slot, port, reference, intRefElectrodeBank);
+	}
 }
 
-void NeuropixThread::setAllGains(unsigned char apGain, unsigned char lfpGain)
+void NeuropixThread::setAllGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain)
 {
 
 	for (int i = 0; i < basestations.size(); i++)
-		basestations[i]->setGains(apGain, lfpGain);
-
-	for (int ch = 0; ch < 384; ch++)
-	{
-		apGains.set(ch, apGain);
-		lfpGains.set(ch, lfpGain);
-	}
+		basestations[i]->setGains(slot, port, apGain, lfpGain);
    
 }
 
-void NeuropixThread::setFilter(bool filterState)
+void NeuropixThread::setFilter(unsigned char slot, signed char port, bool filterState)
 {
 	for (int i = 0; i < basestations.size(); i++)
-		basestations[i]->setApFilterState(filterState);
+		basestations[i]->setApFilterState(slot, port, filterState);
 }
 
 void NeuropixThread::setTriggerMode(bool trigger)
@@ -559,6 +597,75 @@ File NeuropixThread::getDirectoryForSlot(int slotIndex)
 	else {
 		return File::getCurrentWorkingDirectory();
 	}
+}
+
+bool NeuropixThread::runBist(unsigned char slot, signed char port, int bistIndex)
+{
+	bool returnValue = false;
+
+	switch (bistIndex)
+	{
+	case BIST_SIGNAL:
+	{
+		NP_ErrorCode errorCode = bistSignal(slot, port, &returnValue, stats);
+		break;
+	}
+	case BIST_NOISE:
+	{
+		if (bistNoise(slot, port) == SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST_PSB:
+	{
+		if (bistPSB(slot, port) == SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST_SR:
+	{
+		if (bistSR(slot, port) == SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST_EEPROM:
+	{
+		if (bistEEPROM(slot, port) == SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST_I2C:
+	{
+		if (bistI2CMM(slot, port) == SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST_SERDES:
+	{
+		unsigned char errors;
+		bistStartPRBS(slot, port);
+		sleep(200);
+		bistStopPRBS(slot, port, &errors);
+
+		if (errors == 0)
+			returnValue = true;
+		break;
+	}
+	case BIST_HB:
+	{
+		if (bistHB(slot, port) == SUCCESS)
+			returnValue = true;
+		break;
+	} case BIST_BS:
+	{
+		if (bistBS(slot) == SUCCESS)
+			returnValue = true;
+		break;
+	} default :
+		CoreServices::sendStatusMessage("Test not found.");
+	}
+
+	return returnValue;
 }
 
 float NeuropixThread::getFillPercentage(unsigned char slot)
@@ -614,9 +721,9 @@ bool NeuropixThread::updateBuffer()
 				count);
 
 			if (errorCode == SUCCESS && 
-				count > 0)// && 
-				//basestations[bs]->slot == selectedSlot &&
-				//basestations[bs]->probes[probe_num]->port == selectedPort)
+				count > 0 && 
+				basestations[bs]->slot == selectedSlot &&
+				basestations[bs]->probes[probe_num]->port == selectedPort)
 			{
 
 				//std::cout << "Got data. " << std::endl;
@@ -631,28 +738,20 @@ bool NeuropixThread::updateBuffer()
 					{
 						uint64 oldeventcode = eventCode;
 
-						eventCode = 1 - (packet[packetNum].Trigger[i] && 64); // AUX_IO<0:13>
-						//if (ec != 64)
-						//	std::cout << "Got nonzero event code: " << ec << std::endl;
-						//std::cout << "Read event data. " << std::endl;
+						eventCode = packet[packetNum].Status[i] >> 6; // AUX_IO<0:13>
 
-						//if (eventCode != oldeventcode)
-						//	std::cout << "event code: " << eventCode << std::endl;
+						uint32_t npx_timestamp = packet[packetNum].timestamp[i];
 
-						for (int j = 0; j < 384; j++)
+						if (npx_timestamp == last_npx_timestamp)
 						{
-							apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[apGains[j]]; // *-1000000.0f; // convert to microvolts
-
-							if (i == 0) // && sendLfp)
-								lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[lfpGains[j]]; // *-1000000.0f; // convert to microvolts
+							std::cout << "Got repeated timestamp at sample " << *timestamp << std::endl;
+							std::cout << npx_timestamp << std::endl;
 						}
 
-						*timestamp += 1;
-
-						basestations[bs]->probes[probe_num]->apBuffer->addToBuffer(apSamples, timestamp, &eventCode, 1);
-
-						if (*timestamp % 60000 == 0) // check fifo filling
+						if (*timestamp % 3000 == 0) // check fifo filling
 						{
+							//std::cout << eventCode << std::endl;
+
 							size_t packetsAvailable;
 							size_t headroom;
 
@@ -663,11 +762,37 @@ bool NeuropixThread::updateBuffer()
 								&headroom);
 
 							basestations[bs]->probes[probe_num]->fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+
+							//std::cout << npx_timestamp << " " << last_npx_timestamp << std::endl;
 						}
+						
+
+						last_npx_timestamp = npx_timestamp;
+						
+						//if (ec != 64)
+						//	std::cout << "Got nonzero event code: " << ec << std::endl;
+						//std::cout << "Read event data. " << std::endl;
+
+						//if (eventCode != oldeventcode)
+						//	std::cout << "event code: " << eventCode << std::endl;
+
+						for (int j = 0; j < 384; j++)
+						{
+							apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[basestations[bs]->probes[probe_num]->apGains[j]]; // *-1000000.0f; // convert to microvolts
+
+							if (i == 0) // && sendLfp)
+								lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[basestations[bs]->probes[probe_num]->lfpGains[j]]; // *-1000000.0f; // convert to microvolts
+						}
+
+						*timestamp += 1;
+
+						sourceBuffers[0]->addToBuffer(apSamples, timestamp, &eventCode, 1);
+
+						
 						
 					}
 
-					basestations[bs]->probes[probe_num]->lfpBuffer->addToBuffer(lfpSamples, timestamp, &eventCode, 1);
+					sourceBuffers[1]->addToBuffer(lfpSamples, timestamp, &eventCode, 1);
 
 				}
 

@@ -73,9 +73,9 @@ public:
 
 	float getTemperature();
 
-	void setReferences(channelreference_t refId, unsigned char electrodeBank);
-	void setGains(unsigned char apGain, unsigned char lfpGain);
-	void setApFilterState(bool filterState);
+	void setReferences(unsigned char slot, signed char port, channelreference_t refId, unsigned char electrodeBank);
+	void setGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
+	void setApFilterState(unsigned char slot, signed char port, bool filterState);
 
 	void getInfo();
 	void makeSyncMaster();
@@ -127,6 +127,12 @@ public:
 	bool highpass_on;
 
 	Array<bool> selectedElectrodes;
+	Array<int> apGains;
+	Array<int> lfpGains;
+
+	void setApFilterState(bool);
+	void setReferences(channelreference_t refId, unsigned char refElectrodeBank);
+	void setGains(unsigned char apGain, unsigned char lfpGain);
 
 	void calibrate();
 

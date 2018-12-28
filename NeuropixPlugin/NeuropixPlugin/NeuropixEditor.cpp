@@ -158,6 +158,8 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
     desiredWidth = 400;
     tabText = "Neuropix PXI";
 
+	bool foundFirst = false;
+
 	for (int i = 0; i < 16; i++)
 	{
 		int slotIndex = i % 4;
@@ -172,6 +174,12 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 		probeButtons.add(p);
 
 		p->setSlotAndPort(thread->getSlotForIndex(slotIndex, portIndex), thread->getPortForIndex(slotIndex, portIndex));
+
+		if (p->connected && !foundFirst)
+		{
+			p->setSelectedState(true);
+			foundFirst = true;
+		}
 	}
 
 	for (int i = 0; i < 4; i++)
@@ -222,6 +230,9 @@ void NeuropixEditor::buttonEvent(Button* button)
 		ProbeButton* probe = (ProbeButton*)button;
 		probe->setSelectedState(true);
 		thread->setSelectedProbe(probe->slot, probe->port);
+		canvas->setSelectedProbe(probe->slot, probe->port);
+
+		repaint();
 	}
 
     if (!acquisitionIsActive)
@@ -301,8 +312,35 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* p, NeuropixThread* thread)
     processor = (SourceNode*) p;
 
     neuropixViewport = new Viewport();
-    neuropixInterface = new NeuropixInterface(thread, (NeuropixEditor*) p->getEditor());
-    neuropixViewport->setViewedComponent(neuropixInterface, false);
+
+	XmlElement neuropix_info = thread->getInfoXml();
+
+	int slot;
+	int port;
+
+	if (neuropix_info.hasTagName("NEUROPIX-PXI"))
+	{
+		forEachXmlChildElement(neuropix_info, e)
+		{
+			if (e->hasTagName("BASESTATION"))
+			{
+				slot = e->getIntAttribute("slot");
+
+				forEachXmlChildElement(*e, e2)
+				{
+					if (e2->hasTagName("PROBE"))
+					{
+						port = e2->getIntAttribute("port");
+
+						NeuropixInterface* neuropixInterface = new NeuropixInterface(neuropix_info, slot, port, thread, (NeuropixEditor*)p->getEditor());
+						neuropixInterfaces.add(neuropixInterface);
+					}
+				}
+			}
+		}
+	}
+
+    neuropixViewport->setViewedComponent(neuropixInterfaces[0], false);
     addAndMakeVisible(neuropixViewport);
 
     resized();
@@ -346,7 +384,9 @@ void NeuropixCanvas::resized()
 {
 
     neuropixViewport->setBounds(0,0,getWidth(),getHeight());
-    neuropixInterface->setBounds(0,0,getWidth()-neuropixViewport->getScrollBarThickness(), 600);
+
+	for (int i = 0; i < neuropixInterfaces.size(); i++)
+		neuropixInterfaces[i]->setBounds(0,0,getWidth()-neuropixViewport->getScrollBarThickness(), 600);
 }
 
 void NeuropixCanvas::setParameter(int x, float f)
@@ -363,23 +403,38 @@ void NeuropixCanvas::buttonClicked(Button* button)
 
 }
 
+void NeuropixCanvas::setSelectedProbe(int slot, int port)
+{
+
+	for (int i = 0; i < neuropixInterfaces.size(); i++)
+	{
+		if (neuropixInterfaces[i]->slot == slot && neuropixInterfaces[i]->port == port)
+		{
+			neuropixViewport->setViewedComponent(neuropixInterfaces[i], false);
+		}
+	}
+
+}
+
+
 void NeuropixCanvas::saveVisualizerParameters(XmlElement* xml)
 {
-    neuropixInterface->saveParameters(xml);
+	for (int i = 0; i < neuropixInterfaces.size(); i++)
+		neuropixInterfaces[i]->saveParameters(xml);
 }
 
 void NeuropixCanvas::loadVisualizerParameters(XmlElement* xml)
 {
-    neuropixInterface->loadParameters(xml);
+	for (int i = 0; i < neuropixInterfaces.size(); i++)
+		neuropixInterfaces[i]->loadParameters(xml);
 }
 
 /*****************************************************/
-NeuropixInterface::NeuropixInterface(NeuropixThread* t, NeuropixEditor* e) : thread(t), editor(e)
+NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, NeuropixThread* t, NeuropixEditor* e) : thread(t), editor(e), slot(slot_), port(port_), neuropix_info(info_)
 {
     cursorType = MouseCursor::NormalCursor;
 
-    
-
+  
     isOverZoomRegion = false;
     isOverUpperBorder = false;
     isOverLowerBorder = false;
@@ -450,6 +505,21 @@ NeuropixInterface::NeuropixInterface(NeuropixThread* t, NeuropixEditor* e) : thr
     filterComboBox->addItem("OFF", 2);
     filterComboBox->setSelectedId(1, dontSendNotification);
 
+	bistComboBox = new ComboBox("BistComboBox");
+	bistComboBox->setBounds(550, 500, 225, 22);
+	bistComboBox->addListener(this);
+	bistComboBox->addItem("Test probe signal", BIST_SIGNAL);
+	bistComboBox->addItem("Test probe noise", BIST_NOISE);
+	bistComboBox->addItem("Test PSB bus", BIST_PSB);
+	bistComboBox->addItem("Test shift registers", BIST_SR);
+	bistComboBox->addItem("Test EEPROM", BIST_EEPROM);
+	bistComboBox->addItem("Test I2C", BIST_I2C);
+	bistComboBox->addItem("Test Serdes", BIST_SERDES);
+	bistComboBox->addItem("Test Heartbeat", BIST_HB);
+	bistComboBox->addItem("Test Basestation", BIST_BS);
+
+	filterComboBox->setSelectedId(1, dontSendNotification);
+
     enableButton = new UtilityButton("ENABLE", Font("Small Text", 13, Font::plain));
     enableButton->setRadius(3.0f);
     enableButton->setBounds(400,95,65,22);
@@ -504,10 +574,17 @@ NeuropixInterface::NeuropixInterface(NeuropixThread* t, NeuropixEditor* e) : thr
     annotationButton->addListener(this);
     annotationButton->setTooltip("Add annotation to selected channels");
 
+	bistButton = new UtilityButton("RUN", Font("Small Text", 12, Font::plain));
+	bistButton->setRadius(3.0f);
+	bistButton->setBounds(780, 500, 50, 22);
+	bistButton->addListener(this);
+	bistButton->setTooltip("Run selected test");
+
     addAndMakeVisible(lfpGainComboBox);
     addAndMakeVisible(apGainComboBox);
     addAndMakeVisible(referenceComboBox);
     addAndMakeVisible(filterComboBox);
+	addAndMakeVisible(bistComboBox);
 
     addAndMakeVisible(enableButton);
     addAndMakeVisible(enableViewButton);
@@ -515,15 +592,16 @@ NeuropixInterface::NeuropixInterface(NeuropixThread* t, NeuropixEditor* e) : thr
     addAndMakeVisible(apGainViewButton);
     addAndMakeVisible(referenceViewButton);
 	addAndMakeVisible(annotationButton);
+	addAndMakeVisible(bistButton);
 
 	infoLabelView = new Viewport("INFO");
-	infoLabelView->setBounds(550, 20, 750, 500);
+	infoLabelView->setBounds(550, 20, 750, 350);
 	addAndMakeVisible(infoLabelView);
     
     infoLabel = new Label("INFO", "INFO");
 	infoLabelView->setViewedComponent(infoLabel, false);
     infoLabel->setFont(Font("Small Text", 13, Font::plain));
-    infoLabel->setBounds(0, 0, 750, 1500);
+    infoLabel->setBounds(0, 0, 750, 350);
     infoLabel->setColour(Label::textColourId, Colours::grey);
     //addAndMakeVisible(infoLabel);
 
@@ -576,6 +654,12 @@ NeuropixInterface::NeuropixInterface(NeuropixThread* t, NeuropixEditor* e) : thr
     outputLabel->setColour(Label::textColourId, Colours::grey);
     addAndMakeVisible(outputLabel);
 
+	bistLabel = new Label("TESTS", "Available tests:");
+	bistLabel->setFont(Font("Small Text", 13, Font::plain));
+	bistLabel->setBounds(550, 473, 200, 20);
+	bistLabel->setColour(Label::textColourId, Colours::grey);
+	addAndMakeVisible(bistLabel);
+
     shankPath.startNewSubPath(27, 28);
     shankPath.lineTo(27, 514);
     shankPath.lineTo(27+5, 522);
@@ -626,7 +710,77 @@ NeuropixInterface::~NeuropixInterface()
 
 void NeuropixInterface::updateInfoString()
 {
-	infoLabel->setText(thread->getInfoString(), dontSendNotification);
+	String infoString;
+
+	infoString += "API Version: ";
+	infoString += neuropix_info.getChildByName("API")->getStringAttribute("version", "not found");
+	infoString += "\n";
+	infoString += "\n";
+	infoString += "\n";
+
+	forEachXmlChildElement(neuropix_info, bs_info)
+	{
+		if (bs_info->hasTagName("BASESTATION"))
+		{
+			if (bs_info->getIntAttribute("slot") == slot)
+			{
+				forEachXmlChildElement(*bs_info, probe_info)
+				{
+					if (probe_info->getIntAttribute("port") == port)
+					{
+						infoString += "Basestation ";
+						infoString += String(bs_info->getIntAttribute("index"));
+						infoString += " (Slot ";
+						infoString += String(bs_info->getIntAttribute("slot"));
+						infoString += ")\n\n";
+						infoString += "  Firmware version: ";
+						infoString += bs_info->getStringAttribute("firmware_version");
+						infoString += "\n";
+						infoString += "  BSC firmware version: ";
+						infoString += bs_info->getStringAttribute("bsc_firmware_version");
+						infoString += "\n";
+						infoString += "  BSC part number: ";
+						infoString += bs_info->getStringAttribute("bsc_part_number");
+						infoString += "\n";
+						infoString += "  BSC serial number: ";
+						infoString += bs_info->getStringAttribute("bsc_serial_number");
+						infoString += "\n";
+						infoString += "\n\n";
+
+						infoString += "    Port ";
+						infoString += String(probe_info->getStringAttribute("port"));
+						infoString += "\n";
+						infoString += "\n";
+						infoString += "    Probe serial number: ";
+						infoString += probe_info->getStringAttribute("probe_serial_number");
+						infoString += "\n";
+						infoString += "\n";
+						infoString += "    Headstage serial number: ";
+						infoString += probe_info->getStringAttribute("hs_serial_number");
+						infoString += "\n";
+						infoString += "    Headstage part number: ";
+						infoString += probe_info->getStringAttribute("hs_part_number");
+						infoString += "\n";
+						infoString += "    Headstage version: ";
+						infoString += probe_info->getStringAttribute("hs_version");
+						infoString += "\n";
+						infoString += "\n";
+						infoString += "    Flex part number: ";
+						infoString += probe_info->getStringAttribute("flex_part_number");
+						infoString += "\n";
+						infoString += "    Flex version: ";
+						infoString += probe_info->getStringAttribute("flex_version");
+						infoString += "\n";
+						infoString += "\n";
+						infoString += "\n";
+
+					}
+				}
+			}
+		}
+	}
+
+	infoLabel->setText(infoString, dontSendNotification);
 }
 
 void NeuropixInterface::labelTextChanged(Label* label)
@@ -647,7 +801,7 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
 			int gainSettingAp = apGainComboBox->getSelectedId() - 1;
 			int gainSettingLfp = lfpGainComboBox->getSelectedId() - 1;
 
-			thread->setAllGains(gainSettingAp, gainSettingLfp);
+			thread->setAllGains(slot, port, gainSettingAp, gainSettingLfp);
 
 			for (int i = 0; i < 966; i++)
 			{
@@ -660,7 +814,7 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
 
 			int refSetting = comboBox->getSelectedId() - 1;
             
-			thread->setAllReferences(refSetting);
+			thread->setAllReferences(slot, port, refSetting);
 
 			for (int i = 0; i < 966; i++)
 			{
@@ -677,9 +831,9 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
             // 1 = OFF
 
 			if (filterSetting == 0)
-				thread->setFilter(true);
+				thread->setFilter(slot, port, true);
 			else
-				thread->setFilter(false);
+				thread->setFilter(slot, port, false);
         }
         
 
@@ -831,7 +985,36 @@ void NeuropixInterface::buttonClicked(Button* button)
             annotations.add(Annotation(s, a, colorSelector->getCurrentColour()));
 
         repaint();
-    }
+	} else if (button == bistButton)
+	{
+		if (!editor->acquisitionIsActive)
+		{
+			if (bistComboBox->getSelectedId() == 0)
+			{
+				CoreServices::sendStatusMessage("Please select a test to run.");
+			}
+			else {
+				bool passed = thread->runBist(slot, port, bistComboBox->getSelectedId());
+
+				String testString = bistComboBox->getText();
+				if (passed)
+				{
+					testString += " - PASSED";
+				}
+				else {
+					testString += " - FAILED";
+				}
+				//bistComboBox->setText(testString);
+				bistComboBox->changeItemText(bistComboBox->getSelectedId(), testString);
+				bistComboBox->setText(testString);
+				//bistComboBox->setSelectedId(bistComboBox->getSelectedId(), NotificationType::sendNotification);
+			}
+
+		}
+		else {
+			CoreServices::sendStatusMessage("Cannot run test while acquisition is active.");
+		}
+	}
     
 }
 
