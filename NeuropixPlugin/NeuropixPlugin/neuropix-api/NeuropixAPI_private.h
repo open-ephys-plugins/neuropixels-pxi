@@ -125,7 +125,7 @@ extern "C" {
 	NP_EXPORT NP_ErrorCode NP_APIC probeChannelStatistics_ReadADC(uint8_t slotID, int8_t portID, struct probechannelstatistics* stats, int firstchannel, int count);
 
 
-	NP_EXPORT NP_ErrorCode NP_APIC bist_fft(uint8_t slotID, int8_t port, double* real, size_t samplecount, size_t channelcount);
+	NP_EXPORT NP_ErrorCode NP_APIC bist_fft(double* real, size_t samplecount, size_t channelcount);
 	NP_EXPORT NP_ErrorCode NP_APIC bist_fftpeakdetect(uint8_t slotID, int8_t port, double* peakfreq, double* peakampl, size_t samplecount, size_t channelcount);
 
 	/*
