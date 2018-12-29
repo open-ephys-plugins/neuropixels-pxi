@@ -364,21 +364,28 @@ void NeuropixThread::startRecording()
 		if (basestations[i]->getProbeCount() > 0)
 		{
 			File savingDirectory = basestations[i]->getSavingDirectory();
-			File fullPath = savingDirectory.getChildFile(pathName);
 
-			if (!fullPath.exists())
+			if (!savingDirectory.getFullPathName().isEmpty())
 			{
-				fullPath.createDirectory();
+				File fullPath = savingDirectory.getChildFile(pathName);
+
+				if (!fullPath.exists())
+				{
+					fullPath.createDirectory();
+				}
+
+				File npxFileName = fullPath.getChildFile("recording_slot" + String(basestations[i]->slot) + "_" + String(recordingNumber) + ".npx2");
+
+				setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
+				enableFileStream(basestations[i]->slot, true);
+
+				std::cout << "Basestation " << i << " started recording." << std::endl;
 			}
-
-			File npxFileName = fullPath.getChildFile("recording_slot" + String(basestations[i]->slot) + "_" + String(recordingNumber) + ".npx2");
-
-			setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
-			enableFileStream(basestations[i]->slot, true);
+			
 		}
 	}
 
-	std::cout << "NeuropixThread started recording." << std::endl;
+	
 
 }
 

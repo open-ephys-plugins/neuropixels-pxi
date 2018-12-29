@@ -187,13 +187,13 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 		int x_pos = i * 90 + 70;
 		int y_pos = 50;
 
-		UtilityButton* b = new UtilityButton("C:", Font("Small Text", 13, Font::plain));
+		UtilityButton* b = new UtilityButton("", Font("Small Text", 13, Font::plain));
 		b->setBounds(x_pos, y_pos, 30, 20);
 		b->addListener(this);
 		addAndMakeVisible(b);
 		directoryButtons.add(b);
 
-		savingDirectories.add(File::getCurrentWorkingDirectory());
+		savingDirectories.add(File());
 
 		FifoMonitor* f = new FifoMonitor(i, thread);
 		f->setBounds(x_pos + 2, 75, 12, 50);
@@ -299,14 +299,14 @@ Visualizer* NeuropixEditor::createNewCanvas(void)
     std::cout << "Button clicked..." << std::endl;
     GenericProcessor* processor = (GenericProcessor*) getProcessor();
     std::cout << "Got processor." << std::endl;
-    canvas = new NeuropixCanvas(processor, thread);
+    canvas = new NeuropixCanvas(processor, this, thread);
     std::cout << "Created canvas." << std::endl;
     return canvas;
 }
 
 /********************************************/
 
-NeuropixCanvas::NeuropixCanvas(GenericProcessor* p, NeuropixThread* thread)
+NeuropixCanvas::NeuropixCanvas(GenericProcessor* p, NeuropixEditor* editor_, NeuropixThread* thread) : editor(editor_)
 {
 
     processor = (SourceNode*) p;
@@ -331,6 +331,8 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* p, NeuropixThread* thread)
 					if (e2->hasTagName("PROBE"))
 					{
 						port = e2->getIntAttribute("port");
+
+						std::cout << "Creating interface for " << slot << ":" << port << std::endl;
 
 						NeuropixInterface* neuropixInterface = new NeuropixInterface(neuropix_info, slot, port, thread, (NeuropixEditor*)p->getEditor());
 						neuropixInterfaces.add(neuropixInterface);
@@ -419,12 +421,16 @@ void NeuropixCanvas::setSelectedProbe(int slot, int port)
 
 void NeuropixCanvas::saveVisualizerParameters(XmlElement* xml)
 {
+	editor->saveEditorParameters(xml);
+
 	for (int i = 0; i < neuropixInterfaces.size(); i++)
 		neuropixInterfaces[i]->saveParameters(xml);
 }
 
 void NeuropixCanvas::loadVisualizerParameters(XmlElement* xml)
 {
+	editor->loadEditorParameters(xml);
+
 	for (int i = 0; i < neuropixInterfaces.size(); i++)
 		neuropixInterfaces[i]->loadParameters(xml);
 }
@@ -434,6 +440,7 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
 {
     cursorType = MouseCursor::NormalCursor;
 
+	std::cout << slot << "--" << port << std::endl;
   
     isOverZoomRegion = false;
     isOverUpperBorder = false;
@@ -594,8 +601,14 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
 	addAndMakeVisible(annotationButton);
 	addAndMakeVisible(bistButton);
 
+	mainLabel = new Label("MAIN", "MAIN");
+	mainLabel->setFont(Font("Small Text", 60, Font::plain));
+	mainLabel->setBounds(550, 20, 200, 65);
+	mainLabel->setColour(Label::textColourId, Colours::darkkhaki);
+	addAndMakeVisible(mainLabel);
+
 	infoLabelView = new Viewport("INFO");
-	infoLabelView->setBounds(550, 20, 750, 350);
+	infoLabelView->setBounds(550, 50, 750, 350);
 	addAndMakeVisible(infoLabelView);
     
     infoLabel = new Label("INFO", "INFO");
@@ -671,7 +684,7 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
     colorSelector->setBounds(400, 450, 250, 20);
     addAndMakeVisible(colorSelector);
 
-    std::cout << "Created Neuropix Interface" << std::endl;
+    //std::cout << "Created Neuropix Interface" << std::endl;
 
 	updateInfoString();
 
@@ -710,6 +723,7 @@ NeuropixInterface::~NeuropixInterface()
 
 void NeuropixInterface::updateInfoString()
 {
+	String mainString;
 	String infoString;
 
 	infoString += "API Version: ";
@@ -728,8 +742,11 @@ void NeuropixInterface::updateInfoString()
 				{
 					if (probe_info->getIntAttribute("port") == port)
 					{
+						
 						infoString += "Basestation ";
 						infoString += String(bs_info->getIntAttribute("index"));
+						mainString += String(bs_info->getIntAttribute("index"));
+						mainString += ":";
 						infoString += " (Slot ";
 						infoString += String(bs_info->getIntAttribute("slot"));
 						infoString += ")\n\n";
@@ -749,6 +766,7 @@ void NeuropixInterface::updateInfoString()
 
 						infoString += "    Port ";
 						infoString += String(probe_info->getStringAttribute("port"));
+						mainString += String(probe_info->getStringAttribute("port"));
 						infoString += "\n";
 						infoString += "\n";
 						infoString += "    Probe serial number: ";
@@ -781,6 +799,7 @@ void NeuropixInterface::updateInfoString()
 	}
 
 	infoLabel->setText(infoString, dontSendNotification);
+	mainLabel->setText(mainString, dontSendNotification);
 }
 
 void NeuropixInterface::labelTextChanged(Label* label)
@@ -1856,11 +1875,39 @@ int NeuropixInterface::getConnectionForChannel(int ch)
 
 void NeuropixInterface::saveParameters(XmlElement* xml)
 {
-	editor->saveEditorParameters(xml);
 
 	std::cout << "Saving Neuropix display." << std::endl;
 
-	XmlElement* xmlNode = xml->createNewChildElement("NEUROPIXELS");
+	XmlElement* xmlNode = xml->createNewChildElement("PROBE");
+
+	forEachXmlChildElement(neuropix_info, bs_info)
+	{
+		if (bs_info->hasTagName("BASESTATION"))
+		{
+			if (bs_info->getIntAttribute("slot") == slot)
+			{
+				forEachXmlChildElement(*bs_info, probe_info)
+				{
+					if (probe_info->getIntAttribute("port") == port)
+					{
+						xmlNode->setAttribute("basestation_index", bs_info->getIntAttribute("index"));
+						xmlNode->setAttribute("slot", bs_info->getIntAttribute("slot"));
+						xmlNode->setAttribute("firmware_version", bs_info->getStringAttribute("firmware_version"));
+						xmlNode->setAttribute("bsc_firmware_version", bs_info->getStringAttribute("bsc_firmware_version"));
+						xmlNode->setAttribute("bsc_part_number", bs_info->getStringAttribute("bsc_part_number"));
+						xmlNode->setAttribute("bsc_serial_number", bs_info->getStringAttribute("bsc_serial_number"));
+						xmlNode->setAttribute("port", probe_info->getStringAttribute("port"));
+						xmlNode->setAttribute("probe_serial_number", probe_info->getStringAttribute("probe_serial_number"));
+						xmlNode->setAttribute("hs_serial_number", probe_info->getStringAttribute("hs_serial_number"));
+						xmlNode->setAttribute("hs_part_number", probe_info->getStringAttribute("hs_part_number"));
+						xmlNode->setAttribute("hs_version", probe_info->getStringAttribute("hs_version"));
+						xmlNode->setAttribute("flex_part_number", probe_info->getStringAttribute("flex_part_number"));
+						xmlNode->setAttribute("flex_version", probe_info->getStringAttribute("flex_version"));
+					}
+				}
+			}
+		}
+	}
 
 	xmlNode->setAttribute("ZoomHeight", zoomHeight);
 	xmlNode->setAttribute("ZoomOffset", zoomOffset);
@@ -1879,8 +1926,6 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
 	xmlNode->setAttribute("visualizationMode", visualizationMode);
 
-	xmlNode->setAttribute("info", infoLabel->getText());
-
 	// annotations
 	for (int i = 0; i < annotations.size(); i++)
 	{
@@ -1896,48 +1941,66 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
 void NeuropixInterface::loadParameters(XmlElement* xml)
 {
-	editor->loadEditorParameters(xml);
+	String mySerialNumber;
 
-	forEachXmlChildElement(*xml, xmlNode)
+	forEachXmlChildElement(neuropix_info, bs_info)
 	{
-		if (xmlNode->hasTagName("NEUROPIXELS"))
+		if (bs_info->hasTagName("BASESTATION"))
 		{
-			zoomHeight = xmlNode->getIntAttribute("ZoomHeight");
-			zoomOffset = xmlNode->getIntAttribute("ZoomOffset");
-
-			int apGainIndex = xmlNode->getIntAttribute("apGainIndex");
-			if (apGainIndex != apGainComboBox->getSelectedId())
-				apGainComboBox->setSelectedId(apGainIndex, sendNotification);
-
-			int lfpGainIndex = xmlNode->getIntAttribute("lfpGainIndex");
-			if (lfpGainIndex != lfpGainComboBox->getSelectedId())
-				lfpGainComboBox->setSelectedId(lfpGainIndex, sendNotification);
-
-			int referenceChannelIndex = xmlNode->getIntAttribute("referenceChannelIndex");
-			if (referenceChannelIndex != referenceComboBox->getSelectedId())
-				referenceComboBox->setSelectedId(referenceChannelIndex, sendNotification);
-
-			int filterCutIndex = xmlNode->getIntAttribute("filterCutIndex");
-			if (filterCutIndex != filterComboBox->getSelectedId())
-				filterComboBox->setSelectedId(filterCutIndex, sendNotification);
-
-			forEachXmlChildElement(*xmlNode, annotationNode)
+			if (bs_info->getIntAttribute("slot") == slot)
 			{
-				if (annotationNode->hasTagName("ANNOTATION"))
+				forEachXmlChildElement(*bs_info, probe_info)
 				{
-					Array<int> annotationChannels;
-					annotationChannels.add(annotationNode->getIntAttribute("channel"));
-					annotations.add(Annotation(annotationNode->getStringAttribute("text"),
-						annotationChannels,
-						Colour(annotationNode->getIntAttribute("R"),
-						annotationNode->getIntAttribute("G"),
-						annotationNode->getIntAttribute("B"))));
+					if (probe_info->getIntAttribute("port") == port)
+					{
+						mySerialNumber = probe_info->getStringAttribute("probe_serial_number", "none");
+					}
 				}
 			}
-
 		}
 	}
 
+	forEachXmlChildElement(*xml, xmlNode)
+	{
+		if (xmlNode->hasTagName("PROBE"))
+		{
+			if (xmlNode->getStringAttribute("probe_serial_number").equalsIgnoreCase(mySerialNumber))
+			{
+				zoomHeight = xmlNode->getIntAttribute("ZoomHeight");
+				zoomOffset = xmlNode->getIntAttribute("ZoomOffset");
+
+				int apGainIndex = xmlNode->getIntAttribute("apGainIndex");
+				if (apGainIndex != apGainComboBox->getSelectedId())
+					apGainComboBox->setSelectedId(apGainIndex, sendNotification);
+
+				int lfpGainIndex = xmlNode->getIntAttribute("lfpGainIndex");
+				if (lfpGainIndex != lfpGainComboBox->getSelectedId())
+					lfpGainComboBox->setSelectedId(lfpGainIndex, sendNotification);
+
+				int referenceChannelIndex = xmlNode->getIntAttribute("referenceChannelIndex");
+				if (referenceChannelIndex != referenceComboBox->getSelectedId())
+					referenceComboBox->setSelectedId(referenceChannelIndex, sendNotification);
+
+				int filterCutIndex = xmlNode->getIntAttribute("filterCutIndex");
+				if (filterCutIndex != filterComboBox->getSelectedId())
+					filterComboBox->setSelectedId(filterCutIndex, sendNotification);
+
+				forEachXmlChildElement(*xmlNode, annotationNode)
+				{
+					if (annotationNode->hasTagName("ANNOTATION"))
+					{
+						Array<int> annotationChannels;
+						annotationChannels.add(annotationNode->getIntAttribute("channel"));
+						annotations.add(Annotation(annotationNode->getStringAttribute("text"),
+							annotationChannels,
+							Colour(annotationNode->getIntAttribute("R"),
+							annotationNode->getIntAttribute("G"),
+							annotationNode->getIntAttribute("B"))));
+					}
+				}
+			}
+		}
+	}
 }
 
 // --------------------------------------

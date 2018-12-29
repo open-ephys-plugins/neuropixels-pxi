@@ -121,7 +121,7 @@ private:
 class NeuropixCanvas : public Visualizer, public Button::Listener
 {
 public:
-	NeuropixCanvas(GenericProcessor* p, NeuropixThread* thread);
+	NeuropixCanvas(GenericProcessor* p, NeuropixEditor*, NeuropixThread*);
 	~NeuropixCanvas();
 
 	void paint(Graphics& g);
@@ -150,6 +150,8 @@ public:
 	OwnedArray<NeuropixInterface> neuropixInterfaces;
 
 	int option;
+
+	NeuropixEditor* editor;
 
 };
 
@@ -213,6 +215,8 @@ private:
 	ScopedPointer<Label> bistLabel;
 	ScopedPointer<Label> annotationLabelLabel;
 	ScopedPointer<Label> annotationLabel;
+
+	ScopedPointer<Label> mainLabel;
 
 	ScopedPointer<UtilityButton> enableViewButton;
 	ScopedPointer<UtilityButton> lfpGainViewButton;

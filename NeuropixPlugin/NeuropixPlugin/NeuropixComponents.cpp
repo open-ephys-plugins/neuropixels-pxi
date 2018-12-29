@@ -151,9 +151,11 @@ Probe::Probe(Basestation* bs, signed char port_) : basestation(bs), port(port_),
 
 void Probe::calibrate()
 {
-	File baseDirectory = File::getCurrentWorkingDirectory().getFullPathName();
+	File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
 	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
 	File probeDirectory = calibrationDirectory.getChildFile(String(serial_number));
+
+	std::cout << probeDirectory.getFullPathName() << std::endl;
 
 	if (probeDirectory.exists())
 	{
@@ -178,6 +180,11 @@ void Probe::calibrate()
 			std::cout << "Unsuccessful gain calibration, failed with error code: " << errorCode << std::endl;
 
 		errorCode = writeProbeConfiguration(basestation->slot, port, false);
+	}
+	else {
+		// show popup notification window
+		String message = "Missing calibration files for probe serial number " + String(serial_number) + ". ADC and Gain calibration files must be located in 'CalibrationInfo\<serial_number>' folder in the directory where the Open Ephys GUI was launched. The GUI will proceed without calibration.";
+		AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
 	}
 }
 
@@ -233,7 +240,7 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 
 	errorCode = openBS(slot);
 
-	savingDirectory = File::getCurrentWorkingDirectory();
+	savingDirectory = File();
 
 	if (errorCode == SUCCESS)
 	{
