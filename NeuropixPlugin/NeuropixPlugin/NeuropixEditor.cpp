@@ -230,7 +230,9 @@ void NeuropixEditor::buttonEvent(Button* button)
 		ProbeButton* probe = (ProbeButton*)button;
 		probe->setSelectedState(true);
 		thread->setSelectedProbe(probe->slot, probe->port);
-		canvas->setSelectedProbe(probe->slot, probe->port);
+
+		if (canvas != nullptr)
+			canvas->setSelectedProbe(probe->slot, probe->port);
 
 		repaint();
 	}
@@ -593,8 +595,8 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
     addAndMakeVisible(filterComboBox);
 	addAndMakeVisible(bistComboBox);
 
-    addAndMakeVisible(enableButton);
-    addAndMakeVisible(enableViewButton);
+    //addAndMakeVisible(enableButton);
+    //addAndMakeVisible(enableViewButton);
     addAndMakeVisible(lfpGainViewButton);
     addAndMakeVisible(apGainViewButton);
     addAndMakeVisible(referenceViewButton);
@@ -660,12 +662,6 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
     annotationLabelLabel->setBounds(396,400,200,20);
     annotationLabelLabel->setColour(Label::textColourId, Colours::grey);
     addAndMakeVisible(annotationLabelLabel);
-
-    outputLabel = new Label("OUTPUT", "OUTPUT");
-    outputLabel->setFont(Font("Small Text", 13, Font::plain));
-    outputLabel->setBounds(396,330,200,20);
-    outputLabel->setColour(Label::textColourId, Colours::grey);
-    addAndMakeVisible(outputLabel);
 
 	bistLabel = new Label("TESTS", "Available tests:");
 	bistLabel->setFont(Font("Small Text", 13, Font::plain));

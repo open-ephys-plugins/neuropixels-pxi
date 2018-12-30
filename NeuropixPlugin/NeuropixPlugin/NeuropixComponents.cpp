@@ -183,7 +183,7 @@ void Probe::calibrate()
 	}
 	else {
 		// show popup notification window
-		String message = "Missing calibration files for probe serial number " + String(serial_number) + ". ADC and Gain calibration files must be located in 'CalibrationInfo\<serial_number>' folder in the directory where the Open Ephys GUI was launched. The GUI will proceed without calibration.";
+		String message = "Missing calibration files for probe serial number " + String(serial_number) + ". ADC and Gain calibration files must be located in 'CalibrationInfo\\<serial_number>' folder in the directory where the Open Ephys GUI was launched. The GUI will proceed without calibration.";
 		AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
 	}
 }
