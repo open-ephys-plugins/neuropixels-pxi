@@ -826,7 +826,6 @@ NP_EXPORT	NP_ErrorCode NP_APIC bistNoise(unsigned char slotID, signed char port)
 
 struct bistElectrodeStats {
 	double peakfreq_Hz;
-	double peakamplitude;
 	double min;
 	double max;
 	double avg;

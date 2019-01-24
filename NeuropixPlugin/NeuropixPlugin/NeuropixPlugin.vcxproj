@@ -36,8 +36,8 @@
     <ClInclude Include="NeuropixThread.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="resources\NeuropixAPI_x64_1_8.lib" />
-    <Library Include="resources\NeuropixAPI_x86_1_8.lib" />
+    <Library Include="resources\NeuropixAPI_x64_1_11.lib" />
+    <Library Include="resources\NeuropixAPI_x86_1_11.lib" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{136F1FC3-BF86-4F1E-A5A0-1BB533410F57}</ProjectGuid>
@@ -131,7 +131,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\Release\bin;C:\Users\svc_neuropix\Documents\GitHub\neuropixels-pxi\NeuropixPlugin\NeuropixPlugin\resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NeuropixAPI_x86_1_8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NeuropixAPI_x86_1_11.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -149,7 +149,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\x64\Release64\bin;resources</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NeuropixAPI_x64_1_8.lib; open-ephys.lib</AdditionalDependencies>
+      <AdditionalDependencies>NeuropixAPI_x64_1_11.lib; open-ephys.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
