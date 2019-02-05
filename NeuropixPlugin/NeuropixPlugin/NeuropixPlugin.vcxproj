@@ -102,7 +102,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\Debug\bin;resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NeuropixAPI_x86_1_6.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NeuropixAPI_x86_1_11.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

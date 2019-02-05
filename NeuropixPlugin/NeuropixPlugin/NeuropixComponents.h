@@ -116,7 +116,8 @@ public:
 	DataBuffer* apBuffer;
 	DataBuffer* lfpBuffer;
 
-	int64 timestamp;
+	int64 ap_timestamp;
+	int64 lfp_timestamp;
 
 	ScopedPointer<Headstage> headstage;
 	ScopedPointer<Flex> flex;

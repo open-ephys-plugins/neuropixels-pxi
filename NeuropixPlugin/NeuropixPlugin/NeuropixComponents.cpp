@@ -206,6 +206,8 @@ void Probe::setGains(unsigned char apGain, unsigned char lfpGain)
 	}
 		
 	errorCode = writeProbeConfiguration(basestation->slot, port, false);
+
+	//std::cout << "Wrote gain " << int(apGain) << ", " << int(lfpGain) << " with error code " << errorCode << std::endl;
 }
 
 
@@ -253,11 +255,12 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 		{
 			errorCode = openProbe(slot, port);
 
-			std::cout << "    Opening probe " << int(port) << ", error code : " << errorCode << std::endl;
-
 			if (errorCode == SUCCESS)
 			{
+				std::cout << "    Opening probe " << int(port) << ", error code : " << errorCode << std::endl;
+
 				probes.add(new Probe(this, port));
+				errorCode = init(slot, port);
 				std::cout << "  Success." << std::endl;
 			}
 		}
@@ -313,7 +316,6 @@ void Basestation::initializeProbes()
 
 		for (int i = 0; i < probes.size(); i++)
 		{
-			errorCode = init(slot, probes[i]->port);
 			errorCode = setOPMODE(slot, probes[i]->port, RECORDING);
 			errorCode = setHSLed(slot, probes[i]->port, false);
 
@@ -343,7 +345,8 @@ void Basestation::startAcquisition()
 	for (int i = 0; i < probes.size(); i++)
 	{
 		std::cout << "Probe " << int(probes[i]->port) << " setting timestamp to 0" << std::endl;
-		probes[i]->timestamp = 0;
+		probes[i]->ap_timestamp = 0;
+		probes[i]->lfp_timestamp = 0;
 		//std::cout << "... and clearing buffers" << std::endl;
 		//probes[i]->apBuffer->clear();
 		//probes[i]->lfpBuffer->clear();

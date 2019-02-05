@@ -518,6 +518,7 @@ float NeuropixThread::getBitVolts(const DataChannel* chan) const
 	return 0.1950000f;
 }
 
+
 void NeuropixThread::selectElectrode(int chNum, int connection, bool transmit)
 {
 
@@ -737,7 +738,8 @@ bool NeuropixThread::updateBuffer()
 				float apSamples[384];
 				float lfpSamples[384];
 
-				int64* timestamp = &basestations[bs]->probes[probe_num]->timestamp;
+				int64* ap_timestamp = &basestations[bs]->probes[probe_num]->ap_timestamp;
+				int64* lfp_timestamp = &basestations[bs]->probes[probe_num]->lfp_timestamp;
 
 				for (int packetNum = 0; packetNum < count; packetNum++)
 				{
@@ -751,14 +753,12 @@ bool NeuropixThread::updateBuffer()
 
 						if (npx_timestamp == last_npx_timestamp)
 						{
-							std::cout << "Got repeated timestamp at sample " << *timestamp << std::endl;
+							std::cout << "Got repeated timestamp at sample " << *ap_timestamp << std::endl;
 							std::cout << npx_timestamp << std::endl;
 						}
 
-						if (*timestamp % 3000 == 0) // check fifo filling
+						if (*ap_timestamp % 3000 == 0) // check fifo filling
 						{
-							//std::cout << eventCode << std::endl;
-
 							size_t packetsAvailable;
 							size_t headroom;
 
@@ -769,37 +769,29 @@ bool NeuropixThread::updateBuffer()
 								&headroom);
 
 							basestations[bs]->probes[probe_num]->fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
-
-							//std::cout << npx_timestamp << " " << last_npx_timestamp << std::endl;
 						}
 						
 
 						last_npx_timestamp = npx_timestamp;
-						
-						//if (ec != 64)
-						//	std::cout << "Got nonzero event code: " << ec << std::endl;
-						//std::cout << "Read event data. " << std::endl;
-
-						//if (eventCode != oldeventcode)
-						//	std::cout << "event code: " << eventCode << std::endl;
 
 						for (int j = 0; j < 384; j++)
 						{
-							apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[basestations[bs]->probes[probe_num]->apGains[j]]; // *-1000000.0f; // convert to microvolts
+							apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[basestations[bs]->probes[probe_num]->apGains[j]]; // convert to microvolts
 
 							if (i == 0) // && sendLfp)
-								lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[basestations[bs]->probes[probe_num]->lfpGains[j]]; // *-1000000.0f; // convert to microvolts
+								lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[basestations[bs]->probes[probe_num]->lfpGains[j]]; // convert to microvolts
 						}
 
-						*timestamp += 1;
+						*ap_timestamp += 1;
 
-						sourceBuffers[0]->addToBuffer(apSamples, timestamp, &eventCode, 1);
+						sourceBuffers[0]->addToBuffer(apSamples, ap_timestamp, &eventCode, 1);
 
 						
 						
 					}
+					*lfp_timestamp += 1;
 
-					sourceBuffers[1]->addToBuffer(lfpSamples, timestamp, &eventCode, 1);
+					sourceBuffers[1]->addToBuffer(lfpSamples, lfp_timestamp, &eventCode, 1);
 
 				}
 

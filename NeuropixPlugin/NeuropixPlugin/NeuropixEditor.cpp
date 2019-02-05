@@ -119,7 +119,10 @@ void ProbeButton::setSelectedState(bool state)
 
 void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 {
-	g.setColour(Colours::darkgrey);
+	if (isMouseOver && connected)
+		g.setColour(Colours::antiquewhite);
+	else
+		g.setColour(Colours::darkgrey);
 	g.fillEllipse(0, 0, 15, 15);
 
 	///g.setGradientFill(ColourGradient(Colours::lightcyan, 0, 0, Colours::lightskyblue, 10,10, true));
@@ -129,13 +132,13 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 		if (selected)
 		{
 			if (isMouseOver)
-				g.setColour(Colours::lightblue);
+				g.setColour(Colours::lightgreen);
 			else
-				g.setColour(Colours::lightblue);
+				g.setColour(Colours::lightgreen);
 		}
 		else {
 			if (isMouseOver)
-				g.setColour(Colours::lightgreen);
+				g.setColour(Colours::green);
 			else
 				g.setColour(Colours::green);
 		}
