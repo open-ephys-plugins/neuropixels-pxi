@@ -53,7 +53,7 @@ void EditorBackground::paint(Graphics& g)
 
 FifoMonitor::FifoMonitor(int id_, NeuropixThread* thread_) : id(id_), thread(thread_), fillPercentage(0.0)
 {
-	startTimer(10000); // update fill percentage every 10 seconds
+	startTimer(500); // update fill percentage every 0.5 seconds
 }
 
 void FifoMonitor::timerCallback()

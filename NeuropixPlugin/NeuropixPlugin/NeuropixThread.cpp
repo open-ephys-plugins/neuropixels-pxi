@@ -115,24 +115,27 @@ void NeuropixThread::openConnection()
 			}
 
 			// set up data buffers
-			sourceBuffers.add(new DataBuffer(384, 10000));
-			sourceBuffers.add(new DataBuffer(384, 10000));
+			//sourceBuffers.add(new DataBuffer(384, 10000));
+			//sourceBuffers.add(new DataBuffer(384, 10000));
 
-			//for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
-			//{
-			//	std::cout << "Creating buffers for slot " << int(basestations[i]->slot) << ", probe " << int(basestations[i]->probes[probe_num]->port) << std::endl;
-			//	sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
+			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
+			{
+				std::cout << "Creating buffers for slot " << int(basestations[i]->slot) << ", probe " << int(basestations[i]->probes[probe_num]->port) << std::endl;
+				sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
 
-			//	basestations[i]->probes[probe_num]->apBuffer = sourceBuffers.getLast();
+				basestations[i]->probes[probe_num]->apBuffer = sourceBuffers.getLast();
 
-			//	sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
+				sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
 
-			//	basestations[i]->probes[probe_num]->lfpBuffer = sourceBuffers.getLast();
-			//}
+				basestations[i]->probes[probe_num]->lfpBuffer = sourceBuffers.getLast();
+			}
 				
 		}
 			
 	}
+
+	setParameter(NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
+	setParameter(NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
 }
 
 bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
@@ -316,7 +319,7 @@ String NeuropixThread::getInfoString()
 bool NeuropixThread::startAcquisition()
 {
 
-    // clear the internal buffer
+    // clear the internal buffer (happens in initializeProbe)
 	//for (int i = 0; i < sourceBuffers.size(); i++)
 	//{
 	//	sourceBuffers[i]->clear();
@@ -331,24 +334,25 @@ bool NeuropixThread::startAcquisition()
 		basestations[i]->initializeProbes();
 	}
 
-	for (int i = 0; i < basestations.size(); i++)
-	{
-		basestations[i]->startAcquisition();
-	}
-
 	last_npx_timestamp = 0;
 
-	startThread();
-   
+	startTimer(10000);
+	
     return true;
 }
 
 void NeuropixThread::timerCallback()
 {
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		basestations[i]->startAcquisition();
+	}
+
+	startThread();
 
     stopTimer();
 
-	startRecording();
+	//startRecording();
 
 }
 
@@ -453,8 +457,8 @@ void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 		}
 	}
 
-	basestations[newSlot]->probes[newPort]->ap_timestamp = basestations[currentSlot]->probes[currentPort]->ap_timestamp;
-	basestations[newSlot]->probes[newPort]->lfp_timestamp = basestations[currentSlot]->probes[currentPort]->lfp_timestamp;
+	//basestations[newSlot]->probes[newPort]->ap_timestamp = basestations[currentSlot]->probes[currentPort]->ap_timestamp;
+	//basestations[newSlot]->probes[newPort]->lfp_timestamp = basestations[currentSlot]->probes[currentPort]->lfp_timestamp;
 
 	selectedSlot = slot;
 	selectedPort = port;
@@ -497,7 +501,7 @@ bool NeuropixThread::usesCustomNames() const
 unsigned int NeuropixThread::getNumSubProcessors() const
 {
 
-	return 2; // *totalProbes;
+	return 2 * totalProbes;
 }
 
 /** Returns the number of continuous headstage channels the data source can provide.*/
@@ -542,7 +546,7 @@ float NeuropixThread::getSampleRate(int subProcessorIdx) const
 		rate = 2500.0f;
 
 
-//	std::cout << "Sample rate for subprocessor " << subProcessorIdx << " = " << rate << std::endl;
+	//std::cout << "Sample rate for subprocessor " << subProcessorIdx << " = " << rate << std::endl;
 
 	return rate;
 }
@@ -765,9 +769,9 @@ bool NeuropixThread::updateBuffer()
 				count);
 
 			if (errorCode == SUCCESS && 
-				count > 0 && 
-				basestations[bs]->slot == selectedSlot &&
-				basestations[bs]->probes[probe_num]->port == selectedPort)
+				count > 0) // && 
+				//basestations[bs]->slot == selectedSlot &&
+				//basestations[bs]->probes[probe_num]->port == selectedPort)
 			{
 
 				//std::cout << "Got data. " << std::endl;
@@ -789,8 +793,8 @@ bool NeuropixThread::updateBuffer()
 
 						if (npx_timestamp == last_npx_timestamp)
 						{
-							std::cout << "Got repeated timestamp at sample " << *ap_timestamp << std::endl;
-							std::cout << npx_timestamp << std::endl;
+							//std::cout << "Got repeated timestamp at sample " << *ap_timestamp << std::endl;
+							//std::cout << npx_timestamp << std::endl;
 						}
 
 						if (*ap_timestamp % 3000 == 0) // check fifo filling
@@ -803,6 +807,8 @@ bool NeuropixThread::updateBuffer()
 								basestations[bs]->probes[probe_num]->port,
 								&packetsAvailable,
 								&headroom);
+
+							//std::cout << "Basestation " << int(bs) << ", probe " << int(probe_num) << ", packets: " << packetsAvailable << std::endl;
 
 							basestations[bs]->probes[probe_num]->fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
 						}
@@ -820,12 +826,13 @@ bool NeuropixThread::updateBuffer()
 
 						*ap_timestamp += 1;
 
-						sourceBuffers[0]->addToBuffer(apSamples, ap_timestamp, &eventCode, 1);
+						basestations[bs]->probes[probe_num]->apBuffer->addToBuffer(apSamples, ap_timestamp, &eventCode, 1);
 						
 					}
 					*lfp_timestamp += 1;
 
-					sourceBuffers[1]->addToBuffer(lfpSamples, lfp_timestamp, &eventCode, 1);
+					//sourceBuffers[1]->addToBuffer(lfpSamples, lfp_timestamp, &eventCode, 1);
+					basestations[bs]->probes[probe_num]->lfpBuffer->addToBuffer(lfpSamples, lfp_timestamp, &eventCode, 1);
 
 				}
 

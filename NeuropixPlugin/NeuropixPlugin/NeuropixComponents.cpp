@@ -348,8 +348,8 @@ void Basestation::startAcquisition()
 		probes[i]->ap_timestamp = 0;
 		probes[i]->lfp_timestamp = 0;
 		//std::cout << "... and clearing buffers" << std::endl;
-		//probes[i]->apBuffer->clear();
-		//probes[i]->lfpBuffer->clear();
+		probes[i]->apBuffer->clear();
+		probes[i]->lfpBuffer->clear();
 	}
 
 	errorCode = setSWTrigger(slot);
