@@ -420,6 +420,42 @@ bool NeuropixThread::stopAcquisition()
 
 void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 {
+	int currentSlot, currentPort;
+	int newSlot, newPort;
+
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		if (basestations[i]->slot == slot)
+		{
+			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
+			{
+				if (basestations[i]->probes[probe_num]->port == port)
+				{
+					newSlot = i;
+					newPort = probe_num;
+				}
+			}
+		}
+	}
+
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		if (basestations[i]->slot == selectedSlot)
+		{
+			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
+			{
+				if (basestations[i]->probes[probe_num]->port == selectedPort)
+				{
+					currentSlot = i;
+					currentPort = probe_num;
+				}
+			}
+		}
+	}
+
+	basestations[newSlot]->probes[newPort]->ap_timestamp = basestations[currentSlot]->probes[currentPort]->ap_timestamp;
+	basestations[newSlot]->probes[newPort]->lfp_timestamp = basestations[currentSlot]->probes[currentPort]->lfp_timestamp;
+
 	selectedSlot = slot;
 	selectedPort = port;
 }
@@ -785,8 +821,6 @@ bool NeuropixThread::updateBuffer()
 						*ap_timestamp += 1;
 
 						sourceBuffers[0]->addToBuffer(apSamples, ap_timestamp, &eventCode, 1);
-
-						
 						
 					}
 					*lfp_timestamp += 1;
