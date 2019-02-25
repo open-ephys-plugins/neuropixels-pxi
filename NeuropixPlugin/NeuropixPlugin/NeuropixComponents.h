@@ -30,6 +30,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "neuropix-api/NeuropixAPI.h"
 
+
+# define SAMPLECOUNT 64
+
 class BasestationConnectBoard;
 class Flex;
 class Headstage;
@@ -105,7 +108,7 @@ public:
 	void getInfo();
 };
 
-class Probe : public NeuropixComponent
+class Probe : public NeuropixComponent, public Thread
 {
 public:
 	Probe(Basestation* bs, signed char port);
@@ -144,6 +147,13 @@ public:
 	float fifoFillPercentage;
 
 	String name;
+
+	void run();
+
+	uint64 eventCode;
+	Array<int> gains;
+
+	electrodePacket packet[SAMPLECOUNT];
 
 };
 

@@ -48,15 +48,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvai
 	for (int i = 0; i < 16; i++)
 		fillPercentage.add(0.0);
 
-    gains.add(50.0f);
-    gains.add(125.0f);
-    gains.add(250.0f);
-    gains.add(500.0f);
-    gains.add(1000.0f);
-    gains.add(1500.0f);
-    gains.add(2000.0f);
-    gains.add(3000.0f);
-
     refs.add(0);
     refs.add(1);
     refs.add(192);
@@ -65,7 +56,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvai
 
     counter = 0;
 
-    eventCode = 0;
     maxCounter = 0;
 
     openConnection();
@@ -326,7 +316,6 @@ bool NeuropixThread::startAcquisition()
 	//}
 
     counter = 0;
-    eventCode = 0;
     maxCounter = 0;
     
 	for (int i = 0; i < basestations.size(); i++)
@@ -336,7 +325,7 @@ bool NeuropixThread::startAcquisition()
 
 	last_npx_timestamp = 0;
 
-	startTimer(10000);
+	startTimer(500 * totalProbes); // wait for signal chain to be built
 	
     return true;
 }
@@ -351,8 +340,6 @@ void NeuropixThread::timerCallback()
 	startThread();
 
     stopTimer();
-
-	//startRecording();
 
 }
 
@@ -741,112 +728,12 @@ bool NeuropixThread::updateBuffer()
 
 	if (!isRecording && shouldRecord)
 	{
-		isRecording = true;
-		startTimer(500);
+		startRecording();
 	}
 	else if (isRecording && !shouldRecord)
 	{
 		stopRecording();
 	}
-
-	//std::cout << "Attempting data read. " << std::endl;
-
-	for (int bs = 0; bs < basestations.size(); bs++)
-	{
-		//std::cout << " Checking slot " << int(basestations[bs]->slot) << std::endl;
-
-		for (int probe_num = 0; probe_num < basestations[bs]->getProbeCount(); probe_num++)
-		{
-			//std::cout << " Checking probe " << int(basestations[bs]->probes[probe_num]->port) << std::endl;
-
-			size_t count = SAMPLECOUNT;
-
-			errorCode = readElectrodeData(
-				basestations[bs]->slot,
-				basestations[bs]->probes[probe_num]->port,
-				&packet[0],
-				&count,
-				count);
-
-			if (errorCode == SUCCESS && 
-				count > 0) // && 
-				//basestations[bs]->slot == selectedSlot &&
-				//basestations[bs]->probes[probe_num]->port == selectedPort)
-			{
-
-				//std::cout << "Got data. " << std::endl;
-				float apSamples[384];
-				float lfpSamples[384];
-
-				int64* ap_timestamp = &basestations[bs]->probes[probe_num]->ap_timestamp;
-				int64* lfp_timestamp = &basestations[bs]->probes[probe_num]->lfp_timestamp;
-
-				for (int packetNum = 0; packetNum < count; packetNum++)
-				{
-					for (int i = 0; i < 12; i++)
-					{
-						uint64 oldeventcode = eventCode;
-
-						eventCode = packet[packetNum].Status[i] >> 6; // AUX_IO<0:13>
-
-						uint32_t npx_timestamp = packet[packetNum].timestamp[i];
-
-						if (npx_timestamp == last_npx_timestamp)
-						{
-							//std::cout << "Got repeated timestamp at sample " << *ap_timestamp << std::endl;
-							//std::cout << npx_timestamp << std::endl;
-						}
-
-						if (*ap_timestamp % 3000 == 0) // check fifo filling
-						{
-							size_t packetsAvailable;
-							size_t headroom;
-
-							getElectrodeDataFifoState(
-								basestations[bs]->slot,
-								basestations[bs]->probes[probe_num]->port,
-								&packetsAvailable,
-								&headroom);
-
-							//std::cout << "Basestation " << int(bs) << ", probe " << int(probe_num) << ", packets: " << packetsAvailable << std::endl;
-
-							basestations[bs]->probes[probe_num]->fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
-						}
-						
-
-						last_npx_timestamp = npx_timestamp;
-
-						for (int j = 0; j < 384; j++)
-						{
-							apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[basestations[bs]->probes[probe_num]->apGains[j]]; // convert to microvolts
-
-							if (i == 0) // && sendLfp)
-								lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[basestations[bs]->probes[probe_num]->lfpGains[j]]; // convert to microvolts
-						}
-
-						*ap_timestamp += 1;
-
-						basestations[bs]->probes[probe_num]->apBuffer->addToBuffer(apSamples, ap_timestamp, &eventCode, 1);
-						
-					}
-					*lfp_timestamp += 1;
-
-					//sourceBuffers[1]->addToBuffer(lfpSamples, lfp_timestamp, &eventCode, 1);
-					basestations[bs]->probes[probe_num]->lfpBuffer->addToBuffer(lfpSamples, lfp_timestamp, &eventCode, 1);
-
-				}
-
-				
-
-				//std::cout << "READ SUCCESS!" << std::endl;  
-
-			}
-			else if (errorCode != SUCCESS)
-			{
-				std::cout << "Error code: " << errorCode << std::endl;
-			}// dump data
-		} // loop through probes
-	} //loop through basestations
 
     return true;
 }

@@ -32,7 +32,6 @@
 #include "neuropix-api/NeuropixAPI.h"
 #include "NeuropixComponents.h"
 
-# define SAMPLECOUNT 64
 
 enum BISTS {
 	BIST_SIGNAL = 1,
@@ -180,7 +179,7 @@ private:
 
 	CriticalSection displayMutex;
 
-	Array<int> gains;
+	
 	Array<int> channelMap;
 	Array<bool> outputOn;
 	Array<int> refs;
@@ -190,7 +189,7 @@ private:
 	void openConnection();
 	void closeConnection();
 
-	uint64 eventCode;
+	
 	int maxCounter;
 	int numRefs;
 	int totalChans;
@@ -208,9 +207,10 @@ private:
 	unsigned char selectedSlot;
 	signed char selectedPort;
 
+
 	//std::vector<unsigned char> connected_basestations;
 	//std::vector<std::vector<int>> connected_probes;
-	electrodePacket packet[SAMPLECOUNT];
+	
 	bistElectrodeStats stats[960];
 
 };

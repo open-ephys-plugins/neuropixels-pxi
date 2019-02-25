@@ -135,7 +135,7 @@ void Probe::getInfo()
 	part_number = String(pn);
 }
 
-Probe::Probe(Basestation* bs, signed char port_) : basestation(bs), port(port_), fifoFillPercentage(0.0f)
+Probe::Probe(Basestation* bs, signed char port_) : Thread("probe_" + String(port_)), basestation(bs), port(port_), fifoFillPercentage(0.0f)
 {
 	getInfo();
 
@@ -147,6 +147,15 @@ Probe::Probe(Basestation* bs, signed char port_) : basestation(bs), port(port_),
 		apGains.add(3); // default = 500
 		lfpGains.add(2); // default = 250
 	}
+
+	gains.add(50.0f);
+	gains.add(125.0f);
+	gains.add(250.0f);
+	gains.add(500.0f);
+	gains.add(1000.0f);
+	gains.add(1500.0f);
+	gains.add(2000.0f);
+	gains.add(3000.0f);
 }
 
 void Probe::calibrate()
@@ -219,6 +228,83 @@ void Probe::setReferences(channelreference_t refId, unsigned char refElectrodeBa
 	errorCode = writeProbeConfiguration(basestation->slot, port, false);
 }
 
+
+void Probe::run()
+{
+
+	//std::cout << "Thread running." << std::endl;
+
+	while (!threadShouldExit())
+	{
+		
+
+		size_t count = SAMPLECOUNT;
+
+		errorCode = readElectrodeData(
+			basestation->slot,
+			port,
+			&packet[0],
+			&count,
+			count);
+
+		if (errorCode == SUCCESS &&
+			count > 0)
+		{
+			float apSamples[384];
+			float lfpSamples[384];
+
+			for (int packetNum = 0; packetNum < count; packetNum++)
+			{
+				for (int i = 0; i < 12; i++)
+				{
+					eventCode = packet[packetNum].Status[i] >> 6; // AUX_IO<0:13>
+
+					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
+
+					for (int j = 0; j < 384; j++)
+					{
+						apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / gains[apGains[j]]; // convert to microvolts
+
+						if (i == 0)
+							lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / gains[lfpGains[j]]; // convert to microvolts
+					}
+
+					ap_timestamp += 1;
+
+					apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, 1);
+
+					if (ap_timestamp % 30000 == 0)
+					{
+						size_t packetsAvailable;
+						size_t headroom;
+
+						getElectrodeDataFifoState(
+							basestation->slot,
+							port,
+							&packetsAvailable,
+							&headroom);
+
+						//std::cout << "Basestation " << int(basestation->slot) << ", probe " << int(port) << ", packets: " << packetsAvailable << std::endl;
+
+						fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+					}
+
+
+				}
+				lfp_timestamp += 1;
+
+				lfpBuffer->addToBuffer(lfpSamples, &lfp_timestamp, &eventCode, 1);
+
+			}
+
+		}
+		else if (errorCode != SUCCESS)
+		{
+			std::cout << "Error code: " << errorCode << "for Basestation " << int(basestation->slot) << ", probe " << int(port) << std::endl;
+		}
+	}
+
+}
 
 Headstage::Headstage(Probe* probe_) : probe(probe_)
 {
@@ -324,6 +410,9 @@ void Basestation::initializeProbes()
 			if (errorCode == SUCCESS)
 			{
 				std::cout << "     Probe initialized." << std::endl;
+				probes[i]->ap_timestamp = 0;
+				probes[i]->lfp_timestamp = 0;
+				probes[i]->eventCode = 0;
 			}
 			else {
 				std::cout << "     Failed with error code " << errorCode << std::endl;
@@ -334,10 +423,7 @@ void Basestation::initializeProbes()
 		probesInitialized = true;
 	}
 
-	
-
-	errorCode = arm(slot);
-	
+	errorCode = arm(slot);	
 }
 
 void Basestation::startAcquisition()
@@ -350,13 +436,21 @@ void Basestation::startAcquisition()
 		//std::cout << "... and clearing buffers" << std::endl;
 		probes[i]->apBuffer->clear();
 		probes[i]->lfpBuffer->clear();
+		std::cout << "  Starting thread." << std::endl;
+		probes[i]->startThread();
 	}
 
 	errorCode = setSWTrigger(slot);
+
 }
 
 void Basestation::stopAcquisition()
 {
+	for (int i = 0; i < probes.size(); i++)
+	{
+		probes[i]->stopThread(1000);
+	}
+
 	errorCode = arm(slot);
 }
 
