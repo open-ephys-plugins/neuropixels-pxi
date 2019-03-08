@@ -34,7 +34,7 @@ GenericEditor* NeuropixThread::createEditor(SourceNode* sn)
     return new NeuropixEditor(sn, this, true);
 }
 
-NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvailable(false), probesInitialized(false), recordingNumber(0), isRecording(false)
+NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvailable(false), probesInitialized(false), recordingNumber(0), isRecording(false), recordingTimer(this)
 {
 
 	api.getInfo();
@@ -387,8 +387,6 @@ void NeuropixThread::stopRecording()
 		enableFileStream(basestations[i]->slot, false);
 	}
 
-	isRecording = false;
-
 	std::cout << "NeuropixThread stopped recording." << std::endl;
 }
 
@@ -728,12 +726,26 @@ bool NeuropixThread::updateBuffer()
 
 	if (!isRecording && shouldRecord)
 	{
-		startRecording();
+		isRecording = true;
+		recordingTimer.startTimer(1000);
 	}
 	else if (isRecording && !shouldRecord)
 	{
+		isRecording = false;
 		stopRecording();
 	}
 
     return true;
+}
+
+
+RecordingTimer::RecordingTimer(NeuropixThread* t_)
+{
+	thread = t_;
+}
+
+void RecordingTimer::timerCallback()
+{
+	thread->startRecording();
+	stopTimer();
 }

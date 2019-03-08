@@ -46,7 +46,21 @@ enum BISTS {
 	
 };
 
+
 class SourceNode;
+class NeuropixThread;
+
+class RecordingTimer : public Timer
+{
+
+public:
+
+	RecordingTimer(NeuropixThread* t_);
+	void timerCallback();
+
+	NeuropixThread* thread;
+};
+
 
 /**
 
@@ -207,12 +221,19 @@ private:
 	unsigned char selectedSlot;
 	signed char selectedPort;
 
+	
 
 	//std::vector<unsigned char> connected_basestations;
 	//std::vector<std::vector<int>> connected_probes;
 	
 	bistElectrodeStats stats[960];
 
+	RecordingTimer recordingTimer;
+
 };
+
+
+
+
 
 #endif  // __NEUROPIXTHREAD_H_2C4CBD67__

@@ -347,6 +347,7 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 
 				probes.add(new Probe(this, port));
 				errorCode = init(slot, port);
+				setGains(slot, port, 3, 2); // set defaults
 				std::cout << "  Success." << std::endl;
 			}
 		}
