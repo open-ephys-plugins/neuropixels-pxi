@@ -819,6 +819,8 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
 			int gainSettingAp = apGainComboBox->getSelectedId() - 1;
 			int gainSettingLfp = lfpGainComboBox->getSelectedId() - 1;
 
+			//std::cout << " Received gain combo box signal" << 
+
 			thread->setAllGains(slot, port, gainSettingAp, gainSettingLfp);
 
 			for (int i = 0; i < 966; i++)
@@ -1965,24 +1967,43 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 		{
 			if (xmlNode->getStringAttribute("probe_serial_number").equalsIgnoreCase(mySerialNumber))
 			{
+
+				std::cout << "Found settings for probe " << mySerialNumber << std::endl;
 				zoomHeight = xmlNode->getIntAttribute("ZoomHeight");
 				zoomOffset = xmlNode->getIntAttribute("ZoomOffset");
 
 				int apGainIndex = xmlNode->getIntAttribute("apGainIndex");
-				if (apGainIndex != apGainComboBox->getSelectedId())
-					apGainComboBox->setSelectedId(apGainIndex, sendNotification);
-
 				int lfpGainIndex = xmlNode->getIntAttribute("lfpGainIndex");
-				if (lfpGainIndex != lfpGainComboBox->getSelectedId())
-					lfpGainComboBox->setSelectedId(lfpGainIndex, sendNotification);
+
+				if (apGainIndex != apGainComboBox->getSelectedId() || lfpGainIndex != lfpGainComboBox->getSelectedId())
+				{
+					std::cout << " Updating gains." << std::endl;
+					apGainComboBox->setSelectedId(apGainIndex, dontSendNotification);
+					lfpGainComboBox->setSelectedId(lfpGainIndex, dontSendNotification);
+					thread->setAllGains(slot, port, apGainIndex, lfpGainIndex);
+
+				}
 
 				int referenceChannelIndex = xmlNode->getIntAttribute("referenceChannelIndex");
 				if (referenceChannelIndex != referenceComboBox->getSelectedId())
-					referenceComboBox->setSelectedId(referenceChannelIndex, sendNotification);
+				{
+					referenceComboBox->setSelectedId(referenceChannelIndex, dontSendNotification);
+					thread->setAllReferences(slot, port, referenceChannelIndex - 1);
+				}
+				
 
 				int filterCutIndex = xmlNode->getIntAttribute("filterCutIndex");
 				if (filterCutIndex != filterComboBox->getSelectedId())
-					filterComboBox->setSelectedId(filterCutIndex, sendNotification);
+				{
+					filterComboBox->setSelectedId(filterCutIndex, dontSendNotification);
+
+					int filterSetting = filterCutIndex - 1;
+					if (filterSetting == 0)
+						thread->setFilter(slot, port, true);
+					else
+						thread->setFilter(slot, port, false);
+				}
+				
 
 				forEachXmlChildElement(*xmlNode, annotationNode)
 				{

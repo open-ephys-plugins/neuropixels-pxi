@@ -203,6 +203,8 @@ void Probe::setApFilterState(bool filterState)
 		setAPCornerFrequency(basestation->slot, port, channel, filterState);
 
 	errorCode = writeProbeConfiguration(basestation->slot, port, false);
+
+	std::cout << "Wrote filter " << int(filterState) << " with error code " << errorCode << std::endl;
 }
 
 void Probe::setGains(unsigned char apGain, unsigned char lfpGain)
@@ -216,7 +218,7 @@ void Probe::setGains(unsigned char apGain, unsigned char lfpGain)
 		
 	errorCode = writeProbeConfiguration(basestation->slot, port, false);
 
-	//std::cout << "Wrote gain " << int(apGain) << ", " << int(lfpGain) << " with error code " << errorCode << std::endl;
+	std::cout << "Wrote gain " << int(apGain) << ", " << int(lfpGain) << " with error code " << errorCode << std::endl;
 }
 
 
@@ -226,6 +228,8 @@ void Probe::setReferences(channelreference_t refId, unsigned char refElectrodeBa
 		setReference(basestation->slot, port, channel, refId, refElectrodeBank);
 
 	errorCode = writeProbeConfiguration(basestation->slot, port, false);
+
+	std::cout << "Wrote reference " << int(refId) << ", " << int(refElectrodeBank) << " with error code " << errorCode << std::endl;
 }
 
 
