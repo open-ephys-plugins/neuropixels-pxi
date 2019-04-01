@@ -288,9 +288,12 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 	{
 		if (xmlNode->hasTagName("NEUROPIXELS_EDITOR"))
 		{
+			std::cout << "Found parameters for Neuropixels editor" << std::endl;
+
 			for (int slot = 0; slot < 4; slot++)
 			{
 				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
+				std::cout << "Setting thread directory for slot " << slot << std::endl;
 				thread->setDirectoryForSlot(slot, directory);
 				directoryButtons[slot]->setLabel(directory.getFullPathName().substring(0, 2));
 				savingDirectories.set(slot, directory);

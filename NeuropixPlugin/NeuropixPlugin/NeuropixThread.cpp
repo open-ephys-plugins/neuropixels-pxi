@@ -36,6 +36,7 @@ GenericEditor* NeuropixThread::createEditor(SourceNode* sn)
 
 NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvailable(false), probesInitialized(false), recordingNumber(0), isRecording(false), recordingTimer(this)
 {
+	progressBar = new ProgressBar(initializationProgress);
 
 	api.getInfo();
 
@@ -315,6 +316,10 @@ bool NeuropixThread::startAcquisition()
 	//	sourceBuffers[i]->clear();
 	//}
 
+	initializationProgress = 0;
+
+	progressBar->setVisible(true);
+
     counter = 0;
     maxCounter = 0;
     
@@ -340,6 +345,8 @@ void NeuropixThread::timerCallback()
 	startThread();
 
     stopTimer();
+
+	progressBar->setVisible(false);
 
 }
 
@@ -615,6 +622,8 @@ void NeuropixThread::setAutoRestart(bool restart)
 
 void NeuropixThread::setDirectoryForSlot(int slotIndex, File directory)
 {
+	std::cout << "Thread setting directory for slot " << slotIndex << " to " << directory.getFileName() << std::endl;
+
 	if (slotIndex < basestations.size())
 	{
 		basestations[slotIndex]->setSavingDirectory(directory);

@@ -328,6 +328,7 @@ BasestationConnectBoard::BasestationConnectBoard(Basestation* bs) : basestation(
 
 Basestation::Basestation(int slot_number) : probesInitialized(false)
 {
+
 	slot = (unsigned char)slot_number;
 
 	errorCode = openBS(slot);
@@ -399,6 +400,7 @@ void Basestation::makeSyncMaster()
 	errorCode = setParameter(NP_PARAM_SYNCMASTER, slot);
 }
 
+
 void Basestation::initializeProbes()
 {
 	if (!probesInitialized)
@@ -411,6 +413,7 @@ void Basestation::initializeProbes()
 			errorCode = setHSLed(slot, probes[i]->port, false);
 
 			probes[i]->calibrate();
+
 
 			if (errorCode == SUCCESS)
 			{
@@ -428,7 +431,9 @@ void Basestation::initializeProbes()
 		probesInitialized = true;
 	}
 
-	errorCode = arm(slot);	
+	errorCode = arm(slot);
+
+	
 }
 
 void Basestation::startAcquisition()

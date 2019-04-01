@@ -177,6 +177,9 @@ public:
 
 	float getFillPercentage(unsigned char slot);
 
+	ScopedPointer<ProgressBar> progressBar;
+	double initializationProgress;
+
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 
 private:
