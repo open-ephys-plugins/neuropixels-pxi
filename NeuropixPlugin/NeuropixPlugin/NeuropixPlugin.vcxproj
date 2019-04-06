@@ -114,7 +114,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\x64\Debug64\bin;resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\x64\Debug\bin;resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>NeuropixAPI_x64_1_15.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -149,7 +149,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\x64\Release64\bin;resources</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\x64\Release\bin;resources</AdditionalLibraryDirectories>
       <AdditionalDependencies>NeuropixAPI_x64_1_15.lib; open-ephys.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
