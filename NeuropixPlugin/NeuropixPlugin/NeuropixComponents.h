@@ -76,7 +76,7 @@ public:
 
 	float getTemperature();
 
-	void setReferences(unsigned char slot, signed char port, channelreference_t refId, unsigned char electrodeBank);
+	void setReferences(unsigned char slot, signed char port, np::channelreference_t refId, unsigned char electrodeBank);
 	void setGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
 	void setApFilterState(unsigned char slot, signed char port, bool filterState);
 
@@ -136,7 +136,7 @@ public:
 	Array<int> lfpGains;
 
 	void setApFilterState(bool);
-	void setReferences(channelreference_t refId, unsigned char refElectrodeBank);
+	void setReferences(np::channelreference_t refId, unsigned char refElectrodeBank);
 	void setGains(unsigned char apGain, unsigned char lfpGain);
 
 	void calibrate();
@@ -154,7 +154,7 @@ public:
 	uint64 eventCode;
 	Array<int> gains;
 
-	electrodePacket packet[SAMPLECOUNT];
+	np::electrodePacket packet[SAMPLECOUNT];
 
 };
 

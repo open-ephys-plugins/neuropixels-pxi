@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MAXLEN 50
 
-NP_ErrorCode errorCode;
+np::NP_ErrorCode errorCode;
 
 NeuropixComponent::NeuropixComponent() : serial_number(-1), part_number(""), version("")
 {
@@ -35,7 +35,7 @@ void NeuropixAPI::getInfo()
 {
 	unsigned char version_major;
 	unsigned char version_minor;
-	getAPIVersion(&version_major, &version_minor);
+	np::getAPIVersion(&version_major, &version_minor);
 
 	version = String(version_major) + "." + String(version_minor);
 }
@@ -47,7 +47,7 @@ void Basestation::getInfo()
 	unsigned char version_minor;
 	uint16_t version_build;
 
-	errorCode = getBSBootVersion(slot, &version_major, &version_minor, &version_build);
+	errorCode = np::getBSBootVersion(slot, &version_major, &version_minor, &version_build);
 
 	boot_version = String(version_major) + "." + String(version_minor);
 
@@ -65,7 +65,7 @@ void BasestationConnectBoard::getInfo()
 	unsigned char version_minor;
 	uint16_t version_build;
 
-	errorCode = getBSCBootVersion(basestation->slot, &version_major, &version_minor, &version_build);
+	errorCode = np::getBSCBootVersion(basestation->slot, &version_major, &version_minor, &version_build);
 
 	boot_version = String(version_major) + "." + String(version_minor);
 
@@ -73,14 +73,14 @@ void BasestationConnectBoard::getInfo()
 		boot_version += ".";
 		boot_version += String(version_build);
 
-	errorCode = getBSCVersion(basestation->slot, &version_major, &version_minor);
+	errorCode = np::getBSCVersion(basestation->slot, &version_major, &version_minor);
 
 	version = String(version_major) + "." + String(version_minor);
 
-	errorCode = readBSCSN(basestation->slot, &serial_number);
+	errorCode = np::readBSCSN(basestation->slot, &serial_number);
 
 	char pn[MAXLEN];
-	readBSCPN(basestation->slot, pn, MAXLEN);
+	np::readBSCPN(basestation->slot, pn, MAXLEN);
 
 	part_number = String(pn);
 
@@ -92,14 +92,14 @@ void Headstage::getInfo()
 	unsigned char version_major;
 	unsigned char version_minor;
 
-	errorCode = getHSVersion(probe->basestation->slot, probe->port, &version_major, &version_minor);
+	errorCode = np::getHSVersion(probe->basestation->slot, probe->port, &version_major, &version_minor);
 
 	version = String(version_major) + "." + String(version_minor);
 
-	errorCode = readHSSN(probe->basestation->slot, probe->port, &serial_number);
+	errorCode = np::readHSSN(probe->basestation->slot, probe->port, &serial_number);
 
 	char pn[MAXLEN];
-	errorCode = readHSPN(probe->basestation->slot, probe->port, pn, MAXLEN);
+	errorCode = np::readHSPN(probe->basestation->slot, probe->port, pn, MAXLEN);
 
 	part_number = String(pn);
 
@@ -112,12 +112,12 @@ void Flex::getInfo()
 	unsigned char version_major;
 	unsigned char version_minor;
 
-	errorCode = getFlexVersion(probe->basestation->slot, probe->port, &version_major, &version_minor);
+	errorCode = np::getFlexVersion(probe->basestation->slot, probe->port, &version_major, &version_minor);
 
 	version = String(version_major) + "." + String(version_minor);
 
 	char pn[MAXLEN];
-	errorCode = readFlexPN(probe->basestation->slot, probe->port, pn, MAXLEN);
+	errorCode = np::readFlexPN(probe->basestation->slot, probe->port, pn, MAXLEN);
 
 	part_number = String(pn);
 
@@ -127,10 +127,10 @@ void Flex::getInfo()
 void Probe::getInfo()
 {
 
-	errorCode = readId(basestation->slot, port, &serial_number);
+	errorCode = np::readId(basestation->slot, port, &serial_number);
 
 	char pn[MAXLEN];
-	errorCode = readProbePN(basestation->slot, port, pn, MAXLEN);
+	errorCode = np::readProbePN(basestation->slot, port, pn, MAXLEN);
 
 	part_number = String(pn);
 }
@@ -172,7 +172,7 @@ void Probe::calibrate()
 		String gainFile = probeDirectory.getChildFile(String(serial_number) + "_gainCalValues.csv").getFullPathName();
 		std::cout << adcFile << std::endl;
 		
-		errorCode = setADCCalibration(basestation->slot, port, adcFile.toRawUTF8());
+		errorCode = np::setADCCalibration(basestation->slot, port, adcFile.toRawUTF8());
 
 		if (errorCode == 0)
 			std::cout << "Successful ADC calibration." << std::endl;
@@ -181,14 +181,14 @@ void Probe::calibrate()
 
 		std::cout << gainFile << std::endl;
 		
-		errorCode = setGainCalibration(basestation->slot, port, gainFile.toRawUTF8());
+		errorCode = np::setGainCalibration(basestation->slot, port, gainFile.toRawUTF8());
 
 		if (errorCode == 0)
 			std::cout << "Successful gain calibration." << std::endl;
 		else
 			std::cout << "Unsuccessful gain calibration, failed with error code: " << errorCode << std::endl;
 
-		errorCode = writeProbeConfiguration(basestation->slot, port, false);
+		errorCode = np::writeProbeConfiguration(basestation->slot, port, false);
 	}
 	else {
 		// show popup notification window
@@ -200,9 +200,9 @@ void Probe::calibrate()
 void Probe::setApFilterState(bool filterState)
 {
 	for (int channel = 0; channel < 384; channel++)
-		setAPCornerFrequency(basestation->slot, port, channel, filterState);
+		np::setAPCornerFrequency(basestation->slot, port, channel, filterState);
 
-	errorCode = writeProbeConfiguration(basestation->slot, port, false);
+	errorCode = np::writeProbeConfiguration(basestation->slot, port, false);
 
 	std::cout << "Wrote filter " << int(filterState) << " with error code " << errorCode << std::endl;
 }
@@ -211,23 +211,23 @@ void Probe::setGains(unsigned char apGain, unsigned char lfpGain)
 {
 	for (int channel = 0; channel < 384; channel++)
 	{
-		setGain(basestation->slot, port, channel, apGain, lfpGain);
+		np::setGain(basestation->slot, port, channel, apGain, lfpGain);
 		apGains.set(channel, int(apGain));
 		lfpGains.set(channel, int(lfpGain));
 	}
 		
-	errorCode = writeProbeConfiguration(basestation->slot, port, false);
+	errorCode = np::writeProbeConfiguration(basestation->slot, port, false);
 
 	std::cout << "Wrote gain " << int(apGain) << ", " << int(lfpGain) << " with error code " << errorCode << std::endl;
 }
 
 
-void Probe::setReferences(channelreference_t refId, unsigned char refElectrodeBank)
+void Probe::setReferences(np::channelreference_t refId, unsigned char refElectrodeBank)
 {
 	for (int channel = 0; channel < 384; channel++)
-		setReference(basestation->slot, port, channel, refId, refElectrodeBank);
+		np::setReference(basestation->slot, port, channel, refId, refElectrodeBank);
 
-	errorCode = writeProbeConfiguration(basestation->slot, port, false);
+	errorCode = np::writeProbeConfiguration(basestation->slot, port, false);
 
 	std::cout << "Wrote reference " << int(refId) << ", " << int(refElectrodeBank) << " with error code " << errorCode << std::endl;
 }
@@ -251,7 +251,7 @@ void Probe::run()
 			&count,
 			count);
 
-		if (errorCode == SUCCESS &&
+		if (errorCode == np::SUCCESS &&
 			count > 0)
 		{
 			float apSamples[384];
@@ -282,7 +282,7 @@ void Probe::run()
 						size_t packetsAvailable;
 						size_t headroom;
 
-						getElectrodeDataFifoState(
+						np::getElectrodeDataFifoState(
 							basestation->slot,
 							port,
 							&packetsAvailable,
@@ -302,7 +302,7 @@ void Probe::run()
 			}
 
 		}
-		else if (errorCode != SUCCESS)
+		else if (errorCode != np::SUCCESS)
 		{
 			std::cout << "Error code: " << errorCode << "for Basestation " << int(basestation->slot) << ", probe " << int(port) << std::endl;
 		}
@@ -331,11 +331,11 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 
 	slot = (unsigned char)slot_number;
 
-	errorCode = openBS(slot);
+	errorCode = np::openBS(slot);
 
 	savingDirectory = File();
 
-	if (errorCode == SUCCESS)
+	if (errorCode == np::SUCCESS)
 	{
 		std::cout << "  Opened BS on slot " << int(slot) << std::endl;
 
@@ -344,14 +344,14 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 
 		for (signed char port = 1; port < 5; port++)
 		{
-			errorCode = openProbe(slot, port);
+			errorCode = np::openProbe(slot, port);
 
-			if (errorCode == SUCCESS)
+			if (errorCode == np::SUCCESS)
 			{
 				std::cout << "    Opening probe " << int(port) << ", error code : " << errorCode << std::endl;
 
 				probes.add(new Probe(this, port));
-				errorCode = init(slot, port);
+				errorCode = np::init(slot, port);
 				setGains(slot, port, 3, 2); // set defaults
 				std::cout << "  Success." << std::endl;
 			}
@@ -367,10 +367,10 @@ Basestation::~Basestation()
 {
 	for (int i = 0; i < probes.size(); i++)
 	{
-		errorCode = close(slot, probes[i]->port);
+		errorCode = np::close(slot, probes[i]->port);
 	}
 
-	errorCode = closeBS(slot);
+	errorCode = np::closeBS(slot);
 }
 
 int Basestation::getProbeCount()
@@ -396,8 +396,8 @@ float Basestation::getFillPercentage()
 
 void Basestation::makeSyncMaster()
 {
-	errorCode = setParameter(NP_PARAM_SYNCSOURCE, TRIGIN_SMA);
-	errorCode = setParameter(NP_PARAM_SYNCMASTER, slot);
+	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SMA);
+	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot);
 }
 
 
@@ -405,17 +405,17 @@ void Basestation::initializeProbes()
 {
 	if (!probesInitialized)
 	{
-		errorCode = setTriggerInput(slot, TRIGIN_SW);
+		errorCode = np::setTriggerInput(slot, np::TRIGIN_SW);
 
 		for (int i = 0; i < probes.size(); i++)
 		{
-			errorCode = setOPMODE(slot, probes[i]->port, RECORDING);
-			errorCode = setHSLed(slot, probes[i]->port, false);
+			errorCode = np::setOPMODE(slot, probes[i]->port, np::RECORDING);
+			errorCode = np::setHSLed(slot, probes[i]->port, false);
 
 			probes[i]->calibrate();
 
 
-			if (errorCode == SUCCESS)
+			if (errorCode == np::SUCCESS)
 			{
 				std::cout << "     Probe initialized." << std::endl;
 				probes[i]->ap_timestamp = 0;
@@ -431,7 +431,7 @@ void Basestation::initializeProbes()
 		probesInitialized = true;
 	}
 
-	errorCode = arm(slot);
+	errorCode = np::arm(slot);
 
 	
 }
@@ -450,7 +450,7 @@ void Basestation::startAcquisition()
 		probes[i]->startThread();
 	}
 
-	errorCode = setSWTrigger(slot);
+	errorCode = np::setSWTrigger(slot);
 
 }
 
@@ -461,7 +461,7 @@ void Basestation::stopAcquisition()
 		probes[i]->stopThread(1000);
 	}
 
-	errorCode = arm(slot);
+	errorCode = np::arm(slot);
 }
 
 void Basestation::setApFilterState(unsigned char slot_, signed char port, bool filterState)
@@ -496,7 +496,7 @@ void Basestation::setGains(unsigned char slot_, signed char port, unsigned char 
 	
 }
 
-void Basestation::setReferences(unsigned char slot_, signed char port, channelreference_t refId, unsigned char refElectrodeBank)
+void Basestation::setReferences(unsigned char slot_, signed char port, np::channelreference_t refId, unsigned char refElectrodeBank)
 {
 	if (slot == slot_)
 	{

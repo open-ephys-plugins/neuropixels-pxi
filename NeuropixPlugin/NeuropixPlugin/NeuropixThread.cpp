@@ -74,7 +74,7 @@ void NeuropixThread::openConnection()
 	uint32_t availableslotmask;
 	totalProbes = 0;
 
-	scanPXI(&availableslotmask);
+	np::scanPXI(&availableslotmask);
 
 	for (int slot = 0; slot < 32; slot++)
 	{
@@ -125,8 +125,8 @@ void NeuropixThread::openConnection()
 			
 	}
 
-	setParameter(NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
-	setParameter(NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
+	np::setParameter(np::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
+	np::setParameter(np::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
 }
 
 bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
@@ -374,8 +374,8 @@ void NeuropixThread::startRecording()
 
 				File npxFileName = fullPath.getChildFile("recording_slot" + String(basestations[i]->slot) + "_" + String(recordingNumber) + ".npx2");
 
-				setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
-				enableFileStream(basestations[i]->slot, true);
+				np::setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
+				np::enableFileStream(basestations[i]->slot, true);
 
 				std::cout << "Basestation " << i << " started recording." << std::endl;
 			}
@@ -391,7 +391,7 @@ void NeuropixThread::stopRecording()
 {
 	for (int i = 0; i < basestations.size(); i++)
 	{
-		enableFileStream(basestations[i]->slot, false);
+		np::enableFileStream(basestations[i]->slot, false);
 	}
 
 	std::cout << "NeuropixThread stopped recording." << std::endl;
@@ -563,23 +563,23 @@ void NeuropixThread::selectElectrode(int chNum, int connection, bool transmit)
 void NeuropixThread::setAllReferences(unsigned char slot, signed char port, int refId)
 {
  
-	NP_ErrorCode ec;
-	channelreference_t reference;
+	np::NP_ErrorCode ec;
+	np::channelreference_t reference;
 	unsigned char intRefElectrodeBank;
 
 	if (refId == 0) // external reference
 	{
-		reference = EXT_REF;
+		reference = np::EXT_REF;
 		intRefElectrodeBank = 0;
 	}
 	else if (refId == 1) // tip reference
 	{
-		reference = TIP_REF;
+		reference = np::TIP_REF;
 		intRefElectrodeBank = 0;
 	}
 	else if (refId > 1) // internal reference
 	{
-		reference = INT_REF;
+		reference = np::INT_REF;
 		intRefElectrodeBank = refId - 2;
 	}
 
@@ -649,45 +649,45 @@ bool NeuropixThread::runBist(unsigned char slot, signed char port, int bistIndex
 	{
 	case BIST_SIGNAL:
 	{
-		NP_ErrorCode errorCode = bistSignal(slot, port, &returnValue, stats);
+		np::NP_ErrorCode errorCode = bistSignal(slot, port, &returnValue, stats);
 		break;
 	}
 	case BIST_NOISE:
 	{
-		if (bistNoise(slot, port) == SUCCESS)
+		if (np::bistNoise(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_PSB:
 	{
-		if (bistPSB(slot, port) == SUCCESS)
+		if (np::bistPSB(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_SR:
 	{
-		if (bistSR(slot, port) == SUCCESS)
+		if (np::bistSR(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_EEPROM:
 	{
-		if (bistEEPROM(slot, port) == SUCCESS)
+		if (np::bistEEPROM(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_I2C:
 	{
-		if (bistI2CMM(slot, port) == SUCCESS)
+		if (np::bistI2CMM(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_SERDES:
 	{
 		unsigned char errors;
-		bistStartPRBS(slot, port);
+		np::bistStartPRBS(slot, port);
 		sleep(200);
-		bistStopPRBS(slot, port, &errors);
+		np::bistStopPRBS(slot, port, &errors);
 
 		if (errors == 0)
 			returnValue = true;
@@ -695,12 +695,12 @@ bool NeuropixThread::runBist(unsigned char slot, signed char port, int bistIndex
 	}
 	case BIST_HB:
 	{
-		if (bistHB(slot, port) == SUCCESS)
+		if (np::bistHB(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	} case BIST_BS:
 	{
-		if (bistBS(slot) == SUCCESS)
+		if (np::bistBS(slot) == np::SUCCESS)
 			returnValue = true;
 		break;
 	} default :

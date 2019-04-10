@@ -6,6 +6,8 @@
 extern "C" {
 #endif	
 
+	using namespace np;
+
 	typedef enum
 	{
 		ChannelType_None = 0,

@@ -218,7 +218,7 @@ private:
 
 	OwnedArray<Basestation> basestations;
 
-	NP_ErrorCode errorCode;
+	np::NP_ErrorCode errorCode;
 	NeuropixAPI api;
 
 	unsigned char selectedSlot;
@@ -229,7 +229,7 @@ private:
 	//std::vector<unsigned char> connected_basestations;
 	//std::vector<std::vector<int>> connected_probes;
 	
-	bistElectrodeStats stats[960];
+	np::bistElectrodeStats stats[960];
 
 	RecordingTimer recordingTimer;
 
