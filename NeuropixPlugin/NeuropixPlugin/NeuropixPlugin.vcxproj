@@ -36,8 +36,8 @@
     <ClInclude Include="NeuropixThread.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="resources\NeuropixAPI_x64_1_15.lib" />
-    <Library Include="resources\NeuropixAPI_x86_1_15.lib" />
+    <Library Include="resources\NeuropixAPI_x64_1_17.lib" />
+    <Library Include="resources\NeuropixAPI_x86_1_17.lib" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{136F1FC3-BF86-4F1E-A5A0-1BB533410F57}</ProjectGuid>
@@ -102,7 +102,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\Debug\bin;resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NeuropixAPI_x86_1_15.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NeuropixAPI_x86_1_17.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -115,7 +115,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\..\..\plugin-GUI\Builds\VisualStudio2013\x64\Debug\bin;resources</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NeuropixAPI_x64_1_15.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NeuropixAPI_x64_1_17.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(OutDir)$(TargetFileName)" "$(PluginDir)\" &amp;&amp; copy /Y "$(OutDir)$(TargetFileName)" "..\..\..\plugin-GUI\Builds\VisualStudio2013\x64\Debug\bin\plugins</Command>
@@ -135,7 +135,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\Users\svc_neuropix\Documents\GitHub\plugin-GUI\Builds\VisualStudio2013\Release\bin;C:\Users\svc_neuropix\Documents\GitHub\neuropixels-pxi\NeuropixPlugin\NeuropixPlugin\resources;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NeuropixAPI_x86_1_15.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NeuropixAPI_x86_1_17.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -153,7 +153,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\..\..\plugin-GUI\Builds\VisualStudio2013\x64\Release\bin;resources</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NeuropixAPI_x64_1_15.lib; open-ephys.lib</AdditionalDependencies>
+      <AdditionalDependencies>NeuropixAPI_x64_1_17.lib; open-ephys.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
