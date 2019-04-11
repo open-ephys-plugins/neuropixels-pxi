@@ -167,6 +167,8 @@ public:
 
 	GenericEditor* createEditor(SourceNode* sn);
 
+	int getNumBasestations();
+
 	void setSelectedProbe(unsigned char slot, signed char probe);
 
 	bool checkSlotAndPortCombo(int slotIndex, int portIndex);

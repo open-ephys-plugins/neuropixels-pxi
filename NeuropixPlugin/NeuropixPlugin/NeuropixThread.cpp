@@ -129,6 +129,11 @@ void NeuropixThread::openConnection()
 	np::setParameter(np::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
 }
 
+int NeuropixThread::getNumBasestations()
+{
+	return basestations.size();
+}
+
 bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
 {
 	if (basestations.size() <= slotIndex)

@@ -24,11 +24,12 @@
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
 
+EditorBackground::EditorBackground(int numBasestations) : numBasestations(numBasestations) {}
+
 void EditorBackground::paint(Graphics& g)
 {
 
-
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < numBasestations; i++)
 	{
 		g.setColour(Colours::lightgrey);
 		g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 3);
@@ -161,12 +162,14 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
     desiredWidth = 400;
     tabText = "Neuropix PXI";
 
+	int numBasestations = t->getNumBasestations();
+
 	bool foundFirst = false;
 
-	for (int i = 0; i < 16; i++)
+	for (int i = 0; i < 4*numBasestations; i++)
 	{
-		int slotIndex = i % 4;
-		int portIndex = i / 4 + 1;
+		int slotIndex = i / 4;
+		int portIndex = i % 4 + 1;
 		int x_pos = slotIndex * 90 + 40;
 		int y_pos = 125 - portIndex * 22;
 
@@ -185,7 +188,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 		}
 	}
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < numBasestations; i++)
 	{
 		int x_pos = i * 90 + 70;
 		int y_pos = 50;
@@ -205,7 +208,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 		fifoMonitors.add(f);
 	}
 
-	background = new EditorBackground();
+	background = new EditorBackground(numBasestations);
 	background->setBounds(0, 15, 500, 150);
 	addAndMakeVisible(background);
 	background->toBack();
@@ -272,7 +275,7 @@ void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 
 	XmlElement* xmlNode = xml->createNewChildElement("NEUROPIXELS_EDITOR");
 
-	for (int slot = 0; slot < 4; slot++)
+	for (int slot = 0; slot < thread->getNumBasestations(); slot++)
 	{
 		String directory_name = savingDirectories[slot].getFullPathName();
 		if (directory_name.length() == 2)
@@ -290,7 +293,7 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 		{
 			std::cout << "Found parameters for Neuropixels editor" << std::endl;
 
-			for (int slot = 0; slot < 4; slot++)
+			for (int slot = 0; slot < thread->getNumBasestations(); slot++)
 			{
 				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
 				std::cout << "Setting thread directory for slot " << slot << std::endl;

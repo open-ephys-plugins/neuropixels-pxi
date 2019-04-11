@@ -43,8 +43,12 @@ class ColorSelector;
 
 class EditorBackground : public Component
 {
+public:
+	EditorBackground(int numBasestations);
 private:
 	void paint(Graphics& g);
+
+	int numBasestations;
 };
 
 class ProbeButton : public ToggleButton
