@@ -26,7 +26,7 @@
 
 void EditorBackground::paint(Graphics& g)
 {
-	
+
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -1061,7 +1061,7 @@ void NeuropixInterface::mouseMove(const MouseEvent& event)
     float y = event.y;
     float x = event.x;
 
-    //std::cout << x << " " << y << std::endl;
+	//std::cout << x << " " << y << std::endl;
 
     bool isOverZoomRegionNew = false;
     bool isOverUpperBorderNew = false;
@@ -1117,7 +1117,7 @@ void NeuropixInterface::mouseMove(const MouseEvent& event)
         repaint();
     }
 
-    if (x > 225 - channelHeight && x < 225 + channelHeight && y < lowerBound && y > 18)
+	if (x > 225 - channelHeight && x < 225 + channelHeight && y < lowerBound && y > 18 && event.eventComponent->getWidth() > 800)
     {
         int chan = getNearestChannel(x, y);
         isOverChannel = true;
