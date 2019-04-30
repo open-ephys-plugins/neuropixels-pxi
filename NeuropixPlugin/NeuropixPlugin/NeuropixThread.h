@@ -169,6 +169,12 @@ public:
 
 	int getNumBasestations();
 
+	void setMasterSync(int slotIndex);
+	void setSyncOutput(int slotIndex, bool on);
+
+	Array<int> getSyncFrequencies();
+	void setSyncFrequency(int slotIndex, int freqIndex);
+
 	void setSelectedProbe(unsigned char slot, signed char probe);
 
 	bool checkSlotAndPortCombo(int slotIndex, int portIndex);

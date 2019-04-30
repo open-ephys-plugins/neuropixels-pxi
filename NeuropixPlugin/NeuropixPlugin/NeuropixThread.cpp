@@ -134,6 +134,27 @@ int NeuropixThread::getNumBasestations()
 	return basestations.size();
 }
 
+void NeuropixThread::setMasterSync(int slotIndex)
+{
+	basestations[slotIndex]->makeSyncMaster();
+}
+
+void NeuropixThread::setSyncOutput(int slotIndex, bool on)
+{
+	basestations[slotIndex]->setSyncOutput(on);
+}
+
+Array<int> NeuropixThread::getSyncFrequencies()
+{
+	return basestations[0]->getSyncFrequencies();
+}
+
+
+void NeuropixThread::setSyncFrequency(int slotIndex, int freqIndex)
+{
+	basestations[slotIndex]->setSyncFrequency(freqIndex);
+}
+
 bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
 {
 	if (basestations.size() <= slotIndex)

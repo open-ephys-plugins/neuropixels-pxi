@@ -361,6 +361,9 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 	else {
 		std::cout << "  Opening BS on slot " << int(slot) << " failed with error code : " << errorCode << std::endl;
 	}
+
+	syncFrequencies.add(1);
+	syncFrequencies.add(10);
 }
 
 Basestation::~Basestation()
@@ -371,6 +374,39 @@ Basestation::~Basestation()
 	}
 
 	errorCode = np::closeBS(slot);
+}
+
+void Basestation::makeSyncMaster()
+{
+
+	//default to use external SYNC source on SMA connector
+	setSyncOutput(false);
+	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot);
+	/* NOTE: Setting the SYNC clock master is also possible using the setTriggerBinding functions.
+	It is however safer to use the setParameter function as this makes sure that only one slot is set as master. */
+
+}
+
+void Basestation::setSyncOutput(bool on)
+{
+	if (on)
+	{ //use internal sync clock generator with default frequency of 1Hz
+		errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SYNCCLOCK);
+		setSyncFrequency(0);
+	}
+	else //use external SYNC clock generator on SMA connector
+		errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SMA);
+}
+
+Array<int> Basestation::getSyncFrequencies()
+{
+	return syncFrequencies;
+}
+
+void Basestation::setSyncFrequency(int freqIndex)
+{
+	int frequency = syncFrequencies[freqIndex];
+	errorCode = setParameter(np::NP_PARAM_SYNCFREQUENCY_HZ, frequency);
 }
 
 int Basestation::getProbeCount()
@@ -392,14 +428,6 @@ float Basestation::getFillPercentage()
 
 	return perc;
 }
-
-
-void Basestation::makeSyncMaster()
-{
-	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SMA);
-	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot);
-}
-
 
 void Basestation::initializeProbes()
 {

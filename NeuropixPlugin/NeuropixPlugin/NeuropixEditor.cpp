@@ -24,7 +24,13 @@
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
 
-EditorBackground::EditorBackground(int numBasestations) : numBasestations(numBasestations) {}
+EditorBackground::EditorBackground(int numBasestations, bool freqSelectEnabled)
+	: numBasestations(numBasestations), freqSelectEnabled(freqSelectEnabled) {}
+
+void EditorBackground::setFreqSelectAvailable(bool isAvailable)
+{
+	freqSelectEnabled = isAvailable;
+}
 
 void EditorBackground::paint(Graphics& g)
 {
@@ -50,6 +56,14 @@ void EditorBackground::paint(Graphics& g)
 			g.drawText(String(j + 1), 90 * i + 22, 90 - j * 22, 10, 10, Justification::centredLeft);
 		}
 	}
+
+	g.setColour(Colours::darkgrey);
+	g.setFont(10);
+	g.drawText(String("MASTER SYNC"), 90 * (numBasestations)+32, 13, 100, 10, Justification::centredLeft);
+	g.drawText(String("CONFIG AS"), 90 * (numBasestations)+32, 46, 100, 10, Justification::centredLeft);
+	if (freqSelectEnabled)
+		g.drawText(String("WITH FREQ"), 90 * (numBasestations)+32, 79, 100, 10, Justification::centredLeft);
+
 }
 
 FifoMonitor::FifoMonitor(int id_, NeuropixThread* thread_) : id(id_), thread(thread_), fillPercentage(0.0)
@@ -159,7 +173,6 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
     thread = t;
     canvas = nullptr;
 
-    desiredWidth = 400;
     tabText = "Neuropix PXI";
 
 	int numBasestations = t->getNumBasestations();
@@ -208,12 +221,43 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 		fifoMonitors.add(f);
 	}
 
-	background = new EditorBackground(numBasestations);
+	masterSelectBox = new ComboBox("MasterSelectComboBox");
+	masterSelectBox->setBounds(90 * (numBasestations)+32, 39, 38, 20);
+	for (int i = 0; i < numBasestations; i++)
+	{
+		masterSelectBox->addItem(String(i + 1), i+1);
+	}
+	masterSelectBox->setSelectedItemIndex(0, false);
+	masterSelectBox->addListener(this);
+	addAndMakeVisible(masterSelectBox);
+
+	masterConfigBox = new ComboBox("MasterConfigComboBox");
+	masterConfigBox->setBounds(90 * (numBasestations)+32, 72, 78, 20);
+	masterConfigBox->addItem(String("INPUT"), 1);
+	masterConfigBox->addItem(String("OUTPUT"), 2);
+	masterConfigBox->setSelectedItemIndex(0, false);
+	masterConfigBox->addListener(this);
+	addAndMakeVisible(masterConfigBox);
+
+	Array<int> syncFrequencies = t->getSyncFrequencies();
+
+	freqSelectBox = new ComboBox("FreqSelectComboBox");
+	freqSelectBox->setBounds(90 * (numBasestations)+32, 105, 70, 20);
+	for (int i = 0; i < syncFrequencies.size(); i++)
+	{
+		freqSelectBox->addItem(String(syncFrequencies[i])+String(" Hz"), i+1);
+	}
+	freqSelectBox->setSelectedItemIndex(0, false);
+	freqSelectBox->addListener(this);
+	addChildComponent(freqSelectBox);
+
+	desiredWidth = 100 * numBasestations + 120;
+
+	background = new EditorBackground(numBasestations, false);
 	background->setBounds(0, 15, 500, 150);
 	addAndMakeVisible(background);
 	background->toBack();
 	background->repaint();
-
 	
 }
 
@@ -222,7 +266,33 @@ NeuropixEditor::~NeuropixEditor()
 
 }
 
+void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
+{
 
+	int slotIndex = masterSelectBox->getSelectedId() - 1;
+
+	if (comboBox == masterSelectBox)
+	{
+		/* Set basestation as input by default using EXT SYNC */
+		thread->setMasterSync(slotIndex);
+		masterConfigBox->setSelectedItemIndex(0, false);
+		freqSelectBox->setSelectedItemIndex(0, false);
+	}
+	else if (comboBox == masterConfigBox)
+	{
+		/* Allow frequency selection only if basestation is configured as output */
+		bool on = masterConfigBox->getSelectedId() == 2;
+		thread->setSyncOutput(slotIndex, on);
+		freqSelectBox->setVisible(on);
+		background->setFreqSelectAvailable(on);
+		background->repaint();
+	}
+	else /* comboBox == freqSelectBox */
+	{
+		int freqIndex = freqSelectBox->getSelectedId() - 1;
+		thread->setSyncFrequency(slotIndex, freqIndex);
+	}
+}
 
 void NeuropixEditor::buttonEvent(Button* button)
 {

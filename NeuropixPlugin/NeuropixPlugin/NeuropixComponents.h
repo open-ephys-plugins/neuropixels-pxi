@@ -81,7 +81,12 @@ public:
 	void setApFilterState(unsigned char slot, signed char port, bool filterState);
 
 	void getInfo();
+
 	void makeSyncMaster();
+	void setSyncOutput(bool on);
+
+	Array<int> getSyncFrequencies();
+	void setSyncFrequency(int freqIndex);
 
 	void startAcquisition();
 	void stopAcquisition();
@@ -94,6 +99,8 @@ public:
 
 private:
 	bool probesInitialized;
+
+	Array<int> syncFrequencies;
 
 	File savingDirectory;
 };

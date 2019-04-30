@@ -44,11 +44,15 @@ class ColorSelector;
 class EditorBackground : public Component
 {
 public:
-	EditorBackground(int numBasestations);
+	EditorBackground(int numBasestations, bool freqSelectEnabled);
+	void setFreqSelectAvailable(bool available);
+
 private:
 	void paint(Graphics& g);
 
 	int numBasestations;
+	bool freqSelectEnabled;
+
 };
 
 class ProbeButton : public ToggleButton
@@ -91,12 +95,13 @@ private:
 	int id;
 };
 
-class NeuropixEditor : public VisualizerEditor
+class NeuropixEditor : public VisualizerEditor, public ComboBox::Listener
 {
 public:
 	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread, bool useDefaultParameterEditors);
 	virtual ~NeuropixEditor();
 
+	void comboBoxChanged(ComboBox*);
 	void buttonEvent(Button* button);
 
 	void saveEditorParameters(XmlElement*);
@@ -109,6 +114,10 @@ private:
 	OwnedArray<ProbeButton> probeButtons;
 	OwnedArray<UtilityButton> directoryButtons;
 	OwnedArray<FifoMonitor> fifoMonitors;
+
+	ScopedPointer<ComboBox> masterSelectBox;
+	ScopedPointer<ComboBox> masterConfigBox;
+	ScopedPointer<ComboBox> freqSelectBox;
 
 	Array<File> savingDirectories;
 
