@@ -577,12 +577,13 @@ float NeuropixThread::getBitVolts(const DataChannel* chan) const
 }
 
 
-void NeuropixThread::selectElectrode(int chNum, int connection, bool transmit)
+void NeuropixThread::selectElectrodes(unsigned char slot, signed char port, Array<int> channelStatus)
 {
 
-    //neuropix.selectElectrode(slotID, port, chNum, connection);
-  
-    //std::cout << "Connecting input " << chNum << " to channel " << connection << "; error code = " << scec << std::endl;
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		basestations[i]->setChannels(slot, port, channelStatus);
+	}
 
 }
 

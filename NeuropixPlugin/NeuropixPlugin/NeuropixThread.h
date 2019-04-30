@@ -123,7 +123,7 @@ public:
 	bool usesCustomNames() const override;
 
 	/** Selects which electrode is connected to each channel. */
-	void selectElectrode(int chNum, int connection, bool transmit);
+	void selectElectrodes(unsigned char slot, signed char port, Array<int> channelStatus);
 
 	/** Selects which reference is used for each channel. */
 	void setAllReferences(unsigned char slot, signed char port, int refId);

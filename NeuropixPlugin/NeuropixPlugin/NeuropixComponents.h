@@ -76,6 +76,7 @@ public:
 
 	float getTemperature();
 
+	void setChannels(unsigned char slot, signed char port, Array<int> channelStatus);
 	void setReferences(unsigned char slot, signed char port, np::channelreference_t refId, unsigned char electrodeBank);
 	void setGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
 	void setApFilterState(unsigned char slot, signed char port, bool filterState);
@@ -138,7 +139,15 @@ public:
 	int lfp_gain;
 	bool highpass_on;
 
-	Array<bool> selectedElectrodes;
+	void setChannels(Array<int> channelStatus);
+	enum BANK_SELECT {
+		BANK_0,
+		BANK_1,
+		BANK_2,
+		DISCONNECTED = 0xFF
+	};
+	Array<BANK_SELECT> channelMap;
+
 	Array<int> apGains;
 	Array<int> lfpGains;
 

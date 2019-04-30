@@ -197,6 +197,68 @@ void Probe::calibrate()
 	}
 }
 
+void Probe::setChannels(Array<int> channelStatus)
+{
+
+	np::NP_ErrorCode ec;
+
+	/* In order to connect only one electrode at a time to a channel, call ‘selectElectrode’ with parameter ‘electrode_bank’ set to 0xFF, prior to calling ‘selectElectrode’ with ‘electrode_bank’ set to the required bank number.*/
+	for (int channel = 0; channel < channelMap.size(); channel++)
+	{
+		if (channel != 191)
+		{
+			ec = np::selectElectrode(basestation->slot, port, channel, BANK_SELECT::DISCONNECTED);
+		}
+	}
+
+	int electrode;
+	BANK_SELECT electrode_bank;
+
+	for (int channel = 0; channel < channelMap.size(); channel++)
+	{
+
+		if (channel != 191)
+		{
+			if (channelStatus[channel])
+			{
+				electrode = channel;
+				electrode_bank = BANK_SELECT::BANK_0;
+			}
+			else if (channelStatus[channel + 384])
+			{
+				electrode = channel + 384;
+				electrode_bank = BANK_SELECT::BANK_1;
+			}
+			else if (channelStatus[channel + 2 * 384])
+			{
+				electrode = channel + 2 * 384;
+				electrode_bank = BANK_SELECT::BANK_2;
+			}
+			else
+			{
+				electrode_bank = BANK_SELECT::DISCONNECTED;
+			}
+
+			channelMap.set(channel, electrode_bank);
+
+			ec = np::selectElectrode(basestation->slot, port, channel, electrode_bank);
+
+		}
+
+	}
+
+	std::cout << "Updating electrode settings for"
+		<< " slot: " << static_cast<unsigned>(basestation->slot)
+		<< " port: " << static_cast<unsigned>(port) << std::endl;
+
+	ec = np::writeProbeConfiguration(basestation->slot, port, false);
+	if (!ec == np::SUCCESS)
+		std::cout << "Failed to write channel config " << std::endl;
+	else
+		std::cout << "Successfully wrote channel config " << std::endl;
+
+}
+
 void Probe::setApFilterState(bool filterState)
 {
 	for (int channel = 0; channel < 384; channel++)
@@ -490,6 +552,21 @@ void Basestation::stopAcquisition()
 	}
 
 	errorCode = np::arm(slot);
+}
+
+void Basestation::setChannels(unsigned char slot_, signed char port, Array<int> channelMap)
+{
+	if (slot == slot_)
+	{
+		for (int i = 0; i < probes.size(); i++)
+		{
+			if (probes[i]->port == port)
+			{
+				probes[i]->setChannels(channelMap);
+				std::cout << "Set electrode-channel connections " << std::endl;
+			}
+		}
+	}
 }
 
 void Basestation::setApFilterState(unsigned char slot_, signed char port, bool filterState)
