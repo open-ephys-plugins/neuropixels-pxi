@@ -59,7 +59,20 @@ NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvai
 
     maxCounter = 0;
 
-    openConnection();
+    uint32_t availableslotmask;
+	totalProbes = 0;
+
+	np::scanPXI(&availableslotmask);
+
+	for (int slot = 0; slot < 32; slot++)
+	{
+		if ((availableslotmask >> slot) & 1)
+		{
+			basestations.add(new Basestation(slot));
+		}
+	}
+
+	std::cout << "Scanned for basestations!" << std::endl; 
 
 }
 
@@ -68,29 +81,32 @@ NeuropixThread::~NeuropixThread()
     closeConnection();
 }
 
+void NeuropixThread::updateProbeSettingsQueue()
+{
+	probeSettingsUpdateQueue.add(this->p_settings);
+}
+
+void NeuropixThread::applyProbeSettingsQueue()
+{
+	for (auto settings : probeSettingsUpdateQueue)
+	{
+		selectElectrodes(settings.slot, settings.port, settings.channelStatus);
+		setAllGains(settings.slot, settings.port, settings.apGainIndex, settings.lfpGainIndex);
+		setAllReferences(settings.slot, settings.port, settings.refChannelIndex);
+		setFilter(settings.slot, settings.port, settings.disableHighPass);
+	}
+}
+
 void NeuropixThread::openConnection()
 {
-
-	uint32_t availableslotmask;
-	totalProbes = 0;
-
-	np::scanPXI(&availableslotmask);
-
-	for (int slot = 0; slot < 32; slot++)
-	{
-		//std::cout << "Slot " << i << " available: " << ((availableslotmask >> i) & 1) << std::endl;
-		if ((availableslotmask >> slot) & 1)
-		{
-			basestations.add(new Basestation(slot));
-		}
-	}
-
-	std::cout << "Basestations initialized" << std::endl;
 
 	bool foundSync = false;
 
 	for (int i = 0; i < basestations.size(); i++)
 	{
+
+		basestations[i]->init();
+
 		if (basestations[i]->getProbeCount() > 0)
 		{
 			totalProbes += basestations[i]->getProbeCount();
@@ -105,10 +121,6 @@ void NeuropixThread::openConnection()
 				foundSync = true;
 			}
 
-			// set up data buffers
-			//sourceBuffers.add(new DataBuffer(384, 10000));
-			//sourceBuffers.add(new DataBuffer(384, 10000));
-
 			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
 			{
 				std::cout << "Creating buffers for slot " << int(basestations[i]->slot) << ", probe " << int(basestations[i]->probes[probe_num]->port) << std::endl;
@@ -119,6 +131,11 @@ void NeuropixThread::openConnection()
 				sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
 
 				basestations[i]->probes[probe_num]->lfpBuffer = sourceBuffers.getLast();
+
+				CoreServices::sendStatusMessage("Initializing probe " + String(probe_num + 1) + "/" + String(basestations[i]->getProbeCount()) + 
+					" on Basestation " + String(i + 1) + "/" + String(basestations.size()));
+				
+				basestations[i]->initializeProbes();
 			}
 				
 		}
@@ -185,26 +202,12 @@ bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
 
 unsigned char NeuropixThread::getSlotForIndex(int slotIndex, int portIndex)
 {
-	// if portIndex = -1, return the slot number; otherwise, only return if a probe is connected
-
-	if (checkSlotAndPortCombo(slotIndex, portIndex))
-	{
-		return basestations[slotIndex]->slot;
-	}
-	else {
-		return -1;
-	}
+	return basestations[slotIndex]->slot;
 }
 
 signed char NeuropixThread::getPortForIndex(int slotIndex, int portIndex)
 {
-	if (checkSlotAndPortCombo(slotIndex, portIndex))
-	{
-		return (signed char)portIndex;
-	}
-	else {
-		return -1;
-	}
+	return (signed char)portIndex;
 }
 
 
@@ -348,11 +351,6 @@ bool NeuropixThread::startAcquisition()
 
     counter = 0;
     maxCounter = 0;
-    
-	for (int i = 0; i < basestations.size(); i++)
-	{
-		basestations[i]->initializeProbes();
-	}
 
 	last_npx_timestamp = 0;
 
@@ -455,6 +453,7 @@ void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 				{
 					newSlot = i;
 					newPort = probe_num;
+					basestations[i]->probes[probe_num]->setSelected(true);
 				}
 			}
 		}
@@ -470,6 +469,7 @@ void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 				{
 					currentSlot = i;
 					currentPort = probe_num;
+					basestations[i]->probes[probe_num]->setSelected(false);
 				}
 			}
 		}
@@ -480,6 +480,44 @@ void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 
 	selectedSlot = slot;
 	selectedPort = port;
+}
+
+int NeuropixThread::getProbeStatus(unsigned char slot, signed char port)
+{
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		if (basestations[i]->slot == slot)
+		{
+			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
+			{
+				if (basestations[i]->probes[probe_num]->port == port)
+				{
+					return basestations[i]->probes[probe_num]->status;
+				}
+			}
+		}
+
+	}
+	return 0;
+}
+
+bool NeuropixThread::isSelectedProbe(unsigned char slot, signed char port)
+{
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		if (basestations[i]->slot == slot)
+		{
+			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
+			{
+				if (basestations[i]->probes[probe_num]->port == port)
+				{
+					return basestations[i]->probes[probe_num]->isSelected;
+				}
+			}
+		}
+
+	}
+	return false;
 }
 
 void NeuropixThread::setDefaultChannelNames()
@@ -624,10 +662,10 @@ void NeuropixThread::setAllGains(unsigned char slot, signed char port, unsigned 
    
 }
 
-void NeuropixThread::setFilter(unsigned char slot, signed char port, bool filterState)
+void NeuropixThread::setFilter(unsigned char slot, signed char port, bool disableHighPass)
 {
 	for (int i = 0; i < basestations.size(); i++)
-		basestations[i]->setApFilterState(slot, port, filterState);
+		basestations[i]->setApFilterState(slot, port, disableHighPass);
 }
 
 void NeuropixThread::setTriggerMode(bool trigger)

@@ -106,12 +106,14 @@ void FifoMonitor::paint(Graphics& g)
 	g.fillRoundedRectangle(2, this->getHeight()-2-barHeight, this->getWidth() - 4, barHeight, 2);
 }
 
-ProbeButton::ProbeButton(int id_) : id(id_)
+ProbeButton::ProbeButton(int id_, NeuropixThread* thread_) : id(id_), thread(thread_), status(0), selected(false)
 {
 	connected = false;
-	selected = false;
 
 	setRadioGroupId(979);
+
+	startTimer(500);
+
 }
 
 void ProbeButton::setSlotAndPort(unsigned char slot_, signed char port_)
@@ -142,7 +144,7 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 
 	///g.setGradientFill(ColourGradient(Colours::lightcyan, 0, 0, Colours::lightskyblue, 10,10, true));
 
-	if (connected)
+	if (status == 1)
 	{
 		if (selected)
 		{
@@ -158,11 +160,79 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 				g.setColour(Colours::green);
 		}
 	}
+	else if (status == 2)
+	{
+		if (selected)
+		{
+			if (isMouseOver)
+				g.setColour(Colours::lightsalmon);
+			else
+				g.setColour(Colours::lightsalmon);
+		}
+		else {
+			if (isMouseOver)
+				g.setColour(Colours::orange);
+			else
+				g.setColour(Colours::orange);
+		}
+	}
 	else {
 		g.setColour(Colours::lightgrey);
 	}
 		
 	g.fillEllipse(2, 2, 11, 11);
+}
+
+void ProbeButton::setProbeStatus(int status_)
+{
+	status = status_;
+
+	repaint();
+
+}
+
+void ProbeButton::timerCallback()
+{
+
+	if (slot != 255)
+	{
+		setProbeStatus(thread->getProbeStatus(slot, port));
+		//std::cout << "Setting for slot: " << String(slot) << " port: " << String(port) << " status: " << String(status) << " selected: " << String(selected) << std::endl;
+	}
+}
+
+BackgroundLoader::BackgroundLoader(NeuropixThread* thread, NeuropixEditor* editor) 
+	: Thread("Neuropix Loader"), np(thread), ed(editor)
+{
+}
+
+BackgroundLoader::~BackgroundLoader()
+{
+}
+
+void BackgroundLoader::run()
+{
+	/* Open the NPX-PXI probe connections in the background to prevent this plugin from blocking the main GUI*/
+	np->openConnection();
+
+	/* Apply any saved settings */
+	CoreServices::sendStatusMessage("Restoring saved probe settings...");
+	np->applyProbeSettingsQueue();
+
+	/* Remove button callback timers*/
+	for (auto button : ed->probeButtons)
+	{
+		button->stopTimer();
+	}
+
+	/* Default to first detected probe as active probe */
+	ed->buttonEvent(ed->probeButtons[0]);
+
+	/* Let the main GUI know the plugin is done initializing */
+	MessageManagerLock mml;
+	CoreServices::updateSignalChain(ed);
+	CoreServices::sendStatusMessage("Neuropix-PXI plugin ready for acquisition!");
+
 }
 
 
@@ -186,7 +256,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 		int x_pos = slotIndex * 90 + 40;
 		int y_pos = 125 - portIndex * 22;
 
-		ProbeButton* p = new ProbeButton(i);
+		ProbeButton* p = new ProbeButton(i, thread);
 		p->setBounds(x_pos, y_pos, 15, 15);
 		p->addListener(this);
 		addAndMakeVisible(p);
@@ -194,11 +264,6 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 
 		p->setSlotAndPort(thread->getSlotForIndex(slotIndex, portIndex), thread->getPortForIndex(slotIndex, portIndex));
 
-		if (p->connected && !foundFirst)
-		{
-			p->setSelectedState(true);
-			foundFirst = true;
-		}
 	}
 
 	for (int i = 0; i < numBasestations; i++)
@@ -258,6 +323,9 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	addAndMakeVisible(background);
 	background->toBack();
 	background->repaint();
+
+	uiLoader = new BackgroundLoader(t, this);
+	uiLoader->startThread();
 	
 }
 
@@ -299,9 +367,9 @@ void NeuropixEditor::buttonEvent(Button* button)
 
 	if (probeButtons.contains((ProbeButton*) button))
 	{
-		for (int i = 0; i < probeButtons.size(); i++)
+		for (auto button : probeButtons)
 		{
-			probeButtons[i]->setSelectedState(false);
+			button->setSelectedState(false);
 		}
 		ProbeButton* probe = (ProbeButton*)button;
 		probe->setSelectedState(true);
@@ -923,16 +991,12 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
             // inform the thread of the new settings
             int filterSetting = comboBox->getSelectedId() - 1;
 
-            // 0 = ON
-            // 1 = OFF
-
-			if (filterSetting == 0)
-				thread->setFilter(slot, port, true);
-			else
-				thread->setFilter(slot, port, false);
+            // 0 = ON, disableHighPass = false -> (300 Hz highpass cut-off filter enabled)
+            // 1 = OFF, disableHighPass = true -> (300 Hz highpass cut-off filter disabled)
+			bool disableHighPass = (filterSetting == 1);
+			thread->setFilter(slot, port, disableHighPass);
         }
         
-
         repaint();
     } 
      else {
@@ -2065,7 +2129,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 					{
 						channelStatus.set(i, status->getIntAttribute(String("E") + String(i)));
 					}
-					thread->selectElectrodes(slot, port, channelStatus);
+					thread->p_settings.channelStatus = channelStatus;
 
 				}
 
@@ -2080,29 +2144,29 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 					std::cout << " Updating gains." << std::endl;
 					apGainComboBox->setSelectedId(apGainIndex, dontSendNotification);
 					lfpGainComboBox->setSelectedId(lfpGainIndex, dontSendNotification);
-					thread->setAllGains(slot, port, apGainIndex, lfpGainIndex);
 
 				}
+				thread->p_settings.apGainIndex = apGainIndex;
+				thread->p_settings.lfpGainIndex = lfpGainIndex;
 
 				int referenceChannelIndex = xmlNode->getIntAttribute("referenceChannelIndex");
 				if (referenceChannelIndex != referenceComboBox->getSelectedId())
 				{
 					referenceComboBox->setSelectedId(referenceChannelIndex, dontSendNotification);
-					thread->setAllReferences(slot, port, referenceChannelIndex - 1);
 				}
+				thread->p_settings.refChannelIndex = referenceChannelIndex - 1;
 				
 
 				int filterCutIndex = xmlNode->getIntAttribute("filterCutIndex");
 				if (filterCutIndex != filterComboBox->getSelectedId())
 				{
 					filterComboBox->setSelectedId(filterCutIndex, dontSendNotification);
-
-					int filterSetting = filterCutIndex - 1;
-					if (filterSetting == 0)
-						thread->setFilter(slot, port, true);
-					else
-						thread->setFilter(slot, port, false);
 				}
+				int filterSetting = filterCutIndex - 1;
+				if (filterSetting == 0)
+					thread->p_settings.disableHighPass = false;
+				else
+					thread->p_settings.disableHighPass = true;
 				
 
 				forEachXmlChildElement(*xmlNode, annotationNode)
@@ -2118,6 +2182,11 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 							annotationNode->getIntAttribute("B"))));
 					}
 				}
+
+				thread->p_settings.slot = slot;
+				thread->p_settings.port = port;
+				thread->updateProbeSettingsQueue();
+				
 			}
 		}
 	}

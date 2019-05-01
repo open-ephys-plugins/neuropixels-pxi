@@ -137,15 +137,20 @@ void Probe::getInfo()
 
 Probe::Probe(Basestation* bs, signed char port_) : Thread("probe_" + String(port_)), basestation(bs), port(port_), fifoFillPercentage(0.0f)
 {
-	getInfo();
+
+	setStatus(0);
+	setSelected(false);
 
 	flex = new Flex(this);
 	headstage = new Headstage(this);
+
+	getInfo();
 
 	for (int i = 0; i < 384; i++)
 	{
 		apGains.add(3); // default = 500
 		lfpGains.add(2); // default = 250
+		channelMap.add(BANK_SELECT::DISCONNECTED);
 	}
 
 	gains.add(50.0f);
@@ -156,6 +161,17 @@ Probe::Probe(Basestation* bs, signed char port_) : Thread("probe_" + String(port
 	gains.add(1500.0f);
 	gains.add(2000.0f);
 	gains.add(3000.0f);
+
+}
+
+void Probe::setStatus(int status_)
+{
+	status = status_;
+}
+
+void Probe::setSelected(bool isSelected_)
+{
+	isSelected = isSelected_;
 }
 
 void Probe::calibrate()
@@ -202,7 +218,6 @@ void Probe::setChannels(Array<int> channelStatus)
 
 	np::NP_ErrorCode ec;
 
-	/* In order to connect only one electrode at a time to a channel, call ‘selectElectrode’ with parameter ‘electrode_bank’ set to 0xFF, prior to calling ‘selectElectrode’ with ‘electrode_bank’ set to the required bank number.*/
 	for (int channel = 0; channel < channelMap.size(); channel++)
 	{
 		if (channel != 191)
@@ -259,14 +274,14 @@ void Probe::setChannels(Array<int> channelStatus)
 
 }
 
-void Probe::setApFilterState(bool filterState)
+void Probe::setApFilterState(bool disableHighPass)
 {
 	for (int channel = 0; channel < 384; channel++)
-		np::setAPCornerFrequency(basestation->slot, port, channel, filterState);
+		np::setAPCornerFrequency(basestation->slot, port, channel, disableHighPass);
 
 	errorCode = np::writeProbeConfiguration(basestation->slot, port, false);
 
-	std::cout << "Wrote filter " << int(filterState) << " with error code " << errorCode << std::endl;
+	std::cout << "Wrote filter " << int(disableHighPass) << " with error code " << errorCode << std::endl;
 }
 
 void Probe::setGains(unsigned char apGain, unsigned char lfpGain)
@@ -395,37 +410,53 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 
 	errorCode = np::openBS(slot);
 
-	savingDirectory = File();
-
 	if (errorCode == np::SUCCESS)
 	{
+
 		std::cout << "  Opened BS on slot " << int(slot) << std::endl;
 
 		getInfo();
 		basestationConnectBoard = new BasestationConnectBoard(this);
 
-		for (signed char port = 1; port < 5; port++)
+		savingDirectory = File();
+
+		for (signed char port = 1; port <= 4; port++)
 		{
+
 			errorCode = np::openProbe(slot, port);
 
 			if (errorCode == np::SUCCESS)
 			{
-				std::cout << "    Opening probe " << int(port) << ", error code : " << errorCode << std::endl;
-
 				probes.add(new Probe(this, port));
-				errorCode = np::init(slot, port);
-				setGains(slot, port, 3, 2); // set defaults
-				std::cout << "  Success." << std::endl;
+				probes[probes.size() - 1]->setStatus(2); //CONNECTING
 			}
-		}
 
-	}
-	else {
-		std::cout << "  Opening BS on slot " << int(slot) << " failed with error code : " << errorCode << std::endl;
+		}
+		std::cout << "Found " << String(probes.size()) << (probes.size() == 1 ? " probe." : " probes.") << std::endl;
 	}
 
 	syncFrequencies.add(1);
 	syncFrequencies.add(10);
+}
+
+void Basestation::init()
+{
+
+	for (int i = 0; i < probes.size(); i++)
+	{
+		std::cout << "Initializing probe " << String(i + 1) << "/" << String(probes.size()) << "...";
+
+		errorCode = np::init(this->slot, probes[i]->port);
+		if (errorCode != np::SUCCESS)
+			std::cout << "  FAILED!." << std::endl;
+		else
+		{
+			setGains(this->slot, probes[i]->port, 3, 2); // set defaults
+			probes[i]->setStatus(1);
+			std::cout << "  Success!" << std::endl;
+		}
+	}
+
 }
 
 Basestation::~Basestation()
@@ -504,13 +535,13 @@ void Basestation::initializeProbes()
 
 			probes[i]->calibrate();
 
-
 			if (errorCode == np::SUCCESS)
 			{
 				std::cout << "     Probe initialized." << std::endl;
 				probes[i]->ap_timestamp = 0;
 				probes[i]->lfp_timestamp = 0;
 				probes[i]->eventCode = 0;
+				probes[i]->setStatus(1); //READY
 			}
 			else {
 				std::cout << "     Failed with error code " << errorCode << std::endl;
@@ -569,7 +600,7 @@ void Basestation::setChannels(unsigned char slot_, signed char port, Array<int> 
 	}
 }
 
-void Basestation::setApFilterState(unsigned char slot_, signed char port, bool filterState)
+void Basestation::setApFilterState(unsigned char slot_, signed char port, bool disableHighPass)
 {
 	if (slot == slot_)
 	{
@@ -577,8 +608,8 @@ void Basestation::setApFilterState(unsigned char slot_, signed char port, bool f
 		{
 			if (probes[i]->port == port)
 			{
-				probes[i]->setApFilterState(filterState);
-				std::cout << "Set all filters to " << int(filterState) << std::endl;
+				probes[i]->setApFilterState(disableHighPass);
+				std::cout << "Set all filters to " << int(disableHighPass) << std::endl;
 			}
 		}
 	}

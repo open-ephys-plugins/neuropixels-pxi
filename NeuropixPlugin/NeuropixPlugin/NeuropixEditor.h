@@ -40,6 +40,7 @@ class NeuropixCanvas;
 class NeuropixInterface;
 class Annotation;
 class ColorSelector;
+class NeuropixEditor;
 
 class EditorBackground : public Component
 {
@@ -55,23 +56,27 @@ private:
 
 };
 
-class ProbeButton : public ToggleButton
+class ProbeButton : public ToggleButton, public Timer
 {
 public:
-	ProbeButton(int id);
+	ProbeButton(int id, NeuropixThread* thread);
 
 	void setSlotAndPort(unsigned char, signed char);
 	void setSelectedState(bool);
 
+	void setProbeStatus(int status);
+	void timerCallback();
+
 	unsigned char slot;
 	signed char port;
 	bool connected;
+	NeuropixThread* thread;
 
 private:
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
 	int id;
-	
+	int status;
 	bool selected;
 };
 
@@ -95,6 +100,17 @@ private:
 	int id;
 };
 
+class BackgroundLoader : public Thread
+{
+public:
+	BackgroundLoader(NeuropixThread* t, NeuropixEditor* e);
+	~BackgroundLoader();
+	void run();
+private:
+	NeuropixThread* np;
+	NeuropixEditor* ed;
+};
+
 class NeuropixEditor : public VisualizerEditor, public ComboBox::Listener
 {
 public:
@@ -109,9 +125,10 @@ public:
 
 	Visualizer* createNewCanvas(void);
 
+	OwnedArray<ProbeButton> probeButtons;
+
 private:
 
-	OwnedArray<ProbeButton> probeButtons;
 	OwnedArray<UtilityButton> directoryButtons;
 	OwnedArray<FifoMonitor> fifoMonitors;
 
@@ -121,6 +138,7 @@ private:
 
 	Array<File> savingDirectories;
 
+	ScopedPointer<BackgroundLoader> uiLoader;
 	ScopedPointer<EditorBackground> background;
 
 	Viewport* viewport;

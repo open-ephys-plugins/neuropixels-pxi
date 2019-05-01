@@ -64,6 +64,8 @@ public:
 
 	unsigned char slot;
 
+	void init();
+
 	int getProbeCount();
 
 	String boot_version;
@@ -139,6 +141,8 @@ public:
 	int lfp_gain;
 	bool highpass_on;
 
+	void init();
+
 	void setChannels(Array<int> channelStatus);
 	enum BANK_SELECT {
 		BANK_0,
@@ -156,6 +160,12 @@ public:
 	void setGains(unsigned char apGain, unsigned char lfpGain);
 
 	void calibrate();
+
+	void setStatus(int status_);
+	int status;
+
+	void setSelected(bool isSelected_);
+	bool isSelected;
 
 	void getInfo();
 
