@@ -40,30 +40,43 @@ class NeuropixCanvas;
 class NeuropixInterface;
 class Annotation;
 class ColorSelector;
+class NeuropixEditor;
 
 class EditorBackground : public Component
 {
+public:
+	EditorBackground(int numBasestations, bool freqSelectEnabled);
+	void setFreqSelectAvailable(bool available);
+
 private:
 	void paint(Graphics& g);
+
+	int numBasestations;
+	bool freqSelectEnabled;
+
 };
 
-class ProbeButton : public ToggleButton
+class ProbeButton : public ToggleButton, public Timer
 {
 public:
-	ProbeButton(int id);
+	ProbeButton(int id, NeuropixThread* thread);
 
 	void setSlotAndPort(unsigned char, signed char);
 	void setSelectedState(bool);
 
+	void setProbeStatus(int status);
+	void timerCallback();
+
 	unsigned char slot;
 	signed char port;
 	bool connected;
+	NeuropixThread* thread;
 
 private:
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
 	int id;
-	
+	int status;
 	bool selected;
 };
 
@@ -87,12 +100,24 @@ private:
 	int id;
 };
 
-class NeuropixEditor : public VisualizerEditor
+class BackgroundLoader : public Thread
+{
+public:
+	BackgroundLoader(NeuropixThread* t, NeuropixEditor* e);
+	~BackgroundLoader();
+	void run();
+private:
+	NeuropixThread* np;
+	NeuropixEditor* ed;
+};
+
+class NeuropixEditor : public VisualizerEditor, public ComboBox::Listener
 {
 public:
 	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread, bool useDefaultParameterEditors);
 	virtual ~NeuropixEditor();
 
+	void comboBoxChanged(ComboBox*);
 	void buttonEvent(Button* button);
 
 	void saveEditorParameters(XmlElement*);
@@ -100,14 +125,20 @@ public:
 
 	Visualizer* createNewCanvas(void);
 
+	OwnedArray<ProbeButton> probeButtons;
+
 private:
 
-	OwnedArray<ProbeButton> probeButtons;
 	OwnedArray<UtilityButton> directoryButtons;
 	OwnedArray<FifoMonitor> fifoMonitors;
 
+	ScopedPointer<ComboBox> masterSelectBox;
+	ScopedPointer<ComboBox> masterConfigBox;
+	ScopedPointer<ComboBox> freqSelectBox;
+
 	Array<File> savingDirectories;
 
+	ScopedPointer<BackgroundLoader> uiLoader;
 	ScopedPointer<EditorBackground> background;
 
 	Viewport* viewport;

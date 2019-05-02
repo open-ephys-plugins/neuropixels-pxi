@@ -59,7 +59,20 @@ NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvai
 
     maxCounter = 0;
 
-    openConnection();
+    uint32_t availableslotmask;
+	totalProbes = 0;
+
+	np::scanPXI(&availableslotmask);
+
+	for (int slot = 0; slot < 32; slot++)
+	{
+		if ((availableslotmask >> slot) & 1)
+		{
+			basestations.add(new Basestation(slot));
+		}
+	}
+
+	std::cout << "Scanned for basestations!" << std::endl; 
 
 }
 
@@ -68,29 +81,32 @@ NeuropixThread::~NeuropixThread()
     closeConnection();
 }
 
+void NeuropixThread::updateProbeSettingsQueue()
+{
+	probeSettingsUpdateQueue.add(this->p_settings);
+}
+
+void NeuropixThread::applyProbeSettingsQueue()
+{
+	for (auto settings : probeSettingsUpdateQueue)
+	{
+		selectElectrodes(settings.slot, settings.port, settings.channelStatus);
+		setAllGains(settings.slot, settings.port, settings.apGainIndex, settings.lfpGainIndex);
+		setAllReferences(settings.slot, settings.port, settings.refChannelIndex);
+		setFilter(settings.slot, settings.port, settings.disableHighPass);
+	}
+}
+
 void NeuropixThread::openConnection()
 {
-
-	uint32_t availableslotmask;
-	totalProbes = 0;
-
-	scanPXI(&availableslotmask);
-
-	for (int slot = 0; slot < 32; slot++)
-	{
-		//std::cout << "Slot " << i << " available: " << ((availableslotmask >> i) & 1) << std::endl;
-		if ((availableslotmask >> slot) & 1)
-		{
-			basestations.add(new Basestation(slot));
-		}
-	}
-
-	std::cout << "Basestations initialized" << std::endl;
 
 	bool foundSync = false;
 
 	for (int i = 0; i < basestations.size(); i++)
 	{
+
+		basestations[i]->init();
+
 		if (basestations[i]->getProbeCount() > 0)
 		{
 			totalProbes += basestations[i]->getProbeCount();
@@ -105,10 +121,6 @@ void NeuropixThread::openConnection()
 				foundSync = true;
 			}
 
-			// set up data buffers
-			//sourceBuffers.add(new DataBuffer(384, 10000));
-			//sourceBuffers.add(new DataBuffer(384, 10000));
-
 			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
 			{
 				std::cout << "Creating buffers for slot " << int(basestations[i]->slot) << ", probe " << int(basestations[i]->probes[probe_num]->port) << std::endl;
@@ -119,14 +131,45 @@ void NeuropixThread::openConnection()
 				sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
 
 				basestations[i]->probes[probe_num]->lfpBuffer = sourceBuffers.getLast();
+
+				CoreServices::sendStatusMessage("Initializing probe " + String(probe_num + 1) + "/" + String(basestations[i]->getProbeCount()) + 
+					" on Basestation " + String(i + 1) + "/" + String(basestations.size()));
+				
+				basestations[i]->initializeProbes();
 			}
 				
 		}
 			
 	}
 
-	setParameter(NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
-	setParameter(NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
+	np::setParameter(np::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
+	np::setParameter(np::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
+}
+
+int NeuropixThread::getNumBasestations()
+{
+	return basestations.size();
+}
+
+void NeuropixThread::setMasterSync(int slotIndex)
+{
+	basestations[slotIndex]->makeSyncMaster();
+}
+
+void NeuropixThread::setSyncOutput(int slotIndex, bool on)
+{
+	basestations[slotIndex]->setSyncOutput(on);
+}
+
+Array<int> NeuropixThread::getSyncFrequencies()
+{
+	return basestations[0]->getSyncFrequencies();
+}
+
+
+void NeuropixThread::setSyncFrequency(int slotIndex, int freqIndex)
+{
+	basestations[slotIndex]->setSyncFrequency(freqIndex);
 }
 
 bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
@@ -159,26 +202,12 @@ bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
 
 unsigned char NeuropixThread::getSlotForIndex(int slotIndex, int portIndex)
 {
-	// if portIndex = -1, return the slot number; otherwise, only return if a probe is connected
-
-	if (checkSlotAndPortCombo(slotIndex, portIndex))
-	{
-		return basestations[slotIndex]->slot;
-	}
-	else {
-		return -1;
-	}
+	return basestations[slotIndex]->slot;
 }
 
 signed char NeuropixThread::getPortForIndex(int slotIndex, int portIndex)
 {
-	if (checkSlotAndPortCombo(slotIndex, portIndex))
-	{
-		return (signed char)portIndex;
-	}
-	else {
-		return -1;
-	}
+	return (signed char)portIndex;
 }
 
 
@@ -322,11 +351,6 @@ bool NeuropixThread::startAcquisition()
 
     counter = 0;
     maxCounter = 0;
-    
-	for (int i = 0; i < basestations.size(); i++)
-	{
-		basestations[i]->initializeProbes();
-	}
 
 	last_npx_timestamp = 0;
 
@@ -374,8 +398,8 @@ void NeuropixThread::startRecording()
 
 				File npxFileName = fullPath.getChildFile("recording_slot" + String(basestations[i]->slot) + "_" + String(recordingNumber) + ".npx2");
 
-				setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
-				enableFileStream(basestations[i]->slot, true);
+				np::setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
+				np::enableFileStream(basestations[i]->slot, true);
 
 				std::cout << "Basestation " << i << " started recording." << std::endl;
 			}
@@ -391,7 +415,7 @@ void NeuropixThread::stopRecording()
 {
 	for (int i = 0; i < basestations.size(); i++)
 	{
-		enableFileStream(basestations[i]->slot, false);
+		np::enableFileStream(basestations[i]->slot, false);
 	}
 
 	std::cout << "NeuropixThread stopped recording." << std::endl;
@@ -429,6 +453,7 @@ void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 				{
 					newSlot = i;
 					newPort = probe_num;
+					basestations[i]->probes[probe_num]->setSelected(true);
 				}
 			}
 		}
@@ -444,6 +469,7 @@ void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 				{
 					currentSlot = i;
 					currentPort = probe_num;
+					basestations[i]->probes[probe_num]->setSelected(false);
 				}
 			}
 		}
@@ -454,6 +480,44 @@ void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 
 	selectedSlot = slot;
 	selectedPort = port;
+}
+
+int NeuropixThread::getProbeStatus(unsigned char slot, signed char port)
+{
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		if (basestations[i]->slot == slot)
+		{
+			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
+			{
+				if (basestations[i]->probes[probe_num]->port == port)
+				{
+					return basestations[i]->probes[probe_num]->status;
+				}
+			}
+		}
+
+	}
+	return 0;
+}
+
+bool NeuropixThread::isSelectedProbe(unsigned char slot, signed char port)
+{
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		if (basestations[i]->slot == slot)
+		{
+			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
+			{
+				if (basestations[i]->probes[probe_num]->port == port)
+				{
+					return basestations[i]->probes[probe_num]->isSelected;
+				}
+			}
+		}
+
+	}
+	return false;
 }
 
 void NeuropixThread::setDefaultChannelNames()
@@ -551,35 +615,36 @@ float NeuropixThread::getBitVolts(const DataChannel* chan) const
 }
 
 
-void NeuropixThread::selectElectrode(int chNum, int connection, bool transmit)
+void NeuropixThread::selectElectrodes(unsigned char slot, signed char port, Array<int> channelStatus)
 {
 
-    //neuropix.selectElectrode(slotID, port, chNum, connection);
-  
-    //std::cout << "Connecting input " << chNum << " to channel " << connection << "; error code = " << scec << std::endl;
+	for (int i = 0; i < basestations.size(); i++)
+	{
+		basestations[i]->setChannels(slot, port, channelStatus);
+	}
 
 }
 
 void NeuropixThread::setAllReferences(unsigned char slot, signed char port, int refId)
 {
  
-	NP_ErrorCode ec;
-	channelreference_t reference;
+	np::NP_ErrorCode ec;
+	np::channelreference_t reference;
 	unsigned char intRefElectrodeBank;
 
 	if (refId == 0) // external reference
 	{
-		reference = EXT_REF;
+		reference = np::EXT_REF;
 		intRefElectrodeBank = 0;
 	}
 	else if (refId == 1) // tip reference
 	{
-		reference = TIP_REF;
+		reference = np::TIP_REF;
 		intRefElectrodeBank = 0;
 	}
 	else if (refId > 1) // internal reference
 	{
-		reference = INT_REF;
+		reference = np::INT_REF;
 		intRefElectrodeBank = refId - 2;
 	}
 
@@ -597,10 +662,10 @@ void NeuropixThread::setAllGains(unsigned char slot, signed char port, unsigned 
    
 }
 
-void NeuropixThread::setFilter(unsigned char slot, signed char port, bool filterState)
+void NeuropixThread::setFilter(unsigned char slot, signed char port, bool disableHighPass)
 {
 	for (int i = 0; i < basestations.size(); i++)
-		basestations[i]->setApFilterState(slot, port, filterState);
+		basestations[i]->setApFilterState(slot, port, disableHighPass);
 }
 
 void NeuropixThread::setTriggerMode(bool trigger)
@@ -649,45 +714,45 @@ bool NeuropixThread::runBist(unsigned char slot, signed char port, int bistIndex
 	{
 	case BIST_SIGNAL:
 	{
-		NP_ErrorCode errorCode = bistSignal(slot, port, &returnValue, stats);
+		np::NP_ErrorCode errorCode = bistSignal(slot, port, &returnValue, stats);
 		break;
 	}
 	case BIST_NOISE:
 	{
-		if (bistNoise(slot, port) == SUCCESS)
+		if (np::bistNoise(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_PSB:
 	{
-		if (bistPSB(slot, port) == SUCCESS)
+		if (np::bistPSB(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_SR:
 	{
-		if (bistSR(slot, port) == SUCCESS)
+		if (np::bistSR(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_EEPROM:
 	{
-		if (bistEEPROM(slot, port) == SUCCESS)
+		if (np::bistEEPROM(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_I2C:
 	{
-		if (bistI2CMM(slot, port) == SUCCESS)
+		if (np::bistI2CMM(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST_SERDES:
 	{
 		unsigned char errors;
-		bistStartPRBS(slot, port);
+		np::bistStartPRBS(slot, port);
 		sleep(200);
-		bistStopPRBS(slot, port, &errors);
+		np::bistStopPRBS(slot, port, &errors);
 
 		if (errors == 0)
 			returnValue = true;
@@ -695,12 +760,12 @@ bool NeuropixThread::runBist(unsigned char slot, signed char port, int bistIndex
 	}
 	case BIST_HB:
 	{
-		if (bistHB(slot, port) == SUCCESS)
+		if (np::bistHB(slot, port) == np::SUCCESS)
 			returnValue = true;
 		break;
 	} case BIST_BS:
 	{
-		if (bistBS(slot) == SUCCESS)
+		if (np::bistBS(slot) == np::SUCCESS)
 			returnValue = true;
 		break;
 	} default :

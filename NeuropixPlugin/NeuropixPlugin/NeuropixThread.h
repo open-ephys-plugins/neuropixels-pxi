@@ -93,6 +93,8 @@ public:
 	/** Returns version and serial number info for hardware and API as XML.*/
 	XmlElement getInfoXml();
 
+	void openConnection();
+
 	/** Initializes data transfer.*/
 	bool startAcquisition() override;
 
@@ -123,7 +125,7 @@ public:
 	bool usesCustomNames() const override;
 
 	/** Selects which electrode is connected to each channel. */
-	void selectElectrode(int chNum, int connection, bool transmit);
+	void selectElectrodes(unsigned char slot, signed char port, Array<int> channelStatus);
 
 	/** Selects which reference is used for each channel. */
 	void setAllReferences(unsigned char slot, signed char port, int refId);
@@ -167,7 +169,17 @@ public:
 
 	GenericEditor* createEditor(SourceNode* sn);
 
+	int getNumBasestations();
+
+	void setMasterSync(int slotIndex);
+	void setSyncOutput(int slotIndex, bool on);
+
+	Array<int> getSyncFrequencies();
+	void setSyncFrequency(int slotIndex, int freqIndex);
+
+	int getProbeStatus(unsigned char slot, signed char port);
 	void setSelectedProbe(unsigned char slot, signed char probe);
+	bool isSelectedProbe(unsigned char slot, signed char probe);
 
 	bool checkSlotAndPortCombo(int slotIndex, int portIndex);
 	unsigned char getSlotForIndex(int slotIndex, int portIndex);
@@ -179,6 +191,21 @@ public:
 
 	ScopedPointer<ProgressBar> progressBar;
 	double initializationProgress;
+
+	/* Helper for loading probes in the background */
+	struct probeSettings {
+		unsigned char slot;
+		signed char port;
+		Array<int> channelStatus;
+		int apGainIndex;
+		int lfpGainIndex;
+		int refChannelIndex;
+		bool disableHighPass;
+	} p_settings;
+	Array<probeSettings> probeSettingsUpdateQueue;
+
+	void updateProbeSettingsQueue();
+	void applyProbeSettingsQueue();
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 
@@ -196,17 +223,14 @@ private:
 
 	CriticalSection displayMutex;
 
-	
+	void closeConnection();
+
 	Array<int> channelMap;
 	Array<bool> outputOn;
 	Array<int> refs;
 
 	uint64_t probeId;
 
-	void openConnection();
-	void closeConnection();
-
-	
 	int maxCounter;
 	int numRefs;
 	int totalChans;
@@ -218,7 +242,7 @@ private:
 
 	OwnedArray<Basestation> basestations;
 
-	NP_ErrorCode errorCode;
+	np::NP_ErrorCode errorCode;
 	NeuropixAPI api;
 
 	unsigned char selectedSlot;
@@ -229,7 +253,7 @@ private:
 	//std::vector<unsigned char> connected_basestations;
 	//std::vector<std::vector<int>> connected_probes;
 	
-	bistElectrodeStats stats[960];
+	np::bistElectrodeStats stats[960];
 
 	RecordingTimer recordingTimer;
 

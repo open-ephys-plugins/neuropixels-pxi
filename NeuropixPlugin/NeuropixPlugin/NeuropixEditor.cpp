@@ -24,11 +24,18 @@
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
 
+EditorBackground::EditorBackground(int numBasestations, bool freqSelectEnabled)
+	: numBasestations(numBasestations), freqSelectEnabled(freqSelectEnabled) {}
+
+void EditorBackground::setFreqSelectAvailable(bool isAvailable)
+{
+	freqSelectEnabled = isAvailable;
+}
+
 void EditorBackground::paint(Graphics& g)
 {
-	
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < numBasestations; i++)
 	{
 		g.setColour(Colours::lightgrey);
 		g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 3);
@@ -49,6 +56,14 @@ void EditorBackground::paint(Graphics& g)
 			g.drawText(String(j + 1), 90 * i + 22, 90 - j * 22, 10, 10, Justification::centredLeft);
 		}
 	}
+
+	g.setColour(Colours::darkgrey);
+	g.setFont(10);
+	g.drawText(String("MASTER SYNC"), 90 * (numBasestations)+32, 13, 100, 10, Justification::centredLeft);
+	g.drawText(String("CONFIG AS"), 90 * (numBasestations)+32, 46, 100, 10, Justification::centredLeft);
+	if (freqSelectEnabled)
+		g.drawText(String("WITH FREQ"), 90 * (numBasestations)+32, 79, 100, 10, Justification::centredLeft);
+
 }
 
 FifoMonitor::FifoMonitor(int id_, NeuropixThread* thread_) : id(id_), thread(thread_), fillPercentage(0.0)
@@ -91,12 +106,14 @@ void FifoMonitor::paint(Graphics& g)
 	g.fillRoundedRectangle(2, this->getHeight()-2-barHeight, this->getWidth() - 4, barHeight, 2);
 }
 
-ProbeButton::ProbeButton(int id_) : id(id_)
+ProbeButton::ProbeButton(int id_, NeuropixThread* thread_) : id(id_), thread(thread_), status(0), selected(false)
 {
 	connected = false;
-	selected = false;
 
 	setRadioGroupId(979);
+
+	startTimer(500);
+
 }
 
 void ProbeButton::setSlotAndPort(unsigned char slot_, signed char port_)
@@ -127,7 +144,7 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 
 	///g.setGradientFill(ColourGradient(Colours::lightcyan, 0, 0, Colours::lightskyblue, 10,10, true));
 
-	if (connected)
+	if (status == 1)
 	{
 		if (selected)
 		{
@@ -143,11 +160,79 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 				g.setColour(Colours::green);
 		}
 	}
+	else if (status == 2)
+	{
+		if (selected)
+		{
+			if (isMouseOver)
+				g.setColour(Colours::lightsalmon);
+			else
+				g.setColour(Colours::lightsalmon);
+		}
+		else {
+			if (isMouseOver)
+				g.setColour(Colours::orange);
+			else
+				g.setColour(Colours::orange);
+		}
+	}
 	else {
 		g.setColour(Colours::lightgrey);
 	}
 		
 	g.fillEllipse(2, 2, 11, 11);
+}
+
+void ProbeButton::setProbeStatus(int status_)
+{
+	status = status_;
+
+	repaint();
+
+}
+
+void ProbeButton::timerCallback()
+{
+
+	if (slot != 255)
+	{
+		setProbeStatus(thread->getProbeStatus(slot, port));
+		//std::cout << "Setting for slot: " << String(slot) << " port: " << String(port) << " status: " << String(status) << " selected: " << String(selected) << std::endl;
+	}
+}
+
+BackgroundLoader::BackgroundLoader(NeuropixThread* thread, NeuropixEditor* editor) 
+	: Thread("Neuropix Loader"), np(thread), ed(editor)
+{
+}
+
+BackgroundLoader::~BackgroundLoader()
+{
+}
+
+void BackgroundLoader::run()
+{
+	/* Open the NPX-PXI probe connections in the background to prevent this plugin from blocking the main GUI*/
+	np->openConnection();
+
+	/* Apply any saved settings */
+	CoreServices::sendStatusMessage("Restoring saved probe settings...");
+	np->applyProbeSettingsQueue();
+
+	/* Remove button callback timers*/
+	for (auto button : ed->probeButtons)
+	{
+		button->stopTimer();
+	}
+
+	/* Default to first detected probe as active probe */
+	ed->buttonEvent(ed->probeButtons[0]);
+
+	/* Let the main GUI know the plugin is done initializing */
+	MessageManagerLock mml;
+	CoreServices::updateSignalChain(ed);
+	CoreServices::sendStatusMessage("Neuropix-PXI plugin ready for acquisition!");
+
 }
 
 
@@ -158,19 +243,20 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
     thread = t;
     canvas = nullptr;
 
-    desiredWidth = 400;
     tabText = "Neuropix PXI";
+
+	int numBasestations = t->getNumBasestations();
 
 	bool foundFirst = false;
 
-	for (int i = 0; i < 16; i++)
+	for (int i = 0; i < 4*numBasestations; i++)
 	{
-		int slotIndex = i % 4;
-		int portIndex = i / 4 + 1;
+		int slotIndex = i / 4;
+		int portIndex = i % 4 + 1;
 		int x_pos = slotIndex * 90 + 40;
 		int y_pos = 125 - portIndex * 22;
 
-		ProbeButton* p = new ProbeButton(i);
+		ProbeButton* p = new ProbeButton(i, thread);
 		p->setBounds(x_pos, y_pos, 15, 15);
 		p->addListener(this);
 		addAndMakeVisible(p);
@@ -178,14 +264,9 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 
 		p->setSlotAndPort(thread->getSlotForIndex(slotIndex, portIndex), thread->getPortForIndex(slotIndex, portIndex));
 
-		if (p->connected && !foundFirst)
-		{
-			p->setSelectedState(true);
-			foundFirst = true;
-		}
 	}
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < numBasestations; i++)
 	{
 		int x_pos = i * 90 + 70;
 		int y_pos = 50;
@@ -205,12 +286,46 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 		fifoMonitors.add(f);
 	}
 
-	background = new EditorBackground();
+	masterSelectBox = new ComboBox("MasterSelectComboBox");
+	masterSelectBox->setBounds(90 * (numBasestations)+32, 39, 38, 20);
+	for (int i = 0; i < numBasestations; i++)
+	{
+		masterSelectBox->addItem(String(i + 1), i+1);
+	}
+	masterSelectBox->setSelectedItemIndex(0, false);
+	masterSelectBox->addListener(this);
+	addAndMakeVisible(masterSelectBox);
+
+	masterConfigBox = new ComboBox("MasterConfigComboBox");
+	masterConfigBox->setBounds(90 * (numBasestations)+32, 72, 78, 20);
+	masterConfigBox->addItem(String("INPUT"), 1);
+	masterConfigBox->addItem(String("OUTPUT"), 2);
+	masterConfigBox->setSelectedItemIndex(0, false);
+	masterConfigBox->addListener(this);
+	addAndMakeVisible(masterConfigBox);
+
+	Array<int> syncFrequencies = t->getSyncFrequencies();
+
+	freqSelectBox = new ComboBox("FreqSelectComboBox");
+	freqSelectBox->setBounds(90 * (numBasestations)+32, 105, 70, 20);
+	for (int i = 0; i < syncFrequencies.size(); i++)
+	{
+		freqSelectBox->addItem(String(syncFrequencies[i])+String(" Hz"), i+1);
+	}
+	freqSelectBox->setSelectedItemIndex(0, false);
+	freqSelectBox->addListener(this);
+	addChildComponent(freqSelectBox);
+
+	desiredWidth = 100 * numBasestations + 120;
+
+	background = new EditorBackground(numBasestations, false);
 	background->setBounds(0, 15, 500, 150);
 	addAndMakeVisible(background);
 	background->toBack();
 	background->repaint();
 
+	uiLoader = new BackgroundLoader(t, this);
+	uiLoader->startThread();
 	
 }
 
@@ -219,16 +334,42 @@ NeuropixEditor::~NeuropixEditor()
 
 }
 
+void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
+{
 
+	int slotIndex = masterSelectBox->getSelectedId() - 1;
+
+	if (comboBox == masterSelectBox)
+	{
+		/* Set basestation as input by default using EXT SYNC */
+		thread->setMasterSync(slotIndex);
+		masterConfigBox->setSelectedItemIndex(0, false);
+		freqSelectBox->setSelectedItemIndex(0, false);
+	}
+	else if (comboBox == masterConfigBox)
+	{
+		/* Allow frequency selection only if basestation is configured as output */
+		bool on = masterConfigBox->getSelectedId() == 2;
+		thread->setSyncOutput(slotIndex, on);
+		freqSelectBox->setVisible(on);
+		background->setFreqSelectAvailable(on);
+		background->repaint();
+	}
+	else /* comboBox == freqSelectBox */
+	{
+		int freqIndex = freqSelectBox->getSelectedId() - 1;
+		thread->setSyncFrequency(slotIndex, freqIndex);
+	}
+}
 
 void NeuropixEditor::buttonEvent(Button* button)
 {
 
 	if (probeButtons.contains((ProbeButton*) button))
 	{
-		for (int i = 0; i < probeButtons.size(); i++)
+		for (auto button : probeButtons)
 		{
-			probeButtons[i]->setSelectedState(false);
+			button->setSelectedState(false);
 		}
 		ProbeButton* probe = (ProbeButton*)button;
 		probe->setSelectedState(true);
@@ -272,7 +413,7 @@ void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 
 	XmlElement* xmlNode = xml->createNewChildElement("NEUROPIXELS_EDITOR");
 
-	for (int slot = 0; slot < 4; slot++)
+	for (int slot = 0; slot < thread->getNumBasestations(); slot++)
 	{
 		String directory_name = savingDirectories[slot].getFullPathName();
 		if (directory_name.length() == 2)
@@ -290,7 +431,7 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 		{
 			std::cout << "Found parameters for Neuropixels editor" << std::endl;
 
-			for (int slot = 0; slot < 4; slot++)
+			for (int slot = 0; slot < thread->getNumBasestations(); slot++)
 			{
 				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
 				std::cout << "Setting thread directory for slot " << slot << std::endl;
@@ -456,7 +597,7 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
     isSelectionActive = false;
     isOverChannel = false;
     
-    for (int i = 0; i < 966; i++)
+    for (int i = 0; i < 960; i++)
     {
         channelStatus.add(-1);
         channelReference.add(0);
@@ -510,7 +651,7 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
 	referenceComboBox->addItem("Tip", 2);
 	referenceComboBox->addItem("192", 3);
 	referenceComboBox->addItem("576", 4);
-	referenceComboBox->addItem("959", 5);
+	referenceComboBox->addItem("960", 5);
     referenceComboBox->setSelectedId(1, dontSendNotification);
 
     filterComboBox = new ComboBox("FilterComboBox");
@@ -601,8 +742,8 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
     addAndMakeVisible(filterComboBox);
 	addAndMakeVisible(bistComboBox);
 
-    //addAndMakeVisible(enableButton);
-    //addAndMakeVisible(enableViewButton);
+    addAndMakeVisible(enableButton);
+    addAndMakeVisible(enableViewButton);
     addAndMakeVisible(lfpGainViewButton);
     addAndMakeVisible(apGainViewButton);
     addAndMakeVisible(referenceViewButton);
@@ -675,11 +816,11 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
 	bistLabel->setColour(Label::textColourId, Colours::grey);
 	addAndMakeVisible(bistLabel);
 
-    shankPath.startNewSubPath(27, 28);
+    shankPath.startNewSubPath(27, 31);
     shankPath.lineTo(27, 514);
     shankPath.lineTo(27+5, 522);
     shankPath.lineTo(27+10, 514);
-    shankPath.lineTo(27+10, 28);
+    shankPath.lineTo(27+10, 31);
     shankPath.closeSubPath();
 
     colorSelector = new ColorSelector(this);
@@ -700,7 +841,7 @@ NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, Neu
 			channelStatus.set(i, 1);
 	}
 
-	for (int i = 384; i < 966; i++)
+	for (int i = 384; i < 960; i++)
 	{
 		if (i == 575 || i == 959)
 			channelStatus.set(i, -2);
@@ -826,7 +967,7 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
 
 			thread->setAllGains(slot, port, gainSettingAp, gainSettingLfp);
 
-			for (int i = 0; i < 966; i++)
+			for (int i = 0; i < 960; i++)
 			{
 				channelApGain.set(i, gainSettingAp);
 				channelLfpGain.set(i, gainSettingLfp);
@@ -839,7 +980,7 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
             
 			thread->setAllReferences(slot, port, refSetting);
 
-			for (int i = 0; i < 966; i++)
+			for (int i = 0; i < 960; i++)
 			{
 				channelReference.set(i, refSetting);
 			}
@@ -850,16 +991,12 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
             // inform the thread of the new settings
             int filterSetting = comboBox->getSelectedId() - 1;
 
-            // 0 = ON
-            // 1 = OFF
-
-			if (filterSetting == 0)
-				thread->setFilter(slot, port, true);
-			else
-				thread->setFilter(slot, port, false);
+            // 0 = ON, disableHighPass = false -> (300 Hz highpass cut-off filter enabled)
+            // 1 = OFF, disableHighPass = true -> (300 Hz highpass cut-off filter disabled)
+			bool disableHighPass = (filterSetting == 1);
+			thread->setFilter(slot, port, disableHighPass);
         }
         
-
         repaint();
     } 
      else {
@@ -878,7 +1015,7 @@ void NeuropixInterface::buttonClicked(Button* button)
 {
     if (button == selectAllButton)
     {
-        for (int i = 0; i < 966; i++)
+        for (int i = 0; i < 960; i++)
         {
             channelSelectionState.set(i, 1);
         }
@@ -913,7 +1050,7 @@ void NeuropixInterface::buttonClicked(Button* button)
         {
             int maxChan = 0;
 
-            for (int i = 0; i < 966; i++)
+            for (int i = 0; i < 960; i++)
             {
                 if (channelSelectionState[i] == 1) // channel is currently selected
                 {
@@ -925,10 +1062,6 @@ void NeuropixInterface::buttonClicked(Button* button)
                         else
                             channelStatus.set(i, -2); // turn channel on
 
-                        // 4. enable electrode
-                        thread->selectElectrode(getChannelForElectrode(i), getConnectionForChannel(i), false);
-                        maxChan = i;
-
                         int startPoint = -768;
                         int jump = 384;
 
@@ -938,7 +1071,7 @@ void NeuropixInterface::buttonClicked(Button* button)
 
                             int newChan = j + i;
 
-                            if (newChan >= 0 && newChan < 966 && newChan != i)
+                            if (newChan >= 0 && newChan < 960 && newChan != i)
                             {
                                 //std::cout << "  In range" << std::endl;
 
@@ -956,7 +1089,7 @@ void NeuropixInterface::buttonClicked(Button* button)
                 }
             }
 
-            thread->selectElectrode(getChannelForElectrode(maxChan), getConnectionForChannel(maxChan), true);
+            thread->selectElectrodes(slot, port, channelStatus);
             repaint();
         }
 
@@ -967,7 +1100,7 @@ void NeuropixInterface::buttonClicked(Button* button)
         {
 
 
-            for (int i = 0; i < 966; i++)
+            for (int i = 0; i < 960; i++)
             {
                 if (channelSelectionState[i] == 1)
                 {
@@ -983,7 +1116,7 @@ void NeuropixInterface::buttonClicked(Button* button)
     {
         if (!editor->acquisitionIsActive)
         {
-            for (int i = 0; i < 966; i++)
+            for (int i = 0; i < 960; i++)
             {
                 if (channelSelectionState[i] == 1)
                 {
@@ -1045,7 +1178,7 @@ Array<int> NeuropixInterface::getSelectedChannels()
 {
     Array<int> a;
 
-    for (int i = 0; i < 966; i++)
+    for (int i = 0; i < 960; i++)
     {
         if (channelSelectionState[i] == 1)
         {
@@ -1061,7 +1194,7 @@ void NeuropixInterface::mouseMove(const MouseEvent& event)
     float y = event.y;
     float x = event.x;
 
-    //std::cout << x << " " << y << std::endl;
+	//std::cout << x << " " << y << std::endl;
 
     bool isOverZoomRegionNew = false;
     bool isOverUpperBorderNew = false;
@@ -1117,7 +1250,7 @@ void NeuropixInterface::mouseMove(const MouseEvent& event)
         repaint();
     }
 
-    if (x > 225 - channelHeight && x < 225 + channelHeight && y < lowerBound && y > 18)
+	if (x > 225 - channelHeight && x < 225 + channelHeight && y < lowerBound && y > 18 && event.eventComponent->getWidth() > 800)
     {
         int chan = getNearestChannel(x, y);
         isOverChannel = true;
@@ -1216,7 +1349,7 @@ void NeuropixInterface::mouseDown(const MouseEvent& event)
 
             if (!event.mods.isShiftDown())
             {
-                for (int i = 0; i < 966; i++)
+                for (int i = 0; i < 960; i++)
                     channelSelectionState.set(i, 0);
             }
 
@@ -1226,7 +1359,7 @@ void NeuropixInterface::mouseDown(const MouseEvent& event)
 
                 //std::cout << chan << std::endl;
 
-                if (chan >= 0 && chan < 966)
+                if (chan >= 0 && chan < 960)
                 {
                     channelSelectionState.set(chan, 1);
                 }
@@ -1359,7 +1492,7 @@ void NeuropixInterface::mouseDrag(const MouseEvent& event)
 
         if (x < 225 + channelHeight)
         {
-            for (int i = 0; i < 966; i++)
+            for (int i = 0; i < 960; i++)
             {
                 if (i >= chanStart && i <= chanEnd)
                 {
@@ -1381,7 +1514,7 @@ void NeuropixInterface::mouseDrag(const MouseEvent& event)
                 }
             }
         } else {
-            for (int i = 0; i < 966; i++)
+            for (int i = 0; i < 960; i++)
             {
                 if (!event.mods.isShiftDown())
                     channelSelectionState.set(i, 0);
@@ -1440,7 +1573,7 @@ MouseCursor NeuropixInterface::getMouseCursor()
 void NeuropixInterface::paint(Graphics& g)
 {
 
-    int xOffset = 27;
+    int xOffset = 30;
 
     // draw zoomed-out channels channels
 
@@ -1448,13 +1581,13 @@ void NeuropixInterface::paint(Graphics& g)
     {
         g.setColour(getChannelColour(i));
 
-        g.setPixel(xOffset + 3 + ((i % 2)) * 2, 513 - (i / 2));
-        g.setPixel(xOffset + 3 + ((i % 2)) * 2 + 1, 513 - (i / 2));
+        g.setPixel(xOffset + ((i % 2)) * 2, 513 - (i / 2));
+        g.setPixel(xOffset + ((i % 2)) * 2 + 1, 513 - (i / 2));
     }
 
     // channel 1 = pixel 513
-    // channel 966 = pixel 30
-    // 483 pixels for 966 channels
+    // channel 960 = pixel 33
+    // 480 pixels for 960 channels
 
     // draw channel numbers
 
@@ -1463,13 +1596,19 @@ void NeuropixInterface::paint(Graphics& g)
 
     int ch = 0;
 
-    for (int i = 513; i > 30; i -= 50)
+    // draw mark for every 100 channels
+    for (int i = 513; i > 33; i -= 50)
     {
         g.drawLine(6, i, 18, i);
         g.drawLine(44, i, 54, i);
         g.drawText(String(ch), 59, int(i) - 6, 100, 12, Justification::left, false);
         ch += 100;
     }
+
+    // draw 960 mark
+    g.drawLine(6, 33, 18, 33);
+	g.drawLine(44, 33, 54, 33);
+	g.drawText(String(960), 59, int(33) - 6, 100, 12, Justification::left, false);
 
     // draw shank outline
     g.setColour(Colours::lightgrey);
@@ -1485,7 +1624,7 @@ void NeuropixInterface::paint(Graphics& g)
 
     for (int i = lowestChan; i <= highestChan; i++)
     {
-        if (i >= 0 && i < 966)
+        if (i >= 0 && i < 960)
         {
 
             float xLoc = 225 - channelHeight * (1 - (i % 2));
@@ -1826,7 +1965,7 @@ void NeuropixInterface::timerCallback()
 
     if (numSamples > 0)
     {
-        for (int i = 0; i < 966; i++)
+        for (int i = 0; i < 960; i++)
         {
             if (visualizationMode == 4)
                 channelColours.set(i, Colour(random.nextInt(256), random.nextInt(256), 0));
@@ -1835,7 +1974,7 @@ void NeuropixInterface::timerCallback()
         }
     }
     else {
-        for (int i = 0; i < 966; i++)
+        for (int i = 0; i < 960; i++)
         {
             channelColours.set(i, Colour(20, 20, 20));
         }
@@ -1907,6 +2046,14 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 						xmlNode->setAttribute("hs_version", probe_info->getStringAttribute("hs_version"));
 						xmlNode->setAttribute("flex_part_number", probe_info->getStringAttribute("flex_part_number"));
 						xmlNode->setAttribute("flex_version", probe_info->getStringAttribute("flex_version"));
+
+						XmlElement* channelNode = xmlNode->createNewChildElement("CHANNELSTATUS");
+
+						for (int i = 0; i < channelStatus.size(); i++)
+						{
+							channelNode->setAttribute(String("E")+String(i), channelStatus[i]);
+						}
+
 					}
 				}
 			}
@@ -1972,6 +2119,20 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 			{
 
 				std::cout << "Found settings for probe " << mySerialNumber << std::endl;
+
+				if (xmlNode->getChildByName("CHANNELSTATUS"))
+				{
+
+					XmlElement* status = xmlNode->getChildByName("CHANNELSTATUS");
+
+					for (int i = 0; i < channelStatus.size(); i++)
+					{
+						channelStatus.set(i, status->getIntAttribute(String("E") + String(i)));
+					}
+					thread->p_settings.channelStatus = channelStatus;
+
+				}
+
 				zoomHeight = xmlNode->getIntAttribute("ZoomHeight");
 				zoomOffset = xmlNode->getIntAttribute("ZoomOffset");
 
@@ -1983,29 +2144,29 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 					std::cout << " Updating gains." << std::endl;
 					apGainComboBox->setSelectedId(apGainIndex, dontSendNotification);
 					lfpGainComboBox->setSelectedId(lfpGainIndex, dontSendNotification);
-					thread->setAllGains(slot, port, apGainIndex, lfpGainIndex);
 
 				}
+				thread->p_settings.apGainIndex = apGainIndex;
+				thread->p_settings.lfpGainIndex = lfpGainIndex;
 
 				int referenceChannelIndex = xmlNode->getIntAttribute("referenceChannelIndex");
 				if (referenceChannelIndex != referenceComboBox->getSelectedId())
 				{
 					referenceComboBox->setSelectedId(referenceChannelIndex, dontSendNotification);
-					thread->setAllReferences(slot, port, referenceChannelIndex - 1);
 				}
+				thread->p_settings.refChannelIndex = referenceChannelIndex - 1;
 				
 
 				int filterCutIndex = xmlNode->getIntAttribute("filterCutIndex");
 				if (filterCutIndex != filterComboBox->getSelectedId())
 				{
 					filterComboBox->setSelectedId(filterCutIndex, dontSendNotification);
-
-					int filterSetting = filterCutIndex - 1;
-					if (filterSetting == 0)
-						thread->setFilter(slot, port, true);
-					else
-						thread->setFilter(slot, port, false);
 				}
+				int filterSetting = filterCutIndex - 1;
+				if (filterSetting == 0)
+					thread->p_settings.disableHighPass = false;
+				else
+					thread->p_settings.disableHighPass = true;
 				
 
 				forEachXmlChildElement(*xmlNode, annotationNode)
@@ -2021,6 +2182,11 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 							annotationNode->getIntAttribute("B"))));
 					}
 				}
+
+				thread->p_settings.slot = slot;
+				thread->p_settings.port = port;
+				thread->updateProbeSettingsQueue();
+				
 			}
 		}
 	}
@@ -2068,14 +2234,9 @@ ColorSelector::ColorSelector(NeuropixInterface* np)
         buttons[i]->setBounds(18*i,0,15,15);
         buttons[i]->addListener(this);
         addAndMakeVisible(buttons[i]);
-    }
 
-    strings.add("Annotation 1");
-    strings.add("Annotation 2");
-    strings.add("Annotation 3");
-    strings.add("Annotation 4");
-    strings.add("Annotation 5");
-    strings.add("Annotation 6");
+        strings.add("Annotation " + String(i+1));
+    }
 
     npi->setAnnotationLabel(strings[0], standardColors[0]);
 

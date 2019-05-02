@@ -64,6 +64,8 @@ public:
 
 	unsigned char slot;
 
+	void init();
+
 	int getProbeCount();
 
 	String boot_version;
@@ -76,12 +78,18 @@ public:
 
 	float getTemperature();
 
-	void setReferences(unsigned char slot, signed char port, channelreference_t refId, unsigned char electrodeBank);
+	void setChannels(unsigned char slot, signed char port, Array<int> channelStatus);
+	void setReferences(unsigned char slot, signed char port, np::channelreference_t refId, unsigned char electrodeBank);
 	void setGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
 	void setApFilterState(unsigned char slot, signed char port, bool filterState);
 
 	void getInfo();
+
 	void makeSyncMaster();
+	void setSyncOutput(bool on);
+
+	Array<int> getSyncFrequencies();
+	void setSyncFrequency(int freqIndex);
 
 	void startAcquisition();
 	void stopAcquisition();
@@ -94,6 +102,8 @@ public:
 
 private:
 	bool probesInitialized;
+
+	Array<int> syncFrequencies;
 
 	File savingDirectory;
 };
@@ -131,15 +141,31 @@ public:
 	int lfp_gain;
 	bool highpass_on;
 
-	Array<bool> selectedElectrodes;
+	void init();
+
+	void setChannels(Array<int> channelStatus);
+	enum BANK_SELECT {
+		BANK_0,
+		BANK_1,
+		BANK_2,
+		DISCONNECTED = 0xFF
+	};
+	Array<BANK_SELECT> channelMap;
+
 	Array<int> apGains;
 	Array<int> lfpGains;
 
 	void setApFilterState(bool);
-	void setReferences(channelreference_t refId, unsigned char refElectrodeBank);
+	void setReferences(np::channelreference_t refId, unsigned char refElectrodeBank);
 	void setGains(unsigned char apGain, unsigned char lfpGain);
 
 	void calibrate();
+
+	void setStatus(int status_);
+	int status;
+
+	void setSelected(bool isSelected_);
+	bool isSelected;
 
 	void getInfo();
 
@@ -154,7 +180,7 @@ public:
 	uint64 eventCode;
 	Array<int> gains;
 
-	electrodePacket packet[SAMPLECOUNT];
+	np::electrodePacket packet[SAMPLECOUNT];
 
 };
 
