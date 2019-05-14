@@ -500,6 +500,7 @@ void Basestation::setSyncFrequency(int freqIndex)
 {
 	int frequency = syncFrequencies[freqIndex];
 	errorCode = setParameter(np::NP_PARAM_SYNCFREQUENCY_HZ, frequency);
+	errorCode = setTriggerOutput(slot, np::TRIGOUT_SMA, np::TRIGIN_SHAREDSYNC);
 }
 
 int Basestation::getProbeCount()
