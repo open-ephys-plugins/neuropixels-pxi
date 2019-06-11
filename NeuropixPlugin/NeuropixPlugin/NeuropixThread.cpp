@@ -549,15 +549,14 @@ void NeuropixThread::setDefaultChannelNames()
 
 bool NeuropixThread::usesCustomNames() const
 {
-	return false;
+	return true;
 }
 
 
 /** Returns the number of virtual subprocessors this source can generate */
 unsigned int NeuropixThread::getNumSubProcessors() const
 {
-
-	return 2 * totalProbes;
+	return totalProbes > 0 ? 2 * totalProbes : 2;
 }
 
 /** Returns the number of continuous headstage channels the data source can provide.*/
