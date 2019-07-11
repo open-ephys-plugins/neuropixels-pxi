@@ -469,26 +469,20 @@ Basestation::~Basestation()
 	errorCode = np::closeBS(slot);
 }
 
-void Basestation::makeSyncMaster()
+void Basestation::setSyncAsInput()
 {
 
-	//default to use external SYNC source on SMA connector
-	setSyncOutput(false);
 	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot);
-	/* NOTE: Setting the SYNC clock master is also possible using the setTriggerBinding functions.
-	It is however safer to use the setParameter function as this makes sure that only one slot is set as master. */
-
-}
-
-void Basestation::setSyncOutput(bool on)
-{
-	if (on)
-	{ //use internal sync clock generator with default frequency of 1Hz
-		errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SYNCCLOCK);
-		setSyncFrequency(0);
+	if (errorCode != np::SUCCESS)
+	{
+		printf("Failed to set slot %d as sync master!\n");
+		return;
 	}
-	else //use external SYNC clock generator on SMA connector
-		errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SMA);
+
+	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SMA);
+	if (errorCode != np::SUCCESS)
+		printf("Failed to set slot %d SMA as sync source!\n");
+
 }
 
 Array<int> Basestation::getSyncFrequencies()
@@ -496,11 +490,32 @@ Array<int> Basestation::getSyncFrequencies()
 	return syncFrequencies;
 }
 
-void Basestation::setSyncFrequency(int freqIndex)
+void Basestation::setSyncAsOutput(int freqIndex)
 {
-	int frequency = syncFrequencies[freqIndex];
-	errorCode = setParameter(np::NP_PARAM_SYNCFREQUENCY_HZ, frequency);
-	errorCode = setTriggerOutput(slot, np::TRIGOUT_SMA, np::TRIGIN_SHAREDSYNC);
+	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot);
+	if (errorCode != np::SUCCESS)
+	{
+		printf("Failed to set slot %d as sync master!\n", slot);
+		return;
+	} 
+
+	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SYNCCLOCK);
+	if (errorCode != np::SUCCESS)
+	{
+		printf("Failed to set slot %d internal clock as sync source!\n", slot);
+		return;
+	}
+
+	int freq = syncFrequencies[freqIndex];
+
+	printf("Setting slot %d sync frequency to %d Hz...\n", slot, freq);
+	errorCode = setParameter(np::NP_PARAM_SYNCFREQUENCY_HZ, freq);
+	if (errorCode != np::SUCCESS)
+	{
+		printf("Failed to set slot %d sync frequency to %d Hz!\n", slot, freq);
+		return;
+	}
+
 }
 
 int Basestation::getProbeCount()

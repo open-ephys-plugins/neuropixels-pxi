@@ -85,11 +85,10 @@ public:
 
 	void getInfo();
 
-	void makeSyncMaster();
-	void setSyncOutput(bool on);
+	void setSyncAsInput();
+	void setSyncAsOutput(int freqIndex);
 
 	Array<int> getSyncFrequencies();
-	void setSyncFrequency(int freqIndex);
 
 	void startAcquisition();
 	void stopAcquisition();

@@ -341,25 +341,36 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 
 	if (comboBox == masterSelectBox)
 	{
-		/* Set basestation as input by default using EXT SYNC */
 		thread->setMasterSync(slotIndex);
-		masterConfigBox->setSelectedItemIndex(0, false);
-		freqSelectBox->setSelectedItemIndex(0, false);
+		freqSelectBox->setVisible(false);
+		background->setFreqSelectAvailable(false);
+		freqSelectBox->setSelectedItemIndex(0, true);
 	}
 	else if (comboBox == masterConfigBox)
 	{
-		/* Allow frequency selection only if basestation is configured as output */
-		bool on = masterConfigBox->getSelectedId() == 2;
-		thread->setSyncOutput(slotIndex, on);
-		freqSelectBox->setVisible(on);
-		background->setFreqSelectAvailable(on);
-		background->repaint();
+		bool asOutput = masterConfigBox->getSelectedId() == 2;
+		if (asOutput)
+		{
+			thread->setSyncOutput(slotIndex);
+			freqSelectBox->setVisible(true);
+			background->setFreqSelectAvailable(true);
+		}
+		else
+		{
+			thread->setMasterSync(slotIndex);
+			freqSelectBox->setVisible(false);
+			background->setFreqSelectAvailable(false);
+		}
+		freqSelectBox->setSelectedItemIndex(0, true);
 	}
 	else /* comboBox == freqSelectBox */
 	{
 		int freqIndex = freqSelectBox->getSelectedId() - 1;
 		thread->setSyncFrequency(slotIndex, freqIndex);
 	}
+
+	background->repaint();
+
 }
 
 void NeuropixEditor::buttonEvent(Button* button)

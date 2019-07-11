@@ -72,8 +72,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvai
 		}
 	}
 
-	std::cout << "Scanned for basestations!" << std::endl; 
-
 }
 
 NeuropixThread::~NeuropixThread()
@@ -115,7 +113,7 @@ void NeuropixThread::openConnection()
 
 			if (!foundSync)
 			{
-				basestations[i]->makeSyncMaster();
+				basestations[i]->setSyncAsInput();
 				selectedSlot = basestations[i]->slot;
 				selectedPort = basestations[i]->probes[0]->port;
 				foundSync = true;
@@ -153,12 +151,12 @@ int NeuropixThread::getNumBasestations()
 
 void NeuropixThread::setMasterSync(int slotIndex)
 {
-	basestations[slotIndex]->makeSyncMaster();
+	basestations[slotIndex]->setSyncAsInput();
 }
 
-void NeuropixThread::setSyncOutput(int slotIndex, bool on)
+void NeuropixThread::setSyncOutput(int slotIndex)
 {
-	basestations[slotIndex]->setSyncOutput(on);
+	basestations[slotIndex]->setSyncAsOutput(0);
 }
 
 Array<int> NeuropixThread::getSyncFrequencies()
@@ -169,7 +167,7 @@ Array<int> NeuropixThread::getSyncFrequencies()
 
 void NeuropixThread::setSyncFrequency(int slotIndex, int freqIndex)
 {
-	basestations[slotIndex]->setSyncFrequency(freqIndex);
+	basestations[slotIndex]->setSyncAsOutput(freqIndex);
 }
 
 bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)

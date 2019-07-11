@@ -172,7 +172,7 @@ public:
 	int getNumBasestations();
 
 	void setMasterSync(int slotIndex);
-	void setSyncOutput(int slotIndex, bool on);
+	void setSyncOutput(int slotIndex);
 
 	Array<int> getSyncFrequencies();
 	void setSyncFrequency(int slotIndex, int freqIndex);

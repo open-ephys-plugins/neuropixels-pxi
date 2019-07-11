@@ -155,6 +155,9 @@
       <AdditionalLibraryDirectories>..\..\..\plugin-GUI\Builds\VisualStudio2013\x64\Release\bin;resources</AdditionalLibraryDirectories>
       <AdditionalDependencies>NeuropixAPI_x64_1_17.lib; open-ephys.lib</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(OutDir)$(TargetFileName)" "$(PluginDir)\" &amp;&amp; copy /Y "$(OutDir)$(TargetFileName)" "..\..\..\plugin-GUI\Builds\VisualStudio2013\x64\Release\bin\plugins</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

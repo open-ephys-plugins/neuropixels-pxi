@@ -2,7 +2,7 @@
     ------------------------------------------------------------------
 
     This file is part of the Open Ephys GUI
-    Copyright (C) 2016 Allen Institute for Brain Science and Open Ephys
+    Copyright (C) 2019 Allen Institute for Brain Science and Open Ephys
 
     ------------------------------------------------------------------
 
