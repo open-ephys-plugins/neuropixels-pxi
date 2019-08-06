@@ -65,6 +65,7 @@ public:
 	void setSelectedState(bool);
 
 	void setProbeStatus(int status);
+	int getProbeStatus();
 	void timerCallback();
 
 	unsigned char slot;

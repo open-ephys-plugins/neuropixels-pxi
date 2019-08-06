@@ -191,6 +191,11 @@ void ProbeButton::setProbeStatus(int status_)
 
 }
 
+int ProbeButton::getProbeStatus()
+{
+	return status;
+}
+
 void ProbeButton::timerCallback()
 {
 
@@ -219,14 +224,17 @@ void BackgroundLoader::run()
 	CoreServices::sendStatusMessage("Restoring saved probe settings...");
 	np->applyProbeSettingsQueue();
 
-	/* Remove button callback timers*/
+	 /* Remove button callback timers and select first avalable probe by default*/
+	bool selectedFirstAvailableProbe = false;
 	for (auto button : ed->probeButtons)
 	{
+		if (button->getProbeStatus() == 1 && (!selectedFirstAvailableProbe))
+		{
+			ed->buttonEvent(button);
+			selectedFirstAvailableProbe = true;
+		}
 		button->stopTimer();
 	}
-
-	/* Default to first detected probe as active probe */
-	ed->buttonEvent(ed->probeButtons[0]);
 
 	/* Let the main GUI know the plugin is done initializing */
 	MessageManagerLock mml;
