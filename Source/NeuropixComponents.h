@@ -207,4 +207,54 @@ public:
 	void getInfo();
 };
 
+typedef struct HST_Status {
+	np::NP_ErrorCode VDD_A1V2;
+	np::NP_ErrorCode VDD_A1V8;
+	np::NP_ErrorCode VDD_D1V2;
+	np::NP_ErrorCode VDD_D1V8;
+	np::NP_ErrorCode MCLK;
+	np::NP_ErrorCode PCLK;
+	np::NP_ErrorCode PSB;
+	np::NP_ErrorCode I2C;
+	np::NP_ErrorCode NRST;
+	np::NP_ErrorCode REC_NRESET;
+	np::NP_ErrorCode SIGNAL;
+};
+
+class HeadstageTestModule : public NeuropixComponent
+{
+public:
+
+	HeadstageTestModule::HeadstageTestModule(Basestation* bs, signed char port);
+
+	void getInfo();
+
+	np::NP_ErrorCode test_VDD_A1V2();
+	np::NP_ErrorCode test_VDD_A1V8();
+	np::NP_ErrorCode test_VDD_D1V2();
+	np::NP_ErrorCode test_VDD_D1V8();
+	np::NP_ErrorCode test_MCLK();
+	np::NP_ErrorCode test_PCLK();
+	np::NP_ErrorCode test_PSB();
+	np::NP_ErrorCode test_I2C();
+	np::NP_ErrorCode test_NRST();
+	np::NP_ErrorCode test_REC_NRESET();
+	np::NP_ErrorCode test_SIGNAL();
+
+	void runAll();
+	void showResults();
+
+private:
+	Basestation* basestation;
+	Headstage* headstage;
+
+	unsigned char slot;
+	signed char port;
+
+	std::vector<std::string> tests;
+
+	ScopedPointer<HST_Status> status;
+
+};
+
 #endif  // __NEUROPIXCOMPONENTS_H_2C4C2D67__

@@ -429,6 +429,16 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 			{
 				probes.add(new Probe(this, port));
 				probes[probes.size() - 1]->setStatus(ProbeStatus::CONNECTING);
+				continue;
+			}
+			
+			errorCode = np::openProbeHSTest(slot, port);
+
+			if (errorCode == np::SUCCESS)
+			{
+				ScopedPointer<HeadstageTestModule> hst = new HeadstageTestModule(this, port);
+				hst->runAll();
+				hst->showResults();
 			}
 
 		}
@@ -672,4 +682,127 @@ void Basestation::setSavingDirectory(File directory)
 File Basestation::getSavingDirectory()
 {
 	return savingDirectory;
+}
+
+/****************Headstage Test Module**************************/
+
+HeadstageTestModule::HeadstageTestModule(Basestation* bs, signed char port) : basestation(bs)
+{
+
+	slot = basestation->slot;
+
+	this->port = port;
+
+	tests = {
+		"VDDA1V2",
+		"VDDA1V8",
+		"VDDD1V2",
+		"VDDD1V8",
+		"MCLK", 
+		"PCLK",
+		"PSB",
+		"I2C",
+		"NRST",
+		"REC_NRESET",
+		"SIGNAL"
+	};
+
+}
+
+void HeadstageTestModule::getInfo()
+{
+	//TODO?
+}
+
+void HeadstageTestModule::runAll()
+{
+
+	status = new HST_Status();
+
+	status->VDD_A1V2 	= test_VDD_A1V2();
+	status->VDD_A1V8 	= test_VDD_A1V8();
+	status->VDD_D1V2 	= test_VDD_D1V2();
+	status->VDD_D1V8 	= test_VDD_D1V8();
+	status->MCLK 		= test_MCLK();
+	status->PCLK 		= test_PCLK();
+	status->PSB 		= test_PSB();
+	status->I2C 		= test_I2C();
+	status->NRST 		= test_NRST();
+	status->REC_NRESET 	= test_REC_NRESET();
+	status->SIGNAL 		= test_SIGNAL();
+
+}
+
+void HeadstageTestModule::showResults()
+{
+
+	int numTests = sizeof(struct HST_Status)/sizeof(np::NP_ErrorCode);
+	int maxTestNameLength = 40;
+	String message = "Test results from HST module on slot: " + String(slot) + " port: " + String(port) + "\n\n"; 
+
+	np::NP_ErrorCode *results = (np::NP_ErrorCode*)(&status->VDD_A1V2);
+	for (int i = 0; i < numTests; i++)
+	{
+		message+=String(tests[i]).paddedRight('-', maxTestNameLength - tests[i].length());
+		message+=results[i] == np::SUCCESS ? "PASSED" : "FAILED w/ error code: " + String(results[i]);
+		message+= "\n";
+	}
+
+	AlertWindow::showMessageBox(AlertWindow::AlertIconType::InfoIcon, "HST Module Detected!", message, "OK");
+
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_VDD_A1V2()
+{
+	return np::HSTestVDDA1V2(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_VDD_A1V8()
+{
+	return np::HSTestVDDA1V8(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_VDD_D1V2()
+{
+	return np::HSTestVDDD1V2(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_VDD_D1V8()
+{
+	return np::HSTestVDDD1V8(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_MCLK()
+{
+	return np::HSTestMCLK(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_PCLK()
+{
+	return np::HSTestPCLK(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_PSB()
+{
+	return np::HSTestPSB(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_I2C()
+{
+	return np::HSTestI2C(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_NRST()
+{
+	return np::HSTestNRST(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_REC_NRESET()
+{
+	return np::HSTestREC_NRESET(slot, port);
+}
+
+np::NP_ErrorCode HeadstageTestModule::test_SIGNAL()
+{
+	return np::HSTestOscillator(slot, port);
 }
