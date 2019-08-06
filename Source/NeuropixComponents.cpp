@@ -138,7 +138,7 @@ void Probe::getInfo()
 Probe::Probe(Basestation* bs, signed char port_) : Thread("probe_" + String(port_)), basestation(bs), port(port_), fifoFillPercentage(0.0f)
 {
 
-	setStatus(0);
+	setStatus(ProbeStatus::DISCONNECTED);
 	setSelected(false);
 
 	flex = new Flex(this);
@@ -164,9 +164,9 @@ Probe::Probe(Basestation* bs, signed char port_) : Thread("probe_" + String(port
 
 }
 
-void Probe::setStatus(int status_)
+void Probe::setStatus(ProbeStatus status)
 {
-	status = status_;
+	this->status = status;
 }
 
 void Probe::setSelected(bool isSelected_)
@@ -428,7 +428,7 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 			if (errorCode == np::SUCCESS)
 			{
 				probes.add(new Probe(this, port));
-				probes[probes.size() - 1]->setStatus(2); //CONNECTING
+				probes[probes.size() - 1]->setStatus(ProbeStatus::CONNECTING);
 			}
 
 		}
@@ -451,10 +451,10 @@ void Basestation::init()
 			std::cout << "  FAILED!." << std::endl;
 		else
 		{
-			setGains(this->slot, probes[i]->port, 3, 2); // set defaults
-			probes[i]->setStatus(1);
-			std::cout << "  Success!" << std::endl;
+			setGains(this->slot, probes[i]->port, 3, 2);
+			probes[i]->setStatus(ProbeStatus::CONNECTED);
 		}
+
 	}
 
 }
@@ -557,7 +557,7 @@ void Basestation::initializeProbes()
 				probes[i]->ap_timestamp = 0;
 				probes[i]->lfp_timestamp = 0;
 				probes[i]->eventCode = 0;
-				probes[i]->setStatus(1); //READY
+				probes[i]->setStatus(ProbeStatus::CONNECTED);
 			}
 			else {
 				std::cout << "     Failed with error code " << errorCode << std::endl;

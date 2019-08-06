@@ -480,7 +480,7 @@ void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 	selectedPort = port;
 }
 
-int NeuropixThread::getProbeStatus(unsigned char slot, signed char port)
+ProbeStatus NeuropixThread::getProbeStatus(unsigned char slot, signed char port)
 {
 	for (int i = 0; i < basestations.size(); i++)
 	{
@@ -496,7 +496,7 @@ int NeuropixThread::getProbeStatus(unsigned char slot, signed char port)
 		}
 
 	}
-	return 0;
+	return ProbeStatus::DISCONNECTED;
 }
 
 bool NeuropixThread::isSelectedProbe(unsigned char slot, signed char port)

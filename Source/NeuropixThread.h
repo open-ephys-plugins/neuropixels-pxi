@@ -177,7 +177,7 @@ public:
 	Array<int> getSyncFrequencies();
 	void setSyncFrequency(int slotIndex, int freqIndex);
 
-	int getProbeStatus(unsigned char slot, signed char port);
+	ProbeStatus getProbeStatus(unsigned char slot, signed char port);
 	void setSelectedProbe(unsigned char slot, signed char probe);
 	bool isSelectedProbe(unsigned char slot, signed char probe);
 

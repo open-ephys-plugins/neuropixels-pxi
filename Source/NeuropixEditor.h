@@ -64,8 +64,8 @@ public:
 	void setSlotAndPort(unsigned char, signed char);
 	void setSelectedState(bool);
 
-	void setProbeStatus(int status);
-	int getProbeStatus();
+	void setProbeStatus(ProbeStatus status);
+	ProbeStatus getProbeStatus();
 	void timerCallback();
 
 	unsigned char slot;
@@ -77,7 +77,7 @@ private:
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
 	int id;
-	int status;
+	ProbeStatus status;
 	bool selected;
 };
 
