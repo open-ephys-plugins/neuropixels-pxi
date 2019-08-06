@@ -1164,6 +1164,14 @@ void NeuropixInterface::buttonClicked(Button* button)
 				bool passed = thread->runBist(slot, port, bistComboBox->getSelectedId());
 
 				String testString = bistComboBox->getText();
+
+				//Check if testString already has test result attached
+				String result = testString.substring(testString.length() - 6);
+				if (result.compare("PASSED") == 0 || result.compare("FAILED") == 0)
+				{
+				    testString = testString.dropLastCharacters(9);
+				}
+
 				if (passed)
 				{
 					testString += " - PASSED";
