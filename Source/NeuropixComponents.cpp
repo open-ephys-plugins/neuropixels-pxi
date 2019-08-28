@@ -482,6 +482,13 @@ Basestation::~Basestation()
 void Basestation::setSyncAsInput()
 {
 
+	errorCode = np::setTriggerInput(slot, np::TRIGIN_SW);
+	if (errorCode != np::SUCCESS)
+	{
+		printf("Failed to set slot %d trigger as input!\n");
+		return;
+	}
+
 	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot);
 	if (errorCode != np::SUCCESS)
 	{
@@ -493,6 +500,13 @@ void Basestation::setSyncAsInput()
 	if (errorCode != np::SUCCESS)
 		printf("Failed to set slot %d SMA as sync source!\n");
 
+	errorCode = setTriggerOutput(slot, np::TRIGOUT_PXI1, np::TRIGIN_SW);
+	if (errorCode != np::SUCCESS)
+	{
+		printf("Failed to reset sync on SMA output on slot: %d\n", slot);
+	}
+
+
 }
 
 Array<int> Basestation::getSyncFrequencies()
@@ -502,6 +516,7 @@ Array<int> Basestation::getSyncFrequencies()
 
 void Basestation::setSyncAsOutput(int freqIndex)
 {
+
 	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot);
 	if (errorCode != np::SUCCESS)
 	{
@@ -524,6 +539,12 @@ void Basestation::setSyncAsOutput(int freqIndex)
 	{
 		printf("Failed to set slot %d sync frequency to %d Hz!\n", slot, freq);
 		return;
+	}
+
+	errorCode = setTriggerOutput(slot, np::TRIGOUT_SMA, np::TRIGIN_SHAREDSYNC);
+	if (errorCode != np::SUCCESS)
+	{
+		printf("Failed to set sync on SMA output on slot: %d\n", slot);
 	}
 
 }

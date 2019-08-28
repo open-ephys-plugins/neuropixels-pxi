@@ -299,7 +299,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	{
 		masterSelectBox->addItem(String(i + 1), i+1);
 	}
-	masterSelectBox->setSelectedItemIndex(0, false);
+	masterSelectBox->setSelectedItemIndex(0, dontSendNotification);
 	masterSelectBox->addListener(this);
 	addAndMakeVisible(masterSelectBox);
 
@@ -307,7 +307,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	masterConfigBox->setBounds(90 * (numBasestations)+32, 72, 78, 20);
 	masterConfigBox->addItem(String("INPUT"), 1);
 	masterConfigBox->addItem(String("OUTPUT"), 2);
-	masterConfigBox->setSelectedItemIndex(0, false);
+	masterConfigBox->setSelectedItemIndex(0, dontSendNotification);
 	masterConfigBox->addListener(this);
 	addAndMakeVisible(masterConfigBox);
 
@@ -319,7 +319,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	{
 		freqSelectBox->addItem(String(syncFrequencies[i])+String(" Hz"), i+1);
 	}
-	freqSelectBox->setSelectedItemIndex(0, false);
+	freqSelectBox->setSelectedItemIndex(0, dontSendNotification);
 	freqSelectBox->addListener(this);
 	addChildComponent(freqSelectBox);
 
