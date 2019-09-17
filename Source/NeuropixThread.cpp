@@ -522,27 +522,34 @@ void NeuropixThread::setDefaultChannelNames()
 {
 
 	//std::cout << "Setting channel bitVolts to 0.195" << std::endl;
-
-	for (int bs_num = 0; bs_num < basestations.size(); bs_num++)
+	if (totalProbes > 0)
 	{
-		for (int i = 0; i < 384; i++)
+		
+		int chan = 0;
+
+		for (int probe_num = 0; probe_num < totalProbes; probe_num++)
 		{
-			ChannelCustomInfo info;
-			info.name = "AP" + String(i + 1);
-			info.gain = 0.1950000f;
-			channelInfo.set(i, info);
+			for (int i = 0; i < 384; i++)
+			{
+				ChannelCustomInfo info;
+				info.name = "AP" + String(i + 1);
+				info.gain = 0.1950000f;
+				channelInfo.set(chan, info);
+				chan++;
+			}
+
+			for (int i = 0; i < 384; i++)
+			{
+				ChannelCustomInfo info;
+				info.name = "LFP" + String(i + 1);
+				info.gain = 0.1950000f;
+				channelInfo.set(chan, info);
+				chan++;
+			}
 		}
 
-		for (int i = 0; i < 384; i++)
-		{
-			ChannelCustomInfo info;
-			info.name = "LFP" + String(i + 1);
-			info.gain = 0.1950000f;
-			channelInfo.set(384 + i, info);
-		}
 	}
 
-	
 }
 
 bool NeuropixThread::usesCustomNames() const

@@ -758,13 +758,14 @@ void HeadstageTestModule::showResults()
 {
 
 	int numTests = sizeof(struct HST_Status)/sizeof(np::NP_ErrorCode);
-	int maxTestNameLength = 40;
+	int resultLineTextLength = 30;
 	String message = "Test results from HST module on slot: " + String(slot) + " port: " + String(port) + "\n\n"; 
 
 	np::NP_ErrorCode *results = (np::NP_ErrorCode*)(&status->VDD_A1V2);
 	for (int i = 0; i < numTests; i++)
 	{
-		message+=String(tests[i]).paddedRight('-', maxTestNameLength - tests[i].length());
+		message+=String(tests[i]);
+		for (int ii = 0; ii < resultLineTextLength - tests[i].length(); ii++) message+="-"; 
 		message+=results[i] == np::SUCCESS ? "PASSED" : "FAILED w/ error code: " + String(results[i]);
 		message+= "\n";
 	}
