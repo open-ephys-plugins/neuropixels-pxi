@@ -34,7 +34,14 @@ GenericEditor* NeuropixThread::createEditor(SourceNode* sn)
     return new NeuropixEditor(sn, this, true);
 }
 
-NeuropixThread::NeuropixThread(SourceNode* sn) : DataThread(sn), baseStationAvailable(false), probesInitialized(false), recordingNumber(0), isRecording(false), recordingTimer(this)
+NeuropixThread::NeuropixThread(SourceNode* sn) : 
+	DataThread(sn),
+	baseStationAvailable(false),
+	probesInitialized(false),
+	recordingNumber(0),
+	isRecording(false),
+	recordingTimer(this),
+	recordToNpx(false)
 {
 	progressBar = new ProgressBar(initializationProgress);
 
@@ -691,6 +698,9 @@ void NeuropixThread::setAutoRestart(bool restart)
 
 void NeuropixThread::setDirectoryForSlot(int slotIndex, File directory)
 {
+
+	setRecordMode(true);
+
 	std::cout << "Thread setting directory for slot " << slotIndex << " to " << directory.getFileName() << std::endl;
 
 	if (slotIndex < basestations.size())
@@ -800,17 +810,22 @@ float NeuropixThread::getFillPercentage(unsigned char slot)
 bool NeuropixThread::updateBuffer()
 {
 
-	bool shouldRecord = CoreServices::getRecordingStatus();
+	if (recordToNpx)
+	{
 
-	if (!isRecording && shouldRecord)
-	{
-		isRecording = true;
-		recordingTimer.startTimer(1000);
-	}
-	else if (isRecording && !shouldRecord)
-	{
-		isRecording = false;
-		stopRecording();
+		bool shouldRecord = CoreServices::getRecordingStatus();
+
+		if (!isRecording && shouldRecord)
+		{
+			isRecording = true;
+			recordingTimer.startTimer(1000);
+		}
+		else if (isRecording && !shouldRecord)
+		{
+			isRecording = false;
+			stopRecording();
+		}
+
 	}
 
     return true;
