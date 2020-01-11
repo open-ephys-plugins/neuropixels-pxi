@@ -118,6 +118,8 @@ public:
 	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread, bool useDefaultParameterEditors);
 	virtual ~NeuropixEditor();
 
+	void collapsedStateChanged() override;
+
 	void comboBoxChanged(ComboBox*);
 	void buttonEvent(Button* button);
 

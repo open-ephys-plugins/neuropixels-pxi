@@ -341,6 +341,12 @@ NeuropixEditor::~NeuropixEditor()
 
 }
 
+void NeuropixEditor::collapsedStateChanged()
+{
+    if (masterConfigBox->getSelectedId() == 1)
+        freqSelectBox->setVisible(false);
+}
+
 void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 {
 
@@ -349,6 +355,7 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 	if (comboBox == masterSelectBox)
 	{
 		thread->setMasterSync(slotIndex);
+        masterConfigBox->setSelectedItemIndex(0,true);
 		freqSelectBox->setVisible(false);
 		background->setFreqSelectAvailable(false);
 		freqSelectBox->setSelectedItemIndex(0, true);
