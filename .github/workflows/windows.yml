@@ -1,0 +1,73 @@
+name: Windows
+
+on: 
+  push:
+
+jobs:
+
+  build-windows:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup
+      env: 
+        repo: open-ephys-gui
+        package: "open-ephys-lib"
+      run: |
+        cd ../..
+        git clone https://github.com/open-ephys/plugin-GUI.git
+        cd plugin-GUI/Build
+        cmake -G "Visual Studio 16 2019" -A x64 .. 
+        mkdir Release && cd Release
+        lib_version=$(curl -s -X GET https://api.bintray.com/packages/open-ephys-gui/Libraries/open-ephys-lib-for-windows/versions/_latest | jq '.name')
+        lib_version="${lib_version:1:${#lib_version}-2}"
+        curl -L https://dl.bintray.com/open-ephys-gui/Libraries/open-ephys-lib-for-win-${lib_version}.zip --output open-ephys-lib-for-win-${lib_version}.zip 
+        unzip open-ephys-lib-for-win-${lib_version}.zip
+      shell: bash
+    - name: configure
+      run: |
+        cd Build
+        cmake -G "Visual Studio 16 2019" -A x64 .. 
+      shell: bash
+    - name: Setup MSBuild.exe
+      uses: warrenbuckley/Setup-MSBuild@v1
+    - name: build
+      run: |
+        msbuild Build/INSTALL.vcxproj -p:Configuration=Release -p:Platform=x64
+      shell: cmd
+# TODO: Perform some basic testing before publishing...
+#    - name: test
+#      run: cd build && ctest
+    - name: deploy
+      env:
+        bintrayUser: ${{ secrets.bintrayUsername }}
+        bintrayApiKey: ${{ secrets.bintrayApiKey }}
+        build_dir: "Build/Release"
+        repo: ${{ github.event.repository.name }}
+        package: ${{ github.event.repository.name }}-windows
+      run: |
+        tag=$(git describe --tags $(git rev-list --tags --max-count=1))
+        plugin_api=$(grep -rnw ../../plugin-GUI/Source -e '#define PLUGIN_API_VER' | grep -Eo "[0-9]*" | tail -1)
+        new_plugin_ver=$tag-API$plugin_api
+        mkdir plugins
+        cp -v $build_dir/*.dll plugins
+        if [ -d "Resources" ]
+        then
+          mkdir shared
+          cp -v Resources/*.dll shared
+        fi
+        zipfile=${package}_${new_plugin_ver}.zip
+        powershell Compress-Archive -Path "plugins" -DestinationPath ${zipfile}
+        if [ -d "shared" ]
+        then
+          powershell Compress-Archive -U -Path "shared" -DestinationPath ${zipfile}
+        fi
+        user_info="$bintrayUser:$bintrayApiKey"
+        curl -T $zipfile --user $user_info https://api.bintray.com/content/$bintrayUser/$repo/$package/$new_plugin_ver/$zipfile
+        curl -X POST --user $user_info https://api.bintray.com/content/$bintrayUser/$repo/$package/$new_plugin_ver/publish
+      shell: bash
