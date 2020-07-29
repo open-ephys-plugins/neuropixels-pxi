@@ -20,7 +20,7 @@ jobs:
         package: "open-ephys-lib"
       run: |
         cd ../..
-        git clone https://github.com/open-ephys/plugin-GUI.git
+        git clone https://github.com/open-ephys/plugin-GUI.git --branch testing
         cd plugin-GUI/Build
         cmake -G "Visual Studio 16 2019" -A x64 .. 
         mkdir Release && cd Release
@@ -36,9 +36,10 @@ jobs:
       shell: bash
     - name: Setup MSBuild.exe
       uses: warrenbuckley/Setup-MSBuild@v1
-    - name: build
+    - name: build-plugin
       run: |
-        msbuild Build/INSTALL.vcxproj -p:Configuration=Release -p:Platform=x64
+        cd Build
+        msbuild INSTALL.vcxproj -p:Configuration=Release -p:Platform=x64
       shell: cmd
 # TODO: Perform some basic testing before publishing...
 #    - name: test
@@ -51,15 +52,15 @@ jobs:
         repo: ${{ github.event.repository.name }}
         package: ${{ github.event.repository.name }}-windows
       run: |
-        tag=$(git describe --tags $(git rev-list --tags --max-count=1))
         plugin_api=$(grep -rnw ../../plugin-GUI/Source -e '#define PLUGIN_API_VER' | grep -Eo "[0-9]*" | tail -1)
+        tag=$(git describe --tags $(git rev-list --tags --max-count=1))
         new_plugin_ver=$tag-API$plugin_api
         mkdir plugins
-        cp -v $build_dir/*.dll plugins
+        cp $build_dir/*.dll plugins
         if [ -d "Resources" ]
         then
           mkdir shared
-          cp -v Resources/*.dll shared
+          cp Resources/*.dll shared
         fi
         zipfile=${package}_${new_plugin_ver}.zip
         powershell Compress-Archive -Path "plugins" -DestinationPath ${zipfile}
