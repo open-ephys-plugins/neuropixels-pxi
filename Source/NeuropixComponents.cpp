@@ -126,7 +126,6 @@ void Flex::getInfo()
 
 void Probe::getInfo()
 {
-
 	errorCode = np::readId(basestation->slot, port, &serial_number);
 
 	char pn[MAXLEN];
@@ -140,11 +139,6 @@ Probe::Probe(Basestation* bs, signed char port_) : Thread("probe_" + String(port
 
 	setStatus(ProbeStatus::DISCONNECTED);
 	setSelected(false);
-
-	flex = new Flex(this);
-	headstage = new Headstage(this);
-
-	getInfo();
 
 	for (int i = 0; i < 384; i++)
 	{
@@ -162,6 +156,16 @@ Probe::Probe(Basestation* bs, signed char port_) : Thread("probe_" + String(port
 	gains.add(2000.0f);
 	gains.add(3000.0f);
 
+}
+
+void Probe::init()
+{
+	getInfo();
+
+	flex = new Flex(this);
+	flex->getInfo();
+	headstage = new Headstage(this);
+	headstage->getInfo();
 }
 
 void Probe::setStatus(ProbeStatus status)
@@ -389,24 +393,27 @@ void Probe::run()
 
 Headstage::Headstage(Probe* probe_) : probe(probe_)
 {
-	getInfo();
 }
 
 Flex::Flex(Probe* probe_) : probe(probe_)
 {
-	getInfo();
 }
 
 BasestationConnectBoard::BasestationConnectBoard(Basestation* bs) : basestation(bs)
 {
-	getInfo();
 }
 
 
 Basestation::Basestation(int slot_number) : probesInitialized(false)
 {
 
-	slot = (unsigned char)slot_number;
+	slot = (unsigned char) slot_number;
+
+}
+
+void Basestation::open()
+{
+	std::cout << "OPENING PARENT" << std::endl;
 
 	errorCode = np::openBS(slot);
 
@@ -417,6 +424,7 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 
 		getInfo();
 		basestationConnectBoard = new BasestationConnectBoard(this);
+		basestationConnectBoard->getInfo();
 
 		savingDirectory = File();
 
@@ -428,10 +436,11 @@ Basestation::Basestation(int slot_number) : probesInitialized(false)
 			if (errorCode == np::SUCCESS)
 			{
 				probes.add(new Probe(this, port));
-				probes[probes.size() - 1]->setStatus(ProbeStatus::CONNECTING);
+				probes.getLast()->init();
+				probes.getLast()->setStatus(ProbeStatus::CONNECTING);
 				continue;
 			}
-			
+
 			errorCode = np::openProbeHSTest(slot, port);
 
 			if (errorCode == np::SUCCESS)
@@ -470,6 +479,12 @@ void Basestation::init()
 }
 
 Basestation::~Basestation()
+{
+	close();
+	
+}
+
+void Basestation::close()
 {
 	for (int i = 0; i < probes.size(); i++)
 	{

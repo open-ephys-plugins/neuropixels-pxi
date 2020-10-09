@@ -62,6 +62,9 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
     refs.add(576);
     refs.add(960);
 
+	defaultSyncFrequencies.add(1);
+	defaultSyncFrequencies.add(10);
+
     counter = 0;
 
     maxCounter = 0;
@@ -76,7 +79,15 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 		if ((availableslotmask >> slot) & 1)
 		{
 			basestations.add(new Basestation(slot));
+			basestations.getLast()->open();
 		}
+	}
+
+	if (basestations.size() == 0)
+	{
+		// pop-up window
+		basestations.add(new SimulatedBasestation(0));
+		basestations.getLast()->open();
 	}
 
 }
@@ -168,7 +179,11 @@ void NeuropixThread::setSyncOutput(int slotIndex)
 
 Array<int> NeuropixThread::getSyncFrequencies()
 {
-	return basestations[0]->getSyncFrequencies();
+	if (basestations.size() > 0)
+		return basestations[0]->getSyncFrequencies();
+	else
+		return defaultSyncFrequencies;
+		
 }
 
 

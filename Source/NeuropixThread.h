@@ -31,6 +31,7 @@
 
 #include "neuropix-api/NeuropixAPI.h"
 #include "NeuropixComponents.h"
+#include "SimulatedComponents.h"
 
 
 enum BISTS {
@@ -224,6 +225,8 @@ private:
 	CriticalSection displayMutex;
 
 	void closeConnection();
+
+	Array<int> defaultSyncFrequencies;
 
 	Array<int> channelMap;
 	Array<bool> outputOn;

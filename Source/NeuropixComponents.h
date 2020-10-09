@@ -64,9 +64,11 @@ public:
 
 	unsigned char slot;
 
-	void init();
+	virtual void open();
+	virtual void close();
+	virtual void init();
 
-	int getProbeCount();
+	virtual int getProbeCount();
 
 	String boot_version;
 
@@ -74,32 +76,31 @@ public:
 
 	OwnedArray<Probe> probes;
 
-	void initializeProbes();
+	virtual void initializeProbes();
 
 	float getTemperature();
 
-	void setChannels(unsigned char slot, signed char port, Array<int> channelStatus);
-	void setReferences(unsigned char slot, signed char port, np::channelreference_t refId, unsigned char electrodeBank);
-	void setGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
-	void setApFilterState(unsigned char slot, signed char port, bool filterState);
+	virtual void setChannels(unsigned char slot, signed char port, Array<int> channelStatus);
+	virtual void setReferences(unsigned char slot, signed char port, np::channelreference_t refId, unsigned char electrodeBank);
+	virtual void setGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
+	virtual void setApFilterState(unsigned char slot, signed char port, bool filterState);
 
-	void getInfo();
+	virtual void getInfo();
 
-	void setSyncAsInput();
-	void setSyncAsOutput(int freqIndex);
+	virtual void setSyncAsInput();
+	virtual void setSyncAsOutput(int freqIndex);
 
 	Array<int> getSyncFrequencies();
 
-	void startAcquisition();
-	void stopAcquisition();
+	virtual void startAcquisition();
+	virtual void stopAcquisition();
 
 	void setSavingDirectory(File);
 	File getSavingDirectory();
 
 	float getFillPercentage();
 	
-
-private:
+protected:
 	bool probesInitialized;
 
 	Array<int> syncFrequencies;
@@ -115,7 +116,7 @@ public:
 
 	Basestation* basestation;
 
-	void getInfo();
+	virtual void getInfo();
 };
 
 typedef enum {
@@ -148,9 +149,9 @@ public:
 	int lfp_gain;
 	bool highpass_on;
 
-	void init();
+	virtual void init();
 
-	void setChannels(Array<int> channelStatus);
+	virtual void setChannels(Array<int> channelStatus);
 	enum BANK_SELECT {
 		BANK_0,
 		BANK_1,
@@ -162,11 +163,11 @@ public:
 	Array<int> apGains;
 	Array<int> lfpGains;
 
-	void setApFilterState(bool);
-	void setReferences(np::channelreference_t refId, unsigned char refElectrodeBank);
-	void setGains(unsigned char apGain, unsigned char lfpGain);
+	virtual void setApFilterState(bool);
+	virtual void setReferences(np::channelreference_t refId, unsigned char refElectrodeBank);
+	virtual void setGains(unsigned char apGain, unsigned char lfpGain);
 
-	void calibrate();
+	virtual void calibrate();
 
 	void setStatus(ProbeStatus);
 	ProbeStatus status;
@@ -174,7 +175,7 @@ public:
 	void setSelected(bool isSelected_);
 	bool isSelected;
 
-	void getInfo();
+	virtual void getInfo();
 
 	int channel_count;
 
@@ -196,7 +197,7 @@ class Headstage : public NeuropixComponent
 public:
 	Headstage::Headstage(Probe*);
 	Probe* probe;
-	void getInfo();
+	virtual void getInfo();
 };
 
 class Flex : public NeuropixComponent
@@ -204,7 +205,7 @@ class Flex : public NeuropixComponent
 public:
 	Flex::Flex(Probe*);
 	Probe* probe;
-	void getInfo();
+	virtual void getInfo();
 };
 
 typedef struct HST_Status {
