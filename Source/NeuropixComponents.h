@@ -2,7 +2,7 @@
 ------------------------------------------------------------------
 
 This file is part of the Open Ephys GUI
-Copyright (C) 2018 Allen Institute for Brain Science and Open Ephys
+Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
 
 ------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 
-#include "neuropix-api/NeuropixAPI.h"
+#include "API/v1/NeuropixAPI.h"
 
 
 # define SAMPLECOUNT 64
@@ -38,37 +38,88 @@ class Flex;
 class Headstage;
 class Probe;
 
+struct ComponentInfo
+{
+	String version = "";
+	uint64_t serial_number = 0;
+	String part_number = "";
+	String boot_version = "";
+};
+
 class NeuropixComponent
 {
 public:
-	NeuropixComponent();
+	NeuropixComponent() {
+		getInfo();
+	}
 
-	String version;
-	uint64_t serial_number;
-	String part_number;
+	ComponentInfo info;
 
-	virtual void getInfo() = 0;
+	virtual void getInfo() { }
 };
 
-class NeuropixAPI : public NeuropixComponent
+class NeuropixAPIv1 : public NeuropixComponent
 {
 public:
-	void getInfo();
+	void getInfo() {
+
+		unsigned char version_major;
+		unsigned char version_minor;
+		np::getAPIVersion(&version_major, &version_minor);
+
+		info.version = String(version_major) + "." + String(version_minor);
+	}
 };
 
 class Basestation : public NeuropixComponent
 {
 public:
-	Basestation(int slot);
-	~Basestation();
+	Basestation(int slot_) : NeuropixComponent() {
+		probesInitialized = false;
+		slot = slot_;
+	}
+
+	virtual void open() = 0;
+	virtual void close() = 0;
+	virtual void init() = 0;
+
+	virtual int getProbeCount() = 0;
+
+	virtual void initializeProbes() = 0;
+
+//	virtual float getTemperature() = 0;
+
+	virtual bool runBist(signed char port, int bistIndex) = 0;
+
+	virtual void setChannels(unsigned char slot, 
+							 signed char port, 
+							 Array<int> channelStatus) = 0;
+
+	virtual void setReferences(unsigned char slot, 
+							   signed char port, 
+							   np::channelreference_t refId, 
+						       unsigned char electrodeBank) = 0;
+
+	virtual void setGains(unsigned char slot, 
+						  signed char port, 
+						  unsigned char apGain, 
+						  unsigned char lfpGain) = 0;
+
+	virtual void setApFilterState(unsigned char slot, 
+								  signed char port, 
+								  bool filterState) = 0;
+
+	virtual void setSyncAsInput() = 0;
+	virtual void setSyncAsOutput(int freqIndex) = 0;
+
+	virtual Array<int> getSyncFrequencies() = 0;
+
+	virtual void startAcquisition() = 0;
+	virtual void stopAcquisition() = 0;
+
+	virtual float getFillPercentage() = 0;
 
 	unsigned char slot;
-
-	virtual void open();
-	virtual void close();
-	virtual void init();
-
-	virtual int getProbeCount();
 
 	String boot_version;
 
@@ -76,29 +127,12 @@ public:
 
 	OwnedArray<Probe> probes;
 
-	virtual void initializeProbes();
-
-	float getTemperature();
-
-	virtual void setChannels(unsigned char slot, signed char port, Array<int> channelStatus);
-	virtual void setReferences(unsigned char slot, signed char port, np::channelreference_t refId, unsigned char electrodeBank);
-	virtual void setGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
-	virtual void setApFilterState(unsigned char slot, signed char port, bool filterState);
-
-	virtual void getInfo();
-
-	virtual void setSyncAsInput();
-	virtual void setSyncAsOutput(int freqIndex);
-
-	Array<int> getSyncFrequencies();
-
-	virtual void startAcquisition();
-	virtual void stopAcquisition();
-
-	void setSavingDirectory(File);
-	File getSavingDirectory();
-
-	float getFillPercentage();
+	void setSavingDirectory(File directory) {
+		savingDirectory = directory;
+	}
+	File getSavingDirectory() {
+		return savingDirectory;
+	}
 	
 protected:
 	bool probesInitialized;
@@ -111,12 +145,25 @@ protected:
 class BasestationConnectBoard : public NeuropixComponent
 {
 public:
-	BasestationConnectBoard(Basestation*);
+	BasestationConnectBoard(Basestation* bs_) : NeuropixComponent() {
+		basestation = bs_;
+	}
 	String boot_version;
 
 	Basestation* basestation;
+};
 
-	virtual void getInfo();
+enum BISTS {
+	BIST_SIGNAL = 1,
+	BIST_NOISE = 2,
+	BIST_PSB = 3,
+	BIST_SR = 4,
+	BIST_EEPROM = 5,
+	BIST_I2C = 6,
+	BIST_SERDES = 7,
+	BIST_HB = 8,
+	BIST_BS = 9
+
 };
 
 typedef enum {
@@ -130,10 +177,16 @@ typedef enum {
 class Probe : public NeuropixComponent, public Thread
 {
 public:
-	Probe(Basestation* bs, signed char port);
+	Probe(Basestation* bs_, int port_, int dock_) : NeuropixComponent(), Thread("ProbeThread")
+	{
+		port = port_;
+		dock = dock_;
+		basestation = bs_;
+	}
 
 	Basestation* basestation;
-	signed char port;
+	int port;
+	int dock;
 
 	DataBuffer* apBuffer;
 	DataBuffer* lfpBuffer;
@@ -149,41 +202,45 @@ public:
 	int lfp_gain;
 	bool highpass_on;
 
-	virtual void init();
+	virtual void init() = 0;
 
-	virtual void setChannels(Array<int> channelStatus);
+	virtual void setChannels(Array<int> channelStatus) = 0;
+
 	enum BANK_SELECT {
 		BANK_0,
 		BANK_1,
 		BANK_2,
 		DISCONNECTED = 0xFF
 	};
+
 	Array<BANK_SELECT> channelMap;
 
 	Array<int> apGains;
 	Array<int> lfpGains;
 
-	virtual void setApFilterState(bool);
-	virtual void setReferences(np::channelreference_t refId, unsigned char refElectrodeBank);
-	virtual void setGains(unsigned char apGain, unsigned char lfpGain);
+	virtual void setApFilterState(bool) = 0;
+	virtual void setReferences(np::channelreference_t refId, unsigned char refElectrodeBank) = 0;
+	virtual void setGains(unsigned char apGain, unsigned char lfpGain) = 0;
 
-	virtual void calibrate();
+	virtual void calibrate() = 0;
 
-	void setStatus(ProbeStatus);
+	void setStatus(ProbeStatus status_) {
+		status = status_;
+	}
 	ProbeStatus status;
 
-	void setSelected(bool isSelected_);
+	void setSelected(bool isSelected_) {
+		isSelected = isSelected_;
+	}
 	bool isSelected;
 
-	virtual void getInfo();
+	virtual void run() = 0;
 
 	int channel_count;
 
 	float fifoFillPercentage;
 
 	String name;
-
-	void run();
 
 	uint64 eventCode;
 	Array<int> gains;
@@ -195,55 +252,37 @@ public:
 class Headstage : public NeuropixComponent
 {
 public:
-	Headstage::Headstage(Probe*);
+	Headstage::Headstage(Probe* probe_) : NeuropixComponent() {
+		probe = probe_;
+	}
 	Probe* probe;
-	virtual void getInfo();
+
+	virtual bool hasTestModule() = 0;
 };
 
 class Flex : public NeuropixComponent
 {
 public:
-	Flex::Flex(Probe*);
+	Flex::Flex(Probe* probe_)
+	{
+		probe = probe_;
+	}
 	Probe* probe;
-	virtual void getInfo();
-};
 
-typedef struct HST_Status {
-	np::NP_ErrorCode VDD_A1V2;
-	np::NP_ErrorCode VDD_A1V8;
-	np::NP_ErrorCode VDD_D1V2;
-	np::NP_ErrorCode VDD_D1V8;
-	np::NP_ErrorCode MCLK;
-	np::NP_ErrorCode PCLK;
-	np::NP_ErrorCode PSB;
-	np::NP_ErrorCode I2C;
-	np::NP_ErrorCode NRST;
-	np::NP_ErrorCode REC_NRESET;
-	np::NP_ErrorCode SIGNAL;
 };
 
 class HeadstageTestModule : public NeuropixComponent
 {
 public:
 
-	HeadstageTestModule::HeadstageTestModule(Basestation* bs, signed char port);
+	HeadstageTestModule::HeadstageTestModule(Basestation* bs_, signed char port_) : NeuropixComponent()
+	{
+		basestation = bs_;
+		port = port_;
+	}
 
-	void getInfo();
-
-	np::NP_ErrorCode test_VDD_A1V2();
-	np::NP_ErrorCode test_VDD_A1V8();
-	np::NP_ErrorCode test_VDD_D1V2();
-	np::NP_ErrorCode test_VDD_D1V8();
-	np::NP_ErrorCode test_MCLK();
-	np::NP_ErrorCode test_PCLK();
-	np::NP_ErrorCode test_PSB();
-	np::NP_ErrorCode test_I2C();
-	np::NP_ErrorCode test_NRST();
-	np::NP_ErrorCode test_REC_NRESET();
-	np::NP_ErrorCode test_SIGNAL();
-
-	void runAll();
-	void showResults();
+	virtual void runAll() = 0;
+	virtual void showResults() = 0;
 
 private:
 	Basestation* basestation;
@@ -253,8 +292,6 @@ private:
 	signed char port;
 
 	std::vector<std::string> tests;
-
-	ScopedPointer<HST_Status> status;
 
 };
 

@@ -24,6 +24,9 @@
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
 
+#include "Basestations/Basestation_v1.h"
+#include "Basestations/SimulatedBasestation.h"
+
 DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 {
 	return new NeuropixThread(sn);
@@ -44,8 +47,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	recordToNpx(false)
 {
 	progressBar = new ProgressBar(initializationProgress);
-
-	api.getInfo();
 
     for (int i = 0; i < 384; i++)
     {
@@ -78,7 +79,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	{
 		if ((availableslotmask >> slot) & 1)
 		{
-			basestations.add(new Basestation(slot));
+			basestations.add(new Basestation_v1(slot));
 			basestations.getLast()->open();
 		}
 	}
@@ -249,7 +250,7 @@ XmlElement NeuropixThread::getInfoXml()
 	XmlElement neuropix_info("NEUROPIX-PXI");
 
 	XmlElement* api_info = new XmlElement("API");
-	api_info->setAttribute("version", api.version);
+	api_info->setAttribute("version", api.info.version);
 	neuropix_info.addChildElement(api_info);
 
 	for (int i = 0; i < basestations.size(); i++)
@@ -259,19 +260,19 @@ XmlElement NeuropixThread::getInfoXml()
 		basestation_info->setAttribute("slot", int(basestations[i]->slot));
 		basestation_info->setAttribute("firmware_version", basestations[i]->boot_version);
 		basestation_info->setAttribute("bsc_firmware_version", basestations[i]->basestationConnectBoard->boot_version);
-		basestation_info->setAttribute("bsc_part_number", basestations[i]->basestationConnectBoard->part_number);
-		basestation_info->setAttribute("bsc_serial_number", String(basestations[i]->basestationConnectBoard->serial_number));
+		basestation_info->setAttribute("bsc_part_number", basestations[i]->basestationConnectBoard->info.part_number);
+		basestation_info->setAttribute("bsc_serial_number", String(basestations[i]->basestationConnectBoard->info.serial_number));
 
 		for (int j = 0; j < basestations[i]->getProbeCount(); j++)
 		{
 			XmlElement* probe_info = new XmlElement("PROBE");
 			probe_info->setAttribute("port", int(basestations[i]->probes[j]->port));
-			probe_info->setAttribute("probe_serial_number", String(basestations[i]->probes[j]->serial_number));
-			probe_info->setAttribute("hs_serial_number", String(basestations[i]->probes[j]->headstage->serial_number));
-			probe_info->setAttribute("hs_part_number", basestations[i]->probes[j]->headstage->part_number);
-			probe_info->setAttribute("hs_version", basestations[i]->probes[j]->headstage->version);
-			probe_info->setAttribute("flex_part_number", basestations[i]->probes[j]->flex->part_number);
-			probe_info->setAttribute("flex_version", basestations[i]->probes[j]->flex->version);
+			probe_info->setAttribute("probe_serial_number", String(basestations[i]->probes[j]->info.serial_number));
+			probe_info->setAttribute("hs_serial_number", String(basestations[i]->probes[j]->headstage->info.serial_number));
+			probe_info->setAttribute("hs_part_number", basestations[i]->probes[j]->headstage->info.part_number);
+			probe_info->setAttribute("hs_version", basestations[i]->probes[j]->headstage->info.version);
+			probe_info->setAttribute("flex_part_number", basestations[i]->probes[j]->flex->info.part_number);
+			probe_info->setAttribute("flex_version", basestations[i]->probes[j]->flex->info.version);
 
 			basestation_info->addChildElement(probe_info);
 
@@ -292,7 +293,7 @@ String NeuropixThread::getInfoString()
 	String infoString;
 
 	infoString += "API Version: ";
-	infoString += api.version;
+	infoString += api.info.version;
 	infoString += "\n";
 	infoString += "\n";
 	infoString += "\n";
@@ -306,13 +307,13 @@ String NeuropixThread::getInfoString()
 		infoString += basestations[i]->boot_version;
 		infoString += "\n";
 		infoString += "  BSC firmware version: ";
-		infoString += basestations[i]->basestationConnectBoard->boot_version;
+		infoString += basestations[i]->basestationConnectBoard->info.boot_version;
 		infoString += "\n";
 		infoString += "  BSC part number: ";
-		infoString += basestations[i]->basestationConnectBoard->part_number;
+		infoString += basestations[i]->basestationConnectBoard->info.part_number;
 		infoString += "\n";
 		infoString += "  BSC serial number: ";
-		infoString += String(basestations[i]->basestationConnectBoard->serial_number);
+		infoString += String(basestations[i]->basestationConnectBoard->info.serial_number);
 		infoString += "\n";
 		infoString += "\n";
 
@@ -323,24 +324,24 @@ String NeuropixThread::getInfoString()
 			infoString += "\n";
 			infoString += "\n";
 			infoString += "    Probe serial number: ";
-			infoString += String(basestations[i]->probes[j]->serial_number);
+			infoString += String(basestations[i]->probes[j]->info.serial_number);
 			infoString += "\n";
 			infoString += "\n";
 			infoString += "    Headstage serial number: ";
-			infoString += String(basestations[i]->probes[j]->headstage->serial_number);
+			infoString += String(basestations[i]->probes[j]->headstage->info.serial_number);
 			infoString += "\n";
 			infoString += "    Headstage part number: ";
-			infoString += basestations[i]->probes[j]->headstage->part_number;
+			infoString += basestations[i]->probes[j]->headstage->info.part_number;
 			infoString += "\n";
 			infoString += "    Headstage version: ";
-			infoString += basestations[i]->probes[j]->headstage->version;
+			infoString += basestations[i]->probes[j]->headstage->info.version;
 			infoString += "\n";
 			infoString += "\n";
 			infoString += "    Flex part number: ";
-			infoString += basestations[i]->probes[j]->flex->part_number;
+			infoString += basestations[i]->probes[j]->flex->info.part_number;
 			infoString += "\n";
 			infoString += "    Flex version: ";
-			infoString += basestations[i]->probes[j]->flex->version;
+			infoString += basestations[i]->probes[j]->flex->info.version;
 			infoString += "\n";
 			infoString += "\n";
 			infoString += "\n";
@@ -737,71 +738,8 @@ File NeuropixThread::getDirectoryForSlot(int slotIndex)
 
 bool NeuropixThread::runBist(unsigned char slot, signed char port, int bistIndex)
 {
-	bool returnValue = false;
+	return basestations[slot]->runBist(port, bistIndex);
 
-	switch (bistIndex)
-	{
-	case BIST_SIGNAL:
-	{
-		np::NP_ErrorCode errorCode = bistSignal(slot, port, &returnValue, stats);
-		break;
-	}
-	case BIST_NOISE:
-	{
-		if (np::bistNoise(slot, port) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST_PSB:
-	{
-		if (np::bistPSB(slot, port) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST_SR:
-	{
-		if (np::bistSR(slot, port) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST_EEPROM:
-	{
-		if (np::bistEEPROM(slot, port) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST_I2C:
-	{
-		if (np::bistI2CMM(slot, port) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST_SERDES:
-	{
-		unsigned char errors;
-		np::bistStartPRBS(slot, port);
-		sleep(200);
-		np::bistStopPRBS(slot, port, &errors);
-
-		if (errors == 0)
-			returnValue = true;
-		break;
-	}
-	case BIST_HB:
-	{
-		if (np::bistHB(slot, port) == np::SUCCESS)
-			returnValue = true;
-		break;
-	} case BIST_BS:
-	{
-		if (np::bistBS(slot) == np::SUCCESS)
-			returnValue = true;
-		break;
-	} default :
-		CoreServices::sendStatusMessage("Test not found.");
-	}
-
-	return returnValue;
 }
 
 float NeuropixThread::getFillPercentage(unsigned char slot)

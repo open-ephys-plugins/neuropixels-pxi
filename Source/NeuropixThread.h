@@ -29,23 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "neuropix-api/NeuropixAPI.h"
 #include "NeuropixComponents.h"
-#include "SimulatedComponents.h"
-
-
-enum BISTS {
-	BIST_SIGNAL = 1,
-	BIST_NOISE = 2,
-	BIST_PSB = 3,
-	BIST_SR = 4,
-	BIST_EEPROM = 5,
-	BIST_I2C = 6,
-	BIST_SERDES = 7,
-	BIST_HB = 8,
-	BIST_BS = 9
-	
-};
 
 
 class SourceNode;
@@ -245,18 +229,16 @@ private:
 
 	OwnedArray<Basestation> basestations;
 
-	np::NP_ErrorCode errorCode;
-	NeuropixAPI api;
+	NeuropixAPIv1 api;
 
 	unsigned char selectedSlot;
 	signed char selectedPort;
 
-	
 
 	//std::vector<unsigned char> connected_basestations;
 	//std::vector<std::vector<int>> connected_probes;
 	
-	np::bistElectrodeStats stats[960];
+	//np::bistElectrodeStats stats[960];
 
 	RecordingTimer recordingTimer;
 
