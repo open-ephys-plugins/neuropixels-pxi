@@ -28,6 +28,7 @@
 class NeuropixInterface;
 class Annotation;
 class ColorSelector;
+class Probe;
 
 class NeuropixCanvas : public Visualizer, public Button::Listener
 {
@@ -49,7 +50,7 @@ public:
 	void setParameter(int, int, int, float);
 	void buttonClicked(Button* button);
 
-	void setSelectedProbe(int, int);
+	void setSelectedProbe(Probe* p);
 
 	void saveVisualizerParameters(XmlElement* xml);
 	void loadVisualizerParameters(XmlElement* xml);
@@ -59,17 +60,23 @@ public:
 	SourceNode* processor;
 	ScopedPointer<Viewport> neuropixViewport;
 	OwnedArray<NeuropixInterface> neuropixInterfaces;
+	Array<Probe*> probes;
+
+	NeuropixEditor* editor;
+	NeuropixThread* thread;
 
 	int option;
 
-	NeuropixEditor* editor;
-
 };
 
-class NeuropixInterface : public Component, public Button::Listener, public ComboBox::Listener, public Label::Listener, public Timer
+class NeuropixInterface : public Component, 
+	public Button::Listener, 
+	public ComboBox::Listener, 
+	public Label::Listener, 
+	public Timer
 {
 public:
-	NeuropixInterface(XmlElement info_, int slot_, int port, NeuropixThread*, NeuropixEditor*);
+	NeuropixInterface(Probe* probe, NeuropixThread* thread, NeuropixEditor* editor);
 	~NeuropixInterface();
 
 	void paint(Graphics& g);
@@ -93,13 +100,12 @@ public:
 
 	void timerCallback();
 
-	int slot;
-	int port;
-
 private:
 
 	NeuropixThread* thread;
 	NeuropixEditor* editor;
+	Probe* probe;
+
 	DataBuffer* inputBuffer;
 	AudioSampleBuffer displayBuffer;
 

@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "SimulatedHeadstage.h"
+#include "../Probes/SimulatedProbe.h"
 
 void SimulatedHeadstage::getInfo()
 {
@@ -35,4 +36,13 @@ void SimulatedFlex::getInfo()
 
 	info.version = "XX.XX";
 	info.part_number = "Simulated flex";
+}
+
+
+SimulatedHeadstage::SimulatedHeadstage(Basestation* bs, int port) : Headstage(bs, port)
+{
+	flexCables.add(new SimulatedFlex(this));
+
+	probes.add(new SimulatedProbe(basestation, this, flexCables[0], 0));
+	probes[0]->setStatus(ProbeStatus::CONNECTING);
 }

@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 
 #include "API/v1/NeuropixAPI.h"
-
+#include "API/v3/NeuropixAPI.h"
 
 # define SAMPLECOUNT 64
 
@@ -44,113 +44,6 @@ struct ComponentInfo
 	uint64_t serial_number = 0;
 	String part_number = "";
 	String boot_version = "";
-};
-
-class NeuropixComponent
-{
-public:
-	NeuropixComponent() {
-		getInfo();
-	}
-
-	ComponentInfo info;
-
-	virtual void getInfo() { }
-};
-
-class NeuropixAPIv1 : public NeuropixComponent
-{
-public:
-	void getInfo() {
-
-		unsigned char version_major;
-		unsigned char version_minor;
-		np::getAPIVersion(&version_major, &version_minor);
-
-		info.version = String(version_major) + "." + String(version_minor);
-	}
-};
-
-class Basestation : public NeuropixComponent
-{
-public:
-	Basestation(int slot_) : NeuropixComponent() {
-		probesInitialized = false;
-		slot = slot_;
-	}
-
-	virtual void open() = 0;
-	virtual void close() = 0;
-	virtual void init() = 0;
-
-	virtual int getProbeCount() = 0;
-
-	virtual void initializeProbes() = 0;
-
-//	virtual float getTemperature() = 0;
-
-	virtual bool runBist(signed char port, int bistIndex) = 0;
-
-	virtual void setChannels(unsigned char slot, 
-							 signed char port, 
-							 Array<int> channelStatus) = 0;
-
-	virtual void setReferences(unsigned char slot, 
-							   signed char port, 
-							   np::channelreference_t refId, 
-						       unsigned char electrodeBank) = 0;
-
-	virtual void setGains(unsigned char slot, 
-						  signed char port, 
-						  unsigned char apGain, 
-						  unsigned char lfpGain) = 0;
-
-	virtual void setApFilterState(unsigned char slot, 
-								  signed char port, 
-								  bool filterState) = 0;
-
-	virtual void setSyncAsInput() = 0;
-	virtual void setSyncAsOutput(int freqIndex) = 0;
-
-	virtual Array<int> getSyncFrequencies() = 0;
-
-	virtual void startAcquisition() = 0;
-	virtual void stopAcquisition() = 0;
-
-	virtual float getFillPercentage() = 0;
-
-	unsigned char slot;
-
-	String boot_version;
-
-	ScopedPointer<BasestationConnectBoard> basestationConnectBoard;
-
-	OwnedArray<Probe> probes;
-
-	void setSavingDirectory(File directory) {
-		savingDirectory = directory;
-	}
-	File getSavingDirectory() {
-		return savingDirectory;
-	}
-	
-protected:
-	bool probesInitialized;
-
-	Array<int> syncFrequencies;
-
-	File savingDirectory;
-};
-
-class BasestationConnectBoard : public NeuropixComponent
-{
-public:
-	BasestationConnectBoard(Basestation* bs_) : NeuropixComponent() {
-		basestation = bs_;
-	}
-	String boot_version;
-
-	Basestation* basestation;
 };
 
 enum BISTS {
@@ -174,37 +67,203 @@ typedef enum {
 	RECORDING     //The probe is recording the streaming data
 } ProbeStatus;
 
-class Probe : public NeuropixComponent, public Thread
+struct ElectrodeMetadata {
+	int index;
+	int xpos;
+	int ypos;
+
+};
+
+/** Base class for all Neuropixels components, which must implement the "getInfo" method */
+class NeuropixComponent
 {
 public:
-	Probe(Basestation* bs_, int port_, int dock_) : NeuropixComponent(), Thread("ProbeThread")
+	NeuropixComponent() {
+		getInfo();
+	}
+
+	ComponentInfo info;
+
+	virtual void getInfo() { }
+};
+
+/** Holds info about APIv1, as well as a boolean value to indicate whether or not it is being used*/
+class NeuropixAPIv1 : public NeuropixComponent
+{
+public:
+	NeuropixAPIv1::NeuropixAPIv1()
 	{
-		port = port_;
-		dock = dock_;
+		isActive = false;
+	}
+
+	void getInfo() {
+
+		unsigned char version_major;
+		unsigned char version_minor;
+		np::getAPIVersion(&version_major, &version_minor);
+
+		info.version = String(version_major) + "." + String(version_minor);
+	}
+
+	bool isActive;
+};
+
+/** Holds info about APIv3, as well as a boolean value to indicate whether or not it is being used*/
+class NeuropixAPIv3 : public NeuropixComponent
+{
+public:
+
+	NeuropixAPIv3::NeuropixAPIv3()
+	{
+		isActive = false;
+	}
+
+	void getInfo() {
+
+		int version_major;
+		int version_minor;
+		Neuropixels::getAPIVersion(&version_major, &version_minor);
+
+		info.version = String(version_major) + "." + String(version_minor);
+	}
+
+	bool isActive;
+};
+
+/** Represents a PXI basestation card */
+class Basestation : public NeuropixComponent
+{
+public:
+
+	/** Sets the slot values. */
+	Basestation(int slot_) : NeuropixComponent() {
+		probesInitialized = false;
+		slot = slot_;
+		slot_c = (unsigned char) slot_;
+	}
+
+	/** VIRTUAL METHODS */
+
+	/** Opens the connection and retrieves info about available components; should be fast */
+	virtual void open() = 0;
+
+	/** Closes the connection */
+	virtual void close() = 0;
+
+	/** Initializes all components for acquisition; may inclue some delays */
+	virtual void initialize() = 0;
+
+	/** Runs a built-in self-test for a specified port */
+	virtual bool runBist(signed char port, int bistIndex) = 0;
+
+	/** Sets the sync channel as an "input" (for external sync) */
+	virtual void setSyncAsInput() = 0;
+
+	/** Sets the sync channel as an "output" (and specifies the frequency index) */
+	virtual void setSyncAsOutput(int freqIndex) = 0;
+
+	/** Returns an array of available sync frequencies for this basestation */
+	virtual Array<int> getSyncFrequencies() = 0;
+
+	/** Starts data streaming */
+	virtual void startAcquisition() = 0;
+
+	/** Stops data streaming */
+	virtual void stopAcquisition() = 0;
+
+	/** Returns the percentage of the FIFO buffer that is filled */
+	virtual float getFillPercentage() = 0;
+
+	/** Returns the total number of probes connected to this basestation */
+	virtual int getProbeCount() = 0;
+
+	/** Returns an array of probes connected to this basestation (cannot include null values) */
+	Array<Probe*> getProbes()
+	{
+		return probes;
+	}
+
+	/** NON-VIRTUAL METHODS */
+
+	/** Returns an array of headstages connected to this basestation 
+		(can include null values for disconnected headstages) */
+	Array<Headstage*> getHeadstages() {
+
+		Array<Headstage*> headstage_array;
+
+		for (auto h : headstages)
+		{
+			headstage_array.add(h);
+		}
+
+		return headstage_array;
+	}
+
+	unsigned char slot_c;
+	int slot;
+
+	ScopedPointer<BasestationConnectBoard> basestationConnectBoard;
+
+	OwnedArray<Headstage> headstages;
+	Array<Probe*> probes;
+
+	void setSavingDirectory(File directory) {
+		savingDirectory = directory;
+	}
+	File getSavingDirectory() {
+		return savingDirectory;
+	}
+	
+protected:
+
+	bool probesInitialized;
+	Array<int> syncFrequencies;
+	File savingDirectory;
+};
+
+/** Represents a basestation connect board */
+class BasestationConnectBoard : public NeuropixComponent
+{
+public:
+	BasestationConnectBoard(Basestation* bs_) : NeuropixComponent() {
 		basestation = bs_;
 	}
 
 	Basestation* basestation;
-	int port;
+};
+
+
+/** Represents a Neuropixels probe of any type */
+class Probe : public NeuropixComponent, public Thread
+{
+public:
+	Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) : NeuropixComponent(), Thread("ProbeThread")
+	{
+		dock = dock_;
+		basestation = bs_;
+		headstage = hs_;
+		flex = fl_;
+	}
+
+	Basestation* basestation; // owned by NeuropixThread
+	Headstage* headstage; // owned by Basestation
+	Flex* flex; // owned by Headstage
+
 	int dock;
 
 	DataBuffer* apBuffer;
 	DataBuffer* lfpBuffer;
 
+	float ap_sample_rate;
+	float lfp_sample_rate;
+
 	int64 ap_timestamp;
 	int64 lfp_timestamp;
-
-	ScopedPointer<Headstage> headstage;
-	ScopedPointer<Flex> flex;
 
 	int reference;
 	int ap_gain;
 	int lfp_gain;
 	bool highpass_on;
-
-	virtual void init() = 0;
-
-	virtual void setChannels(Array<int> channelStatus) = 0;
 
 	enum BANK_SELECT {
 		BANK_0,
@@ -214,84 +273,147 @@ public:
 	};
 
 	Array<BANK_SELECT> channelMap;
+	Array<int> apGains; // AP gain values for each channel
+	Array<int> lfpGains; // LFP gain values for each channel
 
-	Array<int> apGains;
-	Array<int> lfpGains;
+	/** VIRTUAL METHODS */
 
-	virtual void setApFilterState(bool) = 0;
-	virtual void setReferences(np::channelreference_t refId, unsigned char refElectrodeBank) = 0;
-	virtual void setGains(unsigned char apGain, unsigned char lfpGain) = 0;
+	/** Prepares the probe for data acquisition */
+	virtual void initialize() = 0;
 
+	/** Returns true if the probe generates LFP data */
+	virtual bool generatesLfpData() = 0;
+
+	/** Used to select channels.*/
+	virtual void setChannelStatus(Array<int> channelStatus) = 0;
+
+	/** Used to set references (same for all channels).*/
+	virtual void setAllReferences(int referenceIndex) = 0;
+
+	/** Used to set gains (same for all channels).*/
+	virtual void setAllGains(int apGainIndex, int lfpGainIndex) = 0;
+
+	/** Used to set AP filter cut (if available).*/
+	virtual void setApFilterState(bool disableHighPass) = 0;
+
+	/** Applies calibration info from a file.*/
 	virtual void calibrate() = 0;
+
+	/** Starts data streaming.*/
+	virtual void startAcquisition() = 0;
+
+	/** Stops data streaming.*/
+	virtual void stopAcquisition() = 0;
+
+	/** Main loop -- copies data from the probe into a DataBuffer object */
+	virtual void run() = 0;
+
+	/** NON-VIRTUAL METHODS */
 
 	void setStatus(ProbeStatus status_) {
 		status = status_;
 	}
-	ProbeStatus status;
 
-	void setSelected(bool isSelected_) {
-		isSelected = isSelected_;
+	ProbeStatus getStatus() {
+		return status;
 	}
-	bool isSelected;
-
-	virtual void run() = 0;
 
 	int channel_count;
+	float ap_band_sample_rate;
+	float lfp_band_sample_rate;
 
 	float fifoFillPercentage;
 
 	String name;
 
-	uint64 eventCode;
-	Array<int> gains;
+protected:
 
-	np::electrodePacket packet[SAMPLECOUNT];
+	ProbeStatus status;
+
+	uint64 eventCode;
+	Array<int> gains; // available gain values
 
 };
 
+/** Represents a Neuropixels headstage of any type */
 class Headstage : public NeuropixComponent
 {
 public:
-	Headstage::Headstage(Probe* probe_) : NeuropixComponent() {
-		probe = probe_;
+	Headstage::Headstage(Basestation* bs_, int port_) : NeuropixComponent() {
+		basestation = bs_;
+		port_c = (signed char) port_;
+		port = port_;
 	}
-	Probe* probe;
 
+	Array<Probe*> getProbes() {
+
+		Array<Probe*> probe_array;
+
+		for (auto p : probes)
+		{
+			probe_array.add(p);
+		}
+
+		return probe_array;
+	}
+	Array<Flex*> getFlexCables()
+	{
+		Array<Flex*> flex_array;
+
+		for (auto f : flexCables)
+		{
+			flex_array.add(f);
+		}
+
+		return flex_array;
+	}
+	
+	signed char port_c;
+	int port;
+
+	OwnedArray<Probe> probes;
+	OwnedArray<Flex> flexCables;
+
+	Basestation* basestation;
+
+	// ** Returns true if headstage test module is available */
 	virtual bool hasTestModule() = 0;
 };
 
+/** Represents a Neuropixels flex cable */
 class Flex : public NeuropixComponent
 {
 public:
-	Flex::Flex(Probe* probe_)
+	Flex::Flex(Headstage* hs_, int dock_)
 	{
-		probe = probe_;
+		headstage = hs_;
+		dock = dock_;
 	}
-	Probe* probe;
 
+	Headstage* headstage;
+	int dock;
 };
 
+/** Represents a Headstage Test Module */
 class HeadstageTestModule : public NeuropixComponent
 {
 public:
 
-	HeadstageTestModule::HeadstageTestModule(Basestation* bs_, signed char port_) : NeuropixComponent()
+	HeadstageTestModule::HeadstageTestModule(Basestation* bs_, Headstage* hs_) : NeuropixComponent()
 	{
 		basestation = bs_;
-		port = port_;
+		headstage = hs_;
 	}
 
+	/** Run all available headstage tests */
 	virtual void runAll() = 0;
+
+	/** Show test results */
 	virtual void showResults() = 0;
 
 private:
 	Basestation* basestation;
 	Headstage* headstage;
-
-	unsigned char slot;
-	signed char port;
-
-	std::vector<std::string> tests;
 
 };
 

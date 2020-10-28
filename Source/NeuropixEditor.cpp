@@ -68,7 +68,7 @@ void EditorBackground::paint(Graphics& g)
 
 }
 
-FifoMonitor::FifoMonitor(int id_, NeuropixThread* thread_) : id(id_), thread(thread_), fillPercentage(0.0)
+FifoMonitor::FifoMonitor(int id_, Basestation* basestation_) : id(id_), basestation(basestation_), fillPercentage(0.0)
 {
 	startTimer(500); // update fill percentage every 0.5 seconds
 }
@@ -79,7 +79,7 @@ void FifoMonitor::timerCallback()
 
 	if (slot != 255)
 	{
-		setFillPercentage(thread->getFillPercentage(slot));
+		setFillPercentage(basestation->getFillPercentage());
 	}
 }
 
@@ -108,27 +108,15 @@ void FifoMonitor::paint(Graphics& g)
 	g.fillRoundedRectangle(2, this->getHeight()-2-barHeight, this->getWidth() - 4, barHeight, 2);
 }
 
-ProbeButton::ProbeButton(int id_, NeuropixThread* thread_) : id(id_), thread(thread_), selected(false)
+ProbeButton::ProbeButton(int id_, Probe* probe_) : id(id_), probe(probe_), selected(false)
 {
 	status = ProbeStatus::DISCONNECTED;
 
 	setRadioGroupId(979);
 
-	startTimer(500);
+	startTimer(500); // update probe status and fifo monitor every 500 ms
 }
 
-void ProbeButton::setSlotAndPort(unsigned char slot_, signed char port_)
-{
-	slot = slot_;
-	port = port_;
-
-	std::cout << "Setting button " << id << " to " << int(slot) << ":" << int(port) << std::endl;
-
-	if (slot == 255 || port == -1)
-		connected = false;
-	else
-		connected = true;
-}
 
 void ProbeButton::setSelectedState(bool state)
 {
@@ -186,9 +174,12 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 
 void ProbeButton::setProbeStatus(ProbeStatus status)
 {
-	this->status = status;
+	if (probe != nullptr)
+	{
+		this->status = status;
 
-	repaint();
+		repaint();
+	}
 
 }
 
@@ -200,15 +191,15 @@ ProbeStatus ProbeButton::getProbeStatus()
 void ProbeButton::timerCallback()
 {
 
-	if (slot != 255)
+	if (probe != nullptr)
 	{
-		setProbeStatus(thread->getProbeStatus(slot, port));
+		setProbeStatus(probe->getStatus());
 		//std::cout << "Setting for slot: " << String(slot) << " port: " << String(port) << " status: " << String(status) << " selected: " << String(selected) << std::endl;
 	}
 }
 
-BackgroundLoader::BackgroundLoader(NeuropixThread* thread, NeuropixEditor* editor) 
-	: Thread("Neuropix Loader"), np(thread), ed(editor)
+BackgroundLoader::BackgroundLoader(NeuropixThread* thread_, NeuropixEditor* editor_) 
+	: Thread("Neuropix Loader"), thread(thread_), editor(editor_)
 {
 }
 
@@ -219,27 +210,28 @@ BackgroundLoader::~BackgroundLoader()
 void BackgroundLoader::run()
 {
 	/* Open the NPX-PXI probe connections in the background to prevent this plugin from blocking the main GUI*/
-	np->openConnection();
+	thread->initialize();
 
 	/* Apply any saved settings */
 	CoreServices::sendStatusMessage("Restoring saved probe settings...");
-	np->applyProbeSettingsQueue();
+	thread->applyProbeSettingsQueue();
 
 	 /* Remove button callback timers and select first avalable probe by default*/
 	bool selectedFirstAvailableProbe = false;
-	for (auto button : ed->probeButtons)
+
+	for (auto button : editor->probeButtons)
 	{
 		if (button->getProbeStatus() == ProbeStatus::CONNECTED && (!selectedFirstAvailableProbe))
 		{
-			ed->buttonEvent(button);
+			editor->buttonEvent(button);
 			selectedFirstAvailableProbe = true;
 		}
-		button->stopTimer();
+		//button->stopTimer();
 	}
 
 	/* Let the main GUI know the plugin is done initializing */
 	MessageManagerLock mml;
-	CoreServices::updateSignalChain(ed);
+	CoreServices::updateSignalChain(editor);
 	CoreServices::sendStatusMessage("Neuropix-PXI plugin ready for acquisition!");
 
 }
@@ -254,28 +246,59 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 
     tabText = "Neuropix PXI";
 
-	int numBasestations = t->getNumBasestations();
+	Array<Basestation*> basestations = t->getBasestations();
 
 	bool foundFirst = false;
 
-	for (int i = 0; i < 4*numBasestations; i++)
+	int id = 0;
+
+	for (int i = 0; i < basestations.size(); i++)
 	{
-		int slotIndex = i / 4;
-		int portIndex = i % 4 + 1;
-		int x_pos = slotIndex * 90 + 40;
-		int y_pos = 125 - portIndex * 22;
+		Array<Headstage*> headstages = basestations[i]->getHeadstages(); // can return null
 
-		ProbeButton* p = new ProbeButton(i, thread);
-		p->setBounds(x_pos, y_pos, 15, 15);
-		p->addListener(this);
-		addAndMakeVisible(p);
-		probeButtons.add(p);
+		for (int j = 0; j < headstages.size(); j++)
+		{
 
-		p->setSlotAndPort(thread->getSlotForIndex(slotIndex, portIndex), thread->getPortForIndex(slotIndex, portIndex));
+			int slotIndex = i;
+			int portIndex = j;
 
+			if (headstages[j] != nullptr)
+			{
+				Array<Probe*> probes = headstages[j]->getProbes();
+
+				for (int k = 0; k < probes.size(); k++)
+				{
+					int offset;
+					
+					if (probes.size() == 2)
+						offset = 20 * k;
+					else
+						offset = 10;
+
+					int x_pos = slotIndex * 90 + 30 + offset;
+					int y_pos = 125 - (portIndex + 1) * 22;
+
+					ProbeButton* p = new ProbeButton(id++, probes[k]);
+					p->setBounds(x_pos, y_pos, 15, 15);
+					p->addListener(this);
+					addAndMakeVisible(p);
+					probeButtons.add(p);
+				}
+			}
+			else {
+				int x_pos = slotIndex * 90 + 40;
+				int y_pos = 125 - (portIndex + 1) * 22;
+
+				ProbeButton* p = new ProbeButton(id++, nullptr);
+				p->setBounds(x_pos, y_pos, 15, 15);
+				p->addListener(this);
+				addAndMakeVisible(p);
+				probeButtons.add(p);
+			}
+		}
 	}
 
-	for (int i = 0; i < numBasestations; i++)
+	for (int i = 0; i < basestations.size(); i++)
 	{
 		int x_pos = i * 90 + 70;
 		int y_pos = 50;
@@ -288,16 +311,16 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 
 		savingDirectories.add(File());
 
-		FifoMonitor* f = new FifoMonitor(i, thread);
+		FifoMonitor* f = new FifoMonitor(i, basestations[i]);
 		f->setBounds(x_pos + 2, 75, 12, 50);
 		addAndMakeVisible(f);
-		f->setSlot(thread->getSlotForIndex(i, -1));
+		f->setSlot(basestations[i]->slot);
 		fifoMonitors.add(f);
 	}
 
 	masterSelectBox = new ComboBox("MasterSelectComboBox");
-	masterSelectBox->setBounds(90 * (numBasestations)+32, 39, 38, 20);
-	for (int i = 0; i < numBasestations; i++)
+	masterSelectBox->setBounds(90 * (basestations.size())+32, 39, 38, 20);
+	for (int i = 0; i < basestations.size(); i++)
 	{
 		masterSelectBox->addItem(String(i + 1), i+1);
 	}
@@ -306,7 +329,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	addAndMakeVisible(masterSelectBox);
 
 	masterConfigBox = new ComboBox("MasterConfigComboBox");
-	masterConfigBox->setBounds(90 * (numBasestations)+32, 72, 78, 20);
+	masterConfigBox->setBounds(90 * (basestations.size())+32, 72, 78, 20);
 	masterConfigBox->addItem(String("INPUT"), 1);
 	masterConfigBox->addItem(String("OUTPUT"), 2);
 	masterConfigBox->setSelectedItemIndex(0, dontSendNotification);
@@ -316,7 +339,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	Array<int> syncFrequencies = t->getSyncFrequencies();
 
 	freqSelectBox = new ComboBox("FreqSelectComboBox");
-	freqSelectBox->setBounds(90 * (numBasestations)+32, 105, 70, 20);
+	freqSelectBox->setBounds(90 * (basestations.size())+32, 105, 70, 20);
 	for (int i = 0; i < syncFrequencies.size(); i++)
 	{
 		freqSelectBox->addItem(String(syncFrequencies[i])+String(" Hz"), i+1);
@@ -325,9 +348,9 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	freqSelectBox->addListener(this);
 	addChildComponent(freqSelectBox);
 
-	desiredWidth = 100 * numBasestations + 120;
+	desiredWidth = 100 * basestations.size() + 120;
 
-	background = new EditorBackground(numBasestations, false);
+	background = new EditorBackground(basestations.size(), false);
 	background->setBounds(0, 15, 500, 150);
 	addAndMakeVisible(background);
 	background->toBack();
@@ -356,7 +379,7 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 
 	if (comboBox == masterSelectBox)
 	{
-		thread->setMasterSync(slotIndex);
+		thread->setMainSync(slotIndex);
         masterConfigBox->setSelectedItemIndex(0,true);
 		freqSelectBox->setVisible(false);
 		background->setFreqSelectAvailable(false);
@@ -373,7 +396,7 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 		}
 		else
 		{
-			thread->setMasterSync(slotIndex);
+			thread->setMainSync(slotIndex);
 			freqSelectBox->setVisible(false);
 			background->setFreqSelectAvailable(false);
 		}
@@ -398,12 +421,13 @@ void NeuropixEditor::buttonEvent(Button* button)
 		{
 			button->setSelectedState(false);
 		}
-		ProbeButton* probe = (ProbeButton*)button;
-		probe->setSelectedState(true);
-		thread->setSelectedProbe(probe->slot, probe->port);
 
-		if (canvas != nullptr)
-			canvas->setSelectedProbe(probe->slot, probe->port);
+		ProbeButton* probeButton = (ProbeButton*) button;
+
+		probeButton->setSelectedState(true);
+
+		if (canvas != nullptr && probeButton->probe != nullptr)
+			canvas->setSelectedProbe(probeButton->probe);
 
 		repaint();
 	}
@@ -427,9 +451,7 @@ void NeuropixEditor::buttonEvent(Button* button)
 				UtilityButton* ub = (UtilityButton*)button;
 				ub->setLabel(pathName.substring(0, 3));
 			}
-
 		}
-        
     }
 }
 
@@ -440,7 +462,7 @@ void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 
 	XmlElement* xmlNode = xml->createNewChildElement("NEUROPIXELS_EDITOR");
 
-	for (int slot = 0; slot < thread->getNumBasestations(); slot++)
+	for (int slot = 0; slot < thread->getBasestations().size(); slot++)
 	{
 		String directory_name = savingDirectories[slot].getFullPathName();
 		if (directory_name.length() == 2)
@@ -458,7 +480,7 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 		{
 			std::cout << "Found parameters for Neuropixels editor" << std::endl;
 
-			for (int slot = 0; slot < thread->getNumBasestations(); slot++)
+			for (int slot = 0; slot < thread->getBasestations().size(); slot++)
 			{
 				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
 				std::cout << "Setting thread directory for slot " << slot << std::endl;

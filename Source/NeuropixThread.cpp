@@ -48,30 +48,10 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 {
 	progressBar = new ProgressBar(initializationProgress);
 
-    for (int i = 0; i < 384; i++)
-    {
-        channelMap.add(i);
-        outputOn.add(true);
-    }
-
-	for (int i = 0; i < 16; i++)
-		fillPercentage.add(0.0);
-
-    refs.add(0);
-    refs.add(1);
-    refs.add(192);
-    refs.add(576);
-    refs.add(960);
-
 	defaultSyncFrequencies.add(1);
 	defaultSyncFrequencies.add(10);
 
-    counter = 0;
-
-    maxCounter = 0;
-
     uint32_t availableslotmask;
-	totalProbes = 0;
 
 	np::scanPXI(&availableslotmask);
 
@@ -79,8 +59,9 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	{
 		if ((availableslotmask >> slot) & 1)
 		{
+			// need to check for bs firmware version
 			basestations.add(new Basestation_v1(slot));
-			basestations.getLast()->open();
+			basestations.getLast()->open(); // detects # of probes
 		}
 	}
 
@@ -88,9 +69,50 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	{
 		// pop-up window
 		basestations.add(new SimulatedBasestation(0));
-		basestations.getLast()->open();
+		basestations.getLast()->open(); // detects # of probes
 	}
+	
+	bool foundSync = false;
 
+	for (auto probe : getProbes())
+	{
+		baseStationAvailable = true;
+
+		if (!foundSync)
+		{
+			probe->basestation->setSyncAsInput();
+			foundSync = true;
+		}
+
+		std::cout << "PROBE " << probe->headstage->port << std::endl;
+
+		SubprocessorInfo spInfo;
+		spInfo.num_channels = probe->channel_count;
+		spInfo.sample_rate = probe->ap_sample_rate;
+		spInfo.type = AP_BAND;
+
+		subprocessorInfo.add(spInfo);
+
+		sourceBuffers.add(new DataBuffer(probe->channel_count, 10000));  // AP band buffer
+		probe->apBuffer = sourceBuffers.getLast();
+
+		std::cout << "spinfo: " << spInfo.num_channels << " ch, " << spInfo.sample_rate << " Hz" << std::endl;
+
+		if (probe->generatesLfpData())
+		{
+			sourceBuffers.add(new DataBuffer(probe->channel_count, 10000));  // LFP band buffer
+			probe->lfpBuffer = sourceBuffers.getLast();
+
+			SubprocessorInfo spInfo;
+			spInfo.num_channels = probe->channel_count;
+			spInfo.sample_rate = probe->lfp_sample_rate;
+			spInfo.type = LFP_BAND;
+
+			std::cout << "spinfo: " << spInfo.num_channels << " ch, " << spInfo.sample_rate << " Hz" << std::endl;
+
+			subprocessorInfo.add(spInfo);
+		}
+	}
 }
 
 NeuropixThread::~NeuropixThread()
@@ -107,68 +129,70 @@ void NeuropixThread::applyProbeSettingsQueue()
 {
 	for (auto settings : probeSettingsUpdateQueue)
 	{
-		selectElectrodes(settings.slot, settings.port, settings.channelStatus);
-		setAllGains(settings.slot, settings.port, settings.apGainIndex, settings.lfpGainIndex);
-		setAllReferences(settings.slot, settings.port, settings.refChannelIndex);
-		setFilter(settings.slot, settings.port, settings.disableHighPass);
+		settings.probe->setChannelStatus(settings.channelStatus);
+		settings.probe->setAllGains(settings.apGainIndex, settings.lfpGainIndex);
+		settings.probe->setAllReferences(settings.refChannelIndex);
+		settings.probe->setApFilterState(settings.disableHighPass);
 	}
 }
 
-void NeuropixThread::openConnection()
+void NeuropixThread::initialize()
 {
+	// slower task, run in background thread
 
-	bool foundSync = false;
-
-	for (int i = 0; i < basestations.size(); i++)
+	for (auto basestation : basestations)
 	{
-
-		basestations[i]->init();
-
-		if (basestations[i]->getProbeCount() > 0)
-		{
-			totalProbes += basestations[i]->getProbeCount();
-
-			baseStationAvailable = true;
-
-			if (!foundSync)
-			{
-				basestations[i]->setSyncAsInput();
-				selectedSlot = basestations[i]->slot;
-				selectedPort = basestations[i]->probes[0]->port;
-				foundSync = true;
-			}
-
-			for (int probe_num = 0; probe_num < basestations[i]->getProbeCount(); probe_num++)
-			{
-				std::cout << "Creating buffers for slot " << int(basestations[i]->slot) << ", probe " << int(basestations[i]->probes[probe_num]->port) << std::endl;
-				sourceBuffers.add(new DataBuffer(384, 10000));  // AP band buffer
-
-				basestations[i]->probes[probe_num]->apBuffer = sourceBuffers.getLast();
-
-				sourceBuffers.add(new DataBuffer(384, 10000));  // LFP band buffer
-
-				basestations[i]->probes[probe_num]->lfpBuffer = sourceBuffers.getLast();
-
-				CoreServices::sendStatusMessage("Initializing probe " + String(probe_num + 1) + "/" + String(basestations[i]->getProbeCount()) + 
-					" on Basestation " + String(i + 1) + "/" + String(basestations.size()));
-				
-				basestations[i]->initializeProbes();
-			}
-				
-		}
-			
+		basestation->initialize(); // prepares probes for acquisition; may be slow
 	}
 
-	np::setParameter(np::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
-	np::setParameter(np::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
+	if (api_v1.isActive)
+	{
+		np::setParameter(np::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
+		np::setParameter(np::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
+	}
+	else {
+		Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
+		Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
+	}
+	
 }
 
-int NeuropixThread::getNumBasestations()
+Array<Basestation*> NeuropixThread::getBasestations()
 {
-	return basestations.size();
+	Array<Basestation*> bs;
+
+	for (auto bs_ : basestations)
+	{
+		bs.add(bs_);
+	}
+
+	return bs;
 }
 
-void NeuropixThread::setMasterSync(int slotIndex)
+Array<Probe*> NeuropixThread::getProbes()
+{
+	Array<Probe*> probes;
+
+	for (auto bs : basestations)
+	{
+		for (auto probe : bs->getProbes())
+		{
+			probes.add(probe);
+		}
+	}
+
+	return probes;
+}
+
+String NeuropixThread::getApiVersion()
+{
+	if (api_v1.isActive)
+		return api_v1.info.version;
+	else
+		return api_v3.info.version;
+}
+
+void NeuropixThread::setMainSync(int slotIndex)
 {
 	basestations[slotIndex]->setSyncAsInput();
 }
@@ -193,44 +217,6 @@ void NeuropixThread::setSyncFrequency(int slotIndex, int freqIndex)
 	basestations[slotIndex]->setSyncAsOutput(freqIndex);
 }
 
-bool NeuropixThread::checkSlotAndPortCombo(int slotIndex, int portIndex)
-{
-	if (basestations.size() <= slotIndex)
-	{
-		return false;
-	}
-	else {
-
-		if (portIndex > -1)
-		{
-			bool foundPort = false;
-			for (int i = 0; i < basestations[slotIndex]->probes.size(); i++)
-			{
-				if (basestations[slotIndex]->probes[i]->port == (signed char)portIndex)
-				{
-					foundPort = true;
-				}
-
-			}
-			return foundPort;
-		}
-		else {
-			return true;
-		}
-		
-	}
-}
-
-unsigned char NeuropixThread::getSlotForIndex(int slotIndex, int portIndex)
-{
-	return basestations[slotIndex]->slot;
-}
-
-signed char NeuropixThread::getPortForIndex(int slotIndex, int portIndex)
-{
-	return (signed char)portIndex;
-}
-
 
 void NeuropixThread::closeConnection()
 {
@@ -250,7 +236,12 @@ XmlElement NeuropixThread::getInfoXml()
 	XmlElement neuropix_info("NEUROPIX-PXI");
 
 	XmlElement* api_info = new XmlElement("API");
-	api_info->setAttribute("version", api.info.version);
+
+	if (api_v1.isActive)
+		api_info->setAttribute("version", api_v1.info.version);
+	else
+		api_info->setAttribute("version", api_v3.info.version);
+
 	neuropix_info.addChildElement(api_info);
 
 	for (int i = 0; i < basestations.size(); i++)
@@ -258,21 +249,22 @@ XmlElement NeuropixThread::getInfoXml()
 		XmlElement* basestation_info = new XmlElement("BASESTATION");
 		basestation_info->setAttribute("index", i + 1);
 		basestation_info->setAttribute("slot", int(basestations[i]->slot));
-		basestation_info->setAttribute("firmware_version", basestations[i]->boot_version);
-		basestation_info->setAttribute("bsc_firmware_version", basestations[i]->basestationConnectBoard->boot_version);
+		basestation_info->setAttribute("firmware_version", basestations[i]->info.boot_version);
+		basestation_info->setAttribute("bsc_firmware_version", basestations[i]->basestationConnectBoard->info.boot_version);
 		basestation_info->setAttribute("bsc_part_number", basestations[i]->basestationConnectBoard->info.part_number);
 		basestation_info->setAttribute("bsc_serial_number", String(basestations[i]->basestationConnectBoard->info.serial_number));
 
-		for (int j = 0; j < basestations[i]->getProbeCount(); j++)
+		for (auto probe : basestations[i]->getProbes())
 		{
 			XmlElement* probe_info = new XmlElement("PROBE");
-			probe_info->setAttribute("port", int(basestations[i]->probes[j]->port));
-			probe_info->setAttribute("probe_serial_number", String(basestations[i]->probes[j]->info.serial_number));
-			probe_info->setAttribute("hs_serial_number", String(basestations[i]->probes[j]->headstage->info.serial_number));
-			probe_info->setAttribute("hs_part_number", basestations[i]->probes[j]->headstage->info.part_number);
-			probe_info->setAttribute("hs_version", basestations[i]->probes[j]->headstage->info.version);
-			probe_info->setAttribute("flex_part_number", basestations[i]->probes[j]->flex->info.part_number);
-			probe_info->setAttribute("flex_version", basestations[i]->probes[j]->flex->info.version);
+			probe_info->setAttribute("port", probe->headstage->port);
+			probe_info->setAttribute("port", probe->dock);
+			probe_info->setAttribute("probe_serial_number", String(probe->info.serial_number));
+			probe_info->setAttribute("hs_serial_number", String(probe->headstage->info.serial_number));
+			probe_info->setAttribute("hs_part_number", probe->info.part_number);
+			probe_info->setAttribute("hs_version", probe->headstage->info.version);
+			probe_info->setAttribute("flex_part_number", probe->flex->info.part_number);
+			probe_info->setAttribute("flex_version", probe->flex->info.version);
 
 			basestation_info->addChildElement(probe_info);
 
@@ -293,7 +285,10 @@ String NeuropixThread::getInfoString()
 	String infoString;
 
 	infoString += "API Version: ";
-	infoString += api.info.version;
+	if (api_v1.isActive)
+		infoString += api_v1.info.version;
+	else
+		infoString += api_v3.info.version;
 	infoString += "\n";
 	infoString += "\n";
 	infoString += "\n";
@@ -304,7 +299,7 @@ String NeuropixThread::getInfoString()
 		infoString += String(i + 1);
 		infoString += "\n";
 		infoString += "  Firmware version: ";
-		infoString += basestations[i]->boot_version;
+		infoString += basestations[i]->info.boot_version;
 		infoString += "\n";
 		infoString += "  BSC firmware version: ";
 		infoString += basestations[i]->basestationConnectBoard->info.boot_version;
@@ -317,31 +312,31 @@ String NeuropixThread::getInfoString()
 		infoString += "\n";
 		infoString += "\n";
 
-		for (int j = 0; j < basestations[i]->getProbeCount(); j++)
+		for (auto probe : basestations[i]->getProbes())
 		{
 			infoString += "    Port ";
-			infoString += String(basestations[i]->probes[j]->port);
+			infoString += String(probe->headstage->port);
 			infoString += "\n";
 			infoString += "\n";
 			infoString += "    Probe serial number: ";
-			infoString += String(basestations[i]->probes[j]->info.serial_number);
+			infoString += String(probe->info.serial_number);
 			infoString += "\n";
 			infoString += "\n";
 			infoString += "    Headstage serial number: ";
-			infoString += String(basestations[i]->probes[j]->headstage->info.serial_number);
+			infoString += String(probe->headstage->info.serial_number);
 			infoString += "\n";
 			infoString += "    Headstage part number: ";
-			infoString += basestations[i]->probes[j]->headstage->info.part_number;
+			infoString += probe->headstage->info.part_number;
 			infoString += "\n";
 			infoString += "    Headstage version: ";
-			infoString += basestations[i]->probes[j]->headstage->info.version;
+			infoString += probe->headstage->info.version;
 			infoString += "\n";
 			infoString += "\n";
 			infoString += "    Flex part number: ";
-			infoString += basestations[i]->probes[j]->flex->info.part_number;
+			infoString += probe->flex->info.part_number;
 			infoString += "\n";
 			infoString += "    Flex version: ";
-			infoString += basestations[i]->probes[j]->flex->info.version;
+			infoString += probe->flex->info.version;
 			infoString += "\n";
 			infoString += "\n";
 			infoString += "\n";
@@ -360,22 +355,11 @@ String NeuropixThread::getInfoString()
 bool NeuropixThread::startAcquisition()
 {
 
-    // clear the internal buffer (happens in initializeProbe)
-	//for (int i = 0; i < sourceBuffers.size(); i++)
-	//{
-	//	sourceBuffers[i]->clear();
-	//}
-
 	initializationProgress = 0;
 
 	progressBar->setVisible(true);
 
-    counter = 0;
-    maxCounter = 0;
-
-	last_npx_timestamp = 0;
-
-	startTimer(500 * totalProbes); // wait for signal chain to be built
+	startTimer(500); // wait for signal chain to be built
 	
     return true;
 }
@@ -419,8 +403,16 @@ void NeuropixThread::startRecording()
 
 				File npxFileName = fullPath.getChildFile("recording_slot" + String(basestations[i]->slot) + "_" + String(recordingNumber) + ".npx2");
 
-				np::setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
-				np::enableFileStream(basestations[i]->slot, true);
+				if (api_v1.isActive)
+				{
+					np::setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
+					np::enableFileStream(basestations[i]->slot, true);
+				}
+				else {
+					Neuropixels::setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
+					Neuropixels::enableFileStream(basestations[i]->slot, true);
+				}
+				
 
 				std::cout << "Basestation " << i << " started recording." << std::endl;
 			}
@@ -432,11 +424,38 @@ void NeuropixThread::startRecording()
 
 }
 
+void NeuropixThread::setDirectoryForSlot(int slotIndex, File directory)
+{
+
+	setRecordMode(true);
+
+	std::cout << "Thread setting directory for slot " << slotIndex << " to " << directory.getFileName() << std::endl;
+
+	if (slotIndex < basestations.size())
+	{
+		basestations[slotIndex]->setSavingDirectory(directory);
+	}
+}
+
+File NeuropixThread::getDirectoryForSlot(int slotIndex)
+{
+	if (slotIndex < basestations.size())
+	{
+		return basestations[slotIndex]->getSavingDirectory();
+	}
+	else {
+		return File::getCurrentWorkingDirectory();
+	}
+}
+
 void NeuropixThread::stopRecording()
 {
 	for (int i = 0; i < basestations.size(); i++)
 	{
-		np::enableFileStream(basestations[i]->slot, false);
+		if (api_v1.isActive)
+			np::enableFileStream(basestations[i]->slot_c, false);
+		else
+			Neuropixels::enableFileStream(basestations[i]->slot, false);
 	}
 
 	std::cout << "NeuropixThread stopped recording." << std::endl;
@@ -459,6 +478,7 @@ bool NeuropixThread::stopAcquisition()
     return true;
 }
 
+/*
 void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 {
 	int currentSlot, currentPort;
@@ -501,9 +521,9 @@ void NeuropixThread::setSelectedProbe(unsigned char slot, signed char port)
 
 	selectedSlot = slot;
 	selectedPort = port;
-}
+}*/
 
-ProbeStatus NeuropixThread::getProbeStatus(unsigned char slot, signed char port)
+/*ProbeStatus NeuropixThread::getProbeStatus(unsigned char slot, signed char port)
 {
 	for (int i = 0; i < basestations.size(); i++)
 	{
@@ -539,36 +559,32 @@ bool NeuropixThread::isSelectedProbe(unsigned char slot, signed char port)
 
 	}
 	return false;
-}
+}*/
 
 void NeuropixThread::setDefaultChannelNames()
 {
 
-	//std::cout << "Setting channel bitVolts to 0.195" << std::endl;
-	if (totalProbes > 0)
+	if (subprocessorInfo.size() > 0)
 	{
 		
 		int chan = 0;
 
-		for (int probe_num = 0; probe_num < totalProbes; probe_num++)
+		for (auto spInfo : subprocessorInfo)
 		{
-			for (int i = 0; i < 384; i++)
+			for (int i = 0; i < spInfo.num_channels; i++)
 			{
 				ChannelCustomInfo info;
-				info.name = "AP" + String(i + 1);
+
+				if (spInfo.type == AP_BAND)
+					info.name = "AP" + String(i + 1);
+				else
+					info.name = "LFP" + String(i + 1);
+
 				info.gain = 0.1950000f;
 				channelInfo.set(chan, info);
 				chan++;
 			}
 
-			for (int i = 0; i < 384; i++)
-			{
-				ChannelCustomInfo info;
-				info.name = "LFP" + String(i + 1);
-				info.gain = 0.1950000f;
-				channelInfo.set(chan, info);
-				chan++;
-			}
 		}
 
 	}
@@ -584,7 +600,7 @@ bool NeuropixThread::usesCustomNames() const
 /** Returns the number of virtual subprocessors this source can generate */
 unsigned int NeuropixThread::getNumSubProcessors() const
 {
-	return totalProbes > 0 ? 2 * totalProbes : 2;
+	return subprocessorInfo.size();
 }
 
 /** Returns the number of continuous headstage channels the data source can provide.*/
@@ -593,10 +609,8 @@ int NeuropixThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int su
 
 	int numChans;
 
-	if (type == DataChannel::DataChannelTypes::HEADSTAGE_CHANNEL && subProcessorIdx % 2 == 0)
-		numChans = 384;
-	else if (type == DataChannel::DataChannelTypes::HEADSTAGE_CHANNEL && subProcessorIdx % 2 == 1)
-		numChans = 384;
+	if (type == DataChannel::DataChannelTypes::HEADSTAGE_CHANNEL)
+		return subprocessorInfo[subProcessorIdx].num_channels;
 	else
 		numChans = 0;
 
@@ -608,30 +622,15 @@ int NeuropixThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int su
 /** Returns the number of TTL channels that each subprocessor generates*/
 int NeuropixThread::getNumTTLOutputs(int subProcessorIdx) const 
 {
-	if (subProcessorIdx % 2 == 0)
-	{
-		return 1;
-	}
-	else {
-		return 0;
-	}
+	return 1;
 }
 
 /** Returns the sample rate of the data source.*/
 float NeuropixThread::getSampleRate(int subProcessorIdx) const
 {
 
-	float rate;
+	return subprocessorInfo[subProcessorIdx].sample_rate;
 
-	if (subProcessorIdx % 2 == 0)
-		rate = 30000.0f;
-	else
-		rate = 2500.0f;
-
-
-	//std::cout << "Sample rate for subprocessor " << subProcessorIdx << " = " << rate << std::endl;
-
-	return rate;
 }
 
 /** Returns the volts per bit of the data source.*/
@@ -639,60 +638,6 @@ float NeuropixThread::getBitVolts(const DataChannel* chan) const
 {
 	//std::cout << "BIT VOLTS == 0.195" << std::endl;
 	return 0.1950000f;
-}
-
-
-void NeuropixThread::selectElectrodes(unsigned char slot, signed char port, Array<int> channelStatus)
-{
-
-	for (int i = 0; i < basestations.size(); i++)
-	{
-		basestations[i]->setChannels(slot, port, channelStatus);
-	}
-
-}
-
-void NeuropixThread::setAllReferences(unsigned char slot, signed char port, int refId)
-{
- 
-	np::NP_ErrorCode ec;
-	np::channelreference_t reference;
-	unsigned char intRefElectrodeBank;
-
-	if (refId == 0) // external reference
-	{
-		reference = np::EXT_REF;
-		intRefElectrodeBank = 0;
-	}
-	else if (refId == 1) // tip reference
-	{
-		reference = np::TIP_REF;
-		intRefElectrodeBank = 0;
-	}
-	else if (refId > 1) // internal reference
-	{
-		reference = np::INT_REF;
-		intRefElectrodeBank = refId - 2;
-	}
-
-	for (int i = 0; i < basestations.size(); i++)
-	{
-		basestations[i]->setReferences(slot, port, reference, intRefElectrodeBank);
-	}
-}
-
-void NeuropixThread::setAllGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain)
-{
-
-	for (int i = 0; i < basestations.size(); i++)
-		basestations[i]->setGains(slot, port, apGain, lfpGain);
-   
-}
-
-void NeuropixThread::setFilter(unsigned char slot, signed char port, bool disableHighPass)
-{
-	for (int i = 0; i < basestations.size(); i++)
-		basestations[i]->setApFilterState(slot, port, disableHighPass);
 }
 
 void NeuropixThread::setTriggerMode(bool trigger)
@@ -712,53 +657,7 @@ void NeuropixThread::setAutoRestart(bool restart)
 	autoRestart = restart;
 }
 
-void NeuropixThread::setDirectoryForSlot(int slotIndex, File directory)
-{
 
-	setRecordMode(true);
-
-	std::cout << "Thread setting directory for slot " << slotIndex << " to " << directory.getFileName() << std::endl;
-
-	if (slotIndex < basestations.size())
-	{
-		basestations[slotIndex]->setSavingDirectory(directory);
-	}
-}
-
-File NeuropixThread::getDirectoryForSlot(int slotIndex)
-{
-	if (slotIndex < basestations.size())
-	{
-		return basestations[slotIndex]->getSavingDirectory();
-	}
-	else {
-		return File::getCurrentWorkingDirectory();
-	}
-}
-
-bool NeuropixThread::runBist(unsigned char slot, signed char port, int bistIndex)
-{
-	return basestations[slot]->runBist(port, bistIndex);
-
-}
-
-float NeuropixThread::getFillPercentage(unsigned char slot)
-{
-
-	//std::cout << "  Thread checking fill percentage for slot " << int(slot) << std::endl;
-
-	for (int i = 0; i < basestations.size(); i++)
-	{
-		if (basestations[i]->slot == slot)
-		{
-			//std::cout << "  Found match!" << std::endl;
-			return basestations[i]->getFillPercentage();
-		}
-			
-	}
-
-	return 0.0f;
-}
 
 bool NeuropixThread::updateBuffer()
 {

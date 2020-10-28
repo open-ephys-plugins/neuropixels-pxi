@@ -39,22 +39,15 @@ public:
 	Basestation_v1(int slot);
 	~Basestation_v1();
 
-	unsigned char slot;
+	int slot;
 
 	void open() override;
 	void close() override;
-	void init() override;
+	void initialize() override;
 
 	int getProbeCount() override;
 
-	void initializeProbes() override;
-
 	//float getTemperature() override;
-
-	void setChannels(unsigned char slot, signed char port, Array<int> channelStatus) override;
-	void setReferences(unsigned char slot, signed char port, np::channelreference_t refId, unsigned char electrodeBank) override;
-	void setGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain) override;
-	void setApFilterState(unsigned char slot, signed char port, bool filterState) override;
 
 	void getInfo() override;
 

@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "SimulatedBasestation.h"
 
 #include "../Probes/SimulatedProbe.h"
+#include "../Headstages/SimulatedHeadstage.h"
 
 void SimulatedBasestationConnectBoard::getInfo()
 {
@@ -48,11 +49,20 @@ void SimulatedBasestation::open()
 	basestationConnectBoard = new SimulatedBasestationConnectBoard(this);
 	basestationConnectBoard->getInfo();
 
-	probes.add(new SimulatedProbe(this, 1));
-	probes.getLast()->init();
+	headstages.add(new SimulatedHeadstage(this, 0));
+	headstages.add(new SimulatedHeadstage(this, 1));
+	headstages.add(nullptr);
+	headstages.add(nullptr);
 
-	//probes.add(new SimulatedProbe(this, 2));
-	//probes.getLast()->init();
+	for (auto headstage : headstages)
+	{
+		if (headstage != nullptr)
+		{
+			probes.add(headstage->getProbes()[0]);
+		}
+	}
+
+	std::cout << probes.size() << " total probes " << std::endl;
 
 	syncFrequencies.add(1);
 	syncFrequencies.add(10);
@@ -60,17 +70,6 @@ void SimulatedBasestation::open()
 
 void SimulatedBasestation::close()
 {
-
-}
-
-void SimulatedBasestation::init()
-{
-
-	for (int i = 0; i < probes.size(); i++)
-	{
-		setGains(this->slot, probes[i]->port, 3, 2);
-		probes[i]->setStatus(ProbeStatus::CONNECTED);
-	}
 
 }
 
@@ -92,20 +91,15 @@ int SimulatedBasestation::getProbeCount()
 }
 
 
-void SimulatedBasestation::initializeProbes()
+void SimulatedBasestation::initialize()
 {
 	if (!probesInitialized)
 	{
 		
-		for (int i = 0; i < probes.size(); i++)
+		for (auto probe: probes)
 		{
-
-			probes[i]->calibrate();
-			probes[i]->ap_timestamp = 0;
-			probes[i]->lfp_timestamp = 0;
-			probes[i]->eventCode = 0;
-			probes[i]->setStatus(ProbeStatus::CONNECTED);
-
+			probe->initialize();
+			
 		}
 
 		probesInitialized = true;
@@ -142,69 +136,6 @@ void SimulatedBasestation::stopAcquisition()
 	for (int i = 0; i < probes.size(); i++)
 	{
 		probes[i]->stopThread(1000);
-	}
-
-}
-
-void SimulatedBasestation::setChannels(unsigned char slot_, signed char port, Array<int> channelMap)
-{
-	if (slot == slot_)
-	{
-		for (int i = 0; i < probes.size(); i++)
-		{
-			if (probes[i]->port == port)
-			{
-				probes[i]->setChannels(channelMap);
-				std::cout << "Set electrode-channel connections " << std::endl;
-			}
-		}
-	}
-}
-
-void SimulatedBasestation::setApFilterState(unsigned char slot_, signed char port, bool disableHighPass)
-{
-	if (slot == slot_)
-	{
-		for (int i = 0; i < probes.size(); i++)
-		{
-			if (probes[i]->port == port)
-			{
-				probes[i]->setApFilterState(disableHighPass);
-				std::cout << "Set all filters to " << int(disableHighPass) << std::endl;
-			}
-		}
-	}
-
-}
-
-void SimulatedBasestation::setGains(unsigned char slot_, signed char port, unsigned char apGain, unsigned char lfpGain)
-{
-	if (slot == slot_)
-	{
-		for (int i = 0; i < probes.size(); i++)
-		{
-			if (probes[i]->port == port)
-			{
-				probes[i]->setGains(apGain, lfpGain);
-				std::cout << "Set all gains to " << int(apGain) << ":" << int(lfpGain) << std::endl;
-			}
-		}
-	}
-
-}
-
-void SimulatedBasestation::setReferences(unsigned char slot_, signed char port, np::channelreference_t refId, unsigned char refElectrodeBank)
-{
-	if (slot == slot_)
-	{
-		for (int i = 0; i < probes.size(); i++)
-		{
-			if (probes[i]->port == port)
-			{
-				probes[i]->setReferences(refId, refElectrodeBank);
-				std::cout << "Set all references to " << refId << ":" << int(refElectrodeBank) << std::endl;
-			}
-		}
 	}
 
 }

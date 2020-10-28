@@ -29,20 +29,35 @@ void SimulatedProbe::getInfo()
 	info.part_number = "Simulated probe";
 }
 
-void SimulatedProbe::init()
+
+
+SimulatedProbe::SimulatedProbe(Basestation* bs,
+	Headstage* hs,
+	Flex* fl,
+	int dock) : Probe(bs, hs, fl, dock)
 {
-	flex = new SimulatedFlex(this);
-	headstage = new SimulatedHeadstage(this);
+	channel_count = 384;
+	lfp_sample_rate = 2500.0f;
+	ap_sample_rate = 30000.0f;
 
 }
 
+void SimulatedProbe::initialize()
+{
+	calibrate();
+	ap_timestamp = 0;
+	lfp_timestamp = 0;
+	eventCode = 0;
+	setStatus(ProbeStatus::CONNECTED);
+	Sleep(200);
+}
 
 void SimulatedProbe::calibrate()
 {
 	std::cout << "Calibrating simulated probe." << std::endl;
 }
 
-void SimulatedProbe::setChannels(Array<int> channelStatus)
+void SimulatedProbe::setChannelStatus(Array<int> channelStatus)
 {
 
 	int electrode;
@@ -81,7 +96,7 @@ void SimulatedProbe::setChannels(Array<int> channelStatus)
 
 	std::cout << "Updating electrode settings for"
 		<< " slot: " << static_cast<unsigned>(basestation->slot)
-		<< " port: " << static_cast<unsigned>(port) << std::endl;
+		<< " port: " << static_cast<unsigned>(headstage->port) << std::endl;
 
 }
 
@@ -91,7 +106,7 @@ void SimulatedProbe::setApFilterState(bool disableHighPass)
 	std::cout << "Wrote filter state for simulated probe." << std::endl;
 }
 
-void SimulatedProbe::setGains(unsigned char apGain, unsigned char lfpGain)
+void SimulatedProbe::setAllGains(int apGain, int lfpGain)
 {
 	for (int channel = 0; channel < 384; channel++)
 	{
@@ -103,11 +118,19 @@ void SimulatedProbe::setGains(unsigned char apGain, unsigned char lfpGain)
 }
 
 
-void SimulatedProbe::setReferences(np::channelreference_t refId, unsigned char refElectrodeBank)
+void SimulatedProbe::setAllReferences(int referenceIndex)
 {
 	std::cout << "Wrote reference state for simulated probe." << std::endl;
 }
 
+void SimulatedProbe::startAcquisition() {
+
+}
+
+void SimulatedProbe::stopAcquisition()
+{
+
+}
 
 void SimulatedProbe::run()
 {
@@ -115,8 +138,10 @@ void SimulatedProbe::run()
 	while (!threadShouldExit())
 	{
 
-		if (0) // every 1/300 s
+		if (1) // every 1/300 s
 		{
+			Sleep(3);
+
 			float apSamples[384];
 			float lfpSamples[384];
 
@@ -124,10 +149,6 @@ void SimulatedProbe::run()
 			{
 				for (int i = 0; i < 12; i++)
 				{
-					eventCode = packet[packetNum].Status[i] >> 6; // AUX_IO<0:13>
-
-					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
-
 					for (int j = 0; j < 384; j++)
 					{
 						apSamples[j] = 0;

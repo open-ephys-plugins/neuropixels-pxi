@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "Headstage1_v1.h"
+#include "../Probes/Neuropixels1_v1.h"
 
 #define MAXLEN 50
 
@@ -31,14 +32,14 @@ void Headstage1_v1::getInfo()
 	unsigned char version_major;
 	unsigned char version_minor;
 
-	errorCode = np::getHSVersion(probe->basestation->slot, probe->port, &version_major, &version_minor);
+	errorCode = np::getHSVersion(basestation->slot_c, port_c, &version_major, &version_minor);
 
 	info.version = String(version_major) + "." + String(version_minor);
 
-	errorCode = np::readHSSN(probe->basestation->slot, probe->port, &info.serial_number);
+	errorCode = np::readHSSN(basestation->slot_c, port_c, &info.serial_number);
 
 	char pn[MAXLEN];
-	errorCode = np::readHSPN(probe->basestation->slot, probe->port, pn, MAXLEN);
+	errorCode = np::readHSPN(basestation->slot_c, port_c, pn, MAXLEN);
 
 	info.part_number = String(pn);
 
@@ -51,35 +52,43 @@ void Flex1_v1::getInfo()
 	unsigned char version_major;
 	unsigned char version_minor;
 
-	errorCode = np::getFlexVersion(probe->basestation->slot, probe->port, &version_major, &version_minor);
+	errorCode = np::getFlexVersion(headstage->basestation->slot_c, 
+								   headstage->port_c, 
+								   &version_major, 
+								   &version_minor);
 
 	info.version = String(version_major) + "." + String(version_minor);
 
 	char pn[MAXLEN];
-	errorCode = np::readFlexPN(probe->basestation->slot, probe->port, pn, MAXLEN);
+	errorCode = np::readFlexPN(headstage->basestation->slot_c, 
+								headstage->port_c, 
+								pn, 
+								MAXLEN);
 
 	info.part_number = String(pn);
 
 }
 
 
-Headstage1_v1::Headstage1_v1(Probe* probe_) : Headstage(probe_)
+Headstage1_v1::Headstage1_v1(Basestation* bs_, int port) : Headstage(bs_, port)
 {
+	
+	flexCables.add(new Flex1_v1(this));
+
+	probes.add(new Neuropixels1_v1(basestation, this, flexCables[0]));
+	probes[0]->setStatus(ProbeStatus::CONNECTING);
 }
 
-Flex1_v1::Flex1_v1(Probe* probe_) : Flex(probe_)
+Flex1_v1::Flex1_v1(Headstage* hs_) : Flex(hs_, 0)
 {
+	errorCode = np::SUCCESS;
 }
 
 
 /****************Headstage Test Module**************************/
 
-HeadstageTestModule_v1::HeadstageTestModule_v1(Basestation* bs, signed char port) : HeadstageTestModule(bs, port)
+HeadstageTestModule_v1::HeadstageTestModule_v1(Basestation* bs, Headstage* hs) : HeadstageTestModule(bs, hs)
 {
-
-	slot = basestation->slot;
-
-	this->port = port;
 
 	tests = {
 		"VDDA1V2",
@@ -126,9 +135,10 @@ void HeadstageTestModule_v1::showResults()
 
 	int numTests = sizeof(struct HST_Status)/sizeof(np::NP_ErrorCode);
 	int resultLineTextLength = 30;
-	String message = "Test results from HST module on slot: " + String(slot) + " port: " + String(port) + "\n\n"; 
+	String message = "Test results from HST module on slot: " + String(basestation->slot) + " port: " + String(headstage->port) + "\n\n"; 
 
 	np::NP_ErrorCode *results = (np::NP_ErrorCode*)(&status->VDD_A1V2);
+
 	for (int i = 0; i < numTests; i++)
 	{
 		message+=String(tests[i]);
@@ -143,55 +153,55 @@ void HeadstageTestModule_v1::showResults()
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_VDD_A1V2()
 {
-	return np::HSTestVDDA1V2(slot, port);
+	return np::HSTestVDDA1V2(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_VDD_A1V8()
 {
-	return np::HSTestVDDA1V8(slot, port);
+	return np::HSTestVDDA1V8(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_VDD_D1V2()
 {
-	return np::HSTestVDDD1V2(slot, port);
+	return np::HSTestVDDD1V2(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_VDD_D1V8()
 {
-	return np::HSTestVDDD1V8(slot, port);
+	return np::HSTestVDDD1V8(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_MCLK()
 {
-	return np::HSTestMCLK(slot, port);
+	return np::HSTestMCLK(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_PCLK()
 {
-	return np::HSTestPCLK(slot, port);
+	return np::HSTestPCLK(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_PSB()
 {
-	return np::HSTestPSB(slot, port);
+	return np::HSTestPSB(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_I2C()
 {
-	return np::HSTestI2C(slot, port);
+	return np::HSTestI2C(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_NRST()
 {
-	return np::HSTestNRST(slot, port);
+	return np::HSTestNRST(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_REC_NRESET()
 {
-	return np::HSTestREC_NRESET(slot, port);
+	return np::HSTestREC_NRESET(basestation->slot_c, headstage->port_c);
 }
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_SIGNAL()
 {
-	return np::HSTestOscillator(slot, port);
+	return np::HSTestOscillator(basestation->slot_c, headstage->port_c);
 }

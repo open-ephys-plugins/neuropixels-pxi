@@ -30,27 +30,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # define SAMPLECOUNT 64
 
+
 class Neuropixels1_v1 : public Probe
 {
 public:
-	Neuropixels1_v1(Basestation* bs, signed char port);
-
-	void init() override;
-
-	void setChannels(Array<int> channelStatus) override;
-
-	void setApFilterState(bool) override;
-	void setReferences(np::channelreference_t refId, unsigned char refElectrodeBank) override;
-	void setGains(unsigned char apGain, unsigned char lfpGain) override;
-
-	void calibrate() override;
+	Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl);
 
 	void getInfo() override;
 
-	void run() override;
+	void initialize() override;
+
+    void setChannelStatus(Array<int> channelStatus) override;
+	void setAllReferences(int referenceIndex) override;
+	void setAllGains(int apGainIndex, int lfpGainIndex) override;
+	void setApFilterState(bool disableHighPass) override;
+
+	void startAcquisition() override;
+	void stopAcquisition() override;
+
+	void calibrate() override;
+
+	void run() override; // acquire data
+
+	bool generatesLfpData() { return true; }
 
 	np::electrodePacket packet[SAMPLECOUNT];
-
 	np::NP_ErrorCode errorCode;
 
 };

@@ -37,7 +37,7 @@ class SimulatedProbe;
 class SimulatedHeadstage : public Headstage
 {
 public:
-	SimulatedHeadstage(Probe* probe) : Headstage(probe) {}
+	SimulatedHeadstage(Basestation* bs, int port);
 	void getInfo() override;
 	bool hasTestModule() override { return false; }
 };
@@ -45,7 +45,7 @@ public:
 class SimulatedFlex : public Flex
 {
 public:
-	SimulatedFlex(Probe* probe) : Flex(probe) {}
+	SimulatedFlex(Headstage* headstage) : Flex(headstage, 0) { }
 	void getInfo() override;
 };
 

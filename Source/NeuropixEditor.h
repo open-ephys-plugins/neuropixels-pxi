@@ -53,24 +53,23 @@ private:
 class ProbeButton : public ToggleButton, public Timer
 {
 public:
-	ProbeButton(int id, NeuropixThread* thread);
+	ProbeButton(int id, Probe* probe);
 
-	void setSlotAndPort(unsigned char, signed char);
 	void setSelectedState(bool);
 
 	void setProbeStatus(ProbeStatus status);
 	ProbeStatus getProbeStatus();
+
 	void timerCallback();
 
-	unsigned char slot;
-	signed char port;
+	Probe* probe;
 	bool connected;
-	NeuropixThread* thread;
+
+	int id;
 
 private:
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
-	int id;
 	ProbeStatus status;
 	bool selected;
 };
@@ -78,7 +77,7 @@ private:
 class FifoMonitor : public Component, public Timer
 {
 public:
-	FifoMonitor(int id, NeuropixThread* thread);
+	FifoMonitor(int id, Basestation* basestation);
 
 	void setSlot(unsigned char);
 
@@ -91,7 +90,7 @@ private:
 	void paint(Graphics& g);
 
 	float fillPercentage;
-	NeuropixThread* thread;
+	Basestation* basestation;
 	int id;
 };
 
@@ -102,8 +101,8 @@ public:
 	~BackgroundLoader();
 	void run();
 private:
-	NeuropixThread* np;
-	NeuropixEditor* ed;
+	NeuropixThread* thread;
+	NeuropixEditor* editor;
 };
 
 /**

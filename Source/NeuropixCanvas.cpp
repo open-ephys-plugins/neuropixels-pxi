@@ -22,41 +22,25 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 */
 
 #include "NeuropixCanvas.h"
+#include "NeuropixComponents.h"
 
-NeuropixCanvas::NeuropixCanvas(GenericProcessor* p, NeuropixEditor* editor_, NeuropixThread* thread) : editor(editor_)
+NeuropixCanvas::NeuropixCanvas(GenericProcessor* p, NeuropixEditor* editor_, NeuropixThread* thread_) : 
+    editor(editor_),
+    thread(thread_)
+
 {
-
     processor = (SourceNode*)p;
 
     neuropixViewport = new Viewport();
 
-    XmlElement neuropix_info = thread->getInfoXml();
+    Array<Probe*> available_probes = thread->getProbes();
 
-    int slot;
-    int port;
-
-    if (neuropix_info.hasTagName("NEUROPIX-PXI"))
+    for (auto probe : available_probes)
     {
-        forEachXmlChildElement(neuropix_info, e)
-        {
-            if (e->hasTagName("BASESTATION"))
-            {
-                slot = e->getIntAttribute("slot");
-
-                forEachXmlChildElement(*e, e2)
-                {
-                    if (e2->hasTagName("PROBE"))
-                    {
-                        port = e2->getIntAttribute("port");
-
-                        std::cout << "Creating interface for " << slot << ":" << port << std::endl;
-
-                        NeuropixInterface* neuropixInterface = new NeuropixInterface(neuropix_info, slot, port, thread, (NeuropixEditor*)p->getEditor());
-                        neuropixInterfaces.add(neuropixInterface);
-                    }
-                }
-            }
-        }
+        //std::cout << "Creating interface for probe " << probe->headstage->port << std::endl;
+        NeuropixInterface* neuropixInterface = new NeuropixInterface(probe, thread, editor);
+        neuropixInterfaces.add(neuropixInterface);
+        probes.add(probe);
     }
 
     neuropixViewport->setViewedComponent(neuropixInterfaces[0], false);
@@ -122,19 +106,18 @@ void NeuropixCanvas::buttonClicked(Button* button)
 
 }
 
-void NeuropixCanvas::setSelectedProbe(int slot, int port)
+void NeuropixCanvas::setSelectedProbe(Probe* probe)
 {
-
-    for (int i = 0; i < neuropixInterfaces.size(); i++)
+    if (probe != nullptr)
     {
-        if (neuropixInterfaces[i]->slot == slot && neuropixInterfaces[i]->port == port)
-        {
-            neuropixViewport->setViewedComponent(neuropixInterfaces[i], false);
-        }
+
+        int index = probes.indexOf(probe);
+
+        if (index > -1)
+            neuropixViewport->setViewedComponent(neuropixInterfaces[index], false);
     }
 
 }
-
 
 void NeuropixCanvas::saveVisualizerParameters(XmlElement* xml)
 {
@@ -153,11 +136,14 @@ void NeuropixCanvas::loadVisualizerParameters(XmlElement* xml)
 }
 
 /*****************************************************/
-NeuropixInterface::NeuropixInterface(XmlElement info_, int slot_, int port_, NeuropixThread* t, NeuropixEditor* e) : thread(t), editor(e), slot(slot_), port(port_), neuropix_info(info_)
+NeuropixInterface::NeuropixInterface(Probe* p,
+                                     NeuropixThread* t, 
+                                     NeuropixEditor* e) : 
+                                     probe(p), thread(t), editor(e), neuropix_info("INFO")
 {
     cursorType = MouseCursor::NormalCursor;
 
-    std::cout << slot << "--" << port << std::endl;
+   // std::cout << slot << "--" << port << std::endl;
 
     isOverZoomRegion = false;
     isOverUpperBorder = false;
@@ -438,76 +424,12 @@ void NeuropixInterface::updateInfoString()
     String infoString;
 
     infoString += "API Version: ";
-    infoString += neuropix_info.getChildByName("API")->getStringAttribute("version", "not found");
+    infoString += thread->getApiVersion();
     infoString += "\n";
     infoString += "\n";
     infoString += "\n";
 
-    forEachXmlChildElement(neuropix_info, bs_info)
-    {
-        if (bs_info->hasTagName("BASESTATION"))
-        {
-            if (bs_info->getIntAttribute("slot") == slot)
-            {
-                forEachXmlChildElement(*bs_info, probe_info)
-                {
-                    if (probe_info->getIntAttribute("port") == port)
-                    {
-
-                        infoString += "Basestation ";
-                        infoString += String(bs_info->getIntAttribute("index"));
-                        mainString += String(bs_info->getIntAttribute("index"));
-                        mainString += ":";
-                        infoString += " (Slot ";
-                        infoString += String(bs_info->getIntAttribute("slot"));
-                        infoString += ")\n\n";
-                        infoString += "  Firmware version: ";
-                        infoString += bs_info->getStringAttribute("firmware_version");
-                        infoString += "\n";
-                        infoString += "  BSC firmware version: ";
-                        infoString += bs_info->getStringAttribute("bsc_firmware_version");
-                        infoString += "\n";
-                        infoString += "  BSC part number: ";
-                        infoString += bs_info->getStringAttribute("bsc_part_number");
-                        infoString += "\n";
-                        infoString += "  BSC serial number: ";
-                        infoString += bs_info->getStringAttribute("bsc_serial_number");
-                        infoString += "\n";
-                        infoString += "\n\n";
-
-                        infoString += "    Port ";
-                        infoString += String(probe_info->getStringAttribute("port"));
-                        mainString += String(probe_info->getStringAttribute("port"));
-                        infoString += "\n";
-                        infoString += "\n";
-                        infoString += "    Probe serial number: ";
-                        infoString += probe_info->getStringAttribute("probe_serial_number");
-                        infoString += "\n";
-                        infoString += "\n";
-                        infoString += "    Headstage serial number: ";
-                        infoString += probe_info->getStringAttribute("hs_serial_number");
-                        infoString += "\n";
-                        infoString += "    Headstage part number: ";
-                        infoString += probe_info->getStringAttribute("hs_part_number");
-                        infoString += "\n";
-                        infoString += "    Headstage version: ";
-                        infoString += probe_info->getStringAttribute("hs_version");
-                        infoString += "\n";
-                        infoString += "\n";
-                        infoString += "    Flex part number: ";
-                        infoString += probe_info->getStringAttribute("flex_part_number");
-                        infoString += "\n";
-                        infoString += "    Flex version: ";
-                        infoString += probe_info->getStringAttribute("flex_version");
-                        infoString += "\n";
-                        infoString += "\n";
-                        infoString += "\n";
-
-                    }
-                }
-            }
-        }
-    }
+    infoString += probe->info.part_number;
 
     infoLabel->setText(infoString, dontSendNotification);
     mainLabel->setText(mainString, dontSendNotification);
@@ -533,7 +455,7 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
 
             //std::cout << " Received gain combo box signal" << 
 
-            thread->setAllGains(slot, port, gainSettingAp, gainSettingLfp);
+            probe->setAllGains(gainSettingAp, gainSettingLfp);
 
             for (int i = 0; i < 960; i++)
             {
@@ -546,7 +468,7 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
 
             int refSetting = comboBox->getSelectedId() - 1;
 
-            thread->setAllReferences(slot, port, refSetting);
+            probe->setAllReferences(refSetting);
 
             for (int i = 0; i < 960; i++)
             {
@@ -562,7 +484,7 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
             // 0 = ON, disableHighPass = false -> (300 Hz highpass cut-off filter enabled)
             // 1 = OFF, disableHighPass = true -> (300 Hz highpass cut-off filter disabled)
             bool disableHighPass = (filterSetting == 1);
-            thread->setFilter(slot, port, disableHighPass);
+            probe->setApFilterState(disableHighPass);
         }
 
         repaint();
@@ -660,7 +582,7 @@ void NeuropixInterface::buttonClicked(Button* button)
                 }
             }
 
-            thread->selectElectrodes(slot, port, channelStatus);
+            probe->setChannelStatus(channelStatus);
             repaint();
         }
 
@@ -725,7 +647,7 @@ void NeuropixInterface::buttonClicked(Button* button)
                 CoreServices::sendStatusMessage("Please select a test to run.");
             }
             else {
-                bool passed = thread->runBist(slot, port, bistComboBox->getSelectedId());
+                bool passed = probe->basestation->runBist(probe->headstage->port, bistComboBox->getSelectedId());
 
                 String testString = bistComboBox->getText();
 
@@ -1627,11 +1549,11 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     {
         if (bs_info->hasTagName("BASESTATION"))
         {
-            if (bs_info->getIntAttribute("slot") == slot)
+            if (bs_info->getIntAttribute("slot") == probe->basestation->slot)
             {
                 forEachXmlChildElement(*bs_info, probe_info)
                 {
-                    if (probe_info->getIntAttribute("port") == port)
+                    if (probe_info->getIntAttribute("port") == probe->headstage->port)
                     {
                         xmlNode->setAttribute("basestation_index", bs_info->getIntAttribute("index"));
                         xmlNode->setAttribute("slot", bs_info->getIntAttribute("slot"));
@@ -1698,11 +1620,11 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     {
         if (bs_info->hasTagName("BASESTATION"))
         {
-            if (bs_info->getIntAttribute("slot") == slot)
+            if (bs_info->getIntAttribute("slot") == probe->basestation->slot)
             {
                 forEachXmlChildElement(*bs_info, probe_info)
                 {
-                    if (probe_info->getIntAttribute("port") == port)
+                    if (probe_info->getIntAttribute("port") == probe->headstage->port)
                     {
                         mySerialNumber = probe_info->getStringAttribute("probe_serial_number", "none");
                     }
@@ -1783,8 +1705,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
                     }
                 }
 
-                thread->p_settings.slot = slot;
-                thread->p_settings.port = port;
+                thread->p_settings.probe = probe;
                 thread->updateProbeSettingsQueue();
 
             }

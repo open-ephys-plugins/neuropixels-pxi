@@ -38,19 +38,26 @@ class SimulatedProbe;
 class SimulatedProbe : public Probe
 {
 public:
-	SimulatedProbe(Basestation* bs, signed char port) : Probe(bs, port, 0) { }
+	SimulatedProbe(Basestation* bs,
+		Headstage* hs,
+		Flex* fl,
+		int dock);
 
-	void init() override;
+	void initialize() override;
 
-	void setChannels(Array<int> channelStatus) override;
+	void setChannelStatus(Array<int> channelStatus) override;
+	void setAllReferences(int referenceIndex) override;
+	void setAllGains(int apGainIndex, int lfpGainIndex) override;
+	void setApFilterState(bool disableHighPass) override;
 
-	void setApFilterState(bool) override;
-	void setReferences(np::channelreference_t refId, unsigned char refElectrodeBank) override;
-	void setGains(unsigned char apGain, unsigned char lfpGain) override;
+	void startAcquisition() override;
+	void stopAcquisition() override;
 
 	void calibrate() override;
 
 	void getInfo() override;
+
+	bool generatesLfpData() { return true; }
 
 	void run() override;
 

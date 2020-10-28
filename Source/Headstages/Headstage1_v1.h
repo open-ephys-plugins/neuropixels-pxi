@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class Headstage1_v1 : public Headstage
 {
 public:
-	Headstage1_v1::Headstage1_v1(Probe*);
+	Headstage1_v1::Headstage1_v1(Basestation*, int port);
 	void getInfo() override;
 	bool hasTestModule() override { return true; }
 
@@ -42,7 +42,7 @@ public:
 class Flex1_v1 : public Flex
 {
 public:
-	Flex1_v1::Flex1_v1(Probe*);
+	Flex1_v1::Flex1_v1(Headstage*);
 	void getInfo() override;
 
 	np::NP_ErrorCode errorCode;
@@ -66,9 +66,14 @@ class HeadstageTestModule_v1 : public HeadstageTestModule
 {
 public:
 
-	HeadstageTestModule_v1::HeadstageTestModule_v1(Basestation* bs, signed char port);
+	HeadstageTestModule_v1::HeadstageTestModule_v1(Basestation* bs, Headstage* hs);
 
 	void getInfo() override;
+
+	void runAll() override;
+	void showResults() override;
+
+private:
 
 	np::NP_ErrorCode test_VDD_A1V2();
 	np::NP_ErrorCode test_VDD_A1V8();
@@ -82,19 +87,12 @@ public:
 	np::NP_ErrorCode test_REC_NRESET();
 	np::NP_ErrorCode test_SIGNAL();
 
-	void runAll() override;
-	void showResults() override;
-
-	np::NP_ErrorCode errorCode;
-
-private:
 	Basestation* basestation;
 	Headstage* headstage;
 
-	unsigned char slot;
-	signed char port;
-
 	std::vector<std::string> tests;
+
+	np::NP_ErrorCode errorCode;
 
 	ScopedPointer<HST_Status> status;
 

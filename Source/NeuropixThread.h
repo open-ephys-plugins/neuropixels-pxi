@@ -46,6 +46,16 @@ public:
 	NeuropixThread* thread;
 };
 
+typedef enum {
+	AP_BAND,
+	LFP_BAND
+} subprocessor_type;
+
+struct SubprocessorInfo {
+	int num_channels;
+	float sample_rate;
+	subprocessor_type type;
+};
 
 /**
 
@@ -78,9 +88,10 @@ public:
 	/** Returns version and serial number info for hardware and API as XML.*/
 	XmlElement getInfoXml();
 
-	void openConnection();
+	/** Prepares probes for data acquisition */
+	void initialize();
 
-	/** Initializes data transfer.*/
+	/** Starts data transfer.*/
 	bool startAcquisition() override;
 
 	/** Stops data transfer.*/
@@ -110,16 +121,16 @@ public:
 	bool usesCustomNames() const override;
 
 	/** Selects which electrode is connected to each channel. */
-	void selectElectrodes(unsigned char slot, signed char port, Array<int> channelStatus);
+	//void selectElectrodes(unsigned char slot, signed char port, Array<int> channelStatus);
 
 	/** Selects which reference is used for each channel. */
-	void setAllReferences(unsigned char slot, signed char port, int refId);
+	//void setAllReferences(unsigned char slot, signed char port, int refId);
 
 	/** Sets the gain for each channel. */
-	void setAllGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
+	//void setAllGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
 
 	/** Sets the filter for all channels. */
-	void setFilter(unsigned char slot, signed char port, bool filterState);
+	//void setFilter(Probe* , bool filterState);
 
 	/** Toggles between internal and external triggering. */
 	void setTriggerMode(bool trigger);
@@ -154,43 +165,45 @@ public:
 
 	GenericEditor* createEditor(SourceNode* sn);
 
-	int getNumBasestations();
+	Array<Basestation*> getBasestations();
+	Array<Probe*> getProbes();
 
-	void setMasterSync(int slotIndex);
+	void setMainSync(int slotIndex);
 	void setSyncOutput(int slotIndex);
 
 	Array<int> getSyncFrequencies();
+
 	void setSyncFrequency(int slotIndex, int freqIndex);
 
-	ProbeStatus getProbeStatus(unsigned char slot, signed char port);
-	void setSelectedProbe(unsigned char slot, signed char probe);
-	bool isSelectedProbe(unsigned char slot, signed char probe);
+	//ProbeStatus getProbeStatus(unsigned char slot, signed char port);
+	//void setSelectedProbe(unsigned char slot, signed char probe);
+	//bool isSelectedProbe(unsigned char slot, signed char probe);
 
-	bool checkSlotAndPortCombo(int slotIndex, int portIndex);
-	unsigned char getSlotForIndex(int slotIndex, int portIndex);
-	signed char getPortForIndex(int slotIndex, int portIndex);
+	//bool checkSlotAndPortCombo(int slotIndex, int portIndex);
+	//unsigned char getSlotForIndex(int slotIndex, int portIndex);
+	//signed char getPortForIndex(int slotIndex, int portIndex);
 
-	bool runBist(unsigned char slot, signed char port, int bistIndex);
-
-	float getFillPercentage(unsigned char slot);
+	//bool runBist(unsigned char slot, signed char port, int bistIndex);
 
 	ScopedPointer<ProgressBar> progressBar;
 	double initializationProgress;
 
 	/* Helper for loading probes in the background */
 	struct probeSettings {
-		unsigned char slot;
-		signed char port;
+		Probe* probe;
 		Array<int> channelStatus;
 		int apGainIndex;
 		int lfpGainIndex;
 		int refChannelIndex;
 		bool disableHighPass;
 	} p_settings;
+
 	Array<probeSettings> probeSettingsUpdateQueue;
 
 	void updateProbeSettingsQueue();
 	void applyProbeSettingsQueue();
+
+	String getApiVersion();
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 
@@ -212,14 +225,17 @@ private:
 
 	Array<int> defaultSyncFrequencies;
 
-	Array<int> channelMap;
-	Array<bool> outputOn;
-	Array<int> refs;
+	Array<SubprocessorInfo> subprocessorInfo;
 
-	uint64_t probeId;
+	//Array<int> channelMap;
+	//Array<bool> outputOn;
+	//Array<int> refs;
+
+	//uint64_t probeId;
 
 	int maxCounter;
-	int numRefs;
+
+	//int numRefs;
 	int totalChans;
 	int totalProbes;
 
@@ -229,10 +245,11 @@ private:
 
 	OwnedArray<Basestation> basestations;
 
-	NeuropixAPIv1 api;
+	NeuropixAPIv1 api_v1;
+	NeuropixAPIv3 api_v3;
 
-	unsigned char selectedSlot;
-	signed char selectedPort;
+	//unsigned char selectedSlot;
+	//signed char selectedPort;
 
 
 	//std::vector<unsigned char> connected_basestations;
