@@ -41,14 +41,16 @@ public:
 	SimulatedProbe(Basestation* bs,
 		Headstage* hs,
 		Flex* fl,
-		int dock);
+		int dock,
+		String partNumber);
 
 	void initialize() override;
 
-	void setChannelStatus(Array<int> channelStatus) override;
-	void setAllReferences(int referenceIndex) override;
-	void setAllGains(int apGainIndex, int lfpGainIndex) override;
-	void setApFilterState(bool disableHighPass) override;
+	void selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration = true) override;
+	void setAllReferences(int referenceIndex, bool shouldWriteConfiguration = true) override;
+	void setAllGains(int apGainIndex, int lfpGainIndex, bool shouldWriteConfiguration = true) override;
+	void setApFilterState(bool disableHighPass, bool shouldWriteConfiguration = true) override;
+	void writeConfiguration() override;
 
 	void startAcquisition() override;
 	void stopAcquisition() override;
@@ -58,6 +60,7 @@ public:
 	void getInfo() override;
 
 	bool generatesLfpData() { return true; }
+	bool hasApFilterSwitch() { return true; }
 
 	void run() override;
 

@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "SimulatedProbe.h"
+#include "Geometry.h"
 #include "../Headstages/SimulatedHeadstage.h"
 
 void SimulatedProbe::getInfo()
@@ -34,11 +35,45 @@ void SimulatedProbe::getInfo()
 SimulatedProbe::SimulatedProbe(Basestation* bs,
 	Headstage* hs,
 	Flex* fl,
-	int dock) : Probe(bs, hs, fl, dock)
+	int dock, String PN) : Probe(bs, hs, fl, dock)
 {
+	CoreServices::sendStatusMessage("Probe part number: " + PN);
+
+	Geometry::forPartNumber(PN, electrodeMetadata, probeMetadata);
+
 	channel_count = 384;
 	lfp_sample_rate = 2500.0f;
 	ap_sample_rate = 30000.0f;
+
+	availableApGains.add(50.0f);
+	availableApGains.add(125.0f);
+	availableApGains.add(250.0f);
+	availableApGains.add(500.0f);
+	availableApGains.add(1000.0f);
+	availableApGains.add(1500.0f);
+	availableApGains.add(2000.0f);
+	availableApGains.add(3000.0f);
+
+	//availableLfpGains.add(50.0f);
+	//availableLfpGains.add(125.0f);
+	//availableLfpGains.add(250.0f);
+	//availableLfpGains.add(500.0f);
+	//availableLfpGains.add(1000.0f);
+	//availableLfpGains.add(1500.0f);
+	//availableLfpGains.add(2000.0f);
+	//availableLfpGains.add(3000.0f);
+
+	availableReferences.add("Ext");
+	availableReferences.add("Tip");
+	availableReferences.add("192");
+	availableReferences.add("576");
+	availableReferences.add("960");
+
+	apGainIndex = 3;
+	lfpGainIndex = 2;
+	referenceIndex = 0;
+
+	
 
 }
 
@@ -54,73 +89,43 @@ void SimulatedProbe::initialize()
 
 void SimulatedProbe::calibrate()
 {
+	Sleep(3);
 	std::cout << "Calibrating simulated probe." << std::endl;
 }
 
-void SimulatedProbe::setChannelStatus(Array<int> channelStatus)
+void SimulatedProbe::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
 {
 
-	int electrode;
-	BANK_SELECT electrode_bank;
-
-	for (int channel = 0; channel < channelMap.size(); channel++)
-	{
-
-		if (channel != 191)
-		{
-			if (channelStatus[channel])
-			{
-				electrode = channel;
-				electrode_bank = BANK_SELECT::BANK_0;
-			}
-			else if (channelStatus[channel + 384])
-			{
-				electrode = channel + 384;
-				electrode_bank = BANK_SELECT::BANK_1;
-			}
-			else if (channelStatus[channel + 2 * 384])
-			{
-				electrode = channel + 2 * 384;
-				electrode_bank = BANK_SELECT::BANK_2;
-			}
-			else
-			{
-				electrode_bank = BANK_SELECT::DISCONNECTED;
-			}
-
-			channelMap.set(channel, electrode_bank);
-
-		}
-
-	}
-
-	std::cout << "Updating electrode settings for"
-		<< " slot: " << static_cast<unsigned>(basestation->slot)
-		<< " port: " << static_cast<unsigned>(headstage->port) << std::endl;
+	std::cout << "Selecting channels for simulated probe." << std::endl;
 
 }
 
-void SimulatedProbe::setApFilterState(bool disableHighPass)
+void SimulatedProbe::setApFilterState(bool disableHighPass, bool shouldWriteConfiguration)
 {
 
 	std::cout << "Wrote filter state for simulated probe." << std::endl;
 }
 
-void SimulatedProbe::setAllGains(int apGain, int lfpGain)
+void SimulatedProbe::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
 {
-	for (int channel = 0; channel < 384; channel++)
-	{
-		apGains.set(channel, int(apGain));
-		lfpGains.set(channel, int(lfpGain));
-	}
+	//for (int channel = 0; channel < 384; channel++)
+	//{
+	//	apGains.set(channel, int(apGain));
+	//	lfpGains.set(channel, int(lfpGain));
+	//}
 
 	std::cout << "Wrote gain state for simulated probe." << std::endl;
 }
 
 
-void SimulatedProbe::setAllReferences(int referenceIndex)
+void SimulatedProbe::setAllReferences(int referenceIndex, bool shouldWriteConfiguration)
 {
 	std::cout << "Wrote reference state for simulated probe." << std::endl;
+}
+
+void SimulatedProbe::writeConfiguration()
+{
+	std::cout << "Wrote configuration for simulated probe." << std::endl;
 }
 
 void SimulatedProbe::startAcquisition() {

@@ -356,8 +356,17 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	background->toBack();
 	background->repaint();
 
+	addSyncChannelButton = new UtilityButton("+SYNC", Font("Small Text", 13, Font::plain));
+	addSyncChannelButton->setBounds(90 * basestations.size() + 110, 72, 20, 20);
+	addSyncChannelButton->addListener(this);
+	addSyncChannelButton->setTooltip("Add sync channel to the continuous data stream.");
+	addSyncChannelButton->setClickingTogglesState(true);
+	addAndMakeVisible(addSyncChannelButton);
+
 	uiLoader = new BackgroundLoader(t, this);
 	uiLoader->startThread();
+
+	
 	
 }
 
@@ -412,6 +421,16 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 
 }
 
+void NeuropixEditor::startAcquisition()
+{
+	canvas->startAcquisition();
+}
+
+void NeuropixEditor::stopAcquisition()
+{
+	canvas->stopAcquisition();
+}
+
 void NeuropixEditor::buttonEvent(Button* button)
 {
 
@@ -451,6 +470,12 @@ void NeuropixEditor::buttonEvent(Button* button)
 				UtilityButton* ub = (UtilityButton*)button;
 				ub->setLabel(pathName.substring(0, 3));
 			}
+		}
+		else if (button == addSyncChannelButton)
+		{
+			thread->sendSyncAsContinuousChannel(addSyncChannelButton->getState());
+
+			CoreServices::updateSignalChain(this);
 		}
     }
 }

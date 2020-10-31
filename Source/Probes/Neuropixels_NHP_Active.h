@@ -26,24 +26,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../NeuropixComponents.h"
 
+#include "../API/v3/NeuropixAPI.h"
 #include "../API/v1/NeuropixAPI.h"
 
 # define SAMPLECOUNT 64
 
 
-class Neuropixels1_v1 : public Probe
+class Neuropixels_NHP_Active : public Probe
 {
 public:
-	Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl);
+	Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, Flex* fl);
 
 	void getInfo() override;
 
 	void initialize() override;
 
-    void selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration = true) override;
+	Array<ElectrodeStatus> selectElectrodes(Array<ElectrodeStatus> electrodeStatus, bool shouldWriteConfiguration = true) override;
 	void setAllReferences(int referenceIndex, bool shouldWriteConfiguratio = true) override;
-	void setAllGains(int apGainIndex, int lfpGainIndex, bool shouldWriteConfiguration=true) override;
-	void setApFilterState(bool disableHighPass, bool shouldWriteConfiguration=true) override;
+	void setAllGains(int apGainIndex, int lfpGainIndex, bool shouldWriteConfiguration = true) override;
+	void setApFilterState(bool disableHighPass, bool shouldWriteConfiguration = true) override;
 	void writeConfiguration() override;
 
 	void startAcquisition() override;
@@ -58,6 +59,9 @@ public:
 
 	np::electrodePacket packet[SAMPLECOUNT];
 	np::NP_ErrorCode errorCode;
+
+	Neuropixels::electrodePacket packet[SAMPLECOUNT];
+	Neuropixels::NP_ErrorCode errorCode;
 
 };
 

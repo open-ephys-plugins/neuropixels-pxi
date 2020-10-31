@@ -43,6 +43,6 @@ SimulatedHeadstage::SimulatedHeadstage(Basestation* bs, int port) : Headstage(bs
 {
 	flexCables.add(new SimulatedFlex(this));
 
-	probes.add(new SimulatedProbe(basestation, this, flexCables[0], 0));
+	probes.add(new SimulatedProbe(basestation, this, flexCables[0], 0, "NP1100"));
 	probes[0]->setStatus(ProbeStatus::CONNECTING);
 }

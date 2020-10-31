@@ -21,24 +21,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include "Neuropixels1_v1.h"
+#include "Neuropixels1_v3.h"
 #include "Geometry.h"
-
-#include "../Headstages/Headstage1_v1.h"
 
 #define MAXLEN 50
 
-void Neuropixels1_v1::getInfo()
+void Neuropixels1_v3::getInfo()
 {
-	errorCode = np::readId(basestation->slot_c, headstage->port_c, &info.serial_number);
+	errorCode = Neuropixels::readProbeSN(basestation->slot, headstage->port, dock, &info.serial_number);
 
 	char pn[MAXLEN];
-	errorCode = np::readProbePN(basestation->slot_c, headstage->port_c, pn, MAXLEN);
+	errorCode = Neuropixels::readProbePN(basestation->slot, headstage->port, dock, pn, MAXLEN);
 
 	info.part_number = String(pn);
 }
 
-Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 0)
+Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 0)
 {
 
 	setStatus(ProbeStatus::DISCONNECTED);
@@ -73,13 +71,6 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	availableReferences.add("576");
 	availableReferences.add("960");
 
-	shankOutline.startNewSubPath(27, 31);
-	shankOutline.lineTo(27, 514);
-	shankOutline.lineTo(27 + 5, 522);
-	shankOutline.lineTo(27 + 10, 514);
-	shankOutline.lineTo(27 + 10, 31);
-	shankOutline.closeSubPath();
-
 	availableBanks = { Bank::A,
 		Bank::B,
 		Bank::C,
@@ -91,20 +82,20 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 		Bank::I,
 		Bank::J,
 		Bank::K,
-		Bank::L };
+		Bank::L};
 
-	errorCode = np::NP_ErrorCode::SUCCESS;
+	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
 }
 
-void Neuropixels1_v1::initialize()
+void Neuropixels1_v3::initialize()
 {
-	errorCode = np::init(basestation->slot_c, headstage->port_c);
+	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
 
 	if (errorCode == np::SUCCESS)
 	{
-		errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);
-		errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
+		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
+		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
 		calibrate();
 		ap_timestamp = 0;
@@ -115,7 +106,7 @@ void Neuropixels1_v1::initialize()
 }
 
 
-void Neuropixels1_v1::calibrate()
+void Neuropixels1_v3::calibrate()
 {
 	File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
 	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
@@ -128,8 +119,8 @@ void Neuropixels1_v1::calibrate()
 		String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
 		String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
 		std::cout << adcFile << std::endl;
-		
-		errorCode = np::setADCCalibration(basestation->slot_c, headstage->port_c, adcFile.toRawUTF8());
+
+		errorCode = Neuropixels::setADCCalibration(basestation->slot, headstage->port, adcFile.toRawUTF8());
 
 		if (errorCode == 0)
 			std::cout << "Successful ADC calibration." << std::endl;
@@ -137,15 +128,15 @@ void Neuropixels1_v1::calibrate()
 			std::cout << "Unsuccessful ADC calibration, failed with error code: " << errorCode << std::endl;
 
 		std::cout << gainFile << std::endl;
-		
-		errorCode = np::setGainCalibration(basestation->slot_c, headstage->port_c, gainFile.toRawUTF8());
+
+		errorCode = Neuropixels::setGainCalibration(basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
 
 		if (errorCode == 0)
 			std::cout << "Successful gain calibration." << std::endl;
 		else
 			std::cout << "Unsuccessful gain calibration, failed with error code: " << errorCode << std::endl;
 
-		errorCode = np::writeProbeConfiguration(basestation->slot_c, headstage->port_c, false);
+		errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 	}
 	else {
 		// show popup notification window
@@ -154,28 +145,30 @@ void Neuropixels1_v1::calibrate()
 	}
 }
 
-void Neuropixels1_v1::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
+void Neuropixels1_v3::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
 {
 
-	np::NP_ErrorCode ec;
+	Neuropixels::NP_ErrorCode ec;
 
 	for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
 	{
 
-		ec = np::selectElectrode(basestation->slot_c, 
-							headstage->port_c, 
-							settings.selectedChannel[ch], 
-							availableBanks.indexOf(settings.selectedBank[ch]));
+		ec = Neuropixels::selectElectrode(basestation->slot,
+			headstage->port,
+			dock,
+			settings.selectedChannel[ch],
+			settings.selectedShank[ch],
+			availableBanks.indexOf(settings.selectedBank[ch]));
 
 	}
 
 	std::cout << "Updating electrode settings for"
-		<< " slot: " << static_cast<unsigned>(basestation->slot)
-		<< " port: " << static_cast<unsigned>(headstage->port) << std::endl;
+		<< " slot: " << basestation->slot
+		<< " port: " << headstage->port << std::endl;
 
 	if (shouldWriteConfiguration)
 	{
-		ec = np::writeProbeConfiguration(basestation->slot_c, headstage->port_c, false);
+		ec = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 
 		if (!ec == np::SUCCESS)
 			std::cout << "Failed to write channel config " << std::endl;
@@ -185,31 +178,31 @@ void Neuropixels1_v1::selectElectrodes(ProbeSettings settings, bool shouldWriteC
 
 }
 
-void Neuropixels1_v1::setApFilterState(bool disableHighPass, bool shouldWriteConfiguration)
+void Neuropixels1_v3::setApFilterState(bool disableHighPass, bool shouldWriteConfiguration)
 {
 	for (int channel = 0; channel < 384; channel++)
-		np::setAPCornerFrequency(basestation->slot, headstage->port, channel, disableHighPass);
+		np::setAPCornerFrequency(basestation->slot, headstage->port, dock, disableHighPass);
 
 	if (shouldWriteConfiguration)
-		errorCode = np::writeProbeConfiguration(basestation->slot, headstage->port, false);
+		errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 
 	std::cout << "Wrote filter " << int(disableHighPass) << " with error code " << errorCode << std::endl;
 }
 
-void Neuropixels1_v1::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
+void Neuropixels1_v3::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
 {
 	for (int channel = 0; channel < 384; channel++)
 	{
-		np::setGain(basestation->slot, headstage->port, 
-					channel, 
-					(unsigned char) apGain, 
-				    (unsigned char) lfpGain);
+		Neuropixels::setGain(basestation->slot, headstage->port, dock,
+			channel,
+			apGain,
+			lfpGain);
 		//apGains.set(channel, apGain);
 		//lfpGains.set(channel, lfpGain);
 	}
-		
+
 	if (shouldWriteConfiguration)
-		errorCode = np::writeProbeConfiguration(basestation->slot, headstage->port, false);
+		errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 
 	std::cout << "Wrote gain " << int(apGain) << ", " << int(lfpGain) << " with error code " << errorCode << std::endl;
 }
@@ -217,7 +210,7 @@ void Neuropixels1_v1::setAllGains(int apGain, int lfpGain, bool shouldWriteConfi
 
 
 
-void Neuropixels1_v1::setAllReferences(int referenceIndex, bool shouldWriteConfiguration)
+void Neuropixels1_v3::setAllReferences(int referenceIndex, bool shouldWriteConfiguration)
 {
 	//for (int channel = 0; channel < 384; channel++)
 	//	np::setReference(basestation->slot, headstage->port, channel, refId, refElectrodeBank);
@@ -227,12 +220,12 @@ void Neuropixels1_v1::setAllReferences(int referenceIndex, bool shouldWriteConfi
 	//std::cout << "Wrote reference " << int(refId) << ", " << int(refElectrodeBank) << " with error code " << errorCode << std::endl;
 }
 
-void Neuropixels1_v1::writeConfiguration()
+void Neuropixels1_v3::writeConfiguration()
 {
-	errorCode = np::writeProbeConfiguration(basestation->slot, headstage->port, false);
+	errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 }
 
-void Neuropixels1_v1::startAcquisition()
+void Neuropixels1_v3::startAcquisition()
 {
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
@@ -243,25 +236,25 @@ void Neuropixels1_v1::startAcquisition()
 	startThread();
 }
 
-void Neuropixels1_v1::stopAcquisition()
+void Neuropixels1_v3::stopAcquisition()
 {
 	stopThread(1000);
 }
 
-void Neuropixels1_v1::run()
+void Neuropixels1_v3::run()
 {
 
 	//std::cout << "Thread running." << std::endl;
 
 	while (!threadShouldExit())
 	{
-		
 
-		size_t count = SAMPLECOUNT;
+		int count = SAMPLECOUNT;
 
-		errorCode = readElectrodeData(
+		errorCode = Neuropixels::readElectrodeData(
 			basestation->slot,
 			headstage->port,
+			dock,
 			&packet[0],
 			&count,
 			count);
@@ -282,9 +275,9 @@ void Neuropixels1_v1::run()
 
 					for (int j = 0; j < 384; j++)
 					{
-						
+
 						apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / availableApGains[apGainIndex]; // convert to microvolts
-						
+
 						if (i == 0)
 							lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / availableLfpGains[lfpGainIndex]; // convert to microvolts
 					}
@@ -292,7 +285,7 @@ void Neuropixels1_v1::run()
 					ap_timestamp += 1;
 
 					if (sendSync)
-						apSamples[384] = (float) eventCode;
+						apSamples[384] = (float)eventCode;
 
 					apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, 1);
 
@@ -317,7 +310,7 @@ void Neuropixels1_v1::run()
 				lfp_timestamp += 1;
 
 				if (sendSync)
-					lfpSamples[384] = (float) eventCode;
+					lfpSamples[384] = (float)eventCode;
 
 				lfpBuffer->addToBuffer(lfpSamples, &lfp_timestamp, &eventCode, 1);
 

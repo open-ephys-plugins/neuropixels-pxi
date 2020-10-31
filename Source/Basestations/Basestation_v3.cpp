@@ -27,107 +27,127 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #endif
 
-#include "Basestation_v1.h"
-#include "../Probes/Neuropixels1_v1.h"
-#include "../Headstages/Headstage1_v1.h"
+#include "Basestation_v3.h"
+#include "../Probes/Neuropixels1_v3.h"
+#include "../Headstages/Headstage1_v3.h"
+#include "../Headstages/Headstage2.h"
+#include "../Headstages/Headstage_Analog128.h"
 
 #define MAXLEN 50
 
-
-
-void Basestation_v1::getInfo()
+void Basestation_v3::getInfo()
 {
-
-	unsigned char version_major;
+	// NEED TO FIX
+	/*unsigned char version_major;
 	unsigned char version_minor;
 	uint16_t version_build;
 
-	errorCode = np::getBSBootVersion(slot, &version_major, &version_minor, &version_build);
+	errorCode = Neuropixels::getBSBootVersion(slot, &version_major, &version_minor, &version_build);
 
 	info.boot_version = String(version_major) + "." + String(version_minor);
 
 	if (version_build != NULL)
 		info.boot_version += ".";
-		info.boot_version += String(version_build);
+		info.boot_version += String(version_build);*/
 
 }
 
 
-void BasestationConnectBoard_v1::getInfo()
+void BasestationConnectBoard_v3::getInfo()
 {
 
-	unsigned char version_major;
-	unsigned char version_minor;
-	uint16_t version_build;
+	int version_major;
+	int version_minor;
 
-	errorCode = np::getBSCBootVersion(basestation->slot, &version_major, &version_minor, &version_build);
-
-	info.boot_version = String(version_major) + "." + String(version_minor);
-
-	if (version_build != NULL)
-		info.boot_version += ".";
-		info.boot_version += String(version_build);
-
-	errorCode = np::getBSCVersion(basestation->slot, &version_major, &version_minor);
+	errorCode = Neuropixels::getBSCVersion(basestation->slot, &version_major, &version_minor);
 
 	info.version = String(version_major) + "." + String(version_minor);
 
-	errorCode = np::readBSCSN(basestation->slot, &info.serial_number);
+	errorCode = Neuropixels::readBSCSN(basestation->slot, &info.serial_number);
 
 	char pn[MAXLEN];
-	np::readBSCPN(basestation->slot, pn, MAXLEN);
+	Neuropixels::readBSCPN(basestation->slot, pn, MAXLEN);
 
 	info.part_number = String(pn);
 
 }
 
-BasestationConnectBoard_v1::BasestationConnectBoard_v1(Basestation* bs) : BasestationConnectBoard(bs)
+BasestationConnectBoard_v3::BasestationConnectBoard_v3(Basestation* bs) : BasestationConnectBoard(bs)
 {
 }
 
-Basestation_v1::Basestation_v1(int slot_number) : Basestation(slot_number)
+Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
 {
 
 }
 
-bool Basestation_v1::open()
+bool Basestation_v3::open()
 {
 	std::cout << "OPENING PARENT" << std::endl;
 
-	errorCode = np::openBS(slot_c);
+	errorCode = Neuropixels::openBS(slot_c);
 
 	if (errorCode == np::VERSION_MISMATCH)
 	{
 		return false;
 	}
 
-	if (errorCode == np::SUCCESS)
+	if (errorCode == Neuropixels::SUCCESS)
 	{
 
 		std::cout << "  Opened BS on slot " << slot << std::endl;
 
-		basestationConnectBoard = new BasestationConnectBoard_v1(this);
+		basestationConnectBoard = new BasestationConnectBoard_v3(this);
 
 		savingDirectory = File();
 
 		for (signed char port = 1; port <= 4; port++)
 		{
+			bool detected;
 
-			errorCode = np::openProbe(slot_c, port); // check for probe on slot
+			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
 
 			if (errorCode == np::SUCCESS)
 			{
-				Headstage* headstage = new Headstage1_v1(this, port);
-				headstages.add(headstage);
-				probes.add(headstage->probes[0]);
+				char pn[MAXLEN];
+				Neuropixels::readHSPN(slot, port, pn, MAXLEN);
 
+				String hsPartNumber = String(pn);
+
+				Headstage* headstage;
+
+				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
+
+					headstage = new Headstage1_v3(this, port);
+
+				else if (hsPartNumber == "NPNH_HS_30") // 128-ch analog headstage
+
+					headstage = new Headstage_Analog128(this, port);
+
+				else if (hsPartNumber == "NPM_HS_30") // 2.0 headstage, 2 docks
+
+					headstage = new Headstage2(this, port);
+
+				else
+					headstage = nullptr;
+				
+				headstages.add(headstage);
+
+				for (auto probe : headstage->probes)
+				{
+					if (probe != nullptr)
+						probes.add(probe);
+				}
+				
 				continue;
 			}
 			else {
 				headstages.add(nullptr);
 			}
 
-			errorCode = np::openProbeHSTest(slot_c, port);
+			/*int vmajor, vminor;
+
+			errorCode = Neuropixels::HST_GetVersion(slot, port, &vmajor, &vminor); // is this right?
 
 			if (errorCode == np::SUCCESS)
 			{
@@ -137,7 +157,7 @@ bool Basestation_v1::open()
 					hst->runAll();
 					hst->showResults();
 				}
-			}
+			}*/
 
 		}
 
@@ -150,12 +170,12 @@ bool Basestation_v1::open()
 	return true;
 }
 
-void Basestation_v1::initialize()
+void Basestation_v3::initialize()
 {
 
 	if (!probesInitialized)
 	{
-		errorCode = np::setTriggerInput(slot, np::TRIGIN_SW);
+		//errorCode = Neuropixels::setTriggerInput(slot, np::TRIGIN_SW);
 
 		for (auto probe : probes)
 		{
@@ -165,29 +185,29 @@ void Basestation_v1::initialize()
 		probesInitialized = true;
 	}
 
-	errorCode = np::arm(slot_c);
+	errorCode = Neuropixels::arm(slot);
 }
 
-Basestation_v1::~Basestation_v1()
+Basestation_v3::~Basestation_v3()
 {
 	close();
 	
 }
 
-void Basestation_v1::close()
+void Basestation_v3::close()
 {
-	for (int i = 0; i < probes.size(); i++)
+	for (auto probe : probes)
 	{
-		errorCode = np::close(slot_c, probes[i]->headstage->port_c);
+		errorCode = Neuropixels::closeProbe(slot, probe->headstage->port, probe->dock);
 	}
 
-	errorCode = np::closeBS(slot_c);
+	errorCode = Neuropixels::closeBS(slot);
 }
 
-void Basestation_v1::setSyncAsInput()
+void Basestation_v3::setSyncAsInput()
 {
 
-	errorCode = np::setTriggerInput(slot, np::TRIGIN_SW);
+	/*errorCode = np::setTriggerInput(slot, np::TRIGIN_SW);
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to set slot %d trigger as input!\n");
@@ -209,27 +229,28 @@ void Basestation_v1::setSyncAsInput()
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to reset sync on SMA output on slot: %d\n", slot);
-	}
+	}*/
 
 
 }
 
-Array<int> Basestation_v1::getSyncFrequencies()
+Array<int> Basestation_v3::getSyncFrequencies()
 {
 	return syncFrequencies;
 }
 
-void Basestation_v1::setSyncAsOutput(int freqIndex)
+void Basestation_v3::setSyncAsOutput(int freqIndex)
 {
+	/*
 
-	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot_c);
+	errorCode = setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot_c);
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to set slot %d as sync master!\n", slot);
 		return;
 	} 
 
-	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SYNCCLOCK);
+	errorCode = setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, np::TRIGIN_SYNCCLOCK);
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to set slot %d internal clock as sync source!\n", slot);
@@ -239,27 +260,27 @@ void Basestation_v1::setSyncAsOutput(int freqIndex)
 	int freq = syncFrequencies[freqIndex];
 
 	printf("Setting slot %d sync frequency to %d Hz...\n", slot, freq);
-	errorCode = setParameter(np::NP_PARAM_SYNCFREQUENCY_HZ, freq);
+	errorCode = setParameter(Neuropixels::NP_PARAM_SYNCFREQUENCY_HZ, freq);
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to set slot %d sync frequency to %d Hz!\n", slot, freq);
 		return;
 	}
 
-	errorCode = setTriggerOutput(slot, np::TRIGOUT_SMA, np::TRIGIN_SHAREDSYNC);
+	errorCode = setTriggerOutput(slot, Neuropixels::TRIGOUT_SMA, Neuropixels::TRIGIN_SHAREDSYNC);
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to set sync on SMA output on slot: %d\n", slot);
-	}
+	}*/
 
 }
 
-int Basestation_v1::getProbeCount()
+int Basestation_v3::getProbeCount()
 {
 	return probes.size();
 }
 
-float Basestation_v1::getFillPercentage()
+float Basestation_v3::getFillPercentage()
 {
 	float perc = 0.0;
 
@@ -274,40 +295,40 @@ float Basestation_v1::getFillPercentage()
 	return perc;
 }
 
-void Basestation_v1::startAcquisition()
+void Basestation_v3::startAcquisition()
 {
 	for (auto probe : probes)
 	{
 		probe->startAcquisition();
 	}
 
-	errorCode = np::setSWTrigger(slot_c);
+	errorCode = Neuropixels::setSWTrigger(slot);
 
 }
 
-void Basestation_v1::stopAcquisition()
+void Basestation_v3::stopAcquisition()
 {
 	for (auto probe : probes)
 	{
 		probe->stopAcquisition();
 	}
 
-	errorCode = np::arm(slot_c);
+	errorCode = Neuropixels::arm(slot);
 }
 
-void Basestation_v1::updateBscFirmware(String filepath)
+void Basestation_v3::updateBscFirmware(String filepath)
 {
 	//ProgressBar
-	//errorCode = np::qbsc_update(slot_c, 
+	//errorCode = Neuropixels::bsc_updateFirmware(slot,
 	//							filepath.getCharPointer(),
 	//							firmwareUpdateCallback);
 
 }
 
-void Basestation_v1::updateBsFirmware(String filepath)
+void Basestation_v3::updateBsFirmware(String filepath)
 {
 	// ProgressBar
-	//errorCode = np::bs_update(slot_c, 
+	//errorCode = Neuropixels::bs_updateFirmware(slot,
 	//						  filepath.getCharPointer(), 
 	//						  firmwareUpdateCallback);
 
@@ -315,10 +336,11 @@ void Basestation_v1::updateBsFirmware(String filepath)
 
 
 
-bool Basestation_v1::runBist(signed char port, BIST bistType)
+bool Basestation_v3::runBist(signed char port, BIST bistType)
 {
 
 	bool returnValue = false;
+	/*
 
 	switch (bistType)
 	{
@@ -380,7 +402,7 @@ bool Basestation_v1::runBist(signed char port, BIST bistType)
 		break;
 	} default:
 		CoreServices::sendStatusMessage("Test not found.");
-	}
+	}*/
 
 	return returnValue;
 }

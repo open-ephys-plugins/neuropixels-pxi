@@ -25,6 +25,7 @@
 #include "NeuropixEditor.h"
 
 #include "Basestations/Basestation_v1.h"
+#include "Basestations/Basestation_v3.h"
 #include "Basestations/SimulatedBasestation.h"
 
 DataThread* NeuropixThread::createDataThread(SourceNode *sn)
@@ -37,7 +38,7 @@ GenericEditor* NeuropixThread::createEditor(SourceNode* sn)
     return new NeuropixEditor(sn, this, true);
 }
 
-NeuropixThread::NeuropixThread(SourceNode* sn) : 
+NeuropixThread::NeuropixThread(SourceNode* sn) :
 	DataThread(sn),
 	baseStationAvailable(false),
 	probesInitialized(false),
@@ -51,7 +52,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	defaultSyncFrequencies.add(1);
 	defaultSyncFrequencies.add(10);
 
-    uint32_t availableslotmask;
+	uint32_t availableslotmask;
 
 	np::scanPXI(&availableslotmask);
 
@@ -59,19 +60,55 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	{
 		if ((availableslotmask >> slot) & 1)
 		{
-			// need to check for bs firmware version
-			basestations.add(new Basestation_v1(slot));
-			basestations.getLast()->open(); // detects # of probes
+
+			Basestation* bs = new Basestation_v1(slot);
+
+			if (bs->open()) // detects # of probes; returns true if API version matches
+			{
+				basestations.add(bs);
+				api_v1.isActive = true;
+				api_v3.isActive = false;
+			}
+				
 		}
 	}
 
-	if (basestations.size() == 0)
+	if (basestations.size() == 0) // no basestations with API version match
+	{
+		Neuropixels::scanBS();
+
+		Neuropixels::basestationID list[16];
+			
+		int count = getDeviceList(&list[0], 16);
+
+		for (int i = 0; i < count; i++)
+		{
+			Neuropixels::NP_ErrorCode ec = getDeviceInfo(list[i].ID, &list[i]);
+
+			if (list[i].platformid == Neuropixels::NPPlatform_PXI)
+			{
+				Basestation* bs = new Basestation_v3(list[i].ID);
+
+				if (bs->open())
+				{
+					api_v1.isActive = false;
+					api_v3.isActive = true;
+				}
+					basestations.add(bs);
+			}
+			else {
+				CoreServices::sendStatusMessage("ONE Box not yet supported.");
+			}
+		}
+	}
+
+	if (basestations.size() == 0) // no basestations at all
 	{
 		// pop-up window
 		basestations.add(new SimulatedBasestation(0));
 		basestations.getLast()->open(); // detects # of probes
 	}
-	
+
 	bool foundSync = false;
 
 	for (auto probe : getProbes())
@@ -83,24 +120,38 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 			probe->basestation->setSyncAsInput();
 			foundSync = true;
 		}
+	}
+
+	updateSubprocessors();
+}
+
+void NeuropixThread::updateSubprocessors()
+{
+
+	subprocessorInfo.clear();
+	sourceBuffers.clear();
+
+	for (auto probe : getProbes() )
+	{
 
 		std::cout << "PROBE " << probe->headstage->port << std::endl;
 
 		SubprocessorInfo spInfo;
-		spInfo.num_channels = probe->channel_count;
+		spInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
 		spInfo.sample_rate = probe->ap_sample_rate;
 		spInfo.type = AP_BAND;
+		spInfo.sendSyncAsContinuousChannel = probe->sendSync;
 
 		subprocessorInfo.add(spInfo);
 
-		sourceBuffers.add(new DataBuffer(probe->channel_count, 10000));  // AP band buffer
+		sourceBuffers.add(new DataBuffer(spInfo.num_channels, 10000));  // AP band buffer
 		probe->apBuffer = sourceBuffers.getLast();
 
 		std::cout << "spinfo: " << spInfo.num_channels << " ch, " << spInfo.sample_rate << " Hz" << std::endl;
 
 		if (probe->generatesLfpData())
 		{
-			sourceBuffers.add(new DataBuffer(probe->channel_count, 10000));  // LFP band buffer
+			sourceBuffers.add(new DataBuffer(spInfo.num_channels, 10000));  // LFP band buffer
 			probe->lfpBuffer = sourceBuffers.getLast();
 
 			SubprocessorInfo spInfo;
@@ -129,10 +180,11 @@ void NeuropixThread::applyProbeSettingsQueue()
 {
 	for (auto settings : probeSettingsUpdateQueue)
 	{
-		settings.probe->setChannelStatus(settings.channelStatus);
-		settings.probe->setAllGains(settings.apGainIndex, settings.lfpGainIndex);
-		settings.probe->setAllReferences(settings.refChannelIndex);
-		settings.probe->setApFilterState(settings.disableHighPass);
+		//settings.probe->selectElectrodes(settings.channelStatus);
+		settings.probe->setAllGains(settings.apGainIndex, settings.lfpGainIndex, false);
+		settings.probe->setAllReferences(settings.refChannelIndex, false);
+		settings.probe->setApFilterState(settings.disableHighPass, false);
+		settings.probe->writeConfiguration();
 	}
 }
 
@@ -576,11 +628,21 @@ void NeuropixThread::setDefaultChannelNames()
 				ChannelCustomInfo info;
 
 				if (spInfo.type == AP_BAND)
-					info.name = "AP" + String(i + 1);
+					info.name = "AP";
 				else
 					info.name = "LFP" + String(i + 1);
 
-				info.gain = 0.1950000f;
+
+				if (spInfo.sendSyncAsContinuousChannel && (i == spInfo.num_channels - 1))
+				{
+					info.name += "_SYNC";
+					info.gain = 1.0;
+				}
+				else {
+					info.name += String(i + 1);
+					info.gain = 0.1950000f;
+				}
+
 				channelInfo.set(chan, info);
 				chan++;
 			}
@@ -594,6 +656,17 @@ void NeuropixThread::setDefaultChannelNames()
 bool NeuropixThread::usesCustomNames() const
 {
 	return true;
+}
+
+void NeuropixThread::sendSyncAsContinuousChannel(bool shouldSend)
+{
+	for (auto probe : getProbes())
+	{
+		probe->sendSyncAsContinuousChannel(shouldSend);
+	}
+
+	updateSubprocessors();
+
 }
 
 

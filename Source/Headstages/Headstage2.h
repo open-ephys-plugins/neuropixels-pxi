@@ -21,54 +21,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef __SIMULATEDBASESTATION_H_2C4C2D67__
-#define __SIMULATEDBASESTATION_H_2C4C2D67__
+#ifndef __NEUROPIXHS2_H_2C4C2D67__
+#define __NEUROPIXHS2_H_2C4C2D67__
 
+
+#include "../API/v3/NeuropixAPI.h"
 #include "../NeuropixComponents.h"
 
-class SimulatedBasestation : public Basestation
+
+class Headstage2 : public Headstage
 {
 public:
-	SimulatedBasestation(int slot) : Basestation(slot) { }
-	~SimulatedBasestation() { }
-
+	Headstage2::Headstage2(Basestation*, int port);
 	void getInfo() override;
+	bool hasTestModule() override { return false; }
 
-	bool open() override;
-	void close() override;
-
-	void initialize() override;
-
-	int getProbeCount() override;
-
-	void setSyncAsInput() override;
-	void setSyncAsOutput(int freqIndex) override;
-
-	void startAcquisition() override;
-	void stopAcquisition() override;
-
-	Array<int> getSyncFrequencies() override;
-
-	float getFillPercentage() override;
-
-	void updateBsFirmware(String filepath) { }
-
-	void updateBscFirmware(String filepath) { }
-
-	bool runBist(signed char port, BIST bistType) override
-	{
-		return true;
-	}
+	Neuropixels::NP_ErrorCode errorCode;
 };
 
-class SimulatedBasestationConnectBoard : public BasestationConnectBoard
+class Flex2 : public Flex
 {
 public:
-	SimulatedBasestationConnectBoard(Basestation* bs): BasestationConnectBoard(bs) {}
+	Flex2::Flex2(Headstage*, int dock);
 	void getInfo() override;
+
+	Neuropixels::NP_ErrorCode errorCode;
 };
 
-
-
-
-#endif  // __SIMULATEDBASESTATION_H_2C4C2D67__
+#endif  // __NEUROPIXHS2_H_2C4C2D67__

@@ -126,6 +126,12 @@ public:
 	void saveEditorParameters(XmlElement*);
 	void loadEditorParameters(XmlElement*);
 
+	/** Called just prior to the start of acquisition, to allow custom commands. */
+	void startAcquisition() override;
+
+	/** Called after the end of acquisition, to allow custom commands .*/
+	void stopAcquisition() override;
+
 	Visualizer* createNewCanvas(void);
 
 	OwnedArray<ProbeButton> probeButtons;
@@ -143,6 +149,8 @@ private:
 
 	ScopedPointer<BackgroundLoader> uiLoader;
 	ScopedPointer<EditorBackground> background;
+
+	ScopedPointer<UtilityButton> addSyncChannelButton;
 
 	Viewport* viewport;
 	NeuropixCanvas* canvas;

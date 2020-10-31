@@ -41,7 +41,7 @@ void SimulatedBasestation::getInfo()
 
 /// ###########################################
 
-void SimulatedBasestation::open()
+bool SimulatedBasestation::open()
 {
 	std::cout << "OPENING CHILD" << std::endl;
 	savingDirectory = File();
@@ -66,6 +66,8 @@ void SimulatedBasestation::open()
 
 	syncFrequencies.add(1);
 	syncFrequencies.add(10);
+
+	return true;
 }
 
 void SimulatedBasestation::close()

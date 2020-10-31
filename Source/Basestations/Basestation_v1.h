@@ -29,9 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # define SAMPLECOUNT 64
 
-class BasestationConnectBoard;
-class Probe;
-
 
 class Basestation_v1 : public Basestation
 {
@@ -41,7 +38,7 @@ public:
 
 	int slot;
 
-	void open() override;
+	bool open() override;
 	void close() override;
 	void initialize() override;
 
@@ -61,7 +58,10 @@ public:
 
 	float getFillPercentage() override;
 
-	bool runBist(signed char port, int bistIndex);
+	bool runBist(signed char port, BIST bistType);
+
+	void updateBsFirmware(String filepath);
+	void updateBscFirmware(String filepath);
 
 	np::bistElectrodeStats stats[960];
 
@@ -78,5 +78,8 @@ public:
 
 	np::NP_ErrorCode errorCode;
 };
+
+
+
 
 #endif  // __NEUROPIXBASESTATIONV1_H_2C4C2D67__

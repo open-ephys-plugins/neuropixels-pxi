@@ -55,6 +55,7 @@ struct SubprocessorInfo {
 	int num_channels;
 	float sample_rate;
 	subprocessor_type type;
+	bool sendSyncAsContinuousChannel;
 };
 
 /**
@@ -199,6 +200,9 @@ public:
 	} p_settings;
 
 	Array<probeSettings> probeSettingsUpdateQueue;
+
+	void sendSyncAsContinuousChannel(bool shouldSend);
+	void updateSubprocessors();
 
 	void updateProbeSettingsQueue();
 	void applyProbeSettingsQueue();

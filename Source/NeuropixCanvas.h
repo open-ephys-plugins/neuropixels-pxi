@@ -33,11 +33,12 @@ class Probe;
 class NeuropixCanvas : public Visualizer, public Button::Listener
 {
 public:
-	NeuropixCanvas(GenericProcessor* p, NeuropixEditor*, NeuropixThread*);
+	NeuropixCanvas(GenericProcessor*, NeuropixEditor*, NeuropixThread*);
 	~NeuropixCanvas();
 
 	void paint(Graphics& g);
 
+	// needed for Visualizer class
 	void refresh();
 
 	void beginAnimation();
@@ -49,15 +50,24 @@ public:
 	void setParameter(int, float);
 	void setParameter(int, int, int, float);
 	void buttonClicked(Button* button);
+	// end Visualizer class methods
 
 	void setSelectedProbe(Probe* p);
+
+	void startAcquisition();
+	void stopAcquisition();
+
+	void storeProbeSettings(ProbeSettings p);
+	ProbeSettings getProbeSettings();
+	void applyParametersToAllProbes(ProbeSettings p);
+
+	ProbeSettings savedSettings;
 
 	void saveVisualizerParameters(XmlElement* xml);
 	void loadVisualizerParameters(XmlElement* xml);
 
 	void resized();
 
-	SourceNode* processor;
 	ScopedPointer<Viewport> neuropixViewport;
 	OwnedArray<NeuropixInterface> neuropixInterfaces;
 	Array<Probe*> probes;
@@ -65,7 +75,7 @@ public:
 	NeuropixEditor* editor;
 	NeuropixThread* thread;
 
-	int option;
+	GenericProcessor* processor;
 
 };
 
@@ -76,7 +86,7 @@ class NeuropixInterface : public Component,
 	public Timer
 {
 public:
-	NeuropixInterface(Probe* probe, NeuropixThread* thread, NeuropixEditor* editor);
+	NeuropixInterface(Probe* probe, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas);
 	~NeuropixInterface();
 
 	void paint(Graphics& g);
@@ -92,11 +102,19 @@ public:
 	void comboBoxChanged(ComboBox*);
 	void labelTextChanged(Label* l);
 
+	void startAcquisition();
+	void stopAcquisition();
+
+	void applyProbeSettings(ProbeSettings);
+	ProbeSettings getProbeSettings();
+
 	void saveParameters(XmlElement* xml);
 	void loadParameters(XmlElement* xml);
 
 	void setAnnotationLabel(String, Colour);
 	void updateInfoString();
+
+
 
 	void timerCallback();
 
@@ -104,97 +122,130 @@ private:
 
 	NeuropixThread* thread;
 	NeuropixEditor* editor;
+	NeuropixCanvas* canvas;
 	Probe* probe;
-
-	DataBuffer* inputBuffer;
-	AudioSampleBuffer displayBuffer;
 
 	XmlElement neuropix_info;
 
+	// Combo box - probe-specific settings
 	ScopedPointer<ComboBox> lfpGainComboBox;
 	ScopedPointer<ComboBox> apGainComboBox;
 	ScopedPointer<ComboBox> referenceComboBox;
 	ScopedPointer<ComboBox> filterComboBox;
 
+	// Combo box - basestation settings
 	ScopedPointer<ComboBox> bistComboBox;
+	ScopedPointer<ComboBox> bscFirmwareComboBox;
+	ScopedPointer<ComboBox> bsFirmwareComboBox;
 
-	ScopedPointer<UtilityButton> enableButton;
-	ScopedPointer<UtilityButton> selectAllButton;
-
+	// LABELS
 	ScopedPointer<Viewport> infoLabelView;
 	ScopedPointer<Label> infoLabel;
 	ScopedPointer<Label> lfpGainLabel;
 	ScopedPointer<Label> apGainLabel;
 	ScopedPointer<Label> referenceLabel;
 	ScopedPointer<Label> filterLabel;
-	ScopedPointer<Label> outputLabel;
+	ScopedPointer<Label> bankViewLabel;
+	
 	ScopedPointer<Label> bistLabel;
+	ScopedPointer<Label> bscFirmwareLabel;
+	ScopedPointer<Label> bsFirmwareLabel;
+
+	ScopedPointer<Label> probeSettingsLabel;
+
 	ScopedPointer<Label> annotationLabelLabel;
 	ScopedPointer<Label> annotationLabel;
 
 	ScopedPointer<Label> mainLabel;
 
+	// BUTTONS
+	ScopedPointer<UtilityButton> enableButton;
+
 	ScopedPointer<UtilityButton> enableViewButton;
 	ScopedPointer<UtilityButton> lfpGainViewButton;
 	ScopedPointer<UtilityButton> apGainViewButton;
 	ScopedPointer<UtilityButton> referenceViewButton;
-	ScopedPointer<UtilityButton> outputOnButton;
-	ScopedPointer<UtilityButton> outputOffButton;
+	ScopedPointer<UtilityButton> bankViewButton;
+	//ScopedPointer<UtilityButton> activityViewButton;
+
 	ScopedPointer<UtilityButton> annotationButton;
 	ScopedPointer<UtilityButton> bistButton;
+	ScopedPointer<UtilityButton> bsFirmwareButton;
+	ScopedPointer<UtilityButton> bscFirmwareButton;
+	ScopedPointer<UtilityButton> firmwareToggleButton;
+
+	ScopedPointer<UtilityButton> copyButton;
+	ScopedPointer<UtilityButton> pasteButton;
+	ScopedPointer<UtilityButton> applyToAllButton;
+	ScopedPointer<UtilityButton> loadImroButton;
+	ScopedPointer<UtilityButton> saveImroButton;
 
 	ScopedPointer<ColorSelector> colorSelector;
 
-	Array<int> channelStatus;
-	Array<int> channelReference;
-	Array<int> channelApGain;
-	Array<int> channelLfpGain;
-	Array<int> channelOutput;
-	Array<int> channelSelectionState;
+	Array<ElectrodeMetadata> electrodeMetadata;
+	ProbeMetadata probeMetadata;
 
-	Array<Colour> channelColours;
-
+	// display booleans
 	bool isOverZoomRegion;
 	bool isOverUpperBorder;
 	bool isOverLowerBorder;
-	bool isOverChannel;
+	bool isOverElectrode;
+	bool isSelectionActive;
 
+	// display variables
 	int zoomHeight;
 	int zoomOffset;
 	int initialOffset;
 	int initialHeight;
 	int lowerBound;
 	int dragZoneWidth;
+	int zoomAreaRowCount;
+	int zoomAreaMinRow;
+	int minZoomHeight;
+	int maxZoomHeight;
+	int shankOffset;
+	int leftEdge;
+	int rightEdge;
+	int channelLabelSkip;
 
-	int lowestChan;
-	int highestChan;
+	int lowestElectrode;
+	int highestElectrode;
 
-	float channelHeight;
+	float electrodeHeight;
 
-	int visualizationMode;
+	enum VisualizationMode {
+		ENABLE_VIEW,
+		AP_GAIN_VIEW,
+		LFP_GAIN_VIEW,
+		REFERENCE_VIEW,
+		ACTIVITY_VIEW
+	};
 
-	//		Rectangle<int> selectionBox;
-	bool isSelectionActive;
+	VisualizationMode mode;
 
 	MouseCursor::StandardCursorType cursorType;
 
 	Path shankPath;
 
-	String channelInfoString;
+	String electrodeInfoString;
 
-	Colour getChannelColour(int chan);
-	int getNearestChannel(int x, int y);
-	String getChannelInfoString(int chan);
+	Colour getElectrodeColour(int index);
+	int getNearestElectrode(int x, int y);
+	Array<int> getElectrodesWithinBounds(int x, int y, int w, int h);
+	String getElectrodeInfoString(int index);
 
 	void drawLegend(Graphics& g);
 	void drawAnnotations(Graphics& g);
 
 	Array<Annotation> annotations;
 
-	Array<int> getSelectedChannels();
+	Array<int> getSelectedElectrodes();
 
-	int getChannelForElectrode(int);
-	int getConnectionForChannel(int);
+	Array<BIST> availableBists;
+
+	// For activity view, may use later
+	//DataBuffer* inputBuffer;
+	//AudioSampleBuffer displayBuffer;
 
 };
 
@@ -204,7 +255,7 @@ public:
 	Annotation(String text, Array<int> channels, Colour c);
 	~Annotation();
 
-	Array<int> channels;
+	Array<int> electrodes;
 	String text;
 
 	float currentYLoc;
