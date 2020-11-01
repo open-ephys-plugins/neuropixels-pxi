@@ -199,7 +199,6 @@ private:
 	int initialHeight;
 	int lowerBound;
 	int dragZoneWidth;
-	int zoomAreaRowCount;
 	int zoomAreaMinRow;
 	int minZoomHeight;
 	int maxZoomHeight;
@@ -207,6 +206,7 @@ private:
 	int leftEdge;
 	int rightEdge;
 	int channelLabelSkip;
+	int pixelHeight;
 
 	int lowestElectrode;
 	int highestElectrode;

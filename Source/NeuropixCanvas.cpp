@@ -200,17 +200,23 @@ NeuropixInterface::NeuropixInterface(Probe* p,
     // PROBE SPECIFIC DRAWING SETTINGS
     minZoomHeight = 120;
     maxZoomHeight = 40;
+    pixelHeight = 1;
+    int defaultZoomHeight = 100;
 
     if (probeMetadata.columns_per_shank == 8)
     {
         maxZoomHeight = 450;
         minZoomHeight = 300;
+        defaultZoomHeight = 400;
+        pixelHeight = 10;
     } 
 
     if (probeMetadata.shank_count == 4)
     {
-        maxZoomHeight = 120;
+        maxZoomHeight = 250;
         minZoomHeight = 40;
+        defaultZoomHeight = 100;
+        pixelHeight = 1;
     }
 
     // ALSO CONFIGURE CHANNEL JUMP
@@ -227,25 +233,24 @@ NeuropixInterface::NeuropixInterface(Probe* p,
 
     addMouseListener(this, true);
 
-    zoomHeight = minZoomHeight; // number of rows
+    zoomHeight = defaultZoomHeight; // number of rows
     lowerBound = 530; // bottom of interface
-    zoomAreaRowCount = 200;
-    zoomAreaMinRow = 0;
+    //zoomAreaMinRow = 0;
     zoomOffset = 50;
     dragZoneWidth = 10;
 
-    int currentHeight = 95;
+    int currentHeight = 55;
 
     enableButton = new UtilityButton("ENABLE", Font("Small Text", 13, Font::plain));
     enableButton->setRadius(3.0f);
-    enableButton->setBounds(400, currentHeight, 65, 22);
+    enableButton->setBounds(450, currentHeight, 65, 22);
     enableButton->addListener(this);
     enableButton->setTooltip("Enable selected channel(s)");
     addAndMakeVisible(enableButton);
 
     enableViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
     enableViewButton->setRadius(3.0f);
-    enableViewButton->setBounds(480, currentHeight + 2, 45, 18);
+    enableViewButton->setBounds(530, currentHeight + 2, 45, 18);
     enableViewButton->addListener(this);
     enableViewButton->setTooltip("View channel enabled state");
     addAndMakeVisible(enableViewButton);
@@ -255,7 +260,7 @@ NeuropixInterface::NeuropixInterface(Probe* p,
         currentHeight += 55;
 
         apGainComboBox = new ComboBox("apGainComboBox");
-        apGainComboBox->setBounds(400, currentHeight, 65, 22);
+        apGainComboBox->setBounds(450, currentHeight, 65, 22);
         apGainComboBox->addListener(this);
 
         for (int i = 0; i < probe->availableApGains.size(); i++)
@@ -266,14 +271,14 @@ NeuropixInterface::NeuropixInterface(Probe* p,
 
         apGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
         apGainViewButton->setRadius(3.0f);
-        apGainViewButton->setBounds(480, currentHeight + 2, 45, 18);
+        apGainViewButton->setBounds(530, currentHeight + 2, 45, 18);
         apGainViewButton->addListener(this);
         apGainViewButton->setTooltip("View AP gain of each channel");
         addAndMakeVisible(apGainViewButton);
 
         apGainLabel = new Label("AP GAIN", "AP GAIN");
         apGainLabel->setFont(Font("Small Text", 13, Font::plain));
-        apGainLabel->setBounds(396, currentHeight - 20, 100, 20);
+        apGainLabel->setBounds(446, currentHeight - 20, 100, 20);
         apGainLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(apGainLabel);
 
@@ -284,7 +289,7 @@ NeuropixInterface::NeuropixInterface(Probe* p,
         currentHeight += 55;
 
         lfpGainComboBox = new ComboBox("lfpGainComboBox");
-        lfpGainComboBox->setBounds(400, currentHeight, 65, 22);
+        lfpGainComboBox->setBounds(450, currentHeight, 65, 22);
         lfpGainComboBox->addListener(this);
 
         for (int i = 0; i < probe->availableLfpGains.size(); i++)
@@ -295,14 +300,14 @@ NeuropixInterface::NeuropixInterface(Probe* p,
 
         lfpGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
         lfpGainViewButton->setRadius(3.0f);
-        lfpGainViewButton->setBounds(480, currentHeight + 2, 45, 18);
+        lfpGainViewButton->setBounds(530, currentHeight + 2, 45, 18);
         lfpGainViewButton->addListener(this);
         lfpGainViewButton->setTooltip("View LFP gain of each channel");
         addAndMakeVisible(lfpGainViewButton);
 
         lfpGainLabel = new Label("LFP GAIN", "LFP GAIN");
         lfpGainLabel->setFont(Font("Small Text", 13, Font::plain));
-        lfpGainLabel->setBounds(396, currentHeight - 20, 100, 20);
+        lfpGainLabel->setBounds(446, currentHeight - 20, 100, 20);
         lfpGainLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(lfpGainLabel);
     }
@@ -312,7 +317,7 @@ NeuropixInterface::NeuropixInterface(Probe* p,
         currentHeight += 55;
 
         referenceComboBox = new ComboBox("ReferenceComboBox");
-        referenceComboBox->setBounds(400, currentHeight, 65, 22);
+        referenceComboBox->setBounds(450, currentHeight, 65, 22);
         referenceComboBox->addListener(this);
 
         for (int i = 0; i < probe->availableReferences.size(); i++)
@@ -325,14 +330,14 @@ NeuropixInterface::NeuropixInterface(Probe* p,
 
         referenceViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
         referenceViewButton->setRadius(3.0f);
-        referenceViewButton->setBounds(480, currentHeight + 2, 45, 18);
+        referenceViewButton->setBounds(530, currentHeight + 2, 45, 18);
         referenceViewButton->addListener(this);
         referenceViewButton->setTooltip("View reference of each channel");
         addAndMakeVisible(referenceViewButton);
 
         referenceLabel = new Label("REFERENCE", "REFERENCE");
         referenceLabel->setFont(Font("Small Text", 13, Font::plain));
-        referenceLabel->setBounds(396, currentHeight - 20, 100, 20);
+        referenceLabel->setBounds(446, currentHeight - 20, 100, 20);
         referenceLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(referenceLabel);
     }
@@ -342,7 +347,7 @@ NeuropixInterface::NeuropixInterface(Probe* p,
         currentHeight += 55;
 
         filterComboBox = new ComboBox("FilterComboBox");
-        filterComboBox->setBounds(400, currentHeight, 75, 22);
+        filterComboBox->setBounds(450, currentHeight, 75, 22);
         filterComboBox->addListener(this);
         filterComboBox->addItem("ON", 1);
         filterComboBox->addItem("OFF", 2);
@@ -351,7 +356,7 @@ NeuropixInterface::NeuropixInterface(Probe* p,
 
         filterLabel = new Label("FILTER", "AP FILTER CUT");
         filterLabel->setFont(Font("Small Text", 13, Font::plain));
-        filterLabel->setBounds(396, currentHeight - 20, 200, 20);
+        filterLabel->setBounds(446, currentHeight - 20, 200, 20);
         filterLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(filterLabel);
     }
@@ -659,8 +664,6 @@ void NeuropixInterface::buttonClicked(Button* button)
     else if (button == enableButton)
     {
 
-        ProbeSettings settings;
-
         Array<int> selection = getSelectedElectrodes();
 
         // update selection state
@@ -681,6 +684,8 @@ void NeuropixInterface::buttonClicked(Button* button)
                 }
             }
         }
+
+        ProbeSettings settings;
 
         for (auto electrode : electrodeMetadata)
         {
@@ -1439,8 +1444,9 @@ void NeuropixInterface::paint(Graphics& g)
     {
         g.setColour(getElectrodeColour(i).withAlpha(0.5f));
 
-        g.setPixel(LEFT_BORDER + electrodeMetadata[i].column_index * 2 + electrodeMetadata[i].shank * INTERSHANK_DISTANCE,
-            TOP_BORDER + SHANK_HEIGHT - electrodeMetadata[i].row_index * SHANK_HEIGHT / probeMetadata.rows_per_shank);
+        for (int px = 0; px < pixelHeight; px++)
+            g.setPixel(LEFT_BORDER + electrodeMetadata[i].column_index * 2 + electrodeMetadata[i].shank * INTERSHANK_DISTANCE,
+                       TOP_BORDER + SHANK_HEIGHT - float(electrodeMetadata[i].row_index) * float(SHANK_HEIGHT) / float(probeMetadata.rows_per_shank)- px);
     }
 
     // channel 1 = pixel 513
@@ -1458,7 +1464,9 @@ void NeuropixInterface::paint(Graphics& g)
 
     // draw mark for every N channels
 
-    shankOffset = INTERSHANK_DISTANCE * (probeMetadata.shank_count - 1);
+    //int WWW = 10;
+
+    shankOffset = INTERSHANK_DISTANCE * (probeMetadata.shank_count - 1); // +WWW;
     for (int i = TOP_BORDER + SHANK_HEIGHT; i > TOP_BORDER; i -= ch_interval)
     {
         g.drawLine(6, i, 18, i);
@@ -1550,13 +1558,13 @@ void NeuropixInterface::paint(Graphics& g)
     upperBorder.startNewSubPath(5, lowerBound - zoomOffset - zoomHeight);
     upperBorder.lineTo(54 + shankOffset, lowerBound - zoomOffset - zoomHeight);
     upperBorder.lineTo(100 + shankOffset, 16);
-    upperBorder.lineTo(350 + shankOffset, 16);
+    upperBorder.lineTo(330 + shankOffset, 16);
 
     Path lowerBorder;
     lowerBorder.startNewSubPath(5, lowerBound - zoomOffset);
     lowerBorder.lineTo(54 + shankOffset, lowerBound - zoomOffset);
     lowerBorder.lineTo(100 + shankOffset, lowerBound + 16);
-    lowerBorder.lineTo(350 + shankOffset, lowerBound + 16);
+    lowerBorder.lineTo(330 + shankOffset, lowerBound + 16);
 
     g.strokePath(upperBorder, PathStrokeType(2.0));
     g.strokePath(lowerBorder, PathStrokeType(2.0));
@@ -1580,7 +1588,8 @@ void NeuropixInterface::paint(Graphics& g)
         //std::cout << "YES" << std::endl;
         g.setColour(Colour(55, 55, 55));
         g.setFont(15);
-        g.drawMultiLineText(electrodeInfoString, 280 + shankOffset, 310, 250);
+        g.drawMultiLineText(electrodeInfoString,
+            280 + shankOffset + 50, 420, 250);
     } 
 
     //drawLegend(g);

@@ -356,8 +356,8 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	background->toBack();
 	background->repaint();
 
-	addSyncChannelButton = new UtilityButton("+SYNC", Font("Small Text", 13, Font::plain));
-	addSyncChannelButton->setBounds(90 * basestations.size() + 110, 72, 20, 20);
+	addSyncChannelButton = new UtilityButton("+", Font("Small Text", 13, Font::plain));
+	addSyncChannelButton->setBounds(90 * basestations.size() + 78, 40, 20, 20);
 	addSyncChannelButton->addListener(this);
 	addSyncChannelButton->setTooltip("Add sync channel to the continuous data stream.");
 	addSyncChannelButton->setClickingTogglesState(true);

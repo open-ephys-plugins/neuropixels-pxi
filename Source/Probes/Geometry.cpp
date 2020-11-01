@@ -99,6 +99,7 @@ void Geometry::NP1(Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.ypos = i / 2 * 20; // check on this
 		metadata.column_index = i % 2;
 		metadata.row_index = i / 2;
+		metadata.isSelected = false;
 
 
 		if (i < 384)
@@ -163,6 +164,8 @@ void Geometry::NP2(int shank_count,
 
 		metadata.column_index = i % 2;
 		metadata.row_index = metadata.shank_local_index / 2;
+
+		metadata.isSelected = false;
 
 		if (shank_count == 1)
 		{
@@ -246,8 +249,7 @@ void Geometry::NP2(int shank_count,
 		}
 		else if (shank_count == 4)
 		{
-			int block = metadata.shank_local_index / 48 + 1;
-			int block_index = metadata.shank_local_index % 48;
+			
 
 			if (i < 384)
 			{
@@ -257,44 +259,49 @@ void Geometry::NP2(int shank_count,
 				metadata.status = ElectrodeStatus::DISCONNECTED;
 			}
 
+			if (metadata.shank_local_index < 384)
+				metadata.bank = Bank::A;
+			else if (metadata.shank_local_index >= 384 &&
+				metadata.shank_local_index < 768)
+				metadata.bank = Bank::B;
+			else if (metadata.shank_local_index >= 768 &&
+				metadata.shank_local_index < 1152)
+				metadata.bank = Bank::C;
+			else
+				metadata.bank = Bank::D;
+
+			int block = metadata.shank_local_index % 384 / 48 + 1;
+			int block_index = metadata.shank_local_index % 48;
+
 			if (metadata.shank == 0)
 			{
 				switch (block)
 				{
 					case 1:
-						metadata.bank = Bank::A;
-						metadata.channel = block_index;
+						metadata.channel = block_index + 48 * 0; // 1-48 (Bank 0-3)
 						break;
 					case 2:
-						metadata.bank = Bank::C;
-						metadata.channel = block_index + 48 * 2;
+						metadata.channel = block_index + 48 * 2; // 96-144 (Bank 0-3)
 						break;
 					case 3:
-						metadata.bank = Bank::E;
-						metadata.channel = block_index + 48 * 4;
+						metadata.channel = block_index + 48 * 4; // 192-223 (Bank 0-3)
 						break;
 					case 4:
-						metadata.bank = Bank::G;
-						metadata.channel = block_index + 48 * 6;
+						metadata.channel = block_index + 48 * 6; // 288-336 (Bank 0-2)
 						break;
 					case 5:
-						metadata.bank = Bank::F;
-						metadata.channel = block_index + 48 * 5;
+						metadata.channel = block_index + 48 * 5; // 240-288 (Bank 0-2)
 						break;
 					case 6:
-						metadata.bank = Bank::H;
-						metadata.channel = block_index + 48 * 7;
+						metadata.channel = block_index + 48 * 7; // 336-384 (Bank 0-2)
 						break;
 					case 7:
-						metadata.bank = Bank::B;
-						metadata.channel = block_index + 48 * 1;
+						metadata.channel = block_index + 48 * 1; // 48-96 (Bank 0-2)
 						break;
 					case 8:
-						metadata.bank = Bank::D;
-						metadata.channel = block_index + 48 * 3;
+						metadata.channel = block_index + 48 * 3; // 144-192 (Bank 0-2)
 						break;
 					default:
-						metadata.bank = Bank::NONE;
 						metadata.channel = -1;
 				}
 			} else if (metadata.shank == 1)
@@ -302,39 +309,30 @@ void Geometry::NP2(int shank_count,
 				switch (block)
 				{
 				case 1:
-					metadata.bank = Bank::B;
-					metadata.channel = block_index + 48 * 1;
+					metadata.channel = block_index + 48 * 1; // 48-96 (Bank 0-3)
 					break;
 				case 2:
-					metadata.bank = Bank::D;
-					metadata.channel = block_index + 48 * 3;
+					metadata.channel = block_index + 48 * 3; // 144-192 (Bank 0-3)
 					break;
 				case 3:
-					metadata.bank = Bank::F;
-					metadata.channel = block_index + 48 * 5;
+					metadata.channel = block_index + 48 * 5; // 240-27
 					break;
 				case 4:
-					metadata.bank = Bank::H;
 					metadata.channel = block_index + 48 * 7;
 					break;
 				case 5:
-					metadata.bank = Bank::E;
 					metadata.channel = block_index + 48 * 4;
 					break;
 				case 6:
-					metadata.bank = Bank::G;
 					metadata.channel = block_index + 48 * 6;
 					break;
 				case 7:
-					metadata.bank = Bank::A;
 					metadata.channel = block_index + 48 * 0;
 					break;
 				case 8:
-					metadata.bank = Bank::C;
 					metadata.channel = block_index + 48 * 2;
 					break;
 				default:
-					metadata.bank = Bank::NONE;
 					metadata.channel = -1;
 				}
 			} if (metadata.shank == 2)
@@ -342,39 +340,30 @@ void Geometry::NP2(int shank_count,
 				switch (block)
 				{
 				case 1:
-					metadata.bank = Bank::E;
 					metadata.channel = block_index + 48 * 4;
 					break;
 				case 2:
-					metadata.bank = Bank::G;
 					metadata.channel = block_index + 48 * 6;
 					break;
 				case 3:
-					metadata.bank = Bank::A;
 					metadata.channel = block_index + 48 * 0;
 					break;
 				case 4:
-					metadata.bank = Bank::C;
 					metadata.channel = block_index + 48 * 2;
 					break;
 				case 5:
-					metadata.bank = Bank::B;
 					metadata.channel = block_index + 48 * 1;
 					break;
 				case 6:
-					metadata.bank = Bank::D;
 					metadata.channel = block_index + 48 * 3;
 					break;
 				case 7:
-					metadata.bank = Bank::F;
 					metadata.channel = block_index + 48 * 5;
 					break;
 				case 8:
-					metadata.bank = Bank::H;
 					metadata.channel = block_index + 48 * 7;
 					break;
 				default:
-					metadata.bank = Bank::NONE;
 					metadata.channel = -1;
 				}
 			} if (metadata.shank == 3)
@@ -382,39 +371,30 @@ void Geometry::NP2(int shank_count,
 				switch (block)
 				{
 				case 1:
-					metadata.bank = Bank::F;
 					metadata.channel = block_index + 48 * 5;
 					break;
 				case 2:
-					metadata.bank = Bank::H;
 					metadata.channel = block_index + 48 * 7;
 					break;
 				case 3:
-					metadata.bank = Bank::B;
 					metadata.channel = block_index + 48 * 1;
 					break;
 				case 4:
-					metadata.bank = Bank::D;
 					metadata.channel = block_index + 48 * 3;
 					break;
 				case 5:
-					metadata.bank = Bank::A;
 					metadata.channel = block_index + 48 * 0;
 					break;
 				case 6:
-					metadata.bank = Bank::C;
 					metadata.channel = block_index + 48 * 2;
 					break;
 				case 7:
-					metadata.bank = Bank::E;
 					metadata.channel = block_index + 48 * 4;
 					break;
 				case 8:
-					metadata.bank = Bank::G;
 					metadata.channel = block_index + 48 * 6;
 					break;
 				default:
-					metadata.bank = Bank::NONE;
 					metadata.channel = -1;
 				}
 			}
@@ -478,6 +458,8 @@ void Geometry::NHP1(Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.bank = Bank::A;
 		metadata.channel = channel_map[i];
 		metadata.status = ElectrodeStatus::CONNECTED;
+
+		metadata.isSelected = false;
 
 		electrodeMetadata.add(metadata);
 	}
@@ -545,6 +527,8 @@ void Geometry::NHP2(int length,
 		metadata.bank = availableBanks[bank_index];
 		metadata.channel = i % 384;
 
+		metadata.isSelected = false;
+
 		if (i < 384)
 			metadata.status = ElectrodeStatus::CONNECTED;
 		else
@@ -568,9 +552,9 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 	Path path;
 	path.startNewSubPath(27, 31);
 	path.lineTo(27, 514);
-	path.lineTo(27 + 5, 522);
-	path.lineTo(27 + 10, 514);
-	path.lineTo(27 + 10, 31);
+	path.lineTo(27 + 10, 542);
+	path.lineTo(27 + 20, 514);
+	path.lineTo(27 + 20, 31);
 	path.closeSubPath();
 
 	probeMetadata.shank_count = 1;
@@ -594,6 +578,8 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.channel = i;
 		metadata.bank = Bank::A;
 		metadata.status = ElectrodeStatus::CONNECTED;
+
+		metadata.isSelected = false;
 
 		electrodeMetadata.add(metadata);
 	}
