@@ -41,7 +41,7 @@ class Basestation;
 
 struct ComponentInfo
 {
-	String version = "";
+	String version = "UNKNOWN";
 	uint64_t serial_number = 0;
 	int SN = 0;
 	String part_number = "";
@@ -58,6 +58,7 @@ enum class ProbeType {
 	NHP45,
 	NHP1,
 	UHD1,
+	UHD2,
 	NP2_1,
 	NP2_4
 };
@@ -66,32 +67,34 @@ enum class ProbeStatus {
 	DISCONNECTED, //There is no communication between probe and computer
 	CONNECTING,   //Computer has detected the probe and is attempting to connect
 	CONNECTED,    //Computer has established a valid connection with probe
+	UPDATING,	  //The probe is currently updating its settings
 	ACQUIRING,    //The probe is currently streaming data to computer
 	RECORDING     //The probe is recording the streaming data
 };
 
-enum class Bank {
-	NONE,
-	A,
-	B,
-	C,
-	D,
-	E,
-	F,
-	G,
-	H,
-	I,
-	J,
-	K,
-	L,
-	M
+enum Bank {
+	NONE = -1,
+	A = 0,
+	B = 1,
+	C = 2,
+	D = 3,
+	E = 4,
+	F = 5,
+	G = 6,
+	H = 7,
+	I = 8,
+	J = 9,
+	K = 10,
+	L = 11,
+	M = 12
 };
 
 enum class ElectrodeStatus {
 	CONNECTED,
 	DISCONNECTED,
 	REFERENCE,
-	OPTIONAL_REFERENCE
+	OPTIONAL_REFERENCE,
+	CONNECTED_OPTIONAL_REFERENCE
 };
 
 enum class BIST {
@@ -114,6 +117,8 @@ struct ProbeMetadata {
 	Path shankOutline;
 	int columns_per_shank;
 	int rows_per_shank;
+	ProbeType type;
+	String name;
 };
 
 struct ElectrodeMetadata {
@@ -138,23 +143,23 @@ struct ProbeSettings {
 	int lfpGainIndex;
 	int referenceIndex;
 	bool apFilterState;
-	Array<Bank> selectedBank; // size = channels
-	Array<int> selectedShank; // size = channels
-	Array<int> selectedChannel; // size = channels
+	Array<Bank> selectedBank;    // size = channels
+	Array<int> selectedShank;    // size = channels
+	Array<int> selectedChannel;  // size = channels
+	Array<int> selectedElectrode; // size = channels
 	ProbeType probeType;
+	Probe* probe; // pointer to the probe
 };
 
 /** Base class for all Neuropixels components, which must implement the "getInfo" method */
 class NeuropixComponent
 {
 public:
-	NeuropixComponent() {
-		getInfo();
-	}
+	NeuropixComponent() { }
 
 	ComponentInfo info;
 
-	virtual void getInfo() { }
+	virtual void getInfo() = 0;
 };
 
 /** Holds info about APIv1, as well as a boolean value to indicate whether or not it is being used*/
@@ -163,10 +168,11 @@ class NeuropixAPIv1 : public NeuropixComponent
 public:
 	NeuropixAPIv1::NeuropixAPIv1()
 	{
+		getInfo();
 		isActive = false;
 	}
 
-	void getInfo() {
+	void getInfo() override {
 
 		unsigned char version_major;
 		unsigned char version_minor;
@@ -185,10 +191,11 @@ public:
 
 	NeuropixAPIv3::NeuropixAPIv3()
 	{
+		getInfo();
 		isActive = false;
 	}
 
-	void getInfo() {
+	void getInfo() override {
 
 		int version_major;
 		int version_minor;
@@ -320,15 +327,18 @@ protected:
 };
 
 /** Represents a PXI basestation card */
-class Basestation : public NeuropixComponent
+class Basestation : public NeuropixComponent, public ThreadWithProgressWindow
 {
 public:
 
 	/** Sets the slot values. */
-	Basestation(int slot_) : NeuropixComponent() {
+	Basestation(int slot_) : NeuropixComponent(), ThreadWithProgressWindow("Firmware update", true, false) {
 		probesInitialized = false;
 		slot = slot_;
 		slot_c = (unsigned char) slot_;
+
+		bsFirmwarePath = "";
+		bscFirmwarePath = "";
 	}
 
 	/** VIRTUAL METHODS */
@@ -368,10 +378,23 @@ public:
 	virtual int getProbeCount() = 0;
 
 	/** Updates the BSC firmware */
-	virtual void updateBscFirmware(String filepath) = 0;
+	virtual void updateBscFirmware(File file) = 0;
 
 	/** Updates the BS firmware */
-	virtual void updateBsFirmware(String filepath) = 0;
+	virtual void updateBsFirmware(File file) = 0;
+
+	/** Thread for firmware update */
+	virtual void run() = 0;
+
+	static int firmwareUpdateCallback(size_t bytes)
+	{
+		currentBasestation->setProgress(float(bytes) / totalFirmwareBytes);
+
+		return 1;
+	}
+
+	static Basestation* currentBasestation;
+	static float totalFirmwareBytes;
 	
 	/** NON-VIRTUAL METHODS */
 
@@ -424,6 +447,11 @@ protected:
 	bool probesInitialized;
 	Array<int> syncFrequencies;
 	File savingDirectory;
+
+	
+
+	String bscFirmwarePath;
+	String bsFirmwarePath;
 };
 
 /** Represents a basestation connect board */
@@ -521,9 +549,7 @@ private:
 
 };
 
-//int firmwareUpdateCallback(size_t bytes)
-//{
-//	return 1;
-//}
+
+
 
 #endif  // __NEUROPIXCOMPONENTS_H_2C4C2D67__

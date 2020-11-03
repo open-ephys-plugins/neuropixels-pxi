@@ -28,16 +28,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void Neuropixels_NHP_Passive::getInfo()
 {
-	errorCode = Neuropixels::readProbeSN(basestation->slot, headstage->port, dock, &info.serial_number);
+	info.serial_number = 0;
 
-	char pn[MAXLEN];
-	errorCode = Neuropixels::readProbePN(basestation->slot_c, headstage->port_c, dock, pn, MAXLEN);
-
-	info.part_number = String(pn);
+	info.part_number = "NP1200";
 }
 
 Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 0)
 {
+	getInfo();
 
 	setStatus(ProbeStatus::DISCONNECTED);
 
@@ -52,9 +50,17 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 
 	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 
+	name = probeMetadata.name;
+	type = probeMetadata.type;
+
 	apGainIndex = 3;
 	lfpGainIndex = 2;
 	referenceIndex = 0;
+	apFilterState = true;
+
+	channel_count = 128;
+	lfp_sample_rate = 2500.0f;
+	ap_sample_rate = 30000.0f;
 
 	availableApGains.add(50.0f);
 	availableApGains.add(125.0f);
@@ -76,6 +82,7 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 
 	availableReferences.add("REF_ELEC");
 	availableReferences.add("TIP_REF");
+	availableReferences.add("INT_REF");
 
 	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
@@ -145,34 +152,81 @@ void Neuropixels_NHP_Passive::selectElectrodes(ProbeSettings settings, bool shou
 
 }
 
-void Neuropixels_NHP_Passive::setApFilterState(bool disableHighPass, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Passive::setApFilterState(bool filterIsOn, bool shouldWriteConfiguration)
 {
-	// to implement
+	if (apFilterState != filterIsOn)
+	{
+		for (int channel = 0; channel < 128; channel++)
+			np::setAPCornerFrequency(basestation->slot,
+				headstage->port,
+				dock,
+				!filterIsOn); // true if disabled
+
+		if (shouldWriteConfiguration)
+			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
+
+		std::cout << "Wrote filter " << int(filterIsOn) << " with error code " << errorCode << std::endl;
+
+		apFilterState = filterIsOn;
+	}
 }
 
 void Neuropixels_NHP_Passive::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
 {
-	// to implement
+	if (apGain != apGainIndex || lfpGain != lfpGainIndex)
+	{
+		for (int channel = 0; channel < 128; channel++)
+		{
+			Neuropixels::setGain(basestation->slot, headstage->port, dock,
+				channel,
+				apGain,
+				lfpGain);
+		}
+
+		if (shouldWriteConfiguration)
+			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
+
+		std::cout << "Wrote gain " << int(apGain) << ", " << int(lfpGain) << " with error code " << errorCode << std::endl;
+
+		apGainIndex = apGain;
+		lfpGainIndex = lfpGain;
+	}
 }
 
 
-void Neuropixels_NHP_Passive::setAllReferences(int referenceIndex, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Passive::setAllReferences(int refIndex, bool shouldWriteConfiguration)
 {
+	if (refIndex != referenceIndex)
+	{
+		Neuropixels::channelreference_t refId;
+		uint8_t refElectrodeBank = 0;
 
-	Neuropixels::channelreference_t refId;
+		switch (referenceIndex)
+		{
+		case 0:
+			refId = Neuropixels::EXT_REF;
+			break;
+		case 1:
+			refId = Neuropixels::TIP_REF;
+			break;
+		case 2:
+			refId = Neuropixels::INT_REF;
+			break;
+		default:
+			refId = Neuropixels::EXT_REF;
+		}
 
-	//for (int channel = 0; channel < channel_count; channel++)
-	//	Neuropixels::setReference(basestation->slot, 
-	//							  headstage->port, 
-	//							  dock,
-	//							  channel, 
-	//							  refId, 
-	//							  refElectrodeBank);
+		for (int channel = 0; channel < 128; channel++)
+			Neuropixels::setReference(basestation->slot, headstage->port, dock, 0, channel, refId, refElectrodeBank);
 
-	if (shouldWriteConfiguration)
-		errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
+		if (shouldWriteConfiguration)
+			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 
-	//std::cout << "Wrote reference " << int(refId) << ", " << int(refElectrodeBank) << " with error code " << errorCode << std::endl;
+		std::cout << "Wrote reference " << int(refId) << ", " << int(refElectrodeBank) << " with error code " << errorCode << std::endl;
+
+		referenceIndex = refIndex;
+	}
+
 }
 
 void Neuropixels_NHP_Passive::writeConfiguration()
@@ -193,71 +247,78 @@ void Neuropixels_NHP_Passive::stopAcquisition()
 {
 	stopThread(1000);
 }
-
 void Neuropixels_NHP_Passive::run()
 {
 
 	//std::cout << "Thread running." << std::endl;
 
-	Neuropixels::streamsource_t source = Neuropixels::SourceAP;
-
-	int16_t data[SAMPLECOUNT * 384];
-
-	Neuropixels::PacketInfo packetInfo[SAMPLECOUNT];
-
 	while (!threadShouldExit())
 	{
+
 		int count = SAMPLECOUNT;
 
-		errorCode = Neuropixels::readPackets(
+		errorCode = Neuropixels::readElectrodeData(
 			basestation->slot,
 			headstage->port,
 			dock,
-			source,
-			&packetInfo[0],
-			&data[0],
-			384,
-			count,
-			&count);
+			&packet[0],
+			&count,
+			count);
 
-		if (errorCode == np::SUCCESS && count > 0)
+		if (errorCode == np::SUCCESS &&
+			count > 0)
 		{
-			float apSamples[385];
+			float apSamples[129];
+			float lfpSamples[129];
 
 			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
-
-				eventCode = packetInfo[packetNum].Status >> 6; // AUX_IO<0:13>
-
-				uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
-
-				for (int j = 0; j < 384; j++)
+				for (int i = 0; i < 12; i++)
 				{
-					apSamples[j] = float(data[packetNum * 384 + j]) * 1.2f / 1024.0f * 1000000.0f / 80.0f; // convert to microvolts
-				}
+					eventCode = packet[packetNum].Status[i] >> 6; // AUX_IO<0:13>
 
-				ap_timestamp += 1;
+					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
+
+					for (int j = 0; j < 128; j++)
+					{
+
+						apSamples[j] = float(packet[packetNum].apData[i][channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / availableApGains[apGainIndex]; // convert to microvolts
+
+						if (i == 0)
+							lfpSamples[j] = float(packet[packetNum].lfpData[channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / availableLfpGains[lfpGainIndex]; // convert to microvolts
+					}
+
+					ap_timestamp += 1;
+
+					if (sendSync)
+						apSamples[128] = (float)eventCode;
+
+					apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, 1);
+
+					if (ap_timestamp % 30000 == 0)
+					{
+						size_t packetsAvailable;
+						size_t headroom;
+
+						np::getElectrodeDataFifoState(
+							basestation->slot,
+							headstage->port,
+							&packetsAvailable,
+							&headroom);
+
+						//std::cout << "Basestation " << int(basestation->slot) << ", probe " << int(port) << ", packets: " << packetsAvailable << std::endl;
+
+						fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+					}
+
+
+				}
+				lfp_timestamp += 1;
 
 				if (sendSync)
-					apSamples[384] = (float)eventCode;
+					lfpSamples[128] = (float)eventCode;
 
-				apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, 1);
-
-				if (ap_timestamp % 30000 == 0)
-				{
-					size_t packetsAvailable;
-					size_t headroom;
-
-					np::getElectrodeDataFifoState(
-						basestation->slot,
-						headstage->port,
-						&packetsAvailable,
-						&headroom);
-
-					//std::cout << "Basestation " << int(basestation->slot) << ", probe " << int(port) << ", packets: " << packetsAvailable << std::endl;
-
-					fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
-				}
+				lfpBuffer->addToBuffer(lfpSamples, &lfp_timestamp, &eventCode, 1);
 
 			}
 
@@ -269,3 +330,4 @@ void Neuropixels_NHP_Passive::run()
 	}
 
 }
+

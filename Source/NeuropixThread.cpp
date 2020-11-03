@@ -45,7 +45,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	recordingNumber(0),
 	isRecording(false),
 	recordingTimer(this),
-	recordToNpx(false)
+	recordToNpx(false),
+	initializationComplete(false)
 {
 	progressBar = new ProgressBar(initializationProgress);
 
@@ -55,6 +56,9 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	uint32_t availableslotmask;
 
 	np::scanPXI(&availableslotmask);
+
+	api_v1.isActive = true;
+	api_v3.isActive = false;
 
 	for (int slot = 0; slot < 32; slot++)
 	{
@@ -66,8 +70,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 			if (bs->open()) // detects # of probes; returns true if API version matches
 			{
 				basestations.add(bs);
-				api_v1.isActive = true;
-				api_v3.isActive = false;
 			}
 				
 		}
@@ -171,21 +173,34 @@ NeuropixThread::~NeuropixThread()
     closeConnection();
 }
 
-void NeuropixThread::updateProbeSettingsQueue()
+void NeuropixThread::updateProbeSettingsQueue(ProbeSettings settings)
 {
-	probeSettingsUpdateQueue.add(this->p_settings);
+	probeSettingsUpdateQueue.add(settings);
 }
 
 void NeuropixThread::applyProbeSettingsQueue()
 {
 	for (auto settings : probeSettingsUpdateQueue)
 	{
-		//settings.probe->selectElectrodes(settings.channelStatus);
-		settings.probe->setAllGains(settings.apGainIndex, settings.lfpGainIndex, false);
-		settings.probe->setAllReferences(settings.refChannelIndex, false);
-		settings.probe->setApFilterState(settings.disableHighPass, false);
-		settings.probe->writeConfiguration();
+		settings.probe->setStatus(ProbeStatus::UPDATING);
 	}
+
+	for (auto settings: probeSettingsUpdateQueue)
+	{
+
+		if (settings.probe != nullptr)
+		{
+			settings.probe->selectElectrodes(settings, false);
+			settings.probe->setAllGains(settings.apGainIndex, settings.lfpGainIndex, false);
+			settings.probe->setAllReferences(settings.referenceIndex, false);
+			settings.probe->setApFilterState(settings.apFilterState, false);
+			settings.probe->writeConfiguration();
+
+			settings.probe->setStatus(ProbeStatus::CONNECTED);
+		}
+	}
+
+	probeSettingsUpdateQueue.clear();
 }
 
 void NeuropixThread::initialize()
@@ -206,6 +221,8 @@ void NeuropixThread::initialize()
 		Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
 		Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
 	}
+
+	initializationComplete = true;
 	
 }
 

@@ -42,7 +42,8 @@ public:
 		Headstage* hs,
 		Flex* fl,
 		int dock,
-		String partNumber);
+		String partNumber,
+		int serialNumber);
 
 	void initialize() override;
 

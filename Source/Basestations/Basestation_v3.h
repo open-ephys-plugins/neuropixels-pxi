@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # define SAMPLECOUNT 64
 
 class Basestation_v3 : public Basestation
+
 {
 public:
 	Basestation_v3(int slot);
@@ -57,11 +58,12 @@ public:
 
 	float getFillPercentage() override;
 
-	bool runBist(signed char port, BIST bistType);
+	bool runBist(signed char port, BIST bistType) override;
 
-	void updateBsFirmware(String filepath);
-	void updateBscFirmware(String filepath);
+	void updateBsFirmware(File file) override;
+	void updateBscFirmware(File file) override;
 
+	void run() override;
 
 	//Neuropixels::bistElectrodeStats stats[960];
 

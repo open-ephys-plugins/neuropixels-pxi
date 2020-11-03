@@ -60,8 +60,10 @@ public:
 
 	bool runBist(signed char port, BIST bistType);
 
-	void updateBsFirmware(String filepath);
-	void updateBscFirmware(String filepath);
+	void updateBsFirmware(File file) override;
+	void updateBscFirmware(File file) override;
+
+	void run() override;
 
 	np::bistElectrodeStats stats[960];
 

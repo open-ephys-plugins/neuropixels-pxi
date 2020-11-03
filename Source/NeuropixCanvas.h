@@ -105,8 +105,9 @@ public:
 	void startAcquisition();
 	void stopAcquisition();
 
-	void applyProbeSettings(ProbeSettings);
+	void applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true);
 	ProbeSettings getProbeSettings();
+	void updateProbeSettingsInBackground();
 
 	void saveParameters(XmlElement* xml);
 	void loadParameters(XmlElement* xml);
@@ -140,6 +141,8 @@ private:
 
 	// LABELS
 	ScopedPointer<Viewport> infoLabelView;
+	ScopedPointer<Label> mainLabel;
+	ScopedPointer<Label> nameLabel;
 	ScopedPointer<Label> infoLabel;
 	ScopedPointer<Label> lfpGainLabel;
 	ScopedPointer<Label> apGainLabel;
@@ -156,7 +159,7 @@ private:
 	ScopedPointer<Label> annotationLabelLabel;
 	ScopedPointer<Label> annotationLabel;
 
-	ScopedPointer<Label> mainLabel;
+	
 
 	// BUTTONS
 	ScopedPointer<UtilityButton> enableButton;

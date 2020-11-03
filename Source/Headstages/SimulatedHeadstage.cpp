@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void SimulatedHeadstage::getInfo()
 {
-	info.version = "XX.XX";
+	info.version = "SIM0.0";
 	info.part_number = "Simulated headstage";
 }
 
@@ -34,15 +34,18 @@ void SimulatedHeadstage::getInfo()
 void SimulatedFlex::getInfo()
 {
 
-	info.version = "XX.XX";
+	info.version = "SIM0.0";
 	info.part_number = "Simulated flex";
 }
 
 
-SimulatedHeadstage::SimulatedHeadstage(Basestation* bs, int port) : Headstage(bs, port)
+SimulatedHeadstage::SimulatedHeadstage(Basestation* bs, int port, String PN, int SN) : Headstage(bs, port)
 {
+
+	getInfo();
+
 	flexCables.add(new SimulatedFlex(this));
 
-	probes.add(new SimulatedProbe(basestation, this, flexCables[0], 0, "PRB2_4_2_0640_0"));
+	probes.add(new SimulatedProbe(basestation, this, flexCables[0], 0, PN, SN));
 	probes[0]->setStatus(ProbeStatus::CONNECTING);
 }

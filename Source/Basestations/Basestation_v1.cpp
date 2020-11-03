@@ -83,11 +83,12 @@ void BasestationConnectBoard_v1::getInfo()
 
 BasestationConnectBoard_v1::BasestationConnectBoard_v1(Basestation* bs) : BasestationConnectBoard(bs)
 {
+	getInfo();
 }
 
 Basestation_v1::Basestation_v1(int slot_number) : Basestation(slot_number)
 {
-
+	getInfo();
 }
 
 bool Basestation_v1::open()
@@ -295,24 +296,55 @@ void Basestation_v1::stopAcquisition()
 	errorCode = np::arm(slot_c);
 }
 
-void Basestation_v1::updateBscFirmware(String filepath)
+void Basestation_v1::updateBscFirmware(File file)
 {
-	//ProgressBar
-	//errorCode = np::qbsc_update(slot_c, 
-	//							filepath.getCharPointer(),
-	//							firmwareUpdateCallback);
+	bscFirmwarePath = file.getFullPathName();
+	Basestation::totalFirmwareBytes = (float)file.getSize();
+	Basestation::currentBasestation = this;
 
+	std::cout << bscFirmwarePath << std::endl;
+
+	auto window = getAlertWindow();
+	window->setColour(AlertWindow::textColourId, Colours::white);
+	window->setColour(AlertWindow::backgroundColourId, Colour::fromRGB(50, 50, 50));
+
+	this->setStatusMessage("Updating BSC firmware...");
+	this->runThread(); //Upload firmware
+
+	bscFirmwarePath = "";
 }
 
-void Basestation_v1::updateBsFirmware(String filepath)
+void Basestation_v1::updateBsFirmware(File file)
 {
-	// ProgressBar
-	//errorCode = np::bs_update(slot_c, 
-	//						  filepath.getCharPointer(), 
-	//						  firmwareUpdateCallback);
+	bsFirmwarePath = file.getFullPathName();
+	Basestation::totalFirmwareBytes = (float)file.getSize();
+	Basestation::currentBasestation = this;
 
+	std::cout << bsFirmwarePath << std::endl;
+
+	auto window = getAlertWindow();
+	window->setColour(AlertWindow::textColourId, Colours::white);
+	window->setColour(AlertWindow::backgroundColourId, Colour::fromRGB(50, 50, 50));
+
+	this->setStatusMessage("Updating basestation firmware...");
+	this->runThread(); //Upload firmware
+
+	bsFirmwarePath = "";
 }
 
+void Basestation_v1::run()
+{
+	
+	if (bscFirmwarePath.length() > 0)
+		errorCode = np::qbsc_update(slot_c,
+								bscFirmwarePath.getCharPointer(),
+								firmwareUpdateCallback);
+
+	if (bsFirmwarePath.length() > 0)
+		errorCode = np::bs_update(slot_c,
+					  bsFirmwarePath.getCharPointer(),
+					  firmwareUpdateCallback);
+}
 
 
 bool Basestation_v1::runBist(signed char port, BIST bistType)

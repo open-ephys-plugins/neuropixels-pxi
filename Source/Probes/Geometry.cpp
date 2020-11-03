@@ -72,6 +72,9 @@ void Geometry::NP1(Array<ElectrodeMetadata>& electrodeMetadata,
 				   ProbeMetadata& probeMetadata)
 {
 
+	probeMetadata.type = ProbeType::NP1;
+	probeMetadata.name = "Neuropixels 1.0";
+
 	Path path;
 	path.startNewSubPath(27, 31);
 	path.lineTo(27, 514);
@@ -135,6 +138,18 @@ void Geometry::NP2(int shank_count,
 	Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
+
+	if (shank_count == 1)
+	{
+		probeMetadata.type = ProbeType::NP2_1;
+		probeMetadata.name = "Neuropixels 2.0 - Single Shank";
+	}
+	else
+	{
+		probeMetadata.type = ProbeType::NP2_4;
+		probeMetadata.name = "Neuropixels 2.0 - Multishank";
+	}
+		
 
 	Path path;
 	path.startNewSubPath(27, 31);
@@ -418,6 +433,9 @@ void Geometry::NHP1(Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
 
+	probeMetadata.type = ProbeType::NHP1;
+	probeMetadata.name = "Neuropixels NHP - Passive";
+
 	Path path;
 	path.startNewSubPath(27, 31);
 	path.lineTo(27, 514);
@@ -471,6 +489,21 @@ void Geometry::NHP2(int length,
 	Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
+
+	if (length == 10)
+	{
+		probeMetadata.type = ProbeType::NHP10;
+		probeMetadata.name = "Neuropixels NHP - Active (10 mm)";
+	}
+	else if (length == 25)
+	{
+		probeMetadata.type = ProbeType::NHP25;
+		probeMetadata.name = "Neuropixels NHP - Active (25 mm)";
+	} else if (length == 45)
+	{
+		probeMetadata.type = ProbeType::NHP45;
+		probeMetadata.name = "Neuropixels NHP - Active (45 mm)";
+	}
 
 	Path path;
 	path.startNewSubPath(27, 31);
@@ -548,6 +581,8 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
 	// need to implement switchable case
+	probeMetadata.type = ProbeType::UHD1;
+	probeMetadata.name = "Neuropixels Ultra";
 
 	Path path;
 	path.startNewSubPath(27, 31);

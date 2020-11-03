@@ -74,7 +74,8 @@ void Flex2::getInfo()
 
 Headstage2::Headstage2(Basestation* bs_, int port) : Headstage(bs_, port)
 {
-	
+	getInfo();
+
 	int count;
 
 	Neuropixels::getHSSupportedProbeCount(basestation->slot, port, &count);
@@ -101,5 +102,7 @@ Headstage2::Headstage2(Basestation* bs_, int port) : Headstage(bs_, port)
 
 Flex2::Flex2(Headstage* hs_, int dock) : Flex(hs_, dock)
 {
+	getInfo();
+
 	errorCode = Neuropixels::SUCCESS;
 }

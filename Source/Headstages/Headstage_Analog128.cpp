@@ -74,7 +74,8 @@ void Flex1_NHP::getInfo()
 
 Headstage_Analog128::Headstage_Analog128(Basestation* bs_, int port) : Headstage(bs_, port)
 {
-	
+	getInfo();
+
 	flexCables.add(new Flex1_NHP(this));
 
 	probes.add(new Neuropixels_NHP_Passive(basestation, this, flexCables[0]));
@@ -84,6 +85,8 @@ Headstage_Analog128::Headstage_Analog128(Basestation* bs_, int port) : Headstage
 
 Flex1_NHP::Flex1_NHP(Headstage* hs_) : Flex(hs_, 0)
 {
+	getInfo();
+
 	errorCode = Neuropixels::SUCCESS;
 }
 

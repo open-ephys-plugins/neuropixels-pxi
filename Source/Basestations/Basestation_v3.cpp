@@ -35,20 +35,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MAXLEN 50
 
+
+
 void Basestation_v3::getInfo()
 {
-	// NEED TO FIX
-	/*unsigned char version_major;
-	unsigned char version_minor;
-	uint16_t version_build;
+	Neuropixels::firmware_Info firmwareInfo;
 
-	errorCode = Neuropixels::getBSBootVersion(slot, &version_major, &version_minor, &version_build);
+	Neuropixels::bs_getFirmwareInfo(slot, &firmwareInfo);
 
-	info.boot_version = String(version_major) + "." + String(version_minor);
-
-	if (version_build != NULL)
-		info.boot_version += ".";
-		info.boot_version += String(version_build);*/
+	info.boot_version = String(firmwareInfo.major) + "." + String(firmwareInfo.minor) + String(firmwareInfo.build);
+	 
+	info.part_number = String(firmwareInfo.name);
 
 }
 
@@ -70,19 +67,27 @@ void BasestationConnectBoard_v3::getInfo()
 
 	info.part_number = String(pn);
 
+	Neuropixels::firmware_Info firmwareInfo;
+	Neuropixels::bsc_getFirmwareInfo(basestation->slot, &firmwareInfo);
+	info.boot_version = String(firmwareInfo.major) + "." + String(firmwareInfo.minor) + String(firmwareInfo.build);
+
 }
 
 BasestationConnectBoard_v3::BasestationConnectBoard_v3(Basestation* bs) : BasestationConnectBoard(bs)
 {
+	getInfo();
 }
 
 Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
 {
-
+	getInfo();
 }
 
 bool Basestation_v3::open()
 {
+
+	
+
 	std::cout << "OPENING PARENT" << std::endl;
 
 	errorCode = Neuropixels::openBS(slot_c);
@@ -316,24 +321,57 @@ void Basestation_v3::stopAcquisition()
 	errorCode = Neuropixels::arm(slot);
 }
 
-void Basestation_v3::updateBscFirmware(String filepath)
-{
-	//ProgressBar
-	//errorCode = Neuropixels::bsc_updateFirmware(slot,
-	//							filepath.getCharPointer(),
-	//							firmwareUpdateCallback);
 
+void Basestation_v3::run()
+{
+	if (bscFirmwarePath.length() > 0)
+		errorCode = Neuropixels::bsc_updateFirmware(slot,
+									bscFirmwarePath.getCharPointer(),
+									firmwareUpdateCallback);
+
+	if (bsFirmwarePath.length() > 0)
+	   errorCode = Neuropixels::bs_updateFirmware(slot,
+						  bsFirmwarePath.getCharPointer(), 
+						  firmwareUpdateCallback);
+	
 }
 
-void Basestation_v3::updateBsFirmware(String filepath)
-{
-	// ProgressBar
-	//errorCode = Neuropixels::bs_updateFirmware(slot,
-	//						  filepath.getCharPointer(), 
-	//						  firmwareUpdateCallback);
 
+void Basestation_v3::updateBscFirmware(File file)
+{
+	bscFirmwarePath = file.getFullPathName();
+	Basestation::totalFirmwareBytes = (float)file.getSize();
+	Basestation::currentBasestation = this;
+
+	std::cout << bscFirmwarePath << std::endl;
+
+	auto window = getAlertWindow();
+	window->setColour(AlertWindow::textColourId, Colours::white);
+	window->setColour(AlertWindow::backgroundColourId, Colour::fromRGB(50, 50, 50));
+
+	this->setStatusMessage("Updating BSC firmware...");
+	this->runThread(); //Upload firmware
+
+	bscFirmwarePath = "";
 }
 
+void Basestation_v3::updateBsFirmware(File file)
+{
+	bsFirmwarePath = file.getFullPathName();
+	Basestation::totalFirmwareBytes = (float)file.getSize();
+	Basestation::currentBasestation = this;
+
+	std::cout << bsFirmwarePath << std::endl;
+
+	auto window = getAlertWindow();
+	window->setColour(AlertWindow::textColourId, Colours::white);
+	window->setColour(AlertWindow::backgroundColourId, Colour::fromRGB(50, 50, 50));
+
+	this->setStatusMessage("Updating basestation firmware...");
+	this->runThread(); //Upload firmware
+
+	bsFirmwarePath = "";
+}
 
 
 bool Basestation_v3::runBist(signed char port, BIST bistType)

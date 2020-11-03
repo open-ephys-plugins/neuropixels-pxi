@@ -28,6 +28,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 void SimulatedProbe::getInfo()
 {
 	info.part_number = "Simulated probe";
+	info.serial_number = 123456789;
+
 }
 
 
@@ -35,11 +37,19 @@ void SimulatedProbe::getInfo()
 SimulatedProbe::SimulatedProbe(Basestation* bs,
 	Headstage* hs,
 	Flex* fl,
-	int dock, String PN) : Probe(bs, hs, fl, dock)
+	int dock, String PN, int SN) : Probe(bs, hs, fl, dock)
 {
+
+	getInfo();
+	info.serial_number = SN;
+	info.part_number = PN;
+
 	CoreServices::sendStatusMessage("Probe part number: " + PN);
 
 	Geometry::forPartNumber(PN, electrodeMetadata, probeMetadata);
+
+	name = probeMetadata.name;
+	type = probeMetadata.type;
 
 	channel_count = 384;
 	lfp_sample_rate = 2500.0f;
@@ -54,14 +64,14 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	availableApGains.add(2000.0f);
 	availableApGains.add(3000.0f);
 
-	//availableLfpGains.add(50.0f);
-	//availableLfpGains.add(125.0f);
-	//availableLfpGains.add(250.0f);
-	//availableLfpGains.add(500.0f);
-	//availableLfpGains.add(1000.0f);
-	//availableLfpGains.add(1500.0f);
-	//availableLfpGains.add(2000.0f);
-	//availableLfpGains.add(3000.0f);
+	availableLfpGains.add(50.0f);
+	availableLfpGains.add(125.0f);
+	availableLfpGains.add(250.0f);
+	availableLfpGains.add(500.0f);
+	availableLfpGains.add(1000.0f);
+	availableLfpGains.add(1500.0f);
+	availableLfpGains.add(2000.0f);
+	availableLfpGains.add(3000.0f);
 
 	availableReferences.add("Ext");
 	availableReferences.add("Tip");
@@ -72,6 +82,7 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	apGainIndex = 3;
 	lfpGainIndex = 2;
 	referenceIndex = 0;
+	apFilterState = true;
 
 	
 
@@ -89,7 +100,7 @@ void SimulatedProbe::initialize()
 
 void SimulatedProbe::calibrate()
 {
-	Sleep(3);
+	Sleep(1);
 	std::cout << "Calibrating simulated probe." << std::endl;
 }
 
@@ -125,7 +136,10 @@ void SimulatedProbe::setAllReferences(int referenceIndex, bool shouldWriteConfig
 
 void SimulatedProbe::writeConfiguration()
 {
+	Sleep(1000);
+
 	std::cout << "Wrote configuration for simulated probe." << std::endl;
+	
 }
 
 void SimulatedProbe::startAcquisition() {

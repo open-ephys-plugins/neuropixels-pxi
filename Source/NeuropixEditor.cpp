@@ -131,8 +131,6 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 		g.setColour(Colours::darkgrey);
 	g.fillEllipse(0, 0, 15, 15);
 
-	///g.setGradientFill(ColourGradient(Colours::lightcyan, 0, 0, Colours::lightskyblue, 10,10, true));
-
 	if (status == ProbeStatus::CONNECTED)
 	{
 		if (selected)
@@ -149,7 +147,7 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 				g.setColour(Colours::green);
 		}
 	}
-	else if (status == ProbeStatus::CONNECTING)
+	else if (status == ProbeStatus::CONNECTING || status == ProbeStatus::UPDATING)
 	{
 		if (selected)
 		{
@@ -199,7 +197,7 @@ void ProbeButton::timerCallback()
 }
 
 BackgroundLoader::BackgroundLoader(NeuropixThread* thread_, NeuropixEditor* editor_) 
-	: Thread("Neuropix Loader"), thread(thread_), editor(editor_)
+	: Thread("Neuropix Loader"), thread(thread_), editor(editor_), isInitialized(false)
 {
 }
 
@@ -210,30 +208,36 @@ BackgroundLoader::~BackgroundLoader()
 void BackgroundLoader::run()
 {
 	/* Open the NPX-PXI probe connections in the background to prevent this plugin from blocking the main GUI*/
-	thread->initialize();
+	if (!isInitialized)
+		thread->initialize();
 
 	/* Apply any saved settings */
-	CoreServices::sendStatusMessage("Restoring saved probe settings...");
+	//CoreServices::sendStatusMessage("Restoring saved probe settings...");
 	thread->applyProbeSettingsQueue();
 
 	 /* Remove button callback timers and select first avalable probe by default*/
-	bool selectedFirstAvailableProbe = false;
 
-	for (auto button : editor->probeButtons)
+	/*if (!isInitialized)
 	{
-		if (button->getProbeStatus() == ProbeStatus::CONNECTED && (!selectedFirstAvailableProbe))
+		bool selectedFirstAvailableProbe = false;
+
+		for (auto button : editor->probeButtons)
 		{
-			editor->buttonEvent(button);
-			selectedFirstAvailableProbe = true;
+			if (button->getProbeStatus() == ProbeStatus::CONNECTED && (!selectedFirstAvailableProbe))
+			{
+				editor->buttonEvent(button);
+				selectedFirstAvailableProbe = true;
+			}
+			//button->stopTimer();
 		}
-		//button->stopTimer();
-	}
 
-	/* Let the main GUI know the plugin is done initializing */
-	MessageManagerLock mml;
-	CoreServices::updateSignalChain(editor);
-	CoreServices::sendStatusMessage("Neuropix-PXI plugin ready for acquisition!");
+		MessageManagerLock mml;
+		CoreServices::updateSignalChain(editor);
+		CoreServices::sendStatusMessage("Neuropix-PXI plugin ready for acquisition!");
+	}*/
 
+	isInitialized = true;
+	
 }
 
 
@@ -492,9 +496,11 @@ void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 		String directory_name = savingDirectories[slot].getFullPathName();
 		if (directory_name.length() == 2)
 			directory_name += "\\\\";
+
 		xmlNode->setAttribute("Slot" + String(slot) + "Directory", directory_name);
 	}
 
+	xmlNode->setAttribute("SendSyncAsContinuous", addSyncChannelButton->getToggleState());
 }
 
 void NeuropixEditor::loadEditorParameters(XmlElement* xml)
@@ -513,6 +519,8 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 				directoryButtons[slot]->setLabel(directory.getFullPathName().substring(0, 2));
 				savingDirectories.set(slot, directory);
 			}
+
+			addSyncChannelButton->setToggleState(xmlNode->getBoolAttribute("SendSyncAsContinuous", false), sendNotification);
 		}
 	}
 }

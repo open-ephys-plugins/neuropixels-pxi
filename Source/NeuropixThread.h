@@ -190,22 +190,15 @@ public:
 	double initializationProgress;
 
 	/* Helper for loading probes in the background */
-	struct probeSettings {
-		Probe* probe;
-		Array<int> channelStatus;
-		int apGainIndex;
-		int lfpGainIndex;
-		int refChannelIndex;
-		bool disableHighPass;
-	} p_settings;
+	Array<ProbeSettings> probeSettingsUpdateQueue;
 
-	Array<probeSettings> probeSettingsUpdateQueue;
+	bool isInitialized() { return initializationComplete;  }
+
+	void updateProbeSettingsQueue(ProbeSettings settings);
+	void applyProbeSettingsQueue();
 
 	void sendSyncAsContinuousChannel(bool shouldSend);
 	void updateSubprocessors();
-
-	void updateProbeSettingsQueue();
-	void applyProbeSettingsQueue();
 
 	String getApiVersion();
 
@@ -219,6 +212,8 @@ private:
 	bool autoRestart;
 
 	bool isRecording;
+
+	bool initializationComplete;
 
 	long int counter;
 	int recordingNumber;

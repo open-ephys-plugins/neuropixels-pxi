@@ -2,7 +2,7 @@
 ------------------------------------------------------------------
 
 This file is part of the Open Ephys GUI
-Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+Copyright (C) 2018 Allen Institute for Brain Science and Open Ephys
 
 ------------------------------------------------------------------
 
@@ -21,33 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef __SIMULATEDHEADSTAGE_H_2C4C2D67__
-#define __SIMULATEDHEADSTAGE_H_2C4C2D67__
+#include "NeuropixComponents.h"
 
-#include <stdio.h>
-#include <string.h>
-
-#include "../NeuropixComponents.h"
-
-class SimulatedBasestationConnectBoard;
-class SimulatedFlex;
-class SimulatedHeadstage;
-class SimulatedProbe;
-
-class SimulatedHeadstage : public Headstage
-{
-public:
-	SimulatedHeadstage(Basestation* bs, int port, String PN, int SN);
-	void getInfo() override;
-	bool hasTestModule() override { return false; }
-};
-
-class SimulatedFlex : public Flex
-{
-public:
-	SimulatedFlex(Headstage* headstage) : Flex(headstage, 0) { getInfo(); }
-	void getInfo() override;
-};
-
-
-#endif  // __SIMULATEDCOMPONENTS_H_2C4C2D67__
+float Basestation::totalFirmwareBytes = 0;
+Basestation* Basestation::currentBasestation = nullptr;

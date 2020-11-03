@@ -39,13 +39,24 @@ void Neuropixels2::getInfo()
 Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) : Probe(bs, hs, fl, dock)
 {
 
+	getInfo();
+
 	setStatus(ProbeStatus::DISCONNECTED);
 
 	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 
+	name = probeMetadata.name;
+	type = probeMetadata.type;
+
 	apGainIndex = -1;
 	lfpGainIndex = -1;
 	referenceIndex = 0;
+	apFilterState = false;
+
+	channel_count = 384;
+	lfp_sample_rate = 2500.0f; // not used
+	ap_sample_rate = 30000.0f;
+
 
 	if (probeMetadata.shank_count == 1)
 	{
@@ -155,6 +166,9 @@ void Neuropixels2::selectElectrodes(ProbeSettings settings, bool shouldWriteConf
 
 	Neuropixels::NP_ErrorCode ec;
 
+	if (settings.selectedBank.size() == 0)
+		return;
+
 	for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
 	{
 
@@ -195,23 +209,130 @@ void Neuropixels2::setAllGains(int apGain, int lfpGain, bool shouldWriteConfigur
 }
 
 
-void Neuropixels2::setAllReferences(int referenceIndex, bool shouldWriteConfiguration)
+void Neuropixels2::setAllReferences(int refIndex, bool shouldWriteConfiguration)
 {
 
 	Neuropixels::channelreference_t refId;
+	uint8_t refElectrodeBank = 0;
+	int shank = 0;
 
-	//for (int channel = 0; channel < channel_count; channel++)
-	//	Neuropixels::setReference(basestation->slot, 
-	//							  headstage->port, 
-	//							  dock,
-	//							  channel, 
-	//							  refId, 
-	//							  refElectrodeBank);
+	switch (referenceIndex)
+	{
+	case 0:
+		refId = Neuropixels::EXT_REF;
+		break;
+	case 1:
+		refId = Neuropixels::TIP_REF;
+		break;
+	case 2:
+		refId = Neuropixels::INT_REF;
+		break;
+	case 3:
+		refId = Neuropixels::INT_REF;
+		refElectrodeBank = 1;
+		break;
+	case 4:
+		refId = Neuropixels::INT_REF;
+		refElectrodeBank = 2;
+		break;
+	case 5:
+		refId = Neuropixels::INT_REF;
+		refElectrodeBank = 3;
+		break;
+
+	case 6:
+		refId = Neuropixels::TIP_REF;
+		shank = 1;
+		break;
+	case 7:
+		refId = Neuropixels::INT_REF;
+		shank = 1;
+		break;
+	case 8:
+		refId = Neuropixels::INT_REF;
+		shank = 1;
+		refElectrodeBank = 1;
+		break;
+	case 9:
+		refId = Neuropixels::INT_REF;
+		shank = 1;
+		refElectrodeBank = 2;
+		break;
+	case 10:
+		refId = Neuropixels::INT_REF;
+		shank = 1;
+		refElectrodeBank = 3;
+		break;
+
+
+	case 11:
+		refId = Neuropixels::TIP_REF;
+		shank = 2;
+		break;
+	case 12:
+		refId = Neuropixels::INT_REF;
+		shank = 2;
+		break;
+	case 13:
+		refId = Neuropixels::INT_REF;
+		shank = 2;
+		refElectrodeBank = 1;
+		break;
+	case 14:
+		refId = Neuropixels::INT_REF;
+		shank = 2;
+		refElectrodeBank = 2;
+		break;
+	case 15:
+		refId = Neuropixels::INT_REF;
+		shank = 2;
+		refElectrodeBank = 3;
+		break;
+
+	case 16:
+		refId = Neuropixels::TIP_REF;
+		shank = 3;
+		break;
+	case 17:
+		refId = Neuropixels::INT_REF;
+		shank = 3;
+		break;
+	case 18:
+		refId = Neuropixels::INT_REF;
+		refElectrodeBank = 1;
+		shank = 3;
+		break;
+	case 19:
+		refId = Neuropixels::INT_REF;
+		refElectrodeBank = 2;
+		shank = 3;
+		break;
+	case 20:
+		refId = Neuropixels::INT_REF;
+		refElectrodeBank = 3;
+		shank = 3;
+		break;
+
+
+	default:
+		refId = Neuropixels::EXT_REF;
+	}
+
+	for (int channel = 0; channel < channel_count; channel++)
+		Neuropixels::setReference(basestation->slot, 
+									headstage->port, 
+									dock,
+									shank,
+									channel, 
+									refId, 
+									refElectrodeBank);
 
 	if (shouldWriteConfiguration)
 		errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 
 	//std::cout << "Wrote reference " << int(refId) << ", " << int(refElectrodeBank) << " with error code " << errorCode << std::endl;
+
+	referenceIndex = refIndex;
 }
 
 void Neuropixels2::writeConfiguration()
@@ -272,7 +393,7 @@ void Neuropixels2::run()
 
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j] = float(data[packetNum * 384 + j]) * 1.2f / 1024.0f * 1000000.0f / 80.0f; // convert to microvolts
+					apSamples[j] = float(data[packetNum * 384 + j]) * 1.2f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
 				}
 
 				ap_timestamp += 1;

@@ -100,9 +100,12 @@ public:
 	BackgroundLoader(NeuropixThread* t, NeuropixEditor* e);
 	~BackgroundLoader();
 	void run();
+
 private:
 	NeuropixThread* thread;
 	NeuropixEditor* editor;
+
+	bool isInitialized;
 };
 
 /**
@@ -136,6 +139,8 @@ public:
 
 	OwnedArray<ProbeButton> probeButtons;
 
+	ScopedPointer<BackgroundLoader> uiLoader;
+
 private:
 
 	OwnedArray<UtilityButton> directoryButtons;
@@ -147,7 +152,7 @@ private:
 
 	Array<File> savingDirectories;
 
-	ScopedPointer<BackgroundLoader> uiLoader;
+	
 	ScopedPointer<EditorBackground> background;
 
 	ScopedPointer<UtilityButton> addSyncChannelButton;

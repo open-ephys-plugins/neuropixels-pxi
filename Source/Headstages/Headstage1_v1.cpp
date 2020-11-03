@@ -72,6 +72,7 @@ void Flex1_v1::getInfo()
 
 Headstage1_v1::Headstage1_v1(Basestation* bs_, int port) : Headstage(bs_, port)
 {
+	getInfo();
 	
 	flexCables.add(new Flex1_v1(this));
 
@@ -81,6 +82,8 @@ Headstage1_v1::Headstage1_v1(Basestation* bs_, int port) : Headstage(bs_, port)
 
 Flex1_v1::Flex1_v1(Headstage* hs_) : Flex(hs_, 0)
 {
+	getInfo();
+
 	errorCode = np::SUCCESS;
 }
 

@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class SimulatedBasestation : public Basestation
 {
 public:
-	SimulatedBasestation(int slot) : Basestation(slot) { }
+	SimulatedBasestation(int slot) : Basestation(slot) { getInfo();  }
 	~SimulatedBasestation() { }
 
 	void getInfo() override;
@@ -51,9 +51,11 @@ public:
 
 	float getFillPercentage() override;
 
-	void updateBsFirmware(String filepath) { }
+	void updateBsFirmware(File file) override;
 
-	void updateBscFirmware(String filepath) { }
+	void updateBscFirmware(File file) override;
+
+	void run() override;
 
 	bool runBist(signed char port, BIST bistType) override
 	{
@@ -64,7 +66,7 @@ public:
 class SimulatedBasestationConnectBoard : public BasestationConnectBoard
 {
 public:
-	SimulatedBasestationConnectBoard(Basestation* bs): BasestationConnectBoard(bs) {}
+	SimulatedBasestationConnectBoard(Basestation* bs) : BasestationConnectBoard(bs) { getInfo(); }
 	void getInfo() override;
 };
 
