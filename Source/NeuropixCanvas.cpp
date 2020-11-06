@@ -656,6 +656,9 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
                     comboBox->addItem(fileChooser.getResult().getFullPathName(), comboBox->getNumItems() + 1);
                     comboBox->setSelectedId(comboBox->getNumItems());
                 }
+                else {
+                    comboBox->setSelectedId(0);
+                }
             }
         }
         else if (comboBox == bsFirmwareComboBox)
@@ -668,6 +671,9 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
                 {
                     comboBox->addItem(fileChooser.getResult().getFullPathName(), comboBox->getNumItems() + 1);
                     comboBox->setSelectedId(comboBox->getNumItems());
+                }
+                else {
+                    comboBox->setSelectedId(0);
                 }
             }
         }

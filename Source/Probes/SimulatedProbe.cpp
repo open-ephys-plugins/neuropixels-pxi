@@ -55,37 +55,85 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	lfp_sample_rate = 2500.0f;
 	ap_sample_rate = 30000.0f;
 
-	availableApGains.add(50.0f);
-	availableApGains.add(125.0f);
-	availableApGains.add(250.0f);
-	availableApGains.add(500.0f);
-	availableApGains.add(1000.0f);
-	availableApGains.add(1500.0f);
-	availableApGains.add(2000.0f);
-	availableApGains.add(3000.0f);
+	if (type == ProbeType::NP1 ||
+		type == ProbeType::NHP10 ||
+		type == ProbeType::NHP25 ||
+		type == ProbeType::NHP45 ||
+		type == ProbeType::UHD1 ||
+		type == ProbeType::NHP1)
+	{
+		availableApGains.add(50.0f);
+		availableApGains.add(125.0f);
+		availableApGains.add(250.0f);
+		availableApGains.add(500.0f);
+		availableApGains.add(1000.0f);
+		availableApGains.add(1500.0f);
+		availableApGains.add(2000.0f);
+		availableApGains.add(3000.0f);
 
-	availableLfpGains.add(50.0f);
-	availableLfpGains.add(125.0f);
-	availableLfpGains.add(250.0f);
-	availableLfpGains.add(500.0f);
-	availableLfpGains.add(1000.0f);
-	availableLfpGains.add(1500.0f);
-	availableLfpGains.add(2000.0f);
-	availableLfpGains.add(3000.0f);
+		availableLfpGains.add(50.0f);
+		availableLfpGains.add(125.0f);
+		availableLfpGains.add(250.0f);
+		availableLfpGains.add(500.0f);
+		availableLfpGains.add(1000.0f);
+		availableLfpGains.add(1500.0f);
+		availableLfpGains.add(2000.0f);
+		availableLfpGains.add(3000.0f);
 
-	availableReferences.add("Ext");
-	availableReferences.add("Tip");
-	availableReferences.add("192");
-	availableReferences.add("576");
-	availableReferences.add("960");
+		apGainIndex = 3;
+		lfpGainIndex = 2;
+		apFilterState = true;
+		apFilterSwitch = true;
 
-	apGainIndex = 3;
-	lfpGainIndex = 2;
+		availableReferences.add("Ext");
+		availableReferences.add("Tip");
+		availableReferences.add("192");
+		availableReferences.add("576");
+		availableReferences.add("960");
+
+	}
+	else {
+		apGainIndex = -1;
+		lfpGainIndex = -1;
+		apFilterSwitch = false;
+
+		if (type == ProbeType::NP2_1)
+		{
+			availableReferences.add("Ext");
+			availableReferences.add("Tip");
+			availableReferences.add("128");
+			availableReferences.add("508");
+			availableReferences.add("888");
+			availableReferences.add("1252");
+		}
+		else {
+			availableReferences.add("Ext");
+			availableReferences.add("1: Tip");
+			availableReferences.add("1: 128");
+			availableReferences.add("1: 512");
+			availableReferences.add("1: 896");
+			availableReferences.add("1: 1280");
+			availableReferences.add("2: Tip");
+			availableReferences.add("2: 128");
+			availableReferences.add("2: 512");
+			availableReferences.add("2: 896");
+			availableReferences.add("2: 1280");
+			availableReferences.add("3: Tip");
+			availableReferences.add("3: 128");
+			availableReferences.add("3: 512");
+			availableReferences.add("3: 896");
+			availableReferences.add("3: 1280");
+			availableReferences.add("4: Tip");
+			availableReferences.add("4: 128");
+			availableReferences.add("4: 512");
+			availableReferences.add("4: 896");
+			availableReferences.add("4: 1280");
+		}
+		
+	}
+
 	referenceIndex = 0;
-	apFilterState = true;
-
 	
-
 }
 
 void SimulatedProbe::initialize()
