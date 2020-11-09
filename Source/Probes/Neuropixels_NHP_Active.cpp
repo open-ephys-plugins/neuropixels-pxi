@@ -21,102 +21,75 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include "Neuropixels1_v3.h"
+#include "Neuropixels_NHP_Active.h"
 #include "Geometry.h"
 
 #define MAXLEN 50
 
-void Neuropixels1_v3::getInfo()
+void Neuropixels_NHP_Active::getInfo()
 {
 	errorCode = Neuropixels::readProbeSN(basestation->slot, headstage->port, dock, &info.serial_number);
 
 	char pn[MAXLEN];
-	errorCode = Neuropixels::readProbePN(basestation->slot, headstage->port, dock, pn, MAXLEN);
+	errorCode = Neuropixels::readProbePN(basestation->slot_c, headstage->port_c, dock, pn, MAXLEN);
 
 	info.part_number = String(pn);
 }
 
-Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
+Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 0)
 {
-	getInfo();
+
+    getInfo();
 
 	setStatus(ProbeStatus::DISCONNECTED);
 
-	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
+    Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 
-	if (Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata))
-	{
+	name = probeMetadata.name;
+	type = probeMetadata.type;
 
-		name = probeMetadata.name;
-		type = probeMetadata.type;
+	apGainIndex = 3;
+	lfpGainIndex = 2;
+	referenceIndex = 0;
+	apFilterState = true;
 
-		apGainIndex = 3;
-		lfpGainIndex = 2;
-		referenceIndex = 0;
-		apFilterState = true;
+	channel_count = 384;
+	lfp_sample_rate = 2500.0f;
+	ap_sample_rate = 30000.0f;
 
-		channel_count = 384;
-		lfp_sample_rate = 2500.0f;
-		ap_sample_rate = 30000.0f;
+	availableApGains.add(50.0f);
+	availableApGains.add(125.0f);
+	availableApGains.add(250.0f);
+	availableApGains.add(500.0f);
+	availableApGains.add(1000.0f);
+	availableApGains.add(1500.0f);
+	availableApGains.add(2000.0f);
+	availableApGains.add(3000.0f);
 
+	availableLfpGains.add(50.0f);
+	availableLfpGains.add(125.0f);
+	availableLfpGains.add(250.0f);
+	availableLfpGains.add(500.0f);
+	availableLfpGains.add(1000.0f);
+	availableLfpGains.add(1500.0f);
+	availableLfpGains.add(2000.0f);
+	availableLfpGains.add(3000.0f);
 
-		availableApGains.add(50.0f);
-		availableApGains.add(125.0f);
-		availableApGains.add(250.0f);
-		availableApGains.add(500.0f);
-		availableApGains.add(1000.0f);
-		availableApGains.add(1500.0f);
-		availableApGains.add(2000.0f);
-		availableApGains.add(3000.0f);
+	availableReferences.add("REF_ELEC");
+	availableReferences.add("TIP_REF");
+	availableReferences.add("INT_REF");
 
-		availableLfpGains.add(50.0f);
-		availableLfpGains.add(125.0f);
-		availableLfpGains.add(250.0f);
-		availableLfpGains.add(500.0f);
-		availableLfpGains.add(1000.0f);
-		availableLfpGains.add(1500.0f);
-		availableLfpGains.add(2000.0f);
-		availableLfpGains.add(3000.0f);
+	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
-		availableReferences.add("Ext");
-		availableReferences.add("Tip");
-		availableReferences.add("192");
-		availableReferences.add("576");
-		availableReferences.add("960");
-
-		availableBanks = { Bank::A,
-			Bank::B,
-			Bank::C,
-			Bank::D,
-			Bank::E,
-			Bank::F,
-			Bank::G,
-			Bank::H,
-			Bank::I,
-			Bank::J,
-			Bank::K,
-			Bank::L};
-
-		errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
-
-	}
-	else
-	{
-		/* code */
-	}
-	
 
 }
 
-void Neuropixels1_v3::initialize()
+void Neuropixels_NHP_Active::initialize()
 {
+	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
 
-	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
-	std::cout << "openProbe: slot: " << basestation->slot << " port: " << headstage->port << " dock: " << dock << " errorCode: " << errorCode << std::endl;
-
-	if (errorCode == np::SUCCESS)
+	if (errorCode == Neuropixels::SUCCESS)
 	{
-		std::cout << "Configuring probe..." << std::endl;
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
@@ -129,7 +102,7 @@ void Neuropixels1_v3::initialize()
 }
 
 
-void Neuropixels1_v3::calibrate()
+void Neuropixels_NHP_Active::calibrate()
 {
 	File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
 	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
@@ -168,7 +141,7 @@ void Neuropixels1_v3::calibrate()
 	}
 }
 
-void Neuropixels1_v3::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Active::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
 {
 
 	Neuropixels::NP_ErrorCode ec;
@@ -195,7 +168,7 @@ void Neuropixels1_v3::selectElectrodes(ProbeSettings settings, bool shouldWriteC
 		{
 			ec = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 
-			if (!ec == np::SUCCESS)
+			if (!ec == Neuropixels::SUCCESS)
 				std::cout << "Failed to write channel config " << std::endl;
 			else
 				std::cout << "Successfully wrote channel config " << std::endl;
@@ -204,7 +177,7 @@ void Neuropixels1_v3::selectElectrodes(ProbeSettings settings, bool shouldWriteC
 
 }
 
-void Neuropixels1_v3::setApFilterState(bool filterIsOn, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Active::setApFilterState(bool filterIsOn, bool shouldWriteConfiguration)
 {
 	if (apFilterState != filterIsOn)
 	{
@@ -221,12 +194,12 @@ void Neuropixels1_v3::setApFilterState(bool filterIsOn, bool shouldWriteConfigur
 
 		apFilterState = filterIsOn;
 	}
-	
 }
 
-void Neuropixels1_v3::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Active::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
 {
-	if (apGain != apGainIndex || lfpGain != lfpGainIndex)
+
+    if (apGain != apGainIndex || lfpGain != lfpGainIndex)
 	{
 		for (int channel = 0; channel < 384; channel++)
 		{
@@ -244,13 +217,11 @@ void Neuropixels1_v3::setAllGains(int apGain, int lfpGain, bool shouldWriteConfi
 		apGainIndex = apGain;
 		lfpGainIndex = lfpGain;
 	}
-	
 }
 
 
-void Neuropixels1_v3::setAllReferences(int refIndex, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Active::setAllReferences(int refIndex, bool shouldWriteConfiguration)
 {
-
 	if (refIndex != referenceIndex)
 	{
 		Neuropixels::channelreference_t refId;
@@ -267,14 +238,6 @@ void Neuropixels1_v3::setAllReferences(int refIndex, bool shouldWriteConfigurati
 		case 2:
 			refId = Neuropixels::INT_REF;
 			break;
-		case 3:
-			refId = Neuropixels::INT_REF;
-			refElectrodeBank = 1;
-			break;
-		case 4:
-			refId = Neuropixels::INT_REF;
-			refElectrodeBank = 2;
-			break;
 		default:
 			refId = Neuropixels::EXT_REF;
 		}
@@ -290,31 +253,31 @@ void Neuropixels1_v3::setAllReferences(int refIndex, bool shouldWriteConfigurati
 		referenceIndex = refIndex;
 	}
 
-
 }
 
-void Neuropixels1_v3::writeConfiguration()
+void Neuropixels_NHP_Active::writeConfiguration()
 {
 	errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 }
 
-void Neuropixels1_v3::startAcquisition()
+void Neuropixels_NHP_Active::startAcquisition()
 {
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
-	//std::cout << "... and clearing buffers" << std::endl;
+
 	apBuffer->clear();
 	lfpBuffer->clear();
 	std::cout << "  Starting thread." << std::endl;
 	startThread();
 }
 
-void Neuropixels1_v3::stopAcquisition()
+void Neuropixels_NHP_Active::stopAcquisition()
 {
 	stopThread(1000);
 }
 
-void Neuropixels1_v3::run()
+
+void Neuropixels_NHP_Active::run()
 {
 
 	//std::cout << "Thread running." << std::endl;

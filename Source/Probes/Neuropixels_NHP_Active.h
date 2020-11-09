@@ -21,20 +21,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef __NEUROPIXNHP_PASSIVE_H_2C4C2D67__
-#define __NEUROPIXNHP_PASSIVE_H_2C4C2D67__
+#ifndef __NEUROPIXNHP_ACTIVE_H_2C4C2D67__
+#define __NEUROPIXNHP_ACTIVE_H_2C4C2D67__
 
 #include "../NeuropixComponents.h"
 
-#include "../API/v1/NeuropixAPI.h"
 #include "../API/v3/NeuropixAPI.h"
+#include "../API/v1/NeuropixAPI.h"
 
 # define SAMPLECOUNT 64
 
-class Neuropixels_NHP_Passive : public Probe
+class Neuropixels_NHP_Active : public Probe
 {
 public:
-	Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs, Flex* fl);
+	Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, Flex* fl);
 
 	void getInfo() override;
 
@@ -59,9 +59,7 @@ public:
 	Neuropixels::electrodePacket packet[SAMPLECOUNT];
 	Neuropixels::NP_ErrorCode errorCode;
 
-	Array<int> channel_map;
-
 };
 
 
-#endif  // _NEUROPIXNHP_PASSIVE_2C4C2D67__
+#endif  // __NEUROPIXNHP_ACTIVE_H_2C4C2D67__

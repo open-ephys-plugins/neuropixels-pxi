@@ -237,8 +237,10 @@ void Neuropixels_NHP_Passive::writeConfiguration()
 void Neuropixels_NHP_Passive::startAcquisition()
 {
 	ap_timestamp = 0;
-	apBuffer->clear();
+	lfp_timestamp = 0;
 
+	apBuffer->clear();
+	lfpBuffer->clear();
 	std::cout << "  Starting thread." << std::endl;
 	startThread();
 }
@@ -247,6 +249,7 @@ void Neuropixels_NHP_Passive::stopAcquisition()
 {
 	stopThread(1000);
 }
+
 void Neuropixels_NHP_Passive::run()
 {
 
