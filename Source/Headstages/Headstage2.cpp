@@ -80,7 +80,7 @@ Headstage2::Headstage2(Basestation* bs_, int port) : Headstage(bs_, port)
 
 	Neuropixels::getHSSupportedProbeCount(basestation->slot, port, &count);
 
-	for (int dock = 0; dock < count; dock++)
+	for (int dock = 1; dock <= count; dock++)
 	{
 		bool flexDetected;
 

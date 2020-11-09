@@ -43,13 +43,13 @@ bool Geometry::forPartNumber(String PN,
 	else if (PN.equalsIgnoreCase("NP1200") || PN.equalsIgnoreCase("NP1210"))
 		NHP1(em, pm);
 
-	else if (PN.equalsIgnoreCase("PRB2_1_2_0640_0") || PN.equalsIgnoreCase("NP2000"))
+	else if (PN.equalsIgnoreCase("PRB2_1_2_0640_0") || PN.equalsIgnoreCase("PRB2_1_4_0480_1") || PN.equalsIgnoreCase("NP2000"))
 		NP2(1, em, pm);
 
 	else if (PN.equalsIgnoreCase("PRB2_4_2_0640_0") || PN.equalsIgnoreCase("NP2010"))
 		NP2(4, em, pm);
 
-	else if (PN.equalsIgnoreCase("PRB_1_4_0480_1") || PN.equalsIgnoreCase("PRB_1_4_0480_1_C"))
+	else if (PN.equalsIgnoreCase("PRB_1_4_0480_1") || PN.equalsIgnoreCase("PRB_1_4_0480_1_C") || PN.equalsIgnoreCase("PRB_1_2_0480_2"))
 		NP1(em, pm);
 
 	else if (PN.equalsIgnoreCase("NP1100"))
@@ -63,6 +63,8 @@ bool Geometry::forPartNumber(String PN,
 
 	if (!found_valid_part_number)
 		CoreServices::sendStatusMessage("Unrecognized part number: " + PN);
+
+	std::cout << "Part #: " << PN << " Valid: " << found_valid_part_number << std::endl;
 
 	return found_valid_part_number;
 

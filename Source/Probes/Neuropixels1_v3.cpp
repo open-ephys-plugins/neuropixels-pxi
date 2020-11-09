@@ -36,7 +36,7 @@ void Neuropixels1_v3::getInfo()
 	info.part_number = String(pn);
 }
 
-Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 0)
+Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
 {
 	getInfo();
 
@@ -44,66 +44,79 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 
-	name = probeMetadata.name;
-	type = probeMetadata.type;
+	if (Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata))
+	{
 
-	apGainIndex = 3;
-	lfpGainIndex = 2;
-	referenceIndex = 0;
-	apFilterState = true;
+		name = probeMetadata.name;
+		type = probeMetadata.type;
 
-	channel_count = 384;
-	lfp_sample_rate = 2500.0f;
-	ap_sample_rate = 30000.0f;
+		apGainIndex = 3;
+		lfpGainIndex = 2;
+		referenceIndex = 0;
+		apFilterState = true;
+
+		channel_count = 384;
+		lfp_sample_rate = 2500.0f;
+		ap_sample_rate = 30000.0f;
 
 
-	availableApGains.add(50.0f);
-	availableApGains.add(125.0f);
-	availableApGains.add(250.0f);
-	availableApGains.add(500.0f);
-	availableApGains.add(1000.0f);
-	availableApGains.add(1500.0f);
-	availableApGains.add(2000.0f);
-	availableApGains.add(3000.0f);
+		availableApGains.add(50.0f);
+		availableApGains.add(125.0f);
+		availableApGains.add(250.0f);
+		availableApGains.add(500.0f);
+		availableApGains.add(1000.0f);
+		availableApGains.add(1500.0f);
+		availableApGains.add(2000.0f);
+		availableApGains.add(3000.0f);
 
-	availableLfpGains.add(50.0f);
-	availableLfpGains.add(125.0f);
-	availableLfpGains.add(250.0f);
-	availableLfpGains.add(500.0f);
-	availableLfpGains.add(1000.0f);
-	availableLfpGains.add(1500.0f);
-	availableLfpGains.add(2000.0f);
-	availableLfpGains.add(3000.0f);
+		availableLfpGains.add(50.0f);
+		availableLfpGains.add(125.0f);
+		availableLfpGains.add(250.0f);
+		availableLfpGains.add(500.0f);
+		availableLfpGains.add(1000.0f);
+		availableLfpGains.add(1500.0f);
+		availableLfpGains.add(2000.0f);
+		availableLfpGains.add(3000.0f);
 
-	availableReferences.add("Ext");
-	availableReferences.add("Tip");
-	availableReferences.add("192");
-	availableReferences.add("576");
-	availableReferences.add("960");
+		availableReferences.add("Ext");
+		availableReferences.add("Tip");
+		availableReferences.add("192");
+		availableReferences.add("576");
+		availableReferences.add("960");
 
-	availableBanks = { Bank::A,
-		Bank::B,
-		Bank::C,
-		Bank::D,
-		Bank::E,
-		Bank::F,
-		Bank::G,
-		Bank::H,
-		Bank::I,
-		Bank::J,
-		Bank::K,
-		Bank::L};
+		availableBanks = { Bank::A,
+			Bank::B,
+			Bank::C,
+			Bank::D,
+			Bank::E,
+			Bank::F,
+			Bank::G,
+			Bank::H,
+			Bank::I,
+			Bank::J,
+			Bank::K,
+			Bank::L};
 
-	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
+		errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
+
+	}
+	else
+	{
+		/* code */
+	}
+	
 
 }
 
 void Neuropixels1_v3::initialize()
 {
-	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
+
+	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
+	std::cout << "openProbe: slot: " << basestation->slot << " port: " << headstage->port << " dock: " << dock << " errorCode: " << errorCode << std::endl;
 
 	if (errorCode == np::SUCCESS)
 	{
+		std::cout << "Configuring probe..." << std::endl;
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 

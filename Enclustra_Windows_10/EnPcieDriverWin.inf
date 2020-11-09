@@ -1,0 +1,124 @@
+;/*++
+;
+;-------------------------------------------------------------------------
+;			Copyright (c) Enclustra.  All rights reserved.
+;-------------------------------------------------------------------------
+;
+;Module Name:
+;
+;    driver.INF
+;
+;Abstract:
+;	 INF file for a Enclustra PCI Express device.
+;--*/
+
+[version]
+Signature						= "$Windows NT$"
+Provider						= %MSFT%
+Class							= Memory Controller
+ClassGuid						= {5099944C-F6B9-4057-A056-8C550228544C}
+CatalogFile						= EnPcieDriverWin.cat
+DriverVer						= 11/26/2018,1.09.0000.0000;
+
+
+;-------------------------------------------------------------------------
+; Class Section
+;-------------------------------------------------------------------------
+[ClassInstall32]
+Addreg							= ClassReg     
+
+[ClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+HKR,,DeviceCharacteristics,0x10001,0x100										 ;Use same security checks on relative opens
+HKR,,Security,,"D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;BU)(A;;GA;;;AU)(A;;GA;;;WD)" ;Allow generic all users access to system.  
+
+;-------------------------------------------------------------------------
+; Device Install Section
+;-------------------------------------------------------------------------
+[ControlFlags]
+ExcludeFromSelect				= *
+
+[Manufacturer]
+%MSFT%							= MSFT,NTAMD64
+
+
+[SourceDisksNames]
+1								= %DISK_NAME%,
+
+; For Win2k
+;-----------------
+[Msft]
+;		DisplayName					  	Section					DeviceId
+;		-----------						-------					--------
+%Enclustra_PCI_Express.DRVDESC% =	Enclustra_PCI_Express,   PCI\VEN_1C57&DEV_7018
+
+; For XP and later
+;-----------------
+[MSFT.NTAMD64]
+;		DisplayName					  	Section					DeviceId
+;		-----------						-------					--------
+%Enclustra_PCI_Express.DRVDESC% =	Enclustra_PCI_Express,   PCI\VEN_1C57&DEV_7018
+
+
+[Enclustra_PCI_Express.NT]
+CopyFiles=Enclustra_PCI_Express.CopyFiles
+
+[Enclustra_PCI_Express.CopyFiles]
+EnPcieDriverWin.sys
+
+[Enclustra_PCI_Express.NT.HW]
+AddReg = MSI_REG
+
+[MSI_REG]
+HKR,Interrupt Management,,0x00000010
+HKR,Interrupt Management\MessageSignaledInterruptProperties,,0x00000010
+HKR,Interrupt Management\MessageSignaledInterruptProperties,MSISupported,0x00010001,1
+
+[Enclustra_PCI_Express.NT.Services]
+AddService		= Enclustra_PCI_Express ,0x00000002,Enclustra_PCI_Express_Service 
+
+[Enclustra_PCI_Express_Service]
+DisplayName		= %Enclustra_PCI_Express.SVCDESC%                            
+ServiceType		= 1                  ; SERVICE_KERNEL_DRIVER
+StartType		= 3                  ; SERVICE_DEMAND_START
+ErrorControl	= 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary	= %12%\EnPcieDriverWin.sys   
+
+;-------------------------------------------------------------------------
+; WDF Coinstaller installation
+;-------------------------------------------------------------------------
+[DestinationDirs]
+DefaultDestDir				= 12
+CoInstaller_CopyFiles		= 11
+
+[Enclustra_PCI_Express.NT.CoInstallers]
+AddReg						= CoInstaller_AddReg
+CopyFiles					= CoInstaller_CopyFiles
+
+[Enclustra_PCI_Express.NT.Wdf]
+KmdfService					= Enclustra_PCI_Express, Enclustra_PCI_Express_wdfsect
+[Enclustra_PCI_Express_wdfsect]
+KmdfLibraryVersion			= 1.9
+
+[CoInstaller_CopyFiles]
+WdfCoInstaller01009.dll
+
+[SourceDisksFiles]
+WdfCoInstaller01009.dll = 1 ; make sure the number matches with SourceDisksNames
+EnPcieDriverWin.sys				= 1
+
+[CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller01009.dll,WdfCoInstaller"
+
+
+;------------------------------------------------------------------------------
+;  String Definitions
+;------------------------------------------------------------------------------
+
+[Strings]
+MSFT							= "Enclustra"
+ClassName						= "Enclustra Devices"
+DISK_NAME						= "Enclustra PCI Express Adapter Install Disk"
+Enclustra_PCI_Express.SVCDESC	= "Enclustra PCI Express Adapter"
+Enclustra_PCI_Express.DRVDESC	= "Enclustra PCI Express Adapter"

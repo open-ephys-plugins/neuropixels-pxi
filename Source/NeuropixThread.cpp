@@ -28,6 +28,8 @@
 #include "Basestations/Basestation_v3.h"
 #include "Basestations/SimulatedBasestation.h"
 
+#include <vector>
+
 DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 {
 	return new NeuropixThread(sn);
@@ -55,6 +57,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	uint32_t availableslotmask;
 
+	std::vector<int> slotsToCheck;
 	np::scanPXI(&availableslotmask);
 
 	api_v1.isActive = true;
@@ -71,38 +74,54 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 			{
 				basestations.add(bs);
 			}
-				
+
 		}
 	}
 
 	if (basestations.size() == 0) // no basestations with API version match
 	{
+
 		Neuropixels::scanBS();
 
 		Neuropixels::basestationID list[16];
 			
 		int count = getDeviceList(&list[0], 16);
 
+		std::cout << "Found " << count << " devices..." << std::endl;
+ 
 		for (int i = 0; i < count; i++)
 		{
+
 			Neuropixels::NP_ErrorCode ec = getDeviceInfo(list[i].ID, &list[i]);
 
-			if (list[i].platformid == Neuropixels::NPPlatform_PXI)
+			int slotID;
+
+			bool foundSlot = tryGetSlotID(&list[i], &slotID);
+
+			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
 			{
-				Basestation* bs = new Basestation_v3(list[i].ID);
+
+				std::cout << "Got slot id: " << slotID << std::endl;
+
+				Basestation* bs = new Basestation_v3(slotID); 
 
 				if (bs->open())
 				{
+					std::cout << "Setting active API to v3" << std::endl;
 					api_v1.isActive = false;
 					api_v3.isActive = true;
-				}
+
 					basestations.add(bs);
+				}
+	
 			}
 			else {
 				CoreServices::sendStatusMessage("ONE Box not yet supported.");
 			}
 		}
 	}
+
+	std::cout << "Num basestations: " << basestations.size() << std::endl;
 
 	if (basestations.size() == 0) // no basestations at all
 	{

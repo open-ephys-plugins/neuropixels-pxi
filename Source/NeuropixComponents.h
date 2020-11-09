@@ -218,11 +218,14 @@ public:
 		basestation = bs_;
 		headstage = hs_;
 		flex = fl_;
+		isValid = false;
 	}
 
 	Basestation* basestation; // owned by NeuropixThread
 	Headstage* headstage; // owned by Basestation
 	Flex* flex; // owned by Headstage
+
+	bool isValid; //True if the PN is supported by the API
 
 	int dock;
 

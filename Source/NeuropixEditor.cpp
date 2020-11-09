@@ -409,6 +409,8 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 
 	int slotIndex = masterSelectBox->getSelectedId() - 1;
 
+	std::cout << "Slot index: " << slotIndex << std::endl;
+
 	if (comboBox == masterSelectBox)
 	{
 		thread->setMainSync(slotIndex);
@@ -446,12 +448,14 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 
 void NeuropixEditor::startAcquisition()
 {
-	canvas->startAcquisition();
+	if (canvas)
+		canvas->startAcquisition();
 }
 
 void NeuropixEditor::stopAcquisition()
 {
-	canvas->stopAcquisition();
+	if (canvas)
+		canvas->stopAcquisition();
 }
 
 void NeuropixEditor::buttonEvent(Button* button)
