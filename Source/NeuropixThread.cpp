@@ -106,9 +106,17 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	if (basestations.size() == 0) // no basestations at all
 	{
-		// pop-up window
-		basestations.add(new SimulatedBasestation(0));
-		basestations.getLast()->open(); // detects # of probes
+		bool response = AlertWindow::showOkCancelBox(AlertWindow::NoIcon,
+			"No basestations detected", 
+			"No Neuropixels PXI basestations were detected. Do you want to run this plugin in simulation mode?",
+			"Yes", "No", 0, 0);
+
+		if (response)
+		{
+			basestations.add(new SimulatedBasestation(0));
+			basestations.getLast()->open(); // detects # of probes
+		}
+		
 	}
 
 	bool foundSync = false;

@@ -54,9 +54,14 @@ bool SimulatedBasestation::open()
 	basestationConnectBoard->getInfo();
 
 	headstages.add(new SimulatedHeadstage(this, 0, "NP2000", 12395));
-	headstages.add(new SimulatedHeadstage(this, 1, "NP2010", 45678));
-	headstages.add(new SimulatedHeadstage(this, 2, "PRB_1_4_0480_1", 3222395));
-	headstages.add(new SimulatedHeadstage(this, 3, "PRB_1_4_0480_1", 3225678));
+	headstages.add(nullptr);
+	headstages.add(nullptr);
+	headstages.add(nullptr);
+
+
+	//headstages.add(new SimulatedHeadstage(this, 1, "NP2010", 45678));
+	//headstages.add(new SimulatedHeadstage(this, 2, "PRB_1_4_0480_1", 3222395));
+	//headstages.add(new SimulatedHeadstage(this, 3, "PRB_1_4_0480_1", 3225678));
 
 	for (auto headstage : headstages)
 	{
@@ -176,6 +181,9 @@ void SimulatedBasestation::updateBscFirmware(File file)
 	this->runThread(); //Upload firmware
 
 	bscFirmwarePath = "";
+
+	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
+		String("Basestation connect board firmware updated successfully. Please update the basestation firmware now."));
 }
 
 void SimulatedBasestation::updateBsFirmware(File file)
@@ -195,4 +203,7 @@ void SimulatedBasestation::updateBsFirmware(File file)
 	this->runThread(); //Upload firmware
 
 	bsFirmwarePath = "";
+
+	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
+		String("Please restart your computer and power cycle the PXI chassis for the changes to take effect."));
 }

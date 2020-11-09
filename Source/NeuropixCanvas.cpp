@@ -429,10 +429,10 @@ NeuropixInterface::NeuropixInterface(Probe* p,
     bscFirmwareButton->setTooltip("Upload firmware to selected basestation connect board");
     addChildComponent(bscFirmwareButton);
 
-    bscFirmwareLabel = new Label("BSC FIRMWARE", "Basestation connect board firmware:");
+    bscFirmwareLabel = new Label("BSC FIRMWARE", "1. Update basestation connect board firmware:");
     bscFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
-    bscFirmwareLabel->setBounds(550, 593, 300, 20);
-    bscFirmwareLabel->setColour(Label::textColourId, Colours::grey);
+    bscFirmwareLabel->setBounds(550, 593, 500, 20);
+    bscFirmwareLabel->setColour(Label::textColourId, Colours::orange);
     addChildComponent(bscFirmwareLabel);
 
     bsFirmwareComboBox = new ComboBox("bscFirmwareComboBox");
@@ -448,11 +448,17 @@ NeuropixInterface::NeuropixInterface(Probe* p,
     bsFirmwareButton->setTooltip("Upload firmware to selected basestation");
     addChildComponent(bsFirmwareButton);
 
-    bsFirmwareLabel = new Label("BS FIRMWARE", "Basestation firmware:");
+    bsFirmwareLabel = new Label("BS FIRMWARE", "2. Update basestation firmware:");
     bsFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
-    bsFirmwareLabel->setBounds(550, 663, 300, 20);
-    bsFirmwareLabel->setColour(Label::textColourId, Colours::grey);
+    bsFirmwareLabel->setBounds(550, 663, 500, 20);
+    bsFirmwareLabel->setColour(Label::textColourId, Colours::orange);
     addChildComponent(bsFirmwareLabel);
+
+    firmwareInstructionsLabel = new Label("FIRMWARE INSTRUCTIONS", "3. Power cycle computer and PXI chassis");
+    firmwareInstructionsLabel->setFont(Font("Small Text", 13, Font::plain));
+    firmwareInstructionsLabel->setBounds(550, 733, 500, 20);
+    firmwareInstructionsLabel->setColour(Label::textColourId, Colours::orange);
+    addChildComponent(firmwareInstructionsLabel);
 
     // COPY / PASTE / UPLOAD
     copyButton = new UtilityButton("COPY", Font("Small Text", 12, Font::plain));
@@ -747,7 +753,8 @@ void NeuropixInterface::buttonClicked(Button* button)
                 {
                     if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
                     {
-                        if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
+                        if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE || 
+                            electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
                             electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
                         else
                             electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
@@ -755,7 +762,8 @@ void NeuropixInterface::buttonClicked(Button* button)
                         
                     else
                     {
-                        if (electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
+                        if (electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE ||
+                            electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
                             electrodeMetadata.getReference(j).status = ElectrodeStatus::OPTIONAL_REFERENCE;
                         else
                             electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
@@ -875,6 +883,8 @@ void NeuropixInterface::buttonClicked(Button* button)
         bsFirmwareButton->setVisible(state);
         bsFirmwareComboBox->setVisible(state);
         bsFirmwareLabel->setVisible(state);
+
+        firmwareInstructionsLabel->setVisible(state);
 
         repaint();
     }
@@ -1826,7 +1836,15 @@ void NeuropixInterface::drawLegend(Graphics& g)
 
         for (int i = 0; i < referenceComboBox->getNumItems(); i++)
         {
-            g.setColour(Colour(200 - 10 * i, 110 - 10 * i, 20 * i));
+            String referenceDescription = referenceComboBox->getItemText(i);
+
+            if (referenceDescription.contains("Ext"))
+                g.setColour(Colours::pink);
+            else if (referenceDescription.contains("Tip"))
+                g.setColour(Colours::orange);
+            else
+                g.setColour(Colours::purple);
+
             g.fillRect(xOffset + 10, yOffset + 10 + 20 * i, 15, 15);
         }
 
@@ -1860,7 +1878,21 @@ Colour NeuropixInterface::getElectrodeColour(int i)
         }
         else if (mode == VisualizationMode::REFERENCE_VIEW)
         {
-            return Colours::green; // (200 - 10 * channelReference[i], 110 - 10 * channelReference[i], 20 * channelReference[i]);
+            if (referenceComboBox != nullptr)
+            {
+                String referenceDescription = referenceComboBox->getText();
+
+                if (referenceDescription.contains("Ext"))
+                    return Colours::pink;
+                else if (referenceDescription.contains("Tip"))
+                    return Colours::orange;
+                else
+                    return Colours::purple;
+            }
+            else {
+                return Colours::black;
+            }
+            
             
         }
         /*else if (mode == ACTIVITY_VIEW) // TODO

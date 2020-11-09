@@ -37,34 +37,42 @@ void EditorBackground::setFreqSelectAvailable(bool isAvailable)
 void EditorBackground::paint(Graphics& g)
 {
 
-	for (int i = 0; i < numBasestations; i++)
+	if (numBasestations > 0)
 	{
-		g.setColour(Colours::lightgrey);
-		g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 3);
-		g.setColour(Colours::darkgrey);
-		g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 1);
-
-		g.setColour(Colours::darkgrey);
-		g.setFont(20);
-		g.drawText(String(i + 1), 90 * i + 72, 15, 10, 10, Justification::centred);
-		g.setFont(8);
-		g.drawText(String("0"), 90 * i + 87, 100, 50, 10, Justification::centredLeft);
-		g.drawText(String("100"), 90 * i + 87, 60, 50, 10, Justification::centredLeft);
-		g.drawText(String("%"), 90 * i + 87, 80, 50, 10, Justification::centredLeft);
-
-		for (int j = 0; j < 4; j++)
+		for (int i = 0; i < numBasestations; i++)
 		{
-			g.setFont(10);
-			g.drawText(String(j + 1), 90 * i + 22, 90 - j * 22, 10, 10, Justification::centredLeft);
-		}
-	}
+			g.setColour(Colours::lightgrey);
+			g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 3);
+			g.setColour(Colours::darkgrey);
+			g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 1);
 
-	g.setColour(Colours::darkgrey);
-	g.setFont(10);
-	g.drawText(String("MASTER SYNC"), 90 * (numBasestations)+32, 13, 100, 10, Justification::centredLeft);
-	g.drawText(String("CONFIG AS"), 90 * (numBasestations)+32, 46, 100, 10, Justification::centredLeft);
-	if (freqSelectEnabled)
-		g.drawText(String("WITH FREQ"), 90 * (numBasestations)+32, 79, 100, 10, Justification::centredLeft);
+			g.setColour(Colours::darkgrey);
+			g.setFont(20);
+			g.drawText(String(i + 1), 90 * i + 72, 15, 10, 10, Justification::centred);
+			g.setFont(8);
+			g.drawText(String("0"), 90 * i + 87, 100, 50, 10, Justification::centredLeft);
+			g.drawText(String("100"), 90 * i + 87, 60, 50, 10, Justification::centredLeft);
+			g.drawText(String("%"), 90 * i + 87, 80, 50, 10, Justification::centredLeft);
+
+			for (int j = 0; j < 4; j++)
+			{
+				g.setFont(10);
+				g.drawText(String(j + 1), 90 * i + 22, 90 - j * 22, 10, 10, Justification::centredLeft);
+			}
+		}
+
+		g.setColour(Colours::darkgrey);
+		g.setFont(10);
+		g.drawText(String("MASTER SYNC"), 90 * (numBasestations)+32, 13, 100, 10, Justification::centredLeft);
+		g.drawText(String("CONFIG AS"), 90 * (numBasestations)+32, 46, 100, 10, Justification::centredLeft);
+		if (freqSelectEnabled)
+			g.drawText(String("WITH FREQ"), 90 * (numBasestations)+32, 79, 100, 10, Justification::centredLeft);
+	}
+	else {
+		g.setColour(Colours::darkgrey);
+		g.setFont(15);
+		g.drawText(String("NO BASESTATIONS DETECTED"), 0, 10, 250, 100, Justification::centred);
+	}
 
 }
 
@@ -330,7 +338,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	}
 	masterSelectBox->setSelectedItemIndex(0, dontSendNotification);
 	masterSelectBox->addListener(this);
-	addAndMakeVisible(masterSelectBox);
+	addChildComponent(masterSelectBox);
 
 	masterConfigBox = new ComboBox("MasterConfigComboBox");
 	masterConfigBox->setBounds(90 * (basestations.size())+32, 72, 78, 20);
@@ -338,7 +346,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	masterConfigBox->addItem(String("OUTPUT"), 2);
 	masterConfigBox->setSelectedItemIndex(0, dontSendNotification);
 	masterConfigBox->addListener(this);
-	addAndMakeVisible(masterConfigBox);
+	addChildComponent(masterConfigBox);
 
 	Array<int> syncFrequencies = t->getSyncFrequencies();
 
@@ -352,7 +360,6 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	freqSelectBox->addListener(this);
 	addChildComponent(freqSelectBox);
 
-	desiredWidth = 100 * basestations.size() + 120;
 
 	background = new EditorBackground(basestations.size(), false);
 	background->setBounds(0, 15, 500, 150);
@@ -365,7 +372,19 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 	addSyncChannelButton->addListener(this);
 	addSyncChannelButton->setTooltip("Add sync channel to the continuous data stream.");
 	addSyncChannelButton->setClickingTogglesState(true);
-	addAndMakeVisible(addSyncChannelButton);
+	addChildComponent(addSyncChannelButton);
+
+	if (basestations.size() > 0)
+	{
+		masterConfigBox->setVisible(true);
+		masterSelectBox->setVisible(true);
+		addSyncChannelButton->setVisible(true);
+		desiredWidth = 100 * basestations.size() + 120;
+	}
+	else
+	{
+		desiredWidth = 250;
+	}
 
 	uiLoader = new BackgroundLoader(t, this);
 	uiLoader->startThread();

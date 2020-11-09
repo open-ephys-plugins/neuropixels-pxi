@@ -153,6 +153,7 @@ private:
 	ScopedPointer<Label> bistLabel;
 	ScopedPointer<Label> bscFirmwareLabel;
 	ScopedPointer<Label> bsFirmwareLabel;
+	ScopedPointer<Label> firmwareInstructionsLabel;
 
 	ScopedPointer<Label> probeSettingsLabel;
 

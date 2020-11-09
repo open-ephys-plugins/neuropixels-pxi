@@ -312,6 +312,9 @@ void Basestation_v1::updateBscFirmware(File file)
 	this->runThread(); //Upload firmware
 
 	bscFirmwarePath = "";
+
+	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
+		String("Basestation connect board firmware updated successfully. Please update the basestation firmware now."));
 }
 
 void Basestation_v1::updateBsFirmware(File file)
@@ -330,6 +333,9 @@ void Basestation_v1::updateBsFirmware(File file)
 	this->runThread(); //Upload firmware
 
 	bsFirmwarePath = "";
+
+	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
+		String("Please restart your computer and power cycle the PXI chassis for the changes to take effect."));
 }
 
 void Basestation_v1::run()
@@ -344,6 +350,8 @@ void Basestation_v1::run()
 		errorCode = np::bs_update(slot_c,
 					  bsFirmwarePath.getCharPointer(),
 					  firmwareUpdateCallback);
+
+
 }
 
 
