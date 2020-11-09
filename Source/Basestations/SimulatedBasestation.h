@@ -57,7 +57,7 @@ public:
 
 	void run() override;
 
-	bool runBist(signed char port, BIST bistType) override
+	bool runBist(int port, int dock, BIST bistType) override
 	{
 		return true;
 	}

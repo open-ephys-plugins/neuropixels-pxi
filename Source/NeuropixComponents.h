@@ -357,7 +357,7 @@ public:
 	virtual void initialize() = 0;
 
 	/** Runs a built-in self-test for a specified port */
-	virtual bool runBist(signed char port, BIST bistType) = 0;
+	virtual bool runBist(int port, int dock, BIST bistType) = 0;
 
 	/** Sets the sync channel as an "input" (for external sync) */
 	virtual void setSyncAsInput() = 0;

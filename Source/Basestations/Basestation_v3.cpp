@@ -374,55 +374,55 @@ void Basestation_v3::updateBsFirmware(File file)
 }
 
 
-bool Basestation_v3::runBist(signed char port, BIST bistType)
+bool Basestation_v3::runBist(int port, int dock, BIST bistType)
 {
 
 	bool returnValue = false;
-	/*
 
 	switch (bistType)
 	{
 	case BIST::SIGNAL:
 	{
-		np::NP_ErrorCode errorCode = np::bistSignal(slot_c, port, &returnValue, stats);
+		if (Neuropixels::bistSignal(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
 		break;
 	}
 	case BIST::NOISE:
 	{
-		if (np::bistNoise(slot_c, port) == np::SUCCESS)
+		if (Neuropixels::bistNoise(slot, port, dock) == Neuropixels::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::PSB:
 	{
-		if (np::bistPSB(slot_c, port) == np::SUCCESS)
+		if (Neuropixels::bistPSB(slot, port, dock) == Neuropixels::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::SR:
 	{
-		if (np::bistSR(slot_c, port) == np::SUCCESS)
+		if (Neuropixels::bistSR(slot, port, dock) == Neuropixels::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::EEPROM:
 	{
-		if (np::bistEEPROM(slot_c, port) == np::SUCCESS)
+		if (Neuropixels::bistEEPROM(slot, port) == Neuropixels::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::I2C:
 	{
-		if (np::bistI2CMM(slot_c, port) == np::SUCCESS)
+		if (Neuropixels::bistI2CMM(slot, port, dock) == Neuropixels::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::SERDES:
 	{
-		unsigned char errors;
-		np::bistStartPRBS(slot_c, port);
+		int errors;
+		Neuropixels::bistStartPRBS(slot, port);
 		Sleep(200);
-		np::bistStopPRBS(slot_c, port, &errors);
+		Neuropixels::bistStopPRBS(slot, port, &errors);
 
 		if (errors == 0)
 			returnValue = true;
@@ -430,17 +430,17 @@ bool Basestation_v3::runBist(signed char port, BIST bistType)
 	}
 	case BIST::HB:
 	{
-		if (np::bistHB(slot_c, port) == np::SUCCESS)
+		if (Neuropixels::bistHB(slot, port, dock) == Neuropixels::SUCCESS)
 			returnValue = true;
 		break;
 	} case BIST::BS:
 	{
-		if (np::bistBS(slot_c) == np::SUCCESS)
+		if (Neuropixels::bistBS(slot) == Neuropixels::SUCCESS)
 			returnValue = true;
 		break;
 	} default:
 		CoreServices::sendStatusMessage("Test not found.");
-	}*/
+	}
 
 	return returnValue;
 }

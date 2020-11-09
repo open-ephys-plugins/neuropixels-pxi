@@ -355,8 +355,9 @@ void Basestation_v1::run()
 }
 
 
-bool Basestation_v1::runBist(signed char port, BIST bistType)
+bool Basestation_v1::runBist(int port, int dock, BIST bistType)
 {
+	signed char port_c = (signed char) port;
 
 	bool returnValue = false;
 
@@ -364,45 +365,45 @@ bool Basestation_v1::runBist(signed char port, BIST bistType)
 	{
 	case BIST::SIGNAL:
 	{
-		np::NP_ErrorCode errorCode = np::bistSignal(slot_c, port, &returnValue, stats);
+		np::NP_ErrorCode errorCode = np::bistSignal(slot_c, port_c, &returnValue, stats);
 		break;
 	}
 	case BIST::NOISE:
 	{
-		if (np::bistNoise(slot_c, port) == np::SUCCESS)
+		if (np::bistNoise(slot_c, port_c) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::PSB:
 	{
-		if (np::bistPSB(slot_c, port) == np::SUCCESS)
+		if (np::bistPSB(slot_c, port_c) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::SR:
 	{
-		if (np::bistSR(slot_c, port) == np::SUCCESS)
+		if (np::bistSR(slot_c, port_c) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::EEPROM:
 	{
-		if (np::bistEEPROM(slot_c, port) == np::SUCCESS)
+		if (np::bistEEPROM(slot_c, port_c) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::I2C:
 	{
-		if (np::bistI2CMM(slot_c, port) == np::SUCCESS)
+		if (np::bistI2CMM(slot_c, port_c) == np::SUCCESS)
 			returnValue = true;
 		break;
 	}
 	case BIST::SERDES:
 	{
 		unsigned char errors;
-		np::bistStartPRBS(slot_c, port);
+		np::bistStartPRBS(slot_c, port_c);
 		Sleep(200);
-		np::bistStopPRBS(slot_c, port, &errors);
+		np::bistStopPRBS(slot_c, port_c, &errors);
 
 		if (errors == 0)
 			returnValue = true;
@@ -410,7 +411,7 @@ bool Basestation_v1::runBist(signed char port, BIST bistType)
 	}
 	case BIST::HB:
 	{
-		if (np::bistHB(slot_c, port) == np::SUCCESS)
+		if (np::bistHB(slot_c, port_c) == np::SUCCESS)
 			returnValue = true;
 		break;
 	} case BIST::BS:

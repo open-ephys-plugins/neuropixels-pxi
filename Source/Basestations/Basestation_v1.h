@@ -58,7 +58,7 @@ public:
 
 	float getFillPercentage() override;
 
-	bool runBist(signed char port, BIST bistType);
+	bool runBist(int port, int dock, BIST bistType);
 
 	void updateBsFirmware(File file) override;
 	void updateBscFirmware(File file) override;

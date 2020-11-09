@@ -796,8 +796,8 @@ void NeuropixInterface::buttonClicked(Button* button)
                 CoreServices::sendStatusMessage("Please select a test to run.");
             }
             else {
-                bool passed = probe->basestation->runBist(probe->headstage->port, 
-                    availableBists[bistComboBox->getSelectedId()]);
+                bool passed = probe->basestation->runBist(probe->headstage->port, probe->dock,
+                                                          availableBists[bistComboBox->getSelectedId()]);
 
                 String testString = bistComboBox->getText();
 
