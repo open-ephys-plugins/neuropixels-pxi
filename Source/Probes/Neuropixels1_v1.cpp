@@ -59,7 +59,6 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	lfp_sample_rate = 2500.0f;
 	ap_sample_rate = 30000.0f;
 
-
 	availableApGains.add(50.0f);
 	availableApGains.add(125.0f);
 	availableApGains.add(250.0f);

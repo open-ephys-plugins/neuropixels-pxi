@@ -753,9 +753,11 @@ void NeuropixInterface::buttonClicked(Button* button)
                 {
                     if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
                     {
-                        if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE || 
+                        if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE ||
                             electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
                             electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
+                        else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
+                            ; // skip
                         else
                             electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
                     }
@@ -765,6 +767,8 @@ void NeuropixInterface::buttonClicked(Button* button)
                         if (electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE ||
                             electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
                             electrodeMetadata.getReference(j).status = ElectrodeStatus::OPTIONAL_REFERENCE;
+                        else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
+                            ; // skipp
                         else
                             electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
                     }
@@ -1765,29 +1769,17 @@ void NeuropixInterface::drawLegend(Graphics& g)
     case ENABLE_VIEW: 
         g.drawMultiLineText("ENABLED?", xOffset, yOffset, 200);
         g.drawMultiLineText("YES", xOffset + 30, yOffset + 22, 200);
-        g.drawMultiLineText("X OUT", xOffset + 30, yOffset + 42, 200);
-        g.drawMultiLineText("X IN", xOffset + 30, yOffset + 62, 200);
-        g.drawMultiLineText("N/A", xOffset + 30, yOffset + 82, 200);
-        g.drawMultiLineText("AVAIL REF", xOffset + 30, yOffset + 102, 200);
-        g.drawMultiLineText("X REF", xOffset + 30, yOffset + 122, 200);
+        g.drawMultiLineText("NO", xOffset + 30, yOffset + 42, 200);
+        g.drawMultiLineText("REFERENCE", xOffset + 30, yOffset + 62, 200);
 
         g.setColour(Colours::yellow);
         g.fillRect(xOffset + 10, yOffset + 10, 15, 15);
 
-        g.setColour(Colours::goldenrod);
+        g.setColour(Colours::grey);
         g.fillRect(xOffset + 10, yOffset + 30, 15, 15);
 
-        g.setColour(Colours::maroon);
-        g.fillRect(xOffset + 10, yOffset + 50, 15, 15);
-
-        g.setColour(Colours::grey);
-        g.fillRect(xOffset + 10, yOffset + 70, 15, 15);
-
         g.setColour(Colours::black);
-        g.fillRect(xOffset + 10, yOffset + 90, 15, 15);
-
-        g.setColour(Colours::brown);
-        g.fillRect(xOffset + 10, yOffset + 110, 15, 15);
+        g.fillRect(xOffset + 10, yOffset + 50, 15, 15);
 
         break;
 
@@ -2007,8 +1999,10 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
                 electrodeMetadata[j].bank == bank &&
                 electrodeMetadata[j].shank == shank)
             {
-                if (electrodeMetadata[i].status == ElectrodeStatus::OPTIONAL_REFERENCE)
-                     electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
+                if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
+                    electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
+                else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
+                    ;
                 else
                     electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
             }
