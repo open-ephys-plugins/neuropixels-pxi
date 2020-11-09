@@ -80,17 +80,18 @@ BasestationConnectBoard_v3::BasestationConnectBoard_v3(Basestation* bs) : Basest
 
 Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
 {
+	slot = slot_number;
 	getInfo();
 }
 
 bool Basestation_v3::open()
 {
 
-	
+	std::cout << "Basestation_v3::open()" << std::endl;
 
-	std::cout << "OPENING PARENT" << std::endl;
+	errorCode = Neuropixels::openBS(slot);
 
-	errorCode = Neuropixels::openBS(slot_c);
+	std::cout << "Opening bs on slot: " << slot << " errorCode: " << errorCode << std::endl;
 
 	if (errorCode == np::VERSION_MISMATCH)
 	{
@@ -106,18 +107,22 @@ bool Basestation_v3::open()
 
 		savingDirectory = File();
 
-		for (signed char port = 1; port <= 4; port++)
+		for (int port = 1; port <= 4; port++)
 		{
-			bool detected;
+			bool detected = false;
 
 			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
 
-			if (errorCode == np::SUCCESS)
+			std::cout << "Detecting headstage on slot: " << slot << " port: " << port << " detected: " << detected << " errorCode: " << errorCode << std::endl;
+
+			if (detected && errorCode == np::SUCCESS)
 			{
 				char pn[MAXLEN];
 				Neuropixels::readHSPN(slot, port, pn, MAXLEN);
 
 				String hsPartNumber = String(pn);
+
+				std::cout << "Got part #: " << hsPartNumber << std::endl;
 
 				Headstage* headstage;
 
@@ -129,7 +134,7 @@ bool Basestation_v3::open()
 
 					headstage = new Headstage_Analog128(this, port);
 
-				else if (hsPartNumber == "NPM_HS_30") // 2.0 headstage, 2 docks
+				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 
 					headstage = new Headstage2(this, port);
 
@@ -212,30 +217,18 @@ void Basestation_v3::close()
 void Basestation_v3::setSyncAsInput()
 {
 
-	/*errorCode = np::setTriggerInput(slot, np::TRIGIN_SW);
-	if (errorCode != np::SUCCESS)
-	{
-		printf("Failed to set slot %d trigger as input!\n");
-		return;
-	}
+	std::cout << "Setting sync as input..." << std::endl;
 
-	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot);
-	if (errorCode != np::SUCCESS)
+	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
+	if (errorCode != Neuropixels::SUCCESS)
 	{
 		printf("Failed to set slot %d as sync master!\n");
 		return;
 	}
 
-	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SMA);
-	if (errorCode != np::SUCCESS)
+	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, Neuropixels::SyncSource_SMA);
+	if (errorCode != Neuropixels::SUCCESS)
 		printf("Failed to set slot %d SMA as sync source!\n");
-
-	errorCode = setTriggerOutput(slot, np::TRIGOUT_PXI1, np::TRIGIN_SW);
-	if (errorCode != np::SUCCESS)
-	{
-		printf("Failed to reset sync on SMA output on slot: %d\n", slot);
-	}*/
-
 
 }
 
@@ -246,17 +239,18 @@ Array<int> Basestation_v3::getSyncFrequencies()
 
 void Basestation_v3::setSyncAsOutput(int freqIndex)
 {
-	/*
 
-	errorCode = setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot_c);
-	if (errorCode != np::SUCCESS)
+	std::cout << "Setting sync as output..." << std::endl;
+	
+	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
+	if (errorCode != Neuropixels::SUCCESS)
 	{
 		printf("Failed to set slot %d as sync master!\n", slot);
 		return;
 	} 
 
-	errorCode = setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, np::TRIGIN_SYNCCLOCK);
-	if (errorCode != np::SUCCESS)
+	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, Neuropixels::SyncSource_Clock);
+	if (errorCode != Neuropixels::SUCCESS)
 	{
 		printf("Failed to set slot %d internal clock as sync source!\n", slot);
 		return;
@@ -265,18 +259,18 @@ void Basestation_v3::setSyncAsOutput(int freqIndex)
 	int freq = syncFrequencies[freqIndex];
 
 	printf("Setting slot %d sync frequency to %d Hz...\n", slot, freq);
-	errorCode = setParameter(Neuropixels::NP_PARAM_SYNCFREQUENCY_HZ, freq);
-	if (errorCode != np::SUCCESS)
+	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCFREQUENCY_HZ, freq);
+	if (errorCode != Neuropixels::SUCCESS)
 	{
 		printf("Failed to set slot %d sync frequency to %d Hz!\n", slot, freq);
 		return;
 	}
 
-	errorCode = setTriggerOutput(slot, Neuropixels::TRIGOUT_SMA, Neuropixels::TRIGIN_SHAREDSYNC);
-	if (errorCode != np::SUCCESS)
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, true);
+	if (errorCode != Neuropixels::SUCCESS)
 	{
 		printf("Failed to set sync on SMA output on slot: %d\n", slot);
-	}*/
+	}
 
 }
 

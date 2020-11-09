@@ -105,7 +105,7 @@ bool Basestation_v1::open()
 	if (errorCode == np::SUCCESS)
 	{
 
-		std::cout << "  Opened BS on slot " << slot << std::endl;
+		std::cout << "  Opened BSv1 on slot " << slot_c << std::endl;
 
 		basestationConnectBoard = new BasestationConnectBoard_v1(this);
 

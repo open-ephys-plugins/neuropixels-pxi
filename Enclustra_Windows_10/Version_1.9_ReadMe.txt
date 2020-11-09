@@ -1,0 +1,28 @@
+============
+Installation
+============
+
+1. Open the Windows Device Manager.
+
+You can find the Device Manager in Windows 10 by right-clicking on the Start Menu Icon, then selecting 'Device Manager' in the popup menu. In Windows 7 you can left-click to open the usual Start Menu, then right-click on 'Computer' to get a popup menu and choose 'Manage'.
+
+2. If Enclustra drivers are already installed, you must uninstall them as follows.
+
+2a. Right-click on an enclustra entry, which will be named 'Enclustra PCI Express Adapter'.
+2b. Select 'Uninstall device'.
+2c. In the Uninstall dialog, if there is an option to delete driver software, check that box.
+2d. Repeat the steps for each Enclustra entry (one per Imec BS card).
+2e. The devices should now show up in the device manager as 'PCI Memory Controller'. If you do not see that, try updating the view by selecting 'Action/Scan for hardware changes'.
+
+3. Install, which can only be done for 'PCI Memory Controller' entries, as follows:
+
+3a. Right-click on the device entry and select 'Update driver.
+3b. Browse to your previously extracted folder of Enclustra driver files and select that folder.
+
+
+Done.
+
+
+Note that Enclustra driver files can be obtained here: <https://billkarsh.github.io/SpikeGLX/>.
+
+

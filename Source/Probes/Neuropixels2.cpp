@@ -106,10 +106,16 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 
 void Neuropixels2::initialize()
 {
-	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
+
+	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
+	std::cout << "openProbe: slot: " << basestation->slot << " port: " << headstage->port << " dock: " << dock << " errorCode: " << errorCode << std::endl;
+
+	std::cout << " slot: " << basestation->slot << " port: " << headstage->port << " dock: "<< dock << std::endl;
+	std::cout << "Neuropixels2::initialize() errodCode: " << errorCode << std::endl;
 
 	if (errorCode == Neuropixels::SUCCESS)
 	{
+
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
@@ -387,7 +393,7 @@ void Neuropixels2::run()
 			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
 
-				eventCode = packetInfo[packetNum].Status >> 6; // AUX_IO<0:13>
+				eventCode = packetInfo[packetNum].Status; // AUX_IO<0:13>
 
 				uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
 
