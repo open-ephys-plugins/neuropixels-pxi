@@ -393,7 +393,7 @@ void Neuropixels2::run()
 			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
 
-				eventCode = packetInfo[packetNum].Status; // AUX_IO<0:13>
+				eventCode = packetInfo[packetNum].Status >> 6; // AUX_IO<0:13>
 
 				uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
 
