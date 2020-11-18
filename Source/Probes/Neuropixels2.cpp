@@ -399,7 +399,7 @@ void Neuropixels2::run()
 
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j] = float(data[packetNum * 384 + j]) * 1.2f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
+					apSamples[j] = float(data[packetNum * 384 + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
 				}
 
 				ap_timestamp += 1;
