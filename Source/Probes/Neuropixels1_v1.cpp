@@ -131,37 +131,44 @@ void Neuropixels1_v1::calibrate()
 	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
 	File probeDirectory = calibrationDirectory.getChildFile(String(info.serial_number));
 
-	std::cout << probeDirectory.getFullPathName() << std::endl;
-
-	if (probeDirectory.exists())
+	if (!probeDirectory.exists())
 	{
-		String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
-		String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
-		std::cout << adcFile << std::endl;
-		
-		errorCode = np::setADCCalibration(basestation->slot_c, headstage->port_c, adcFile.toRawUTF8());
-
-		if (errorCode == 0)
-			std::cout << "Successful ADC calibration." << std::endl;
-		else
-			std::cout << "Unsuccessful ADC calibration, failed with error code: " << errorCode << std::endl;
-
-		std::cout << gainFile << std::endl;
-		
-		errorCode = np::setGainCalibration(basestation->slot_c, headstage->port_c, gainFile.toRawUTF8());
-
-		if (errorCode == 0)
-			std::cout << "Successful gain calibration." << std::endl;
-		else
-			std::cout << "Unsuccessful gain calibration, failed with error code: " << errorCode << std::endl;
-
-		errorCode = np::writeProbeConfiguration(basestation->slot_c, headstage->port_c, false);
+		// check alternate location
+		baseDirectory = CoreServices::getSavedStateDirectory();
+		calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
+		probeDirectory = calibrationDirectory.getChildFile(String(info.serial_number));
 	}
-	else {
+
+	if (!probeDirectory.exists())
+	{
 		// show popup notification window
 		String message = "Missing calibration files for probe serial number " + String(info.serial_number) + ". ADC and Gain calibration files must be located in 'CalibrationInfo\\<serial_number>' folder in the directory where the Open Ephys GUI was launched. The GUI will proceed without calibration.";
 		AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
+		return;
 	}
+
+	String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
+	String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
+	std::cout << adcFile << std::endl;
+		
+	errorCode = np::setADCCalibration(basestation->slot_c, headstage->port_c, adcFile.toRawUTF8());
+
+	if (errorCode == 0)
+		std::cout << "Successful ADC calibration." << std::endl;
+	else
+		std::cout << "Unsuccessful ADC calibration, failed with error code: " << errorCode << std::endl;
+
+	std::cout << gainFile << std::endl;
+		
+	errorCode = np::setGainCalibration(basestation->slot_c, headstage->port_c, gainFile.toRawUTF8());
+
+	if (errorCode == 0)
+		std::cout << "Successful gain calibration." << std::endl;
+	else
+		std::cout << "Unsuccessful gain calibration, failed with error code: " << errorCode << std::endl;
+
+	errorCode = np::writeProbeConfiguration(basestation->slot_c, headstage->port_c, false);
+
 }
 
 void Neuropixels1_v1::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)

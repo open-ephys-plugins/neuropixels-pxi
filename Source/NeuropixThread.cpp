@@ -74,6 +74,9 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 			{
 				basestations.add(bs);
 			}
+			else {
+				delete bs;
+			}
 
 		}
 	}
