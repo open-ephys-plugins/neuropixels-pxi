@@ -33,7 +33,7 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
 {
     neuropixViewport = new Viewport();
-    neuropixViewport->setScrollBarsShown(true, true);
+    neuropixViewport->setScrollBarsShown(true, true, true, true);
 
     Array<Probe*> available_probes = thread->getProbes();
 
@@ -88,12 +88,15 @@ void NeuropixCanvas::endAnimation()
 
 void NeuropixCanvas::resized()
 {
-    // why is this not working?
-
-    neuropixViewport->setBounds(0, 0, getWidth(), getHeight());
-
+   
     for (int i = 0; i < neuropixInterfaces.size(); i++)
-        neuropixInterfaces[i]->setBounds(0, 0, getWidth(), 1000);
+        neuropixInterfaces[i]->setBounds(0, 0, 1000, 820);
+
+    neuropixViewport->setBounds(10, 10, getWidth(), getHeight());
+
+    // why is this not working?
+    neuropixViewport->setScrollBarsShown(true, true, true, true);
+    neuropixViewport->setScrollBarThickness(20);
 }
 
 void NeuropixCanvas::setParameter(int x, float f)
@@ -1483,7 +1486,7 @@ void NeuropixInterface::mouseDrag(const MouseEvent& event)
     repaint();
 }
 
-void NeuropixInterface::mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel)
+/*void NeuropixInterface::mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel)
 {
 
     if (event.x > 100 && event.x < 350)
@@ -1507,11 +1510,11 @@ void NeuropixInterface::mouseWheelMove(const MouseEvent& event, const MouseWheel
 
         repaint();
     }
-    //else {
-    //    canvas->mouseWheelMove(event, wheel);
-    //}
+    else {
+        canvas->mouseWheelMove(event, wheel);
+    }
 
-}
+}*/
 
 MouseCursor NeuropixInterface::getMouseCursor()
 {
@@ -1766,11 +1769,20 @@ void NeuropixInterface::drawLegend(Graphics& g)
 
     switch (mode)
     {
-    case ENABLE_VIEW: 
+    case ENABLE_VIEW:
         g.drawMultiLineText("ENABLED?", xOffset, yOffset, 200);
         g.drawMultiLineText("YES", xOffset + 30, yOffset + 22, 200);
         g.drawMultiLineText("NO", xOffset + 30, yOffset + 42, 200);
-        g.drawMultiLineText("REFERENCE", xOffset + 30, yOffset + 62, 200);
+        
+        if (probe->type == ProbeType::NP2_1 ||
+            probe->type == ProbeType::NP2_4)
+        {
+            g.drawMultiLineText("SELECTABLE REFERENCE", xOffset + 30, yOffset + 62, 200);
+        }
+        else {
+            g.drawMultiLineText("REFERENCE", xOffset + 30, yOffset + 62, 200);
+        }
+       
 
         g.setColour(Colours::yellow);
         g.fillRect(xOffset + 10, yOffset + 10, 15, 15);
@@ -1778,7 +1790,16 @@ void NeuropixInterface::drawLegend(Graphics& g)
         g.setColour(Colours::grey);
         g.fillRect(xOffset + 10, yOffset + 30, 15, 15);
 
-        g.setColour(Colours::black);
+        if (probe->type == ProbeType::NP2_1 ||
+            probe->type == ProbeType::NP2_4)
+        {
+            g.setColour(Colours::purple);
+        }
+        else {
+            g.setColour(Colours::black);
+           
+        }
+
         g.fillRect(xOffset + 10, yOffset + 50, 15, 15);
 
         break;
