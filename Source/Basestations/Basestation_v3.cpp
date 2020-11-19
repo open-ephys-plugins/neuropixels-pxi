@@ -143,12 +143,15 @@ bool Basestation_v3::open()
 				
 				headstages.add(headstage);
 
-				for (auto probe : headstage->probes)
+				if (headstage != nullptr)
 				{
-					if (probe != nullptr)
-						probes.add(probe);
+					for (auto probe : headstage->probes)
+					{
+						if (probe != nullptr)
+							probes.add(probe);
+					}
 				}
-				
+			
 				continue;
 			}
 			else {
