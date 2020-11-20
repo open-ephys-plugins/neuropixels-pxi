@@ -60,69 +60,70 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	std::vector<int> slotsToCheck;
 	np::scanPXI(&availableslotmask);
 
-	api_v1.isActive = true;
-	api_v3.isActive = false;
+	api_v1.isActive = false;
+	api_v3.isActive = true;
 
-	for (int slot = 0; slot < 32; slot++)
+	Neuropixels::scanBS();
+
+	Neuropixels::basestationID list[16];
+		
+	int count = getDeviceList(&list[0], 16);
+
+	std::cout << "Found " << count << " devices..." << std::endl;
+
+	for (int i = 0; i < count; i++)
 	{
-		if ((availableslotmask >> slot) & 1)
+
+		Neuropixels::NP_ErrorCode ec = getDeviceInfo(list[i].ID, &list[i]);
+
+		int slotID;
+
+		bool foundSlot = tryGetSlotID(&list[i], &slotID);
+
+		if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
 		{
 
-			Basestation* bs = new Basestation_v1(slot);
+			std::cout << "Got slot id: " << slotID << std::endl;
 
-			if (bs->open()) // detects # of probes; returns true if API version matches
+			Basestation* bs = new Basestation_v3(slotID); 
+
+			//Only add a basestation if it has at least one probe connected
+			if (bs->open() && bs->getProbeCount())
 			{
 				basestations.add(bs);
 			}
-			else {
-				delete bs;
-			}
 
 		}
+		else {
+			CoreServices::sendStatusMessage("ONE Box not yet supported.");
+		}
 	}
+
 
 	if (basestations.size() == 0) // no basestations with API version match
 	{
-
-		Neuropixels::scanBS();
-
-		Neuropixels::basestationID list[16];
-			
-		int count = getDeviceList(&list[0], 16);
-
-		std::cout << "Found " << count << " devices..." << std::endl;
- 
-		for (int i = 0; i < count; i++)
+		for (int slot = 0; slot < 32; slot++)
 		{
-
-			Neuropixels::NP_ErrorCode ec = getDeviceInfo(list[i].ID, &list[i]);
-
-			int slotID;
-
-			bool foundSlot = tryGetSlotID(&list[i], &slotID);
-
-			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
+			if ((availableslotmask >> slot) & 1)
 			{
 
-				std::cout << "Got slot id: " << slotID << std::endl;
+				Basestation* bs = new Basestation_v1(slot);
 
-				Basestation* bs = new Basestation_v3(slotID); 
-
-				if (bs->open())
+				if (bs->open()) // detects # of probes; returns true if API version matches
 				{
-					std::cout << "Setting active API to v3" << std::endl;
-					api_v1.isActive = false;
-					api_v3.isActive = true;
-
+					std::cout << "Setting active API to v1" << std::endl;
+					api_v1.isActive = true ;
+					api_v3.isActive = false;
 					basestations.add(bs);
 				}
-	
-			}
-			else {
-				CoreServices::sendStatusMessage("ONE Box not yet supported.");
+				else {
+					delete bs;
+				}
+
 			}
 		}
 	}
+
 
 	std::cout << "Num basestations: " << basestations.size() << std::endl;
 
@@ -677,7 +678,7 @@ void NeuropixThread::setDefaultChannelNames()
 				if (spInfo.type == AP_BAND)
 					info.name = "AP";
 				else
-					info.name = "LFP" + String(i + 1);
+					info.name = "LFP";
 
 
 				if (spInfo.sendSyncAsContinuousChannel && (i == spInfo.num_channels - 1))

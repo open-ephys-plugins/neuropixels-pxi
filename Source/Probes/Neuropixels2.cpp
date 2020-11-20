@@ -111,7 +111,7 @@ void Neuropixels2::initialize()
 	std::cout << "openProbe: slot: " << basestation->slot << " port: " << headstage->port << " dock: " << dock << " errorCode: " << errorCode << std::endl;
 
 	std::cout << " slot: " << basestation->slot << " port: " << headstage->port << " dock: "<< dock << std::endl;
-	std::cout << "Neuropixels2::initialize() errodCode: " << errorCode << std::endl;
+	std::cout << "Neuropixels2::initialize() errorCode: " << errorCode << std::endl;
 
 	if (errorCode == Neuropixels::SUCCESS)
 	{
