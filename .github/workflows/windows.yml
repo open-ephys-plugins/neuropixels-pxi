@@ -34,8 +34,8 @@ jobs:
         cd Build
         cmake -G "Visual Studio 16 2019" -A x64 .. 
       shell: bash
-    - name: Setup MSBuild.exe
-      uses: warrenbuckley/Setup-MSBuild@v1
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
     - name: build-plugin
       run: |
         cd Build
@@ -45,6 +45,7 @@ jobs:
 #    - name: test
 #      run: cd build && ctest
     - name: deploy
+      if: github.ref == 'refs/heads/master'
       env:
         bintrayUser: ${{ secrets.bintrayUsername }}
         bintrayApiKey: ${{ secrets.bintrayApiKey }}
