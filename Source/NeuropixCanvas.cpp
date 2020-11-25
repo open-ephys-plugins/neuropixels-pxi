@@ -570,14 +570,14 @@ void NeuropixInterface::updateInfoString()
 
     String mainString, nameString, infoString;
 
-    mainString += String(probe->basestation->slot + 1);
+    mainString += String(probe->basestation->slot);
     mainString += ":";
-    mainString += String(probe->headstage->port + 1);
+    mainString += String(probe->headstage->port);
 
     if (probe->type == ProbeType::NP2_1 || probe->type == ProbeType::NP2_4)
     {
         mainString += ":";
-        mainString += String(probe->dock + 1);
+        mainString += String(probe->dock);
     }
     
     nameString = probe->name;
