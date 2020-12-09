@@ -188,14 +188,16 @@ void Basestation_v1::close()
 void Basestation_v1::setSyncAsInput()
 {
 
-	errorCode = np::setTriggerInput(slot, np::TRIGIN_SW);
+	/*
+	errorCode = np::setTriggerInput(slot_c, np::TRIGIN_SW);
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to set slot %d trigger as input!\n");
 		return;
 	}
+	*/
 
-	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot);
+	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot_c);
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to set slot %d as sync master!\n");
@@ -204,14 +206,15 @@ void Basestation_v1::setSyncAsInput()
 
 	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SMA);
 	if (errorCode != np::SUCCESS)
-		printf("Failed to set slot %d SMA as sync source!\n");
+		printf("Failed to set slot %d SMA as sync input!\n");
 
+	/*
 	errorCode = setTriggerOutput(slot, np::TRIGOUT_PXI1, np::TRIGIN_SW);
 	if (errorCode != np::SUCCESS)
 	{
-		printf("Failed to reset sync on SMA output on slot: %d\n", slot);
+		printf("Failed to reset sync on SMA output on slot: %d\n", slot_c);
 	}
-
+	*/
 
 }
 
@@ -226,32 +229,34 @@ void Basestation_v1::setSyncAsOutput(int freqIndex)
 	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot_c);
 	if (errorCode != np::SUCCESS)
 	{
-		printf("Failed to set slot %d as sync master!\n", slot);
+		printf("Failed to set slot %d as sync master!\n", slot_c);
 		return;
 	} 
 
 	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SYNCCLOCK);
 	if (errorCode != np::SUCCESS)
 	{
-		printf("Failed to set slot %d internal clock as sync source!\n", slot);
+		printf("Failed to set slot %d internal clock as sync source!\n", slot_c);
 		return;
 	}
 
 	int freq = syncFrequencies[freqIndex];
 
-	printf("Setting slot %d sync frequency to %d Hz...\n", slot, freq);
+	printf("Setting slot %d sync frequency to %d Hz...\n", slot_c, freq);
 	errorCode = setParameter(np::NP_PARAM_SYNCFREQUENCY_HZ, freq);
 	if (errorCode != np::SUCCESS)
 	{
-		printf("Failed to set slot %d sync frequency to %d Hz!\n", slot, freq);
+		printf("Failed to set slot %d sync frequency to %d Hz!\n", slot_c, freq);
 		return;
 	}
 
-	errorCode = setTriggerOutput(slot, np::TRIGOUT_SMA, np::TRIGIN_SHAREDSYNC);
+	/*
+	errorCode = setTriggerOutput(slot_c, np::TRIGOUT_SMA, np::TRIGIN_SHAREDSYNC);
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to set sync on SMA output on slot: %d\n", slot);
 	}
+	*/
 
 }
 
