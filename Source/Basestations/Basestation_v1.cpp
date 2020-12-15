@@ -116,28 +116,33 @@ bool Basestation_v1::open()
 
 			errorCode = np::openProbe(slot_c, port); // check for probe on slot
 
-			if (errorCode == np::SUCCESS)
+			std::cout << "Port: " << port << " errorCode: " << errorCode << std::endl;
+
+			if (errorCode == 24) 
+			{ //likely no cable connected 
+				std::cout << "There is no cable connected!" << std::endl;
+				headstages.add(nullptr);
+			} 
+			else if (errorCode == 8)
+			{ //either headstage test module detected or broken connection to real probe
+				Headstage* headstage = new Headstage1_v1(this, port);
+				if (headstage->hasTestModule())
+				{
+					std::cout << "Found test module! " << std::endl;
+					headstage->runTestModule();
+				}
+				else
+				{
+					//TODO: Run other calls to help narrow down error
+				}
+				delete headstage;
+				headstages.add(nullptr);
+			} 
+			else if (errorCode == np::SUCCESS) //either headstage test module attached or there is no communication to the detected probe
 			{
 				Headstage* headstage = new Headstage1_v1(this, port);
 				headstages.add(headstage);
 				probes.add(headstage->probes[0]);
-
-				continue;
-			}
-			else {
-				headstages.add(nullptr);
-			}
-
-			errorCode = np::openProbeHSTest(slot_c, port);
-
-			if (errorCode == np::SUCCESS)
-			{
-				if (headstages.getLast() != nullptr)
-				{
-					ScopedPointer<HeadstageTestModule> hst = new HeadstageTestModule_v1(this, headstages.getLast());
-					hst->runAll();
-					hst->showResults();
-				}
 			}
 
 		}

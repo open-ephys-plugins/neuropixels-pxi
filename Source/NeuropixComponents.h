@@ -468,6 +468,29 @@ public:
 	Basestation* basestation;
 };
 
+/** Represents a Headstage Test Module */
+class HeadstageTestModule : public NeuropixComponent
+{
+public:
+
+	HeadstageTestModule::HeadstageTestModule(Basestation* bs_, Headstage* hs_) : NeuropixComponent()
+	{
+		basestation = bs_;
+		headstage = hs_;
+	}
+
+	/** Run all available headstage tests */
+	virtual void runAll() = 0;
+
+	/** Show test results */
+	virtual void showResults() = 0;
+
+private:
+	Basestation* basestation;
+	Headstage* headstage;
+
+};
+
 
 
 /** Represents a Neuropixels headstage of any type */
@@ -509,10 +532,14 @@ public:
 	OwnedArray<Probe> probes;
 	OwnedArray<Flex> flexCables;
 
+	HeadstageTestModule* testModule;
+
 	Basestation* basestation;
 
 	// ** Returns true if headstage test module is available */
 	virtual bool hasTestModule() = 0;
+	// ** Runs the headstage test module and shows the results in a pop-window */
+	virtual void runTestModule() = 0;
 };
 
 /** Represents a Neuropixels flex cable */
@@ -527,29 +554,6 @@ public:
 
 	Headstage* headstage;
 	int dock;
-};
-
-/** Represents a Headstage Test Module */
-class HeadstageTestModule : public NeuropixComponent
-{
-public:
-
-	HeadstageTestModule::HeadstageTestModule(Basestation* bs_, Headstage* hs_) : NeuropixComponent()
-	{
-		basestation = bs_;
-		headstage = hs_;
-	}
-
-	/** Run all available headstage tests */
-	virtual void runAll() = 0;
-
-	/** Show test results */
-	virtual void showResults() = 0;
-
-private:
-	Basestation* basestation;
-	Headstage* headstage;
-
 };
 
 

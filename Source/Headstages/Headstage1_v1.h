@@ -34,7 +34,8 @@ class Headstage1_v1 : public Headstage
 public:
 	Headstage1_v1::Headstage1_v1(Basestation*, int port);
 	void getInfo() override;
-	bool hasTestModule() override { return true; }
+	bool hasTestModule() override;
+	void runTestModule() override;
 
 	np::NP_ErrorCode errorCode;
 };

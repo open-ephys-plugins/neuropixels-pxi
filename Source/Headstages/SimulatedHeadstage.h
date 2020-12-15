@@ -40,6 +40,7 @@ public:
 	SimulatedHeadstage(Basestation* bs, int port, String PN, int SN);
 	void getInfo() override;
 	bool hasTestModule() override { return false; }
+	void runTestModule() override {}
 };
 
 class SimulatedFlex : public Flex

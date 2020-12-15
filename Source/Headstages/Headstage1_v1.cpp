@@ -72,12 +72,38 @@ void Flex1_v1::getInfo()
 
 Headstage1_v1::Headstage1_v1(Basestation* bs_, int port) : Headstage(bs_, port)
 {
-	getInfo();
-	
-	flexCables.add(new Flex1_v1(this));
 
-	probes.add(new Neuropixels1_v1(basestation, this, flexCables[0]));
-	probes[0]->setStatus(ProbeStatus::CONNECTING);
+	getInfo();
+
+	if (hasTestModule())
+	{
+		testModule = new HeadstageTestModule_v1(basestation, this);
+		std::cout << "Created test module! " << std::endl;
+		testModule->runAll();
+		std::cout << "Ran all tests! " << std::endl;
+		testModule->showResults();
+		std::cout << "Showed results! " << std::endl;
+	}
+	else
+	{
+		testModule = nullptr;
+		flexCables.add(new Flex1_v1(this));
+		probes.add(new Neuropixels1_v1(basestation, this, flexCables[0]));
+		probes[0]->setStatus(ProbeStatus::CONNECTING);
+	}
+
+}
+
+bool Headstage1_v1::hasTestModule()
+{
+	std::cout << "Checking for test module..." << std::endl;
+	return np::openProbeHSTest(basestation->slot_c, port) == np::SUCCESS;
+}
+
+void Headstage1_v1::runTestModule()
+{
+	testModule->runAll();
+	testModule->showResults();
 }
 
 Flex1_v1::Flex1_v1(Headstage* hs_) : Flex(hs_, 0)
@@ -107,6 +133,11 @@ HeadstageTestModule_v1::HeadstageTestModule_v1(Basestation* bs, Headstage* hs) :
 		"SIGNAL"
 	};
 
+	basestation = bs;
+	headstage = hs;
+
+	std::cout << basestation->slot_c << std::endl;
+
 }
 
 void HeadstageTestModule_v1::getInfo()
@@ -119,7 +150,10 @@ void HeadstageTestModule_v1::runAll()
 
 	status = new HST_Status();
 
+	std::cout << "Made it to: HeadstageTestModule_v1::runAll" << std::endl;
+
 	status->VDD_A1V2 	= test_VDD_A1V2();
+	std::cout << "Ran first test" << std::endl;
 	status->VDD_A1V8 	= test_VDD_A1V8();
 	status->VDD_D1V2 	= test_VDD_D1V2();
 	status->VDD_D1V8 	= test_VDD_D1V8();
@@ -156,6 +190,7 @@ void HeadstageTestModule_v1::showResults()
 
 np::NP_ErrorCode HeadstageTestModule_v1::test_VDD_A1V2()
 {
+	std::cout << "Running first test on " << basestation->slot_c << "," << headstage->port_c << std::endl;
 	return np::HSTestVDDA1V2(basestation->slot_c, headstage->port_c);
 }
 

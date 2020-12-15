@@ -35,6 +35,7 @@ public:
 	Headstage2::Headstage2(Basestation*, int port);
 	void getInfo() override;
 	bool hasTestModule() override { return false; }
+	void runTestModule() override {}
 
 	Neuropixels::NP_ErrorCode errorCode;
 };

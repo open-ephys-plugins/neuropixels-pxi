@@ -35,6 +35,7 @@ public:
 	Headstage_Analog128::Headstage_Analog128(Basestation*, int port);
 	void getInfo() override;
 	bool hasTestModule() override { return false; }
+	void runTestModule() override {}
 
 	Neuropixels::NP_ErrorCode errorCode;
 };
