@@ -34,8 +34,8 @@ class Headstage1_v3 : public Headstage
 public:
 	Headstage1_v3::Headstage1_v3(Basestation*, int port);
 	void getInfo() override;
-	bool hasTestModule() override { return true; }
-	void runTestModule() override { }
+	bool hasTestModule() override;
+	void runTestModule() override;
 
 	Neuropixels::NP_ErrorCode errorCode;
 };
@@ -90,6 +90,7 @@ private:
 
 	Basestation* basestation;
 	Headstage* headstage;
+	HeadstageTestModule* testModule;
 
 	std::vector<std::string> tests;
 

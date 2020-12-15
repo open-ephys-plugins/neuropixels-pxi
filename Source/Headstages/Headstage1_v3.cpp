@@ -74,14 +74,38 @@ void Flex1_v3::getInfo()
 
 Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 {
+
 	getInfo();
 
-	flexCables.add(new Flex1_v3(this));
+	testModule = nullptr;
 
-	probes.add(new Neuropixels1_v3(basestation, this, flexCables[0]));
+	if (hasTestModule())
+	{
+		testModule = new HeadstageTestModule_v3(basestation, this);
+		testModule->runAll();
+		testModule->showResults();
+	}
+	else
+	{
+		flexCables.add(new Flex1_v3(this));
+		probes.add(new Neuropixels1_v3(basestation, this, flexCables[0]));
+		probes[0]->setStatus(ProbeStatus::CONNECTING);
+	}
 
-	probes[0]->setStatus(ProbeStatus::CONNECTING);
+}
 
+bool Headstage1_v3::hasTestModule()
+{
+	std::cout << "Checking for test module..." << std::endl;
+	int vmajor;
+	int vminor;
+	return Neuropixels::HST_GetVersion(basestation->slot, port, &vmajor, &vminor) == Neuropixels::SUCCESS;
+}
+
+void Headstage1_v3::runTestModule()
+{
+	testModule->runAll();
+	testModule->showResults();
 }
 
 Flex1_v3::Flex1_v3(Headstage* hs_) : Flex(hs_, 0)
@@ -110,6 +134,9 @@ HeadstageTestModule_v3::HeadstageTestModule_v3(Basestation* bs, Headstage* hs) :
 		"REC_NRESET",
 		"SIGNAL"
 	};
+
+	basestation = bs;
+	headstage = hs;
 
 }
 

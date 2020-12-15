@@ -127,19 +127,26 @@ bool Basestation_v3::open()
 				Headstage* headstage;
 
 				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
-
+				{
 					headstage = new Headstage1_v3(this, port);
-
+					std::cout << "Headstage test module on port: " << port << "? : " << (headstage->testModule != nullptr) << std::endl;
+					if (headstage->testModule != nullptr)
+					{
+						headstage = nullptr;
+					}
+				}
 				else if (hsPartNumber == "NPNH_HS_30") // 128-ch analog headstage
-
+				{
 					headstage = new Headstage_Analog128(this, port);
-
+				}
 				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
-
+				{
 					headstage = new Headstage2(this, port);
-
+				}
 				else
+				{
 					headstage = nullptr;
+				}
 				
 				headstages.add(headstage);
 
@@ -154,7 +161,9 @@ bool Basestation_v3::open()
 			
 				continue;
 			}
-			else {
+			else  
+			{
+				//TODO: Run other calls to help narrow down error
 				headstages.add(nullptr);
 			}
 

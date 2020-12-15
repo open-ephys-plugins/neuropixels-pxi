@@ -118,17 +118,15 @@ bool Basestation_v1::open()
 
 			std::cout << "Port: " << port << " errorCode: " << errorCode << std::endl;
 
-			if (errorCode == 24) 
+			if (errorCode == np::NO_LOCK) 
 			{ //likely no cable connected 
-				std::cout << "There is no cable connected!" << std::endl;
 				headstages.add(nullptr);
 			} 
-			else if (errorCode == 8)
+			else if (errorCode == np::TIMEOUT)
 			{ //either headstage test module detected or broken connection to real probe
 				Headstage* headstage = new Headstage1_v1(this, port);
 				if (headstage->hasTestModule())
 				{
-					std::cout << "Found test module! " << std::endl;
 					headstage->runTestModule();
 				}
 				else
@@ -138,7 +136,7 @@ bool Basestation_v1::open()
 				delete headstage;
 				headstages.add(nullptr);
 			} 
-			else if (errorCode == np::SUCCESS) //either headstage test module attached or there is no communication to the detected probe
+			else if (errorCode == np::SUCCESS)
 			{
 				Headstage* headstage = new Headstage1_v1(this, port);
 				headstages.add(headstage);

@@ -136,8 +136,6 @@ HeadstageTestModule_v1::HeadstageTestModule_v1(Basestation* bs, Headstage* hs) :
 	basestation = bs;
 	headstage = hs;
 
-	std::cout << basestation->slot_c << std::endl;
-
 }
 
 void HeadstageTestModule_v1::getInfo()
