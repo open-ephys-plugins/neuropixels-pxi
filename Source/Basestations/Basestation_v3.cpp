@@ -129,7 +129,6 @@ bool Basestation_v3::open()
 				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
 				{
 					headstage = new Headstage1_v3(this, port);
-					std::cout << "Headstage test module on port: " << port << "? : " << (headstage->testModule != nullptr) << std::endl;
 					if (headstage->testModule != nullptr)
 					{
 						headstage = nullptr;
@@ -167,19 +166,6 @@ bool Basestation_v3::open()
 				headstages.add(nullptr);
 			}
 
-			/*int vmajor, vminor;
-
-			errorCode = Neuropixels::HST_GetVersion(slot, port, &vmajor, &vminor); // is this right?
-
-			if (errorCode == np::SUCCESS)
-			{
-				if (headstages.getLast() != nullptr)
-				{
-					ScopedPointer<HeadstageTestModule> hst = new HeadstageTestModule_v1(this, headstages.getLast());
-					hst->runAll();
-					hst->showResults();
-				}
-			}*/
 
 		}
 
@@ -241,6 +227,12 @@ void Basestation_v3::setSyncAsInput()
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, Neuropixels::SyncSource_SMA);
 	if (errorCode != Neuropixels::SUCCESS)
 		printf("Failed to set slot %d SMA as sync source!\n");
+
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, false);
+	if (errorCode != Neuropixels::SUCCESS)
+	{
+		printf("Failed to set sync on SMA output on slot: %d\n", slot);
+	}
 
 }
 
