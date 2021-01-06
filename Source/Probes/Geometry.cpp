@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "Geometry.h"
+#include "../Utils.h"
 
 bool Geometry::forPartNumber(String PN,
 	Array<ElectrodeMetadata>& em,
@@ -64,7 +65,7 @@ bool Geometry::forPartNumber(String PN,
 	if (!found_valid_part_number)
 		CoreServices::sendStatusMessage("Unrecognized part number: " + PN);
 
-	std::cout << "Part #: " << PN << " Valid: " << found_valid_part_number << std::endl;
+	LOGD("Part #: ", PN, " Valid: ", found_valid_part_number);
 
 	return found_valid_part_number;
 

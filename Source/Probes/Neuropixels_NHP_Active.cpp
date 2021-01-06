@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Neuropixels_NHP_Active.h"
 #include "Geometry.h"
+#include "../Utils.h"
 
 #define MAXLEN 50
 
@@ -87,9 +88,11 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
 void Neuropixels_NHP_Active::initialize()
 {
 	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
+	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
 	if (errorCode == Neuropixels::SUCCESS)
 	{
+		LOGD("Configuring probe...");
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
@@ -108,33 +111,31 @@ void Neuropixels_NHP_Active::calibrate()
 	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
 	File probeDirectory = calibrationDirectory.getChildFile(String(info.serial_number));
 
-	std::cout << probeDirectory.getFullPathName() << std::endl;
-
 	if (probeDirectory.exists())
 	{
 		String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
 		String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
-		std::cout << adcFile << std::endl;
+		LOGD("ADC file: ", adcFile);
 
 		errorCode = Neuropixels::setADCCalibration(basestation->slot, headstage->port, adcFile.toRawUTF8());
 
-		if (errorCode == 0)
-			std::cout << "Successful ADC calibration." << std::endl;
-		else
-			std::cout << "Unsuccessful ADC calibration, failed with error code: " << errorCode << std::endl;
+		if (errorCode == 0) { LOGD("Successful ADC calibration."); }
+		else { LOGD("Unsuccessful ADC calibration, failed with error code: ", errorCode); }
 
-		std::cout << gainFile << std::endl;
+		LOGD("Gain file: ", gainFile);
 
 		errorCode = Neuropixels::setGainCalibration(basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
 
-		if (errorCode == 0)
-			std::cout << "Successful gain calibration." << std::endl;
-		else
-			std::cout << "Unsuccessful gain calibration, failed with error code: " << errorCode << std::endl;
+		if (errorCode == 0) { LOGD("Successful gain calibration."); }
+		else { LOGD("Unsuccessful gain calibration, failed with error code: ", errorCode); }
 
 		errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
+
+		if (!errorCode == Neuropixels::SUCCESS) { LOGD("Failed to write probe config w/ error code: ", errorCode); }
+		else { LOGD("Successfully wrote probe config "); }
 	}
-	else {
+	else 
+	{
 		// show popup notification window
 		String message = "Missing calibration files for probe serial number " + String(info.serial_number) + ". ADC and Gain calibration files must be located in 'CalibrationInfo\\<serial_number>' folder in the directory where the Open Ephys GUI was launched. The GUI will proceed without calibration.";
 		AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
@@ -160,18 +161,14 @@ void Neuropixels_NHP_Active::selectElectrodes(ProbeSettings settings, bool shoul
 
 		}
 
-		std::cout << "Updating electrode settings for"
-			<< " slot: " << basestation->slot
-			<< " port: " << headstage->port << std::endl;
+		LOGD("Updating electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
 
 		if (shouldWriteConfiguration)
 		{
 			ec = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 
-			if (!ec == Neuropixels::SUCCESS)
-				std::cout << "Failed to write channel config " << std::endl;
-			else
-				std::cout << "Successfully wrote channel config " << std::endl;
+			if (!ec == Neuropixels::SUCCESS) { LOGD("Failed to write probe config w/ error code: ", ec); }
+			else { LOGD("Successfully wrote channel config "); }
 		}
 	}
 
@@ -182,15 +179,17 @@ void Neuropixels_NHP_Active::setApFilterState(bool filterIsOn, bool shouldWriteC
 	if (apFilterState != filterIsOn)
 	{
 		for (int channel = 0; channel < 384; channel++)
-			np::setAPCornerFrequency(basestation->slot,
+			Neuropixels::setAPCornerFrequency(basestation->slot,
 				headstage->port,
 				dock,
+				channel,
 				!filterIsOn); // true if disabled
 
 		if (shouldWriteConfiguration)
+		{
 			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-
-		std::cout << "Wrote filter " << int(filterIsOn) << " with error code " << errorCode << std::endl;
+			LOGD("Wrote filter ", int(filterIsOn), " with error code ", errorCode);
+		}
 
 		apFilterState = filterIsOn;
 	}
@@ -210,9 +209,10 @@ void Neuropixels_NHP_Active::setAllGains(int apGain, int lfpGain, bool shouldWri
 		}
 
 		if (shouldWriteConfiguration)
+		{
 			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-
-		std::cout << "Wrote gain " << int(apGain) << ", " << int(lfpGain) << " with error code " << errorCode << std::endl;
+			LOGD("Wrote gain AP=", int(apGain), ", LFP=", int(lfpGain), " with error code ", errorCode);
+		}
 
 		apGainIndex = apGain;
 		lfpGainIndex = lfpGain;
@@ -246,9 +246,10 @@ void Neuropixels_NHP_Active::setAllReferences(int refIndex, bool shouldWriteConf
 			Neuropixels::setReference(basestation->slot, headstage->port, dock, 0, channel, refId, refElectrodeBank);
 
 		if (shouldWriteConfiguration)
+		{
 			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-
-		std::cout << "Wrote reference " << int(refId) << ", " << int(refElectrodeBank) << " with error code " << errorCode << std::endl;
+			LOGD("Wrote reference ", int(refId), ", ", int(refElectrodeBank), " with error code ", errorCode);
+		}
 
 		referenceIndex = refIndex;
 	}
@@ -267,7 +268,7 @@ void Neuropixels_NHP_Active::startAcquisition()
 
 	apBuffer->clear();
 	lfpBuffer->clear();
-	std::cout << "  Starting thread." << std::endl;
+	LOGD("  Starting thread.");
 	startThread();
 }
 
@@ -279,8 +280,6 @@ void Neuropixels_NHP_Active::stopAcquisition()
 
 void Neuropixels_NHP_Active::run()
 {
-
-	//std::cout << "Thread running." << std::endl;
 
 	while (!threadShouldExit())
 	{
@@ -295,7 +294,7 @@ void Neuropixels_NHP_Active::run()
 			&count,
 			count);
 
-		if (errorCode == np::SUCCESS &&
+		if (errorCode == Neuropixels::SUCCESS &&
 			count > 0)
 		{
 			float apSamples[385];
@@ -327,16 +326,15 @@ void Neuropixels_NHP_Active::run()
 
 					if (ap_timestamp % 30000 == 0)
 					{
-						size_t packetsAvailable;
-						size_t headroom;
+						int packetsAvailable;
+						int headroom;
 
-						np::getElectrodeDataFifoState(
+						Neuropixels::getElectrodeDataFifoState(
 							basestation->slot,
 							headstage->port,
+							dock,
 							&packetsAvailable,
 							&headroom);
-
-						//std::cout << "Basestation " << int(basestation->slot) << ", probe " << int(port) << ", packets: " << packetsAvailable << std::endl;
 
 						fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
 					}
@@ -353,9 +351,9 @@ void Neuropixels_NHP_Active::run()
 			}
 
 		}
-		else if (errorCode != np::SUCCESS)
+		else if (errorCode != Neuropixels::SUCCESS)
 		{
-			std::cout << "Error code: " << errorCode << "for Basestation " << int(basestation->slot) << ", probe " << int(headstage->port) << std::endl;
+			LOGD("readPackets error code: ", errorCode, " for Basestation ", int(basestation->slot), ", probe ", int(headstage->port));
 		}
 	}
 

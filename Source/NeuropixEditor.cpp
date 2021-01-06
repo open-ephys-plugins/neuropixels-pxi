@@ -26,6 +26,8 @@
 #include "NeuropixThread.h"
 #include "NeuropixCanvas.h"
 
+#include "Utils.h"
+
 EditorBackground::EditorBackground(int numBasestations, bool freqSelectEnabled)
 	: numBasestations(numBasestations), freqSelectEnabled(freqSelectEnabled) {}
 
@@ -409,8 +411,6 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 
 	int slotIndex = masterSelectBox->getSelectedId() - 1;
 
-	std::cout << "Slot index: " << slotIndex << std::endl;
-
 	if (comboBox == masterSelectBox)
 	{
 		thread->setMainSync(slotIndex);
@@ -510,7 +510,7 @@ void NeuropixEditor::buttonEvent(Button* button)
 
 void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 {
-	std::cout << "Saving Neuropix editor." << std::endl;
+	LOGD("Saving Neuropix editor.");
 
 	XmlElement* xmlNode = xml->createNewChildElement("NEUROPIXELS_EDITOR");
 
@@ -532,12 +532,12 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 	{
 		if (xmlNode->hasTagName("NEUROPIXELS_EDITOR"))
 		{
-			std::cout << "Found parameters for Neuropixels editor" << std::endl;
+			LOGD("Found parameters for Neuropixels editor");
 
 			for (int slot = 0; slot < thread->getBasestations().size(); slot++)
 			{
 				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
-				std::cout << "Setting thread directory for slot " << slot << std::endl;
+				LOGD("Setting thread directory for slot ", slot);
 				thread->setDirectoryForSlot(slot, directory);
 				directoryButtons[slot]->setLabel(directory.getFullPathName().substring(0, 2));
 				savingDirectories.set(slot, directory);
@@ -550,11 +550,8 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 
 Visualizer* NeuropixEditor::createNewCanvas(void)
 {
-    std::cout << "Button clicked..." << std::endl;
     GenericProcessor* processor = (GenericProcessor*) getProcessor();
-    std::cout << "Got processor." << std::endl;
     canvas = new NeuropixCanvas(processor, this, thread);
-    std::cout << "Created canvas." << std::endl;
     return canvas;
 }
 

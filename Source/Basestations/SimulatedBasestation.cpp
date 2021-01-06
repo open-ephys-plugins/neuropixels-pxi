@@ -26,6 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Probes/SimulatedProbe.h"
 #include "../Headstages/SimulatedHeadstage.h"
 
+#include "../Utils.h"
+
 
 
 void SimulatedBasestationConnectBoard::getInfo()
@@ -47,7 +49,7 @@ void SimulatedBasestation::getInfo()
 
 bool SimulatedBasestation::open()
 {
-	std::cout << "OPENING CHILD" << std::endl;
+
 	savingDirectory = File();
 
 	basestationConnectBoard = new SimulatedBasestationConnectBoard(this);
@@ -71,7 +73,7 @@ bool SimulatedBasestation::open()
 		}
 	}
 
-	std::cout << probes.size() << " total probes " << std::endl;
+	LOGD(probes.size(), " total probes ");
 
 	syncFrequencies.add(1);
 	syncFrequencies.add(10);
@@ -171,7 +173,7 @@ void SimulatedBasestation::updateBscFirmware(File file)
 	Basestation::totalFirmwareBytes = (float)file.getSize();
 	Basestation::currentBasestation = this;
 
-	std::cout << bscFirmwarePath << std::endl;
+	LOGD("BSC Firmware path: ", bscFirmwarePath);
 
 	auto window = getAlertWindow();
 	window->setColour(AlertWindow::textColourId, Colours::white);
@@ -193,7 +195,7 @@ void SimulatedBasestation::updateBsFirmware(File file)
 	Basestation::totalFirmwareBytes = (float) file.getSize();
 	Basestation::currentBasestation = this;
 
-	std::cout << bsFirmwarePath << std::endl;
+	LOGD("BS Firmware path: ", bsFirmwarePath);
 
 	auto window = getAlertWindow();
 	window->setColour(AlertWindow::textColourId, Colours::white);

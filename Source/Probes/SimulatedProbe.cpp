@@ -25,6 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Geometry.h"
 #include "../Headstages/SimulatedHeadstage.h"
 
+#include "../Utils.h"
+
 void SimulatedProbe::getInfo()
 {
 	info.part_number = "Simulated probe";
@@ -149,20 +151,20 @@ void SimulatedProbe::initialize()
 void SimulatedProbe::calibrate()
 {
 	Sleep(1);
-	std::cout << "Calibrating simulated probe." << std::endl;
+	LOGD("Calibrating simulated probe.");
 }
 
 void SimulatedProbe::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
 {
 
-	std::cout << "Selecting channels for simulated probe." << std::endl;
+	LOGD("Selecting channels for simulated probe.");
 
 }
 
 void SimulatedProbe::setApFilterState(bool disableHighPass, bool shouldWriteConfiguration)
 {
 
-	std::cout << "Wrote filter state for simulated probe." << std::endl;
+	LOGD("Wrote filter state for simulated probe.");
 }
 
 void SimulatedProbe::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
@@ -173,20 +175,20 @@ void SimulatedProbe::setAllGains(int apGain, int lfpGain, bool shouldWriteConfig
 	//	lfpGains.set(channel, int(lfpGain));
 	//}
 
-	std::cout << "Wrote gain state for simulated probe." << std::endl;
+	LOGD("Wrote gain state for simulated probe.");
 }
 
 
 void SimulatedProbe::setAllReferences(int referenceIndex, bool shouldWriteConfiguration)
 {
-	std::cout << "Wrote reference state for simulated probe." << std::endl;
+	LOGD("Wrote reference state for simulated probe.");
 }
 
 void SimulatedProbe::writeConfiguration()
 {
 	Sleep(1000);
 
-	std::cout << "Wrote configuration for simulated probe." << std::endl;
+	LOGD("Wrote configuration for simulated probe.");
 	
 }
 

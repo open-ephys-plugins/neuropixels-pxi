@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../NeuropixComponents.h"
+#include "../Utils.h"
 
 class IMRO
 {
@@ -79,7 +80,7 @@ public:
         bool foundHeader = false;
         int lastOpeningParen = 0;
 
-        std::cout << "Length: " << imro.length() << std::endl;
+        LOGD("Length: ", imro.length());
 
         for (int i = 0; i < imro.length(); i++)
         {

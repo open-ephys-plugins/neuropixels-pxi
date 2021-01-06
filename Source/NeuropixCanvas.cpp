@@ -2084,7 +2084,7 @@ ProbeSettings NeuropixInterface::getProbeSettings()
 void NeuropixInterface::saveParameters(XmlElement* xml)
 {
 
-    std::cout << "Saving Neuropix display." << std::endl;
+    LOGD("Saving Neuropix display.");
 
     XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
 

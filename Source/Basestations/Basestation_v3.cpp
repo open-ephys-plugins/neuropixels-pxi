@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage1_v3.h"
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
+#include "../Utils.h"
 
 #define MAXLEN 50
 
@@ -87,21 +88,18 @@ Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
 bool Basestation_v3::open()
 {
 
-	std::cout << "Basestation_v3::open()" << std::endl;
-
 	errorCode = Neuropixels::openBS(slot);
 
-	std::cout << "Opening bs on slot: " << slot << " errorCode: " << errorCode << std::endl;
-
-	if (errorCode == np::VERSION_MISMATCH)
+	if (errorCode == Neuropixels::VERSION_MISMATCH)
 	{
+		LOGD("Basestation at slot: ", slot, " API VERSION MISMATCH!");
 		return false;
 	}
 
 	if (errorCode == Neuropixels::SUCCESS)
 	{
 
-		std::cout << "  Opened BS on slot " << slot << std::endl;
+		LOGD("  Opened BS on slot ", slot);
 
 		basestationConnectBoard = new BasestationConnectBoard_v3(this);
 
@@ -113,16 +111,16 @@ bool Basestation_v3::open()
 
 			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
 
-			std::cout << "Detecting headstage on slot: " << slot << " port: " << port << " detected: " << detected << " errorCode: " << errorCode << std::endl;
+			LOGD("Detecting headstage on slot: ", slot, " port: ", port, " detected: ", detected, " errorCode: ", errorCode);
 
-			if (detected && errorCode == np::SUCCESS)
+			if (detected && errorCode == Neuropixels::SUCCESS)
 			{
 				char pn[MAXLEN];
 				Neuropixels::readHSPN(slot, port, pn, MAXLEN);
 
 				String hsPartNumber = String(pn);
 
-				std::cout << "Got part #: " << hsPartNumber << std::endl;
+				LOGD("Got part #: ", hsPartNumber);
 
 				Headstage* headstage;
 
@@ -169,7 +167,7 @@ bool Basestation_v3::open()
 
 		}
 
-		std::cout << "Found " << String(probes.size()) << (probes.size() == 1 ? " probe." : " probes.") << std::endl;
+		LOGD("Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 	}
 
 	syncFrequencies.add(1);
@@ -183,7 +181,7 @@ void Basestation_v3::initialize()
 
 	if (!probesInitialized)
 	{
-		//errorCode = Neuropixels::setTriggerInput(slot, np::TRIGIN_SW);
+		//errorCode = Neuropixels::setTriggerInput(slot, Neuropixels::TRIGIN_SW);
 
 		for (auto probe : probes)
 		{
@@ -215,23 +213,23 @@ void Basestation_v3::close()
 void Basestation_v3::setSyncAsInput()
 {
 
-	std::cout << "Setting sync as input..." << std::endl;
+	LOGD("Setting sync as input...");
 
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set slot %d as sync master!\n");
+		LOGD("Failed to set slot", slot, "as sync master!");
 		return;
 	}
 
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, Neuropixels::SyncSource_SMA);
 	if (errorCode != Neuropixels::SUCCESS)
-		printf("Failed to set slot %d SMA as sync source!\n");
+		LOGD("Failed to set slot ", slot, "SMA as sync source!");
 
 	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, false);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set sync on SMA output on slot: %d\n", slot);
+		LOGD("Failed to set sync on SMA output on slot: ", slot);
 	}
 
 }
@@ -244,36 +242,36 @@ Array<int> Basestation_v3::getSyncFrequencies()
 void Basestation_v3::setSyncAsOutput(int freqIndex)
 {
 
-	std::cout << "Setting sync as output..." << std::endl;
+	LOGD("Setting sync as output...");
 	
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set slot %d as sync master!\n", slot);
+		LOGD("Failed to set slot ",  slot, " as sync master!");
 		return;
 	} 
 
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, Neuropixels::SyncSource_Clock);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set slot %d internal clock as sync source!\n", slot);
+		LOGD("Failed to set slot ", slot, " internal clock as sync source!");
 		return;
 	}
 
 	int freq = syncFrequencies[freqIndex];
 
-	printf("Setting slot %d sync frequency to %d Hz...\n", slot, freq);
+	LOGD("Setting slot ", slot, " sync frequency to ", freq, " Hz...");
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCFREQUENCY_HZ, freq);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set slot %d sync frequency to %d Hz!\n", slot, freq);
+		LOGD("Failed to set slot ", slot, " sync frequency to ", freq, " Hz!");
 		return;
 	}
 
 	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, true);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set sync on SMA output on slot: %d\n", slot);
+		LOGD("Failed to set sync on SMA output on slot: ", slot);
 	}
 
 }
@@ -289,7 +287,7 @@ float Basestation_v3::getFillPercentage()
 
 	for (int i = 0; i < getProbeCount(); i++)
 	{
-		//std::cout << "Percentage for probe " << i << ": " << probes[i]->fifoFillPercentage << std::endl;
+		LOGDD("Percentage for probe ", i, ": ", probes[i]->fifoFillPercentage);
 
 		if (probes[i]->fifoFillPercentage > perc)
 			perc = probes[i]->fifoFillPercentage;
@@ -341,7 +339,7 @@ void Basestation_v3::updateBscFirmware(File file)
 	Basestation::totalFirmwareBytes = (float)file.getSize();
 	Basestation::currentBasestation = this;
 
-	std::cout << bscFirmwarePath << std::endl;
+	LOGD("BSC Firmware path: ", bscFirmwarePath);
 
 	auto window = getAlertWindow();
 	window->setColour(AlertWindow::textColourId, Colours::white);
@@ -362,7 +360,7 @@ void Basestation_v3::updateBsFirmware(File file)
 	Basestation::totalFirmwareBytes = (float)file.getSize();
 	Basestation::currentBasestation = this;
 
-	std::cout << bsFirmwarePath << std::endl;
+	LOGD("BS Firmware path: ", bsFirmwarePath);
 
 	auto window = getAlertWindow();
 	window->setColour(AlertWindow::textColourId, Colours::white);
