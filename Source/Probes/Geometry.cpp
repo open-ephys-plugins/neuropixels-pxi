@@ -65,7 +65,7 @@ bool Geometry::forPartNumber(String PN,
 	if (!found_valid_part_number)
 		CoreServices::sendStatusMessage("Unrecognized part number: " + PN);
 
-	LOGD("Part #: ", PN, " Valid: ", found_valid_part_number);
+	LOGDD("Part #: ", PN, " Valid: ", found_valid_part_number);
 
 	return found_valid_part_number;
 

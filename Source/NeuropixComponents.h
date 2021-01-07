@@ -227,6 +227,9 @@ public:
 
 	bool isValid; //True if the PN is supported by the API
 
+	bool isCalibrated;
+
+	int port;
 	int dock;
 
 	DataBuffer* apBuffer;
@@ -287,6 +290,9 @@ public:
 
 	/** Stops data streaming.*/
 	virtual void stopAcquisition() = 0;
+
+	/** Runs a built-in self-test for a specified port */
+	virtual bool runBist(BIST bistType) = 0;
 
 	/** Main loop -- copies data from the probe into a DataBuffer object */
 	virtual void run() = 0;
@@ -355,9 +361,6 @@ public:
 
 	/** Initializes all components for acquisition; may inclue some delays */
 	virtual void initialize() = 0;
-
-	/** Runs a built-in self-test for a specified port */
-	virtual bool runBist(int port, int dock, BIST bistType) = 0;
 
 	/** Sets the sync channel as an "input" (for external sync) */
 	virtual void setSyncAsInput() = 0;

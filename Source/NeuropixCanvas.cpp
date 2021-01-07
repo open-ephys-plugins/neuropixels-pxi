@@ -37,6 +37,8 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
     Array<Probe*> available_probes = thread->getProbes();
 
+    LOGD("NeuropixCanvas got ", available_probes.size(), " probes");
+
     for (auto probe : available_probes)
     {
         NeuropixInterface* neuropixInterface = new NeuropixInterface(probe, thread, editor, this);
@@ -160,13 +162,18 @@ void NeuropixCanvas::saveVisualizerParameters(XmlElement* xml)
 {
     editor->saveEditorParameters(xml);
 
+    LOGD("Saved ", neuropixInterfaces.size(), " interfaces.");
+
     for (int i = 0; i < neuropixInterfaces.size(); i++)
         neuropixInterfaces[i]->saveParameters(xml);
 }
 
 void NeuropixCanvas::loadVisualizerParameters(XmlElement* xml)
 {
+
     editor->loadEditorParameters(xml);
+
+    LOGD("Loaded ", neuropixInterfaces.size(), " interfaces.");
 
     for (int i = 0; i < neuropixInterfaces.size(); i++)
         neuropixInterfaces[i]->loadParameters(xml);
@@ -803,8 +810,9 @@ void NeuropixInterface::buttonClicked(Button* button)
                 CoreServices::sendStatusMessage("Please select a test to run.");
             }
             else {
-                bool passed = probe->basestation->runBist(probe->headstage->port, probe->dock,
-                                                          availableBists[bistComboBox->getSelectedId()]);
+
+
+                bool passed = probe->runBist(availableBists[bistComboBox->getSelectedId()]);
 
                 String testString = bistComboBox->getText();
 
@@ -2032,8 +2040,9 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
 
  
     // apply settings in background thread
-    if (shouldUpdateProbe)
+    if (shouldUpdateProbe) {
          updateProbeSettingsInBackground();
+    }
 
     repaint();
 

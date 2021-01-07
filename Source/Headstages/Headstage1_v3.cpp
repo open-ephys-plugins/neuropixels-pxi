@@ -82,6 +82,7 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 
 	if (hasTestModule())
 	{
+		LOGD("Test module detected");
 		testModule = new HeadstageTestModule_v3(basestation, this);
 		testModule->runAll();
 		testModule->showResults();
@@ -97,7 +98,6 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 
 bool Headstage1_v3::hasTestModule()
 {
-	LOGD("Checking for test module...");
 	int vmajor;
 	int vminor;
 	return Neuropixels::HST_GetVersion(basestation->slot, port, &vmajor, &vminor) == Neuropixels::SUCCESS;

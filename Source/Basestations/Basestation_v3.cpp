@@ -105,27 +105,29 @@ bool Basestation_v3::open()
 
 		savingDirectory = File();
 
+		LOGD("    Searching for probes...");
+
 		for (int port = 1; port <= 4; port++)
 		{
 			bool detected = false;
 
 			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
 
-			LOGD("Detecting headstage on slot: ", slot, " port: ", port, " detected: ", detected, " errorCode: ", errorCode);
-
 			if (detected && errorCode == Neuropixels::SUCCESS)
 			{
+
 				char pn[MAXLEN];
 				Neuropixels::readHSPN(slot, port, pn, MAXLEN);
 
 				String hsPartNumber = String(pn);
 
-				LOGD("Got part #: ", hsPartNumber);
+				LOGDD("Got part #: ", hsPartNumber);
 
 				Headstage* headstage;
 
 				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
 				{
+					LOGD("  Found 1.0 single-dock headstage on port: ", port);
 					headstage = new Headstage1_v3(this, port);
 					if (headstage->testModule != nullptr)
 					{
@@ -134,10 +136,12 @@ bool Basestation_v3::open()
 				}
 				else if (hsPartNumber == "NPNH_HS_30") // 128-ch analog headstage
 				{
+					LOGD("  Found 128-ch analog headstage on port: ", port);
 					headstage = new Headstage_Analog128(this, port);
 				}
 				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 				{
+					LOGD("  Found 2.0 dual-dock headstage on port: ", port);
 					headstage = new Headstage2(this, port);
 				}
 				else
@@ -160,14 +164,21 @@ bool Basestation_v3::open()
 			}
 			else  
 			{
-				//TODO: Run other calls to help narrow down error
+				if (errorCode != Neuropixels::SUCCESS)
+				{
+					LOGD("***detectHeadstage failed w/ error code: ", errorCode);
+				}
+				else if (!detected)
+				{
+					LOGDD("  No headstage detected on port: ", port);
+				}
 				headstages.add(nullptr);
 			}
 
 
 		}
 
-		LOGD("Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
+		LOGD("  Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 	}
 
 	syncFrequencies.add(1);
@@ -300,6 +311,7 @@ void Basestation_v3::startAcquisition()
 {
 	for (auto probe : probes)
 	{
+		LOGD("*** Probe AP gain setting: ", probe->availableApGains[probe->apGainIndex]);
 		probe->startAcquisition();
 	}
 
@@ -373,76 +385,4 @@ void Basestation_v3::updateBsFirmware(File file)
 
 	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
 		String("Please restart your computer and power cycle the PXI chassis for the changes to take effect."));
-}
-
-
-bool Basestation_v3::runBist(int port, int dock, BIST bistType)
-{
-
-	bool returnValue = false;
-
-	switch (bistType)
-	{
-	case BIST::SIGNAL:
-	{
-		if (Neuropixels::bistSignal(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::NOISE:
-	{
-		if (Neuropixels::bistNoise(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::PSB:
-	{
-		if (Neuropixels::bistPSB(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::SR:
-	{
-		if (Neuropixels::bistSR(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::EEPROM:
-	{
-		if (Neuropixels::bistEEPROM(slot, port) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::I2C:
-	{
-		if (Neuropixels::bistI2CMM(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::SERDES:
-	{
-		int errors;
-		Neuropixels::bistStartPRBS(slot, port);
-		Sleep(200);
-		Neuropixels::bistStopPRBS(slot, port, &errors);
-
-		if (errors == 0)
-			returnValue = true;
-		break;
-	}
-	case BIST::HB:
-	{
-		if (Neuropixels::bistHB(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	} case BIST::BS:
-	{
-		if (Neuropixels::bistBS(slot) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	} default:
-		CoreServices::sendStatusMessage("Test not found.");
-	}
-
-	return returnValue;
 }

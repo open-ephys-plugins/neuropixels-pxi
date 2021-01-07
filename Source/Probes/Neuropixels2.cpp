@@ -103,6 +103,8 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 	
 	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
+	isCalibrated = false;
+
 }
 
 void Neuropixels2::initialize()
@@ -434,4 +436,9 @@ void Neuropixels2::run()
 		}
 	}
 
+}
+
+bool Neuropixels2::runBist(BIST type) { 
+	//Not implemeneted -- this will not get called?
+	return false; 
 }

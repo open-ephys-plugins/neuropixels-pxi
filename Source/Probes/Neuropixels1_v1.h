@@ -49,12 +49,16 @@ public:
 	void startAcquisition() override;
 	void stopAcquisition() override;
 
+	bool runBist(BIST bistType) override;
+
 	void calibrate() override;
 
 	void run() override; // acquire data
 
 	bool generatesLfpData() { return true; }
 	bool hasApFilterSwitch() { return true; }
+
+	np::bistElectrodeStats stats[960];
 
 	np::electrodePacket packet[SAMPLECOUNT];
 	np::NP_ErrorCode errorCode;

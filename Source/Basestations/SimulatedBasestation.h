@@ -57,10 +57,6 @@ public:
 
 	void run() override;
 
-	bool runBist(int port, int dock, BIST bistType) override
-	{
-		return true;
-	}
 };
 
 class SimulatedBasestationConnectBoard : public BasestationConnectBoard

@@ -135,6 +135,8 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	}
 
 	referenceIndex = 0;
+
+	isCalibrated = false;
 	
 }
 
@@ -199,6 +201,12 @@ void SimulatedProbe::startAcquisition() {
 void SimulatedProbe::stopAcquisition()
 {
 
+}
+
+bool SimulatedProbe::runBist(BIST bistType)
+{
+	//TODO: Output some meaningful simulated results.
+	return true;
 }
 
 void SimulatedProbe::run()

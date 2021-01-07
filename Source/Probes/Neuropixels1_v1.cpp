@@ -106,10 +106,14 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	errorCode = np::NP_ErrorCode::SUCCESS;
 
+	isCalibrated = false;
+
 }
 
 void Neuropixels1_v1::initialize()
 {
+
+	//Resets probe to default settings
 	errorCode = np::init(basestation->slot_c, headstage->port_c);
 
 	if (errorCode == np::SUCCESS)
@@ -384,4 +388,77 @@ void Neuropixels1_v1::run()
 		}
 	}
 
+}
+
+bool Neuropixels1_v1::runBist(BIST bistType)
+{
+
+	signed char slot_c = (signed char) basestation->slot;
+	signed char port_c = (signed char) headstage->port;
+
+	bool returnValue = false;
+
+	switch (bistType)
+	{
+	case BIST::SIGNAL:
+	{
+		np::NP_ErrorCode errorCode = np::bistSignal(slot_c, port_c, &returnValue, stats);
+		break;
+	}
+	case BIST::NOISE:
+	{
+		if (np::bistNoise(slot_c, port_c) == np::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::PSB:
+	{
+		if (np::bistPSB(slot_c, port_c) == np::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::SR:
+	{
+		if (np::bistSR(slot_c, port_c) == np::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::EEPROM:
+	{
+		if (np::bistEEPROM(slot_c, port_c) == np::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::I2C:
+	{
+		if (np::bistI2CMM(slot_c, port_c) == np::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::SERDES:
+	{
+		unsigned char errors;
+		np::bistStartPRBS(slot_c, port_c);
+		Sleep(200);
+		np::bistStopPRBS(slot_c, port_c, &errors);
+
+		if (errors == 0)
+			returnValue = true;
+		break;
+	}
+	case BIST::HB:
+	{
+		if (np::bistHB(slot_c, port_c) == np::SUCCESS)
+			returnValue = true;
+		break;
+	} case BIST::BS:
+	{
+		if (np::bistBS(slot_c) == np::SUCCESS)
+			returnValue = true;
+		break;
+	} default:
+		CoreServices::sendStatusMessage("Test not found.");
+	}
+
+	return returnValue;
 }

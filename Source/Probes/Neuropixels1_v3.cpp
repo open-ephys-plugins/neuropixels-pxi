@@ -105,6 +105,8 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	{
 		/* code */
 	}
+
+	isCalibrated = false;
 	
 
 }
@@ -113,13 +115,20 @@ void Neuropixels1_v3::initialize()
 {
 
 	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
-	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	LOGDD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+
+	getGain();
+	LOGD("Gain settings after open probe: ", availableApGains[apGainIndex], " ", availableLfpGains[lfpGainIndex]);
 
 	if (errorCode == Neuropixels::SUCCESS)
 	{
-		LOGD("Configuring probe...");
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
+		LOGDD("setOPMODE: errorCode: ", errorCode);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+		LOGDD("setHSLed: errorCode: ", errorCode);
+
+		getGain();
+		LOGD("Gain settings after setOPMODE + setHSLed: ", availableApGains[apGainIndex], " ", availableLfpGains[lfpGainIndex]);
 
 		calibrate();
 		ap_timestamp = 0;
@@ -132,6 +141,9 @@ void Neuropixels1_v3::initialize()
 
 void Neuropixels1_v3::calibrate()
 {
+
+	LOGD("Calibrating probe...");
+
 	File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
 	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
 	File probeDirectory = calibrationDirectory.getChildFile(String(info.serial_number));
@@ -155,25 +167,29 @@ void Neuropixels1_v3::calibrate()
 
 	String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
 	String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
-	LOGD("ADC file: ", adcFile);
+	LOGDD("ADC file: ", adcFile);
 
 	errorCode = Neuropixels::setADCCalibration(basestation->slot, headstage->port, adcFile.toRawUTF8());
 
 	if (errorCode == 0) { LOGD("Successful ADC calibration."); }
-	else { LOGD("Unsuccessful ADC calibration, failed with error code: ", errorCode); }
+	else { LOGD("***Unsuccessful ADC calibration, failed with error code: ", errorCode); }
 
-	LOGD("Gain file: ", gainFile);
+	LOGDD("Gain file: ", gainFile);
 
 	errorCode = Neuropixels::setGainCalibration(basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
 
 	if (errorCode == 0) { LOGD("Successful gain calibration."); }
-	else { LOGD("Unsuccessful gain calibration, failed with error code: ", errorCode); }
+	else { LOGD("***Unsuccessful gain calibration, failed with error code: ", errorCode); }
 
-	errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
+	writeConfiguration();
 
-	if (!errorCode == Neuropixels::SUCCESS) { LOGD("Failed to write probe config w/ error code: ", errorCode); }
-	else { LOGD("Successfully wrote probe config "); }
+	isCalibrated = true;
 
+}
+
+void Neuropixels1_v3::getGain()
+{
+	Neuropixels::getGain(basestation->slot, headstage->port, dock, 32, &apGainIndex, &lfpGainIndex);
 }
 
 void Neuropixels1_v3::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
@@ -202,7 +218,7 @@ void Neuropixels1_v3::selectElectrodes(ProbeSettings settings, bool shouldWriteC
 			ec = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 
 			if (!ec == Neuropixels::SUCCESS) { LOGD("Failed to write channel config w/ error code: ", ec); }
-			else { LOGD("Successfully wrote channel config "); }
+			else { LOGD("Wrote channel config "); }
 		}
 	}
 
@@ -232,6 +248,7 @@ void Neuropixels1_v3::setApFilterState(bool filterIsOn, bool shouldWriteConfigur
 
 void Neuropixels1_v3::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
 {
+
 	if (apGain != apGainIndex || lfpGain != lfpGainIndex)
 	{
 		for (int channel = 0; channel < 384; channel++)
@@ -245,7 +262,6 @@ void Neuropixels1_v3::setAllGains(int apGain, int lfpGain, bool shouldWriteConfi
 		if (shouldWriteConfiguration)
 		{
 			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-			LOGD("Wrote gain AP=", int(apGain), ", LFP=", int(lfpGain), " with error code ", errorCode);
 		}
 
 		apGainIndex = apGain;
@@ -302,7 +318,20 @@ void Neuropixels1_v3::setAllReferences(int refIndex, bool shouldWriteConfigurati
 
 void Neuropixels1_v3::writeConfiguration()
 {
+
 	errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
+
+	if (errorCode == Neuropixels::SUCCESS)
+	{
+		LOGD("### 					Succesfully wrote probe configuration");
+		getGain();
+		LOGD("### 					Current gain settings: ", availableApGains[apGainIndex], ", ", availableLfpGains[lfpGainIndex]);
+	}
+	else
+	{
+		LOGD("#################### FAILED TO WRITE PROBE CONFIGURATION w/ error code: ", errorCode);
+	}
+
 }
 
 void Neuropixels1_v3::startAcquisition()
@@ -325,6 +354,9 @@ void Neuropixels1_v3::run()
 {
 
 	//std::cout << "Thread running." << std::endl;
+
+	getGain();
+	LOGD("Start of acquisition gain values: AP=", availableApGains[apGainIndex], ", LFP=", availableLfpGains[lfpGainIndex]);
 
 	while (!threadShouldExit())
 	{
@@ -404,4 +436,85 @@ void Neuropixels1_v3::run()
 		}
 	}
 
+}
+
+bool Neuropixels1_v3::runBist(BIST bistType)
+{
+
+	//save gain setting
+	
+    //close and re-open probe 
+    //check default gain setting (should be reset by openProbe call)
+	//run test
+	//apply saved gain setting
+
+	int slot = basestation->slot;
+	int port = headstage->port;
+
+	bool returnValue = false;
+
+	switch (bistType)
+	{
+	case BIST::SIGNAL:
+	{
+		if (Neuropixels::bistSignal(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::NOISE:
+	{
+		if (Neuropixels::bistNoise(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::PSB:
+	{
+		if (Neuropixels::bistPSB(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::SR:
+	{
+		if (Neuropixels::bistSR(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::EEPROM:
+	{
+		if (Neuropixels::bistEEPROM(slot, port) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::I2C:
+	{
+		if (Neuropixels::bistI2CMM(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::SERDES:
+	{
+		int errors;
+		Neuropixels::bistStartPRBS(slot, port);
+		Sleep(200);
+		Neuropixels::bistStopPRBS(slot, port, &errors);
+
+		if (errors == 0)
+			returnValue = true;
+		break;
+	}
+	case BIST::HB:
+	{
+		if (Neuropixels::bistHB(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	} case BIST::BS:
+	{
+		if (Neuropixels::bistBS(slot) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	} default:
+		CoreServices::sendStatusMessage("Test not found.");
+	}
+
+	return returnValue;
 }

@@ -66,13 +66,13 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	api_v1.isActive = false;
 	api_v3.isActive = true;
 
-	Neuropixels::scanBS();
+	LOGD("Scanning for devices...");
 
+	Neuropixels::scanBS();
 	Neuropixels::basestationID list[16];
-		
 	int count = getDeviceList(&list[0], 16);
 
-	LOGD("Found ", count, " devices...");
+	LOGD("  Found ", count, " device", count == 1 ? "." : "s.");
 
 	for (int i = 0; i < count; i++)
 	{
@@ -103,11 +103,13 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	if (basestations.size() == 0) // no basestations with API version match
 	{
-		LOGD("No V3 basestations detected...searching for V1 basestations...");
+		LOGD("Checking for V1 basestations...");
 		for (int slot = 0; slot < 32; slot++)
 		{
 			if ((availableslotmask >> slot) & 1)
 			{
+
+				LOGD("  Found V1 Basestation");
 
 				Basestation* bs = new Basestation_v1(slot);
 
@@ -216,6 +218,14 @@ void NeuropixThread::applyProbeSettingsQueue()
 
 	for (auto settings: probeSettingsUpdateQueue)
 	{
+
+		//Prevent settings from being loaded if probe is not calibrated
+		/*
+		while(!settings.probe->isCalibrated)
+		{
+			LOGD("Probe not yet calibrated!");
+		}
+		*/
 
 		if (settings.probe != nullptr)
 		{

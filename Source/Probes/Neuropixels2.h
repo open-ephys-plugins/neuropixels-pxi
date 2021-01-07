@@ -49,6 +49,8 @@ public:
 	void startAcquisition() override;
 	void stopAcquisition() override;
 
+	bool runBist(BIST bistType) override;
+
 	void calibrate() override;
 
 	void run() override; // acquire data

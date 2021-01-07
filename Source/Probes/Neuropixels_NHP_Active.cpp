@@ -82,7 +82,7 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
 
 	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
-
+	isCalibrated = false;
 }
 
 void Neuropixels_NHP_Active::initialize()
@@ -358,3 +358,85 @@ void Neuropixels_NHP_Active::run()
 	}
 
 }
+
+bool Neuropixels_NHP_Active::runBist(BIST bistType)
+{
+
+	//save gain setting
+	
+    //close and re-open probe 
+    //check default gain setting (should be reset by openProbe call)
+	//run test
+	//apply saved gain setting
+
+	int slot = basestation->slot;
+	int port = headstage->port;
+
+	bool returnValue = false;
+
+	switch (bistType)
+	{
+	case BIST::SIGNAL:
+	{
+		if (Neuropixels::bistSignal(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::NOISE:
+	{
+		if (Neuropixels::bistNoise(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::PSB:
+	{
+		if (Neuropixels::bistPSB(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::SR:
+	{
+		if (Neuropixels::bistSR(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::EEPROM:
+	{
+		if (Neuropixels::bistEEPROM(slot, port) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::I2C:
+	{
+		if (Neuropixels::bistI2CMM(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::SERDES:
+	{
+		int errors;
+		Neuropixels::bistStartPRBS(slot, port);
+		Sleep(200);
+		Neuropixels::bistStopPRBS(slot, port, &errors);
+
+		if (errors == 0)
+			returnValue = true;
+		break;
+	}
+	case BIST::HB:
+	{
+		if (Neuropixels::bistHB(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	} case BIST::BS:
+	{
+		if (Neuropixels::bistBS(slot) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	} default:
+		CoreServices::sendStatusMessage("Test not found.");
+	}
+
+	return returnValue;
+}
+
