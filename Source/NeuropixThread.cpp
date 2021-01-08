@@ -58,11 +58,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	defaultSyncFrequencies.add(1);
 	defaultSyncFrequencies.add(10);
 
-	uint32_t availableslotmask;
-
-	std::vector<int> slotsToCheck;
-	np::scanPXI(&availableslotmask);
-
 	api_v1.isActive = false;
 	api_v3.isActive = true;
 
@@ -104,6 +99,12 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	if (basestations.size() == 0) // no basestations with API version match
 	{
 		LOGD("Checking for V1 basestations...");
+
+		uint32_t availableslotmask;
+
+		std::vector<int> slotsToCheck;
+		np::scanPXI(&availableslotmask);
+
 		for (int slot = 0; slot < 32; slot++)
 		{
 			if ((availableslotmask >> slot) & 1)
