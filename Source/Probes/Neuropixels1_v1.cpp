@@ -110,13 +110,25 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 }
 
+bool Neuropixels1_v1::open()
+{
+	errorCode = np::init(basestation->slot_c, headstage->port_c);
+	LOGD("init: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	return errorCode == np::SUCCESS;
+
+}
+
+bool Neuropixels1_v1::close()
+{
+	errorCode = np::close(basestation->slot_c, headstage->port_c);
+	LOGD("close: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	return errorCode == np::SUCCESS;
+}
+
 void Neuropixels1_v1::initialize()
 {
 
-	//Resets probe to default settings
-	errorCode = np::init(basestation->slot_c, headstage->port_c);
-
-	if (errorCode == np::SUCCESS)
+	if (open())
 	{
 		LOGD("Configuring probe...");
 		errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);

@@ -37,8 +37,6 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
     Array<Probe*> available_probes = thread->getProbes();
 
-    LOGD("NeuropixCanvas got ", available_probes.size(), " probes");
-
     for (auto probe : available_probes)
     {
         NeuropixInterface* neuropixInterface = new NeuropixInterface(probe, thread, editor, this);
@@ -811,8 +809,21 @@ void NeuropixInterface::buttonClicked(Button* button)
             }
             else {
 
+                //Save current probe settings
+                ProbeSettings settings = getProbeSettings();
 
+                //Close and re-open probe
+                probe->close();
+                probe->open();
+
+                //Run test
                 bool passed = probe->runBist(availableBists[bistComboBox->getSelectedId()]);
+
+                //Re-calibrate probe
+                probe->calibrate();
+
+                //Re-apply previous probe settings
+                applyProbeSettings(settings, true);
 
                 String testString = bistComboBox->getText();
 
@@ -834,6 +845,7 @@ void NeuropixInterface::buttonClicked(Button* button)
                 bistComboBox->changeItemText(bistComboBox->getSelectedId(), testString);
                 bistComboBox->setText(testString);
                 //bistComboBox->setSelectedId(bistComboBox->getSelectedId(), NotificationType::sendNotification);
+
             }
 
         }

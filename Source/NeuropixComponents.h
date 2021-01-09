@@ -258,6 +258,12 @@ public:
 
 	/** VIRTUAL METHODS */
 
+	/** Opens the connection to the probe */
+	virtual bool open() = 0;
+
+	/** Closes the connection to the probe */
+	virtual bool close() = 0;
+
 	/** Prepares the probe for data acquisition */
 	virtual void initialize() = 0;
 

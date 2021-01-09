@@ -111,16 +111,27 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 }
 
+bool Neuropixels1_v3::open()
+{
+	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
+	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	getGain();
+	LOGD("Gain settings after openProbe: ", availableApGains[apGainIndex], " ", availableLfpGains[lfpGainIndex]);
+	return errorCode == Neuropixels::SUCCESS;
+
+}
+
+bool Neuropixels1_v3::close()
+{
+	errorCode = Neuropixels::closeProbe(basestation->slot, headstage->port, dock);
+	LOGD("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	return errorCode == Neuropixels::SUCCESS;
+}
+
 void Neuropixels1_v3::initialize()
 {
 
-	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
-	LOGDD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
-
-	getGain();
-	LOGD("Gain settings after open probe: ", availableApGains[apGainIndex], " ", availableLfpGains[lfpGainIndex]);
-
-	if (errorCode == Neuropixels::SUCCESS)
+	if (open())
 	{
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		LOGDD("setOPMODE: errorCode: ", errorCode);
@@ -210,8 +221,6 @@ void Neuropixels1_v3::selectElectrodes(ProbeSettings settings, bool shouldWriteC
 				availableBanks.indexOf(settings.selectedBank[ch]));
 
 		}
-
-		LOGD("Updating electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
 
 		if (shouldWriteConfiguration)
 		{

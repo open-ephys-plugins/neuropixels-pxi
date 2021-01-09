@@ -220,20 +220,13 @@ void NeuropixThread::applyProbeSettingsQueue()
 	for (auto settings: probeSettingsUpdateQueue)
 	{
 
-		//Prevent settings from being loaded if probe is not calibrated
-		/*
-		while(!settings.probe->isCalibrated)
-		{
-			LOGD("Probe not yet calibrated!");
-		}
-		*/
-
 		if (settings.probe != nullptr)
 		{
 			settings.probe->selectElectrodes(settings, false);
 			settings.probe->setAllGains(settings.apGainIndex, settings.lfpGainIndex, false);
 			settings.probe->setAllReferences(settings.referenceIndex, false);
 			settings.probe->setApFilterState(settings.apFilterState, false);
+			
 			settings.probe->writeConfiguration();
 
 			settings.probe->setStatus(ProbeStatus::CONNECTED);

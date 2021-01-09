@@ -140,6 +140,18 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	
 }
 
+bool SimulatedProbe::open()
+{
+	LOGD("Opened connection to probe.");
+	return true;
+}
+
+bool SimulatedProbe::close()
+{
+	LOGD("Closed connection to probe.");
+	return true;
+}
+
 void SimulatedProbe::initialize()
 {
 	calibrate();

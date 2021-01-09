@@ -91,14 +91,27 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 
 }
 
-void Neuropixels_NHP_Passive::initialize()
+bool Neuropixels_NHP_Passive::open()
 {
 	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
 	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	return errorCode == Neuropixels::SUCCESS;
 
-	if (errorCode == Neuropixels::SUCCESS)
+}
+
+bool Neuropixels_NHP_Passive::close()
+{
+	errorCode = Neuropixels::closeProbe(basestation->slot, headstage->port, dock);
+	LOGD("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	return errorCode == Neuropixels::SUCCESS;
+}
+
+void Neuropixels_NHP_Passive::initialize()
+{
+
+	if (open())
 	{
-		LOGD("Configuring probe...");
+
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
@@ -108,6 +121,7 @@ void Neuropixels_NHP_Passive::initialize()
 		eventCode = 0;
 		setStatus(ProbeStatus::CONNECTED);
 	}
+
 }
 
 

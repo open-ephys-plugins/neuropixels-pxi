@@ -38,6 +38,9 @@ public:
 
 	void getInfo() override;
 
+	bool open() override;
+	bool close() override;
+
 	void initialize() override;
 
 	void selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration = true) override;
