@@ -138,10 +138,10 @@ void Neuropixels1_v3::initialize()
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 		LOGDD("setHSLed: errorCode: ", errorCode);
 
-		getGain();
-		LOGD("Gain settings after setOPMODE + setHSLed: ", availableApGains[apGainIndex], " ", availableLfpGains[lfpGainIndex]);
-
 		calibrate();
+
+		setAllGains(3,2, true);
+
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
 		eventCode = 0;

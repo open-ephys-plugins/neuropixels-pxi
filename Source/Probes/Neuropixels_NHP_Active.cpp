@@ -110,6 +110,9 @@ void Neuropixels_NHP_Active::initialize()
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
 		calibrate();
+
+		setAllGains(3,2, true);
+
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
 		eventCode = 0;

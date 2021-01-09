@@ -135,9 +135,13 @@ void Neuropixels1_v1::initialize()
 		errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
 
 		calibrate();
+
+		setAllGains(3,2, true);
+
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
 		eventCode = 0;
+
 		setStatus(ProbeStatus::CONNECTED);
 	}
 }
