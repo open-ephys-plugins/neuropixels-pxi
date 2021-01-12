@@ -117,6 +117,7 @@ bool Neuropixels1_v3::open()
 	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 	getGain();
 	LOGD("Gain settings after openProbe: ", availableApGains[apGainIndex], " ", availableLfpGains[lfpGainIndex]);
+
 	return errorCode == Neuropixels::SUCCESS;
 
 }
@@ -133,6 +134,8 @@ void Neuropixels1_v3::initialize()
 
 	if (open())
 	{
+		errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
+		LOGD("Init: errorCode: ", errorCode);
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		LOGDD("setOPMODE: errorCode: ", errorCode);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);

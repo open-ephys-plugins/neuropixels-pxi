@@ -820,6 +820,8 @@ void NeuropixInterface::buttonClicked(Button* button)
                 bool passed = probe->runBist(availableBists[bistComboBox->getSelectedId()]);
 
                 //Re-calibrate probe
+                probe->close();
+                probe->initialize();
                 probe->calibrate();
 
                 //Re-apply previous probe settings
