@@ -464,5 +464,8 @@ bool Neuropixels1_v1::runBist(BIST bistType)
 	open();
 	initialize();
 
+	np::setTriggerInput(basestation->slot_c, np::TRIGIN_SW);
+	np::arm(basestation->slot_c);
+
 	return returnValue;
 }

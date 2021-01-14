@@ -506,5 +506,8 @@ bool Neuropixels1_v3::runBist(BIST bistType)
 	close();
 	initialize();
 
+	errorCode = Neuropixels::setSWTrigger(slot);
+	errorCode = Neuropixels::arm(slot);
+
 	return returnValue;
 }
