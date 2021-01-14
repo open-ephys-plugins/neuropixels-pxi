@@ -51,41 +51,47 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 		name = probeMetadata.name;
 		type = probeMetadata.type;
 
-		apGainIndex = 3;
-		lfpGainIndex = 2;
-		referenceIndex = 0;
-		apFilterState = true;
+		settings.apGainIndex = 3;
+		settings.lfpGainIndex = 2;
+		settings.referenceIndex = 0;
+		settings.apFilterState = true;
 
 		channel_count = 384;
 		lfp_sample_rate = 2500.0f;
 		ap_sample_rate = 30000.0f;
+		
+		for (int i = 0; i < channel_count; i++)
+		{
+			settings.selectedBank.add(Bank::A);
+			settings.selectedChannel.add(i);
+			settings.selectedShank.add(0);
+		}
 
+		settings.availableApGains.add(50.0f);
+		settings.availableApGains.add(125.0f);
+		settings.availableApGains.add(250.0f);
+		settings.availableApGains.add(500.0f);
+		settings.availableApGains.add(1000.0f);
+		settings.availableApGains.add(1500.0f);
+		settings.availableApGains.add(2000.0f);
+		settings.availableApGains.add(3000.0f);
 
-		availableApGains.add(50.0f);
-		availableApGains.add(125.0f);
-		availableApGains.add(250.0f);
-		availableApGains.add(500.0f);
-		availableApGains.add(1000.0f);
-		availableApGains.add(1500.0f);
-		availableApGains.add(2000.0f);
-		availableApGains.add(3000.0f);
+		settings.availableLfpGains.add(50.0f);
+		settings.availableLfpGains.add(125.0f);
+		settings.availableLfpGains.add(250.0f);
+		settings.availableLfpGains.add(500.0f);
+		settings.availableLfpGains.add(1000.0f);
+		settings.availableLfpGains.add(1500.0f);
+		settings.availableLfpGains.add(2000.0f);
+		settings.availableLfpGains.add(3000.0f);
 
-		availableLfpGains.add(50.0f);
-		availableLfpGains.add(125.0f);
-		availableLfpGains.add(250.0f);
-		availableLfpGains.add(500.0f);
-		availableLfpGains.add(1000.0f);
-		availableLfpGains.add(1500.0f);
-		availableLfpGains.add(2000.0f);
-		availableLfpGains.add(3000.0f);
+		settings.availableReferences.add("Ext");
+		settings.availableReferences.add("Tip");
+		settings.availableReferences.add("192");
+		settings.availableReferences.add("576");
+		settings.availableReferences.add("960");
 
-		availableReferences.add("Ext");
-		availableReferences.add("Tip");
-		availableReferences.add("192");
-		availableReferences.add("576");
-		availableReferences.add("960");
-
-		availableBanks = { Bank::A,
+		settings.availableBanks = { Bank::A,
 			Bank::B,
 			Bank::C,
 			Bank::D,
@@ -115,8 +121,6 @@ bool Neuropixels1_v3::open()
 {
 	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
 	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
-	getGain();
-	LOGD("Gain settings after openProbe: ", availableApGains[apGainIndex], " ", availableLfpGains[lfpGainIndex]);
 
 	return errorCode == Neuropixels::SUCCESS;
 
@@ -126,6 +130,7 @@ bool Neuropixels1_v3::close()
 {
 	errorCode = Neuropixels::closeProbe(basestation->slot, headstage->port, dock);
 	LOGD("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+
 	return errorCode == Neuropixels::SUCCESS;
 }
 
@@ -134,6 +139,7 @@ void Neuropixels1_v3::initialize()
 
 	if (open())
 	{
+		
 		errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
 		LOGD("Init: errorCode: ", errorCode);
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
@@ -143,11 +149,17 @@ void Neuropixels1_v3::initialize()
 
 		calibrate();
 
-		setAllGains(3,2, true);
+		selectElectrodes();
+		setAllReferences();
+		setAllGains();
+		setApFilterState();
+
+		writeConfiguration();
 
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
 		eventCode = 0;
+
 		setStatus(ProbeStatus::CONNECTED);
 	}
 }
@@ -203,10 +215,15 @@ void Neuropixels1_v3::calibrate()
 
 void Neuropixels1_v3::getGain()
 {
+	int apGainIndex;
+	int lfpGainIndex;
+
 	Neuropixels::getGain(basestation->slot, headstage->port, dock, 32, &apGainIndex, &lfpGainIndex);
+
+	LOGD("Current gain index: AP=", apGainIndex, " LFP=", lfpGainIndex);
 }
 
-void Neuropixels1_v3::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
+void Neuropixels1_v3::selectElectrodes()
 {
 
 	Neuropixels::NP_ErrorCode ec;
@@ -221,110 +238,72 @@ void Neuropixels1_v3::selectElectrodes(ProbeSettings settings, bool shouldWriteC
 				dock,
 				settings.selectedChannel[ch],
 				settings.selectedShank[ch],
-				availableBanks.indexOf(settings.selectedBank[ch]));
+				settings.availableBanks.indexOf(settings.selectedBank[ch]));
 
-		}
-
-		if (shouldWriteConfiguration)
-		{
-			ec = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-
-			if (!ec == Neuropixels::SUCCESS) { LOGD("Failed to write channel config w/ error code: ", ec); }
-			else { LOGD("Wrote channel config "); }
 		}
 	}
 
 }
 
-void Neuropixels1_v3::setApFilterState(bool filterIsOn, bool shouldWriteConfiguration)
+void Neuropixels1_v3::setApFilterState()
 {
-	if (apFilterState != filterIsOn)
-	{
-		for (int channel = 0; channel < 384; channel++)
-			Neuropixels::setAPCornerFrequency(basestation->slot,
-				headstage->port,
-				dock,
-				channel,
-				!filterIsOn); // true if disabled
 
-		if (shouldWriteConfiguration)
-		{
-			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-			LOGD("Wrote filter ", int(filterIsOn), " with error code ", errorCode);
-		}
-
-		apFilterState = filterIsOn;
-	}
+	for (int channel = 0; channel < 384; channel++)
+		Neuropixels::setAPCornerFrequency(basestation->slot,
+			headstage->port,
+			dock,
+			channel,
+			!settings.apFilterState); // true if disabled
 	
 }
 
-void Neuropixels1_v3::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
+void Neuropixels1_v3::setAllGains()
 {
 
-	if (apGain != apGainIndex || lfpGain != lfpGainIndex)
+	LOGD("Setting gain AP=", settings.apGainIndex, " LFP=", settings.lfpGainIndex);
+
+	for (int channel = 0; channel < 384; channel++)
 	{
-		for (int channel = 0; channel < 384; channel++)
-		{
-			Neuropixels::setGain(basestation->slot, headstage->port, dock,
-				channel,
-				apGain,
-				lfpGain);
-		}
-
-		if (shouldWriteConfiguration)
-		{
-			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-		}
-
-		apGainIndex = apGain;
-		lfpGainIndex = lfpGain;
+		Neuropixels::setGain(basestation->slot, headstage->port, dock,
+			channel,
+			settings.apGainIndex,
+			settings.lfpGainIndex);
 	}
 	
 }
 
 
-void Neuropixels1_v3::setAllReferences(int refIndex, bool shouldWriteConfiguration)
+void Neuropixels1_v3::setAllReferences()
 {
 
-	if (refIndex != referenceIndex)
+	Neuropixels::channelreference_t refId;
+	int refElectrodeBank = 0;
+
+	switch (settings.referenceIndex)
 	{
-		Neuropixels::channelreference_t refId;
-		int refElectrodeBank = 0;
-
-		switch (referenceIndex)
-		{
-		case 0:
-			refId = Neuropixels::EXT_REF;
-			break;
-		case 1:
-			refId = Neuropixels::TIP_REF;
-			break;
-		case 2:
-			refId = Neuropixels::INT_REF;
-			break;
-		case 3:
-			refId = Neuropixels::INT_REF;
-			refElectrodeBank = 1;
-			break;
-		case 4:
-			refId = Neuropixels::INT_REF;
-			refElectrodeBank = 2;
-			break;
-		default:
-			refId = Neuropixels::EXT_REF;
-		}
-
-		for (int channel = 0; channel < 384; channel++)
-			Neuropixels::setReference(basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank);
-
-		if (shouldWriteConfiguration)
-			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-
-		std::cout << "Wrote reference " << int(refId) << ", " << int(refElectrodeBank) << " with error code " << errorCode << std::endl;
-
-		referenceIndex = refIndex;
+	case 0:
+		refId = Neuropixels::EXT_REF;
+		break;
+	case 1:
+		refId = Neuropixels::TIP_REF;
+		break;
+	case 2:
+		refId = Neuropixels::INT_REF;
+		break;
+	case 3:
+		refId = Neuropixels::INT_REF;
+		refElectrodeBank = 1;
+		break;
+	case 4:
+		refId = Neuropixels::INT_REF;
+		refElectrodeBank = 2;
+		break;
+	default:
+		refId = Neuropixels::EXT_REF;
 	}
 
+	for (int channel = 0; channel < 384; channel++)
+		Neuropixels::setReference(basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank);
 
 }
 
@@ -337,7 +316,7 @@ void Neuropixels1_v3::writeConfiguration()
 	{
 		LOGD("### 					Succesfully wrote probe configuration");
 		getGain();
-		LOGD("### 					Current gain settings: ", availableApGains[apGainIndex], ", ", availableLfpGains[lfpGainIndex]);
+		LOGD("### 					Current gain settings: ", settings.availableApGains[settings.apGainIndex], ", ", settings.availableLfpGains[settings.lfpGainIndex]);
 	}
 	else
 	{
@@ -368,7 +347,7 @@ void Neuropixels1_v3::run()
 	//std::cout << "Thread running." << std::endl;
 
 	getGain();
-	LOGD("Start of acquisition gain values: AP=", availableApGains[apGainIndex], ", LFP=", availableLfpGains[lfpGainIndex]);
+	LOGD("Start of acquisition gain values: AP=", settings.availableApGains[settings.apGainIndex], ", LFP=", settings.availableLfpGains[settings.lfpGainIndex]);
 
 	while (!threadShouldExit())
 	{
@@ -400,10 +379,10 @@ void Neuropixels1_v3::run()
 					for (int j = 0; j < 384; j++)
 					{
 
-						apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / availableApGains[apGainIndex]; // convert to microvolts
+						apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / settings.availableApGains[settings.apGainIndex]; // convert to microvolts
 
 						if (i == 0)
-							lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / availableLfpGains[lfpGainIndex]; // convert to microvolts
+							lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / settings.availableLfpGains[settings.lfpGainIndex]; // convert to microvolts
 					}
 
 					ap_timestamp += 1;

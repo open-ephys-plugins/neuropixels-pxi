@@ -222,10 +222,11 @@ void NeuropixThread::applyProbeSettingsQueue()
 
 		if (settings.probe != nullptr)
 		{
-			settings.probe->selectElectrodes(settings, false);
-			settings.probe->setAllGains(settings.apGainIndex, settings.lfpGainIndex, false);
-			settings.probe->setAllReferences(settings.referenceIndex, false);
-			settings.probe->setApFilterState(settings.apFilterState, false);
+
+			settings.probe->selectElectrodes();
+			settings.probe->setAllGains();
+			settings.probe->setAllReferences();
+			settings.probe->setApFilterState();
 			
 			settings.probe->writeConfiguration();
 

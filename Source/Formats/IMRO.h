@@ -57,8 +57,8 @@ public:
             }
                 
             else {
-                channelInfo += " " + String(int(settings.probe->availableApGains[settings.apGainIndex]));
-                channelInfo += " " + String(int(settings.probe->availableLfpGains[settings.lfpGainIndex]));
+                channelInfo += " " + String(int(settings.availableApGains[settings.apGainIndex]));
+                channelInfo += " " + String(int(settings.availableLfpGains[settings.lfpGainIndex]));
                 channelInfo += " " + String(int(settings.apFilterState));
             }
 

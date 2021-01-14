@@ -311,7 +311,6 @@ void Basestation_v3::startAcquisition()
 {
 	for (auto probe : probes)
 	{
-		LOGD("*** Probe AP gain setting: ", probe->availableApGains[probe->apGainIndex]);
 		probe->startAcquisition();
 	}
 

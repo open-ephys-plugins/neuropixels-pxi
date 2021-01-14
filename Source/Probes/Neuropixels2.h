@@ -43,10 +43,10 @@ public:
 
 	void initialize() override;
 
-	void selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration = true) override;
-	void setAllReferences(int referenceIndex, bool shouldWriteConfiguratio = true) override;
-	void setAllGains(int apGainIndex, int lfpGainIndex, bool shouldWriteConfiguration = true) override;
-	void setApFilterState(bool disableHighPass, bool shouldWriteConfiguration = true) override;
+	void selectElectrodes() override;
+	void setAllReferences() override;
+	void setAllGains() override;
+	void setApFilterState() override;
 	void writeConfiguration() override;
 
 	void startAcquisition() override;

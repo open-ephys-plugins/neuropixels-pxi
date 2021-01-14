@@ -54,36 +54,43 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 	name = probeMetadata.name;
 	type = probeMetadata.type;
 
-	apGainIndex = 3;
-	lfpGainIndex = 2;
-	referenceIndex = 0;
-	apFilterState = true;
+	settings.apGainIndex = 3;
+	settings.lfpGainIndex = 2;
+	settings.referenceIndex = 0;
+	settings.apFilterState = true;
 
 	channel_count = 128;
 	lfp_sample_rate = 2500.0f;
 	ap_sample_rate = 30000.0f;
+	
+	for (int i = 0; i < channel_count; i++)
+    {
+        settings.selectedBank.add(Bank::A);
+        settings.selectedChannel.add(i);
+        settings.selectedShank.add(0);
+    }
 
-	availableApGains.add(50.0f);
-	availableApGains.add(125.0f);
-	availableApGains.add(250.0f);
-	availableApGains.add(500.0f);
-	availableApGains.add(1000.0f);
-	availableApGains.add(1500.0f);
-	availableApGains.add(2000.0f);
-	availableApGains.add(3000.0f);
+	settings.availableApGains.add(50.0f);
+	settings.availableApGains.add(125.0f);
+	settings.availableApGains.add(250.0f);
+	settings.availableApGains.add(500.0f);
+	settings.availableApGains.add(1000.0f);
+	settings.availableApGains.add(1500.0f);
+	settings.availableApGains.add(2000.0f);
+	settings.availableApGains.add(3000.0f);
 
-	availableLfpGains.add(50.0f);
-	availableLfpGains.add(125.0f);
-	availableLfpGains.add(250.0f);
-	availableLfpGains.add(500.0f);
-	availableLfpGains.add(1000.0f);
-	availableLfpGains.add(1500.0f);
-	availableLfpGains.add(2000.0f);
-	availableLfpGains.add(3000.0f);
+	settings.availableLfpGains.add(50.0f);
+	settings.availableLfpGains.add(125.0f);
+	settings.availableLfpGains.add(250.0f);
+	settings.availableLfpGains.add(500.0f);
+	settings.availableLfpGains.add(1000.0f);
+	settings.availableLfpGains.add(1500.0f);
+	settings.availableLfpGains.add(2000.0f);
+	settings.availableLfpGains.add(3000.0f);
 
-	availableReferences.add("REF_ELEC");
-	availableReferences.add("TIP_REF");
-	availableReferences.add("INT_REF");
+	settings.availableReferences.add("REF_ELEC");
+	settings.availableReferences.add("TIP_REF");
+	settings.availableReferences.add("INT_REF");
 
 	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
@@ -117,7 +124,12 @@ void Neuropixels_NHP_Passive::initialize()
 
 		calibrate();
 
-		setAllGains(3,2, true);
+		selectElectrodes();
+		setAllReferences();
+		setAllGains();
+		setApFilterState();
+
+		writeConfiguration();
 
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
@@ -173,91 +185,61 @@ void Neuropixels_NHP_Passive::calibrate()
 	
 }
 
-void Neuropixels_NHP_Passive::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Passive::selectElectrodes()
 {
 
 	// not available
 
 }
 
-void Neuropixels_NHP_Passive::setApFilterState(bool filterIsOn, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Passive::setApFilterState()
 {
-	if (apFilterState != filterIsOn)
-	{
-		for (int channel = 0; channel < 128; channel++)
-			Neuropixels::setAPCornerFrequency(basestation->slot,
-				headstage->port,
-				dock,
-				channel,
-				!filterIsOn); // true if disabled
-
-		if (shouldWriteConfiguration)
-		{
-			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-			LOGD("Wrote filter ", int(filterIsOn), " with error code ", errorCode);
-		}
-
-		apFilterState = filterIsOn;
-	}
+	for (int channel = 0; channel < 128; channel++)
+		Neuropixels::setAPCornerFrequency(basestation->slot,
+			headstage->port,
+			dock,
+			channel,
+			!settings.apFilterState); // true if disabled
 }
 
-void Neuropixels_NHP_Passive::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Passive::setAllGains()
 {
-	if (apGain != apGainIndex || lfpGain != lfpGainIndex)
+
+	for (int channel = 0; channel < 128; channel++)
 	{
-		for (int channel = 0; channel < 128; channel++)
-		{
-			Neuropixels::setGain(basestation->slot, headstage->port, dock,
-				channel,
-				apGain,
-				lfpGain);
-		}
-
-		if (shouldWriteConfiguration)
-		{
-			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-			LOGD("Wrote gain AP=", int(apGain), ", LFP=", int(lfpGain), " with error code ", errorCode);
-		}
-
-		apGainIndex = apGain;
-		lfpGainIndex = lfpGain;
+		Neuropixels::setGain(basestation->slot, headstage->port, dock,
+			channel,
+			settings.apGainIndex,
+			settings.lfpGainIndex);
 	}
+
 }
 
 
-void Neuropixels_NHP_Passive::setAllReferences(int refIndex, bool shouldWriteConfiguration)
+void Neuropixels_NHP_Passive::setAllReferences()
 {
-	if (refIndex != referenceIndex)
+
+	Neuropixels::channelreference_t refId;
+	int refElectrodeBank = 0;
+
+	switch (settings.referenceIndex)
 	{
-		Neuropixels::channelreference_t refId;
-		int refElectrodeBank = 0;
-
-		switch (referenceIndex)
-		{
-		case 0:
-			refId = Neuropixels::EXT_REF;
-			break;
-		case 1:
-			refId = Neuropixels::TIP_REF;
-			break;
-		case 2:
-			refId = Neuropixels::INT_REF;
-			break;
-		default:
-			refId = Neuropixels::EXT_REF;
-		}
-
-		for (int channel = 0; channel < 128; channel++)
-			Neuropixels::setReference(basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank);
-
-		if (shouldWriteConfiguration)
-		{
-			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-			LOGD("Wrote reference ", int(refId), ", ", int(refElectrodeBank), " with error code ", errorCode);
-		}
-
-		referenceIndex = refIndex;
+	case 0:
+		refId = Neuropixels::EXT_REF;
+		break;
+	case 1:
+		refId = Neuropixels::TIP_REF;
+		break;
+	case 2:
+		refId = Neuropixels::INT_REF;
+		break;
+	default:
+		refId = Neuropixels::EXT_REF;
 	}
+
+	for (int channel = 0; channel < 128; channel++)
+		Neuropixels::setReference(basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank);
+
 
 }
 
@@ -315,10 +297,10 @@ void Neuropixels_NHP_Passive::run()
 					for (int j = 0; j < 128; j++)
 					{
 
-						apSamples[j] = float(packet[packetNum].apData[i][channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / availableApGains[apGainIndex]; // convert to microvolts
+						apSamples[j] = float(packet[packetNum].apData[i][channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / settings.availableApGains[settings.apGainIndex]; // convert to microvolts
 
 						if (i == 0)
-							lfpSamples[j] = float(packet[packetNum].lfpData[channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / availableLfpGains[lfpGainIndex]; // convert to microvolts
+							lfpSamples[j] = float(packet[packetNum].lfpData[channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / settings.availableLfpGains[settings.lfpGainIndex]; // convert to microvolts
 					}
 
 					ap_timestamp += 1;

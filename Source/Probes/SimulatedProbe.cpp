@@ -57,6 +57,13 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	lfp_sample_rate = 2500.0f;
 	ap_sample_rate = 30000.0f;
 
+	for (int i = 0; i < channel_count; i++)
+    {
+        settings.selectedBank.add(Bank::A);
+        settings.selectedChannel.add(i);
+        settings.selectedShank.add(0);
+    }
+
 	if (type == ProbeType::NP1 ||
 		type == ProbeType::NHP10 ||
 		type == ProbeType::NHP25 ||
@@ -64,79 +71,82 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 		type == ProbeType::UHD1 ||
 		type == ProbeType::NHP1)
 	{
-		availableApGains.add(50.0f);
-		availableApGains.add(125.0f);
-		availableApGains.add(250.0f);
-		availableApGains.add(500.0f);
-		availableApGains.add(1000.0f);
-		availableApGains.add(1500.0f);
-		availableApGains.add(2000.0f);
-		availableApGains.add(3000.0f);
+		settings.availableApGains.add(50.0f);
+		settings.availableApGains.add(125.0f);
+		settings.availableApGains.add(250.0f);
+		settings.availableApGains.add(500.0f);
+		settings.availableApGains.add(1000.0f);
+		settings.availableApGains.add(1500.0f);
+		settings.availableApGains.add(2000.0f);
+		settings.availableApGains.add(3000.0f);
 
-		availableLfpGains.add(50.0f);
-		availableLfpGains.add(125.0f);
-		availableLfpGains.add(250.0f);
-		availableLfpGains.add(500.0f);
-		availableLfpGains.add(1000.0f);
-		availableLfpGains.add(1500.0f);
-		availableLfpGains.add(2000.0f);
-		availableLfpGains.add(3000.0f);
+		settings.availableLfpGains.add(50.0f);
+		settings.availableLfpGains.add(125.0f);
+		settings.availableLfpGains.add(250.0f);
+		settings.availableLfpGains.add(500.0f);
+		settings.availableLfpGains.add(1000.0f);
+		settings.availableLfpGains.add(1500.0f);
+		settings.availableLfpGains.add(2000.0f);
+		settings.availableLfpGains.add(3000.0f);
 
-		apGainIndex = 3;
-		lfpGainIndex = 2;
-		apFilterState = true;
-		apFilterSwitch = true;
+		settings.apGainIndex = 3;
+		settings.lfpGainIndex = 2;
+		settings.apFilterState = true;
 
-		availableReferences.add("Ext");
-		availableReferences.add("Tip");
-		availableReferences.add("192");
-		availableReferences.add("576");
-		availableReferences.add("960");
+		settings.availableReferences.add("Ext");
+		settings.availableReferences.add("Tip");
+		settings.availableReferences.add("192");
+		settings.availableReferences.add("576");
+		settings.availableReferences.add("960");
 
 	}
 	else {
-		apGainIndex = -1;
-		lfpGainIndex = -1;
+
+		settings.apGainIndex = -1;
+		settings.lfpGainIndex = -1;
+
 		apFilterSwitch = false;
 
 		if (type == ProbeType::NP2_1)
 		{
-			availableReferences.add("Ext");
-			availableReferences.add("Tip");
-			availableReferences.add("128");
-			availableReferences.add("508");
-			availableReferences.add("888");
-			availableReferences.add("1252");
+			settings.availableReferences.add("Ext");
+			settings.availableReferences.add("Tip");
+			settings.availableReferences.add("128");
+			settings.availableReferences.add("508");
+			settings.availableReferences.add("888");
+			settings.availableReferences.add("1252");
 		}
 		else {
-			availableReferences.add("Ext");
-			availableReferences.add("1: Tip");
-			availableReferences.add("1: 128");
-			availableReferences.add("1: 512");
-			availableReferences.add("1: 896");
-			availableReferences.add("1: 1280");
-			availableReferences.add("2: Tip");
-			availableReferences.add("2: 128");
-			availableReferences.add("2: 512");
-			availableReferences.add("2: 896");
-			availableReferences.add("2: 1280");
-			availableReferences.add("3: Tip");
-			availableReferences.add("3: 128");
-			availableReferences.add("3: 512");
-			availableReferences.add("3: 896");
-			availableReferences.add("3: 1280");
-			availableReferences.add("4: Tip");
-			availableReferences.add("4: 128");
-			availableReferences.add("4: 512");
-			availableReferences.add("4: 896");
-			availableReferences.add("4: 1280");
+			settings.availableReferences.add("Ext");
+			settings.availableReferences.add("1: Tip");
+			settings.availableReferences.add("1: 128");
+			settings.availableReferences.add("1: 512");
+			settings.availableReferences.add("1: 896");
+			settings.availableReferences.add("1: 1280");
+			settings.availableReferences.add("2: Tip");
+			settings.availableReferences.add("2: 128");
+			settings.availableReferences.add("2: 512");
+			settings.availableReferences.add("2: 896");
+			settings.availableReferences.add("2: 1280");
+			settings.availableReferences.add("3: Tip");
+			settings.availableReferences.add("3: 128");
+			settings.availableReferences.add("3: 512");
+			settings.availableReferences.add("3: 896");
+			settings.availableReferences.add("3: 1280");
+			settings.availableReferences.add("4: Tip");
+			settings.availableReferences.add("4: 128");
+			settings.availableReferences.add("4: 512");
+			settings.availableReferences.add("4: 896");
+			settings.availableReferences.add("4: 1280");
 		}
 		
 	}
 
-	referenceIndex = 0;
+	settings.referenceIndex = 0;
 
 	isCalibrated = false;
+
+	apFilterSwitch = true;
 	
 }
 
@@ -168,20 +178,20 @@ void SimulatedProbe::calibrate()
 	LOGD("Calibrating simulated probe.");
 }
 
-void SimulatedProbe::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
+void SimulatedProbe::selectElectrodes()
 {
 
 	LOGD("Selecting channels for simulated probe.");
 
 }
 
-void SimulatedProbe::setApFilterState(bool disableHighPass, bool shouldWriteConfiguration)
+void SimulatedProbe::setApFilterState()
 {
 
 	LOGD("Wrote filter state for simulated probe.");
 }
 
-void SimulatedProbe::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
+void SimulatedProbe::setAllGains()
 {
 	//for (int channel = 0; channel < 384; channel++)
 	//{
@@ -193,7 +203,7 @@ void SimulatedProbe::setAllGains(int apGain, int lfpGain, bool shouldWriteConfig
 }
 
 
-void SimulatedProbe::setAllReferences(int referenceIndex, bool shouldWriteConfiguration)
+void SimulatedProbe::setAllReferences()
 {
 	LOGD("Wrote reference state for simulated probe.");
 }
