@@ -137,10 +137,10 @@ void Neuropixels2::initialize()
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
-		calibrate();
-
 		selectElectrodes();
 		setAllReferences();
+
+		calibrate();
 
 		writeConfiguration();
 

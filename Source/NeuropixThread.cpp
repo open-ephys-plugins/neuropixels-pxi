@@ -212,6 +212,7 @@ void NeuropixThread::updateProbeSettingsQueue(ProbeSettings settings)
 
 void NeuropixThread::applyProbeSettingsQueue()
 {
+
 	for (auto settings : probeSettingsUpdateQueue)
 	{
 		settings.probe->setStatus(ProbeStatus::UPDATING);
@@ -227,7 +228,9 @@ void NeuropixThread::applyProbeSettingsQueue()
 			settings.probe->setAllGains();
 			settings.probe->setAllReferences();
 			settings.probe->setApFilterState();
-			
+
+			settings.probe->calibrate();
+
 			settings.probe->writeConfiguration();
 
 			settings.probe->setStatus(ProbeStatus::CONNECTED);

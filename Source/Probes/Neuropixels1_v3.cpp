@@ -141,18 +141,17 @@ void Neuropixels1_v3::initialize()
 	{
 		
 		errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
-		LOGD("Init: errorCode: ", errorCode);
-		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
-		LOGDD("setOPMODE: errorCode: ", errorCode);
-		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
-		LOGDD("setHSLed: errorCode: ", errorCode);
+		LOGD("Neuropixels::init: errorCode: ", errorCode);
 
-		calibrate();
+		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+		LOGDD("Neuropixels::setHSLed: errorCode: ", errorCode);
 
 		selectElectrodes();
 		setAllReferences();
 		setAllGains();
 		setApFilterState();
+
+		calibrate();
 
 		writeConfiguration();
 
@@ -198,16 +197,14 @@ void Neuropixels1_v3::calibrate()
 	errorCode = Neuropixels::setADCCalibration(basestation->slot, headstage->port, adcFile.toRawUTF8());
 
 	if (errorCode == 0) { LOGD("Successful ADC calibration."); }
-	else { LOGD("***Unsuccessful ADC calibration, failed with error code: ", errorCode); }
+	else { LOGD("!!! Unsuccessful ADC calibration, failed with error code: ", errorCode); return; }
 
 	LOGDD("Gain file: ", gainFile);
 
 	errorCode = Neuropixels::setGainCalibration(basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
 
 	if (errorCode == 0) { LOGD("Successful gain calibration."); }
-	else { LOGD("***Unsuccessful gain calibration, failed with error code: ", errorCode); }
-
-	writeConfiguration();
+	else { LOGD("!!! Unsuccessful gain calibration, failed with error code: ", errorCode); return; }
 
 	isCalibrated = true;
 
@@ -220,7 +217,12 @@ void Neuropixels1_v3::getGain()
 
 	Neuropixels::getGain(basestation->slot, headstage->port, dock, 32, &apGainIndex, &lfpGainIndex);
 
-	LOGD("Current gain index: AP=", apGainIndex, " LFP=", lfpGainIndex);
+	LOGD("Current settings for probe on slot: ", basestation->slot,
+		" port: ", headstage->port,
+		" dock: ", dock,
+		" AP=", settings.availableApGains[apGainIndex],
+		" LFP=", settings.availableLfpGains[lfpGainIndex],
+		" REF=", settings.availableReferences[settings.referenceIndex]);
 }
 
 void Neuropixels1_v3::selectElectrodes()
@@ -232,6 +234,8 @@ void Neuropixels1_v3::selectElectrodes()
 	{
 		for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
 		{
+
+			LOGDD("Setting probe: ", headstage->port, " ch: ", settings.selectedChannel[ch], " to bank: ", settings.availableBanks.indexOf(settings.selectedBank[ch]));
 
 			ec = Neuropixels::selectElectrode(basestation->slot,
 				headstage->port,
@@ -260,7 +264,7 @@ void Neuropixels1_v3::setApFilterState()
 void Neuropixels1_v3::setAllGains()
 {
 
-	LOGD("Setting gain AP=", settings.apGainIndex, " LFP=", settings.lfpGainIndex);
+	LOGDD("Setting gain AP=", settings.apGainIndex, " LFP=", settings.lfpGainIndex);
 
 	for (int channel = 0; channel < 384; channel++)
 	{
@@ -314,13 +318,12 @@ void Neuropixels1_v3::writeConfiguration()
 
 	if (errorCode == Neuropixels::SUCCESS)
 	{
-		LOGD("### 					Succesfully wrote probe configuration");
+		LOGD("Succesfully wrote probe configuration");
 		getGain();
-		LOGD("### 					Current gain settings: ", settings.availableApGains[settings.apGainIndex], ", ", settings.availableLfpGains[settings.lfpGainIndex]);
 	}
 	else
 	{
-		LOGD("#################### FAILED TO WRITE PROBE CONFIGURATION w/ error code: ", errorCode);
+		LOGD("!!! FAILED TO WRITE PROBE CONFIGURATION !!! Slot: ", basestation->slot, " port: ", headstage->port, " error code: ", errorCode);
 	}
 
 }
@@ -343,11 +346,6 @@ void Neuropixels1_v3::stopAcquisition()
 
 void Neuropixels1_v3::run()
 {
-
-	//std::cout << "Thread running." << std::endl;
-
-	getGain();
-	LOGD("Start of acquisition gain values: AP=", settings.availableApGains[settings.apGainIndex], ", LFP=", settings.availableLfpGains[settings.lfpGainIndex]);
 
 	while (!threadShouldExit())
 	{

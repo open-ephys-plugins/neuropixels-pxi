@@ -127,7 +127,7 @@ bool Basestation_v3::open()
 
 				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
 				{
-					LOGD("  Found 1.0 single-dock headstage on port: ", port);
+					LOGD("      Found 1.0 single-dock headstage on port: ", port);
 					headstage = new Headstage1_v3(this, port);
 					if (headstage->testModule != nullptr)
 					{
@@ -136,12 +136,12 @@ bool Basestation_v3::open()
 				}
 				else if (hsPartNumber == "NPNH_HS_30") // 128-ch analog headstage
 				{
-					LOGD("  Found 128-ch analog headstage on port: ", port);
+					LOGD("      Found 128-ch analog headstage on port: ", port);
 					headstage = new Headstage_Analog128(this, port);
 				}
 				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 				{
-					LOGD("  Found 2.0 dual-dock headstage on port: ", port);
+					LOGD("      Found 2.0 dual-dock headstage on port: ", port);
 					headstage = new Headstage2(this, port);
 				}
 				else
@@ -178,7 +178,7 @@ bool Basestation_v3::open()
 
 		}
 
-		LOGD("  Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
+		LOGD("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 	}
 
 	syncFrequencies.add(1);

@@ -122,12 +122,12 @@ void Neuropixels_NHP_Passive::initialize()
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
-		calibrate();
-
 		selectElectrodes();
 		setAllReferences();
 		setAllGains();
 		setApFilterState();
+
+		calibrate();
 
 		writeConfiguration();
 

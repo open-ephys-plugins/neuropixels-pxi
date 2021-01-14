@@ -2336,8 +2336,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     }
 
     thread->updateProbeSettingsQueue(settings);
-
-    applyProbeSettings(settings, false);
+    applyProbeSettings(settings, true);
 }
 
 // --------------------------------------

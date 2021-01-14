@@ -219,7 +219,12 @@ void BackgroundLoader::run()
 {
 	/* Open the NPX-PXI probe connections in the background to prevent this plugin from blocking the main GUI*/
 	if (!isInitialized)
+	{
 		thread->initialize();
+		isInitialized = true;
+		thread->probeSettingsUpdateQueue.clear();
+		return;
+	}
 
 	/* Apply any saved settings */
 	//CoreServices::sendStatusMessage("Restoring saved probe settings...");
@@ -245,8 +250,6 @@ void BackgroundLoader::run()
 		CoreServices::updateSignalChain(editor);
 		CoreServices::sendStatusMessage("Neuropix-PXI plugin ready for acquisition!");
 	}*/
-
-	isInitialized = true;
 	
 }
 
