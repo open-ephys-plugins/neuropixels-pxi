@@ -233,7 +233,7 @@ void Neuropixels2::setAllReferences(int refIndex, bool shouldWriteConfiguration)
 {
 
 	Neuropixels::channelreference_t refId;
-	uint8_t refElectrodeBank = 0;
+	int refElectrodeBank = 0;
 	int shank = 0;
 
 	switch (referenceIndex)
@@ -342,8 +342,8 @@ void Neuropixels2::setAllReferences(int refIndex, bool shouldWriteConfiguration)
 		Neuropixels::setReference(basestation->slot, 
 									headstage->port, 
 									dock,
-									shank,
-									channel, 
+									channel,
+									shank, 
 									refId, 
 									refElectrodeBank);
 

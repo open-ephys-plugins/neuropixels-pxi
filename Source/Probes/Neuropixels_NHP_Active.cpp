@@ -241,7 +241,7 @@ void Neuropixels_NHP_Active::setAllReferences(int refIndex, bool shouldWriteConf
 	if (refIndex != referenceIndex)
 	{
 		Neuropixels::channelreference_t refId;
-		uint8_t refElectrodeBank = 0;
+		int refElectrodeBank = 0;
 
 		switch (referenceIndex)
 		{
@@ -259,7 +259,7 @@ void Neuropixels_NHP_Active::setAllReferences(int refIndex, bool shouldWriteConf
 		}
 
 		for (int channel = 0; channel < 384; channel++)
-			Neuropixels::setReference(basestation->slot, headstage->port, dock, 0, channel, refId, refElectrodeBank);
+			Neuropixels::setReference(basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank);
 
 		if (shouldWriteConfiguration)
 		{

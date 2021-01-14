@@ -289,7 +289,7 @@ void Neuropixels1_v3::setAllReferences(int refIndex, bool shouldWriteConfigurati
 	if (refIndex != referenceIndex)
 	{
 		Neuropixels::channelreference_t refId;
-		uint8_t refElectrodeBank = 0;
+		int refElectrodeBank = 0;
 
 		switch (referenceIndex)
 		{
@@ -315,7 +315,7 @@ void Neuropixels1_v3::setAllReferences(int refIndex, bool shouldWriteConfigurati
 		}
 
 		for (int channel = 0; channel < 384; channel++)
-			Neuropixels::setReference(basestation->slot, headstage->port, dock, 0, channel, refId, refElectrodeBank);
+			Neuropixels::setReference(basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank);
 
 		if (shouldWriteConfiguration)
 			errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
