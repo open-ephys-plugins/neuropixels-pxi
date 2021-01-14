@@ -348,12 +348,8 @@ void Neuropixels_NHP_Passive::run()
 bool Neuropixels_NHP_Passive::runBist(BIST bistType)
 {
 
-	//save gain setting
-	
-    //close and re-open probe 
-    //check default gain setting (should be reset by openProbe call)
-	//run test
-	//apply saved gain setting
+	close();
+	open();
 
 	int slot = basestation->slot;
 	int port = headstage->port;
@@ -422,6 +418,9 @@ bool Neuropixels_NHP_Passive::runBist(BIST bistType)
 	} default:
 		CoreServices::sendStatusMessage("Test not found.");
 	}
+
+	close();
+	initialize();
 
 	return returnValue;
 }

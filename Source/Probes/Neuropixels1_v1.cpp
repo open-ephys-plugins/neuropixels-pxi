@@ -128,32 +128,30 @@ bool Neuropixels1_v1::close()
 void Neuropixels1_v1::initialize()
 {
 
-	if (open())
-	{
-		LOGD("Configuring probe...");
+	LOGD("Configuring probe...");
 
-		errorCode = np::init(basestation->slot_c, headstage->port_c);
-		LOGD("init: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-		errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);
-		LOGD("setOPMODE: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-		errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
-		LOGD("setHSLed: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	errorCode = np::init(basestation->slot_c, headstage->port_c);
+	LOGD("init: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);
+	LOGD("setOPMODE: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
+	LOGD("setHSLed: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
 
-		calibrate();
+	calibrate();
 
-		selectElectrodes();
-		setAllReferences();
-		setAllGains();
-		setApFilterState();
+	selectElectrodes();
+	setAllReferences();
+	setAllGains();
+	setApFilterState();
 
-		writeConfiguration();
+	writeConfiguration();
 
-		ap_timestamp = 0;
-		lfp_timestamp = 0;
-		eventCode = 0;
+	ap_timestamp = 0;
+	lfp_timestamp = 0;
+	eventCode = 0;
 
-		setStatus(ProbeStatus::CONNECTED);
-	}
+	setStatus(ProbeStatus::CONNECTED);
+
 }
 
 
@@ -279,6 +277,13 @@ void Neuropixels1_v1::setAllReferences()
 
 void Neuropixels1_v1::writeConfiguration()
 {
+
+	LOGD("************WRITE PROBE CONFIGURATION****************");
+	LOGD("AP Gain: ", settings.availableApGains[settings.apGainIndex]);
+	LOGD("LFP Gain: ", settings.availableLfpGains[settings.lfpGainIndex]);
+	LOGD("REF: ", settings.availableReferences[settings.referenceIndex]);
+	LOGD("FILTER: ", settings.apFilterState);
+
 	errorCode = np::writeProbeConfiguration(basestation->slot_c, headstage->port_c, false);
 }
 
@@ -390,6 +395,9 @@ bool Neuropixels1_v1::runBist(BIST bistType)
 
 	bool returnValue = false;
 
+	close();
+	open();
+
 	switch (bistType)
 	{
 	case BIST::SIGNAL:
@@ -451,6 +459,10 @@ bool Neuropixels1_v1::runBist(BIST bistType)
 	} default:
 		CoreServices::sendStatusMessage("Test not found.");
 	}
+
+	close();
+	open();
+	initialize();
 
 	return returnValue;
 }

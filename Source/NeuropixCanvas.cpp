@@ -814,15 +814,8 @@ void NeuropixInterface::buttonClicked(Button* button)
                 //Save current probe settings
                 ProbeSettings settings = getProbeSettings();
 
-                //Close and re-open probe
-                probe->close();
-                probe->open();
-
                 //Run test
                 bool passed = probe->runBist(availableBists[bistComboBox->getSelectedId()]);
-
-                //Re-calibrate probe
-                probe->initialize();
 
                 String testString = bistComboBox->getText();
 
