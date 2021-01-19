@@ -716,6 +716,7 @@ void NeuropixThread::sendSyncAsContinuousChannel(bool shouldSend)
 {
 	for (auto probe : getProbes())
 	{
+		LOGD("Setting sendSyncAsContinuousChannel to: ", shouldSend);
 		probe->sendSyncAsContinuousChannel(shouldSend);
 	}
 

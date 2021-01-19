@@ -503,8 +503,8 @@ void NeuropixEditor::buttonEvent(Button* button)
 		}
 		else if (button == addSyncChannelButton)
 		{
+			LOGD("***addSyncChannelButton pressed, current state: ", addSyncChannelButton->getState());
 			thread->sendSyncAsContinuousChannel(addSyncChannelButton->getState());
-
 			CoreServices::updateSignalChain(this);
 		}
     }
@@ -527,6 +527,12 @@ void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 	}
 
 	xmlNode->setAttribute("SendSyncAsContinuous", addSyncChannelButton->getToggleState());
+
+	xmlNode->setAttribute("SyncDirection", masterConfigBox->getSelectedItemIndex());
+
+	xmlNode->setAttribute("SyncFreq", freqSelectBox->getSelectedItemIndex());
+
+
 }
 
 void NeuropixEditor::loadEditorParameters(XmlElement* xml)
@@ -535,18 +541,30 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 	{
 		if (xmlNode->hasTagName("NEUROPIXELS_EDITOR"))
 		{
-			LOGD("Found parameters for Neuropixels editor");
+			LOGDD("Found parameters for Neuropixels editor");
 
 			for (int slot = 0; slot < thread->getBasestations().size(); slot++)
 			{
 				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
-				LOGD("Setting thread directory for slot ", slot);
+				LOGDD("Setting thread directory for slot ", slot);
 				thread->setDirectoryForSlot(slot, directory);
 				directoryButtons[slot]->setLabel(directory.getFullPathName().substring(0, 2));
 				savingDirectories.set(slot, directory);
 			}
 
-			addSyncChannelButton->setToggleState(xmlNode->getBoolAttribute("SendSyncAsContinuous", false), sendNotification);
+			addSyncChannelButton->setToggleState(xmlNode->getBoolAttribute("SendSyncAsContinuous", false), false);
+			thread->sendSyncAsContinuousChannel(xmlNode->getBoolAttribute("SendSyncAsContinuous", false));
+
+			masterConfigBox->setSelectedItemIndex(xmlNode->getIntAttribute("SyncDirection", false), sendNotificationAsync);
+
+			if (xmlNode->getIntAttribute("SyncDirection", false) + 1 > 1)
+			{
+				freqSelectBox->setSelectedItemIndex(xmlNode->getIntAttribute("SyncFreq", false), sendNotificationAsync);
+				background->setFreqSelectAvailable(true);
+				freqSelectBox->setVisible(true);
+			}
+
+			CoreServices::updateSignalChain(this);
 		}
 	}
 }
