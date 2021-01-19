@@ -189,7 +189,7 @@ void NeuropixThread::updateSubprocessors()
 			probe->lfpBuffer = sourceBuffers.getLast();
 
 			SubprocessorInfo spInfo;
-			spInfo.num_channels = probe->channel_count;
+			spInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
 			spInfo.sample_rate = probe->lfp_sample_rate;
 			spInfo.type = LFP_BAND;
 
