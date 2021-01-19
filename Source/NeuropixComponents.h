@@ -229,6 +229,9 @@ public:
 		headstage = hs_;
 		flex = fl_;
 		isValid = false;
+
+		isCalibrated = false;
+		calibrationWarningShown = false;
 	}
 
 	Basestation* basestation; // owned by NeuropixThread
@@ -238,6 +241,7 @@ public:
 	bool isValid; //True if the PN is supported by the API
 
 	bool isCalibrated;
+	bool calibrationWarningShown;
 
 	int port;
 	int dock;
