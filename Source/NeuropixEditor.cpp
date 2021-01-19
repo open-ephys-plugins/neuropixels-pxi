@@ -503,8 +503,7 @@ void NeuropixEditor::buttonEvent(Button* button)
 		}
 		else if (button == addSyncChannelButton)
 		{
-			LOGD("***addSyncChannelButton pressed, current state: ", addSyncChannelButton->getState());
-			thread->sendSyncAsContinuousChannel(addSyncChannelButton->getState());
+			thread->sendSyncAsContinuousChannel(addSyncChannelButton->getToggleState());
 			CoreServices::updateSignalChain(this);
 		}
     }
