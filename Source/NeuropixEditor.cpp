@@ -536,6 +536,7 @@ void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 
 void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 {
+
 	forEachXmlChildElement(*xml, xmlNode)
 	{
 		if (xmlNode->hasTagName("NEUROPIXELS_EDITOR"))
@@ -554,16 +555,17 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 			addSyncChannelButton->setToggleState(xmlNode->getBoolAttribute("SendSyncAsContinuous", false), false);
 			thread->sendSyncAsContinuousChannel(xmlNode->getBoolAttribute("SendSyncAsContinuous", false));
 
-			masterConfigBox->setSelectedItemIndex(xmlNode->getIntAttribute("SyncDirection", false), sendNotificationAsync);
+			masterConfigBox->setSelectedItemIndex(xmlNode->getIntAttribute("SyncDirection", false), dontSendNotification);
 
-			if (xmlNode->getIntAttribute("SyncDirection", false) + 1 > 1)
+			if (xmlNode->getIntAttribute("SyncDirection", false))
 			{
-				freqSelectBox->setSelectedItemIndex(xmlNode->getIntAttribute("SyncFreq", false), sendNotificationAsync);
 				background->setFreqSelectAvailable(true);
 				freqSelectBox->setVisible(true);
+				freqSelectBox->setSelectedId(xmlNode->getIntAttribute("SyncFreq", false)+1);
 			}
 
 			CoreServices::updateSignalChain(this);
+
 		}
 	}
 }
