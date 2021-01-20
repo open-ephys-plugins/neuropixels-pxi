@@ -30,6 +30,8 @@
 
 #include <vector>
 
+#include "Utils.h"
+
 DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 {
 	return new NeuropixThread(sn);
@@ -50,26 +52,22 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	recordToNpx(false),
 	initializationComplete(false)
 {
+
 	progressBar = new ProgressBar(initializationProgress);
 
 	defaultSyncFrequencies.add(1);
 	defaultSyncFrequencies.add(10);
 
-	uint32_t availableslotmask;
-
-	std::vector<int> slotsToCheck;
-	np::scanPXI(&availableslotmask);
-
 	api_v1.isActive = false;
 	api_v3.isActive = true;
 
-	Neuropixels::scanBS();
+	LOGD("Scanning for devices...");
 
+	Neuropixels::scanBS();
 	Neuropixels::basestationID list[16];
-		
 	int count = getDeviceList(&list[0], 16);
 
-	std::cout << "Found " << count << " devices..." << std::endl;
+	LOGD("  Found ", count, " device", count == 1 ? "." : "s.");
 
 	for (int i = 0; i < count; i++)
 	{
@@ -82,8 +80,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 		if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
 		{
-
-			std::cout << "Got slot id: " << slotID << std::endl;
 
 			Basestation* bs = new Basestation_v3(slotID); 
 
@@ -102,16 +98,24 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	if (basestations.size() == 0) // no basestations with API version match
 	{
+		LOGD("Checking for V1 basestations...");
+
+		uint32_t availableslotmask;
+
+		std::vector<int> slotsToCheck;
+		np::scanPXI(&availableslotmask);
+
 		for (int slot = 0; slot < 32; slot++)
 		{
 			if ((availableslotmask >> slot) & 1)
 			{
 
+				LOGD("  Found V1 Basestation");
+
 				Basestation* bs = new Basestation_v1(slot);
 
 				if (bs->open()) // detects # of probes; returns true if API version matches
 				{
-					std::cout << "Setting active API to v1" << std::endl;
 					api_v1.isActive = true ;
 					api_v3.isActive = false;
 					basestations.add(bs);
@@ -123,9 +127,10 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 			}
 		}
 	}
-
-
-	std::cout << "Num basestations: " << basestations.size() << std::endl;
+	else
+	{
+		LOGD("Found ", basestations.size(), " V3 basestation", basestations.size() > 1 ? "s" : "");
+	}
 
 	if (basestations.size() == 0) // no basestations at all
 	{
@@ -167,8 +172,6 @@ void NeuropixThread::updateSubprocessors()
 	for (auto probe : getProbes() )
 	{
 
-		std::cout << "PROBE " << probe->headstage->port << std::endl;
-
 		SubprocessorInfo spInfo;
 		spInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
 		spInfo.sample_rate = probe->ap_sample_rate;
@@ -180,22 +183,21 @@ void NeuropixThread::updateSubprocessors()
 		sourceBuffers.add(new DataBuffer(spInfo.num_channels, 10000));  // AP band buffer
 		probe->apBuffer = sourceBuffers.getLast();
 
-		std::cout << "spinfo: " << spInfo.num_channels << " ch, " << spInfo.sample_rate << " Hz" << std::endl;
-
 		if (probe->generatesLfpData())
 		{
 			sourceBuffers.add(new DataBuffer(spInfo.num_channels, 10000));  // LFP band buffer
 			probe->lfpBuffer = sourceBuffers.getLast();
 
 			SubprocessorInfo spInfo;
-			spInfo.num_channels = probe->channel_count;
+			spInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
 			spInfo.sample_rate = probe->lfp_sample_rate;
 			spInfo.type = LFP_BAND;
-
-			std::cout << "spinfo: " << spInfo.num_channels << " ch, " << spInfo.sample_rate << " Hz" << std::endl;
+			spInfo.sendSyncAsContinuousChannel = probe->sendSync;
 
 			subprocessorInfo.add(spInfo);
 		}
+
+		LOGD("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") CH=", spInfo.num_channels, " SR=", spInfo.sample_rate, " Hz"); 
 	}
 }
 
@@ -211,6 +213,7 @@ void NeuropixThread::updateProbeSettingsQueue(ProbeSettings settings)
 
 void NeuropixThread::applyProbeSettingsQueue()
 {
+
 	for (auto settings : probeSettingsUpdateQueue)
 	{
 		settings.probe->setStatus(ProbeStatus::UPDATING);
@@ -221,10 +224,14 @@ void NeuropixThread::applyProbeSettingsQueue()
 
 		if (settings.probe != nullptr)
 		{
-			settings.probe->selectElectrodes(settings, false);
-			settings.probe->setAllGains(settings.apGainIndex, settings.lfpGainIndex, false);
-			settings.probe->setAllReferences(settings.referenceIndex, false);
-			settings.probe->setApFilterState(settings.apFilterState, false);
+
+			settings.probe->selectElectrodes();
+			settings.probe->setAllGains();
+			settings.probe->setAllReferences();
+			settings.probe->setApFilterState();
+
+			settings.probe->calibrate();
+
 			settings.probe->writeConfiguration();
 
 			settings.probe->setStatus(ProbeStatus::CONNECTED);
@@ -514,7 +521,7 @@ void NeuropixThread::startRecording()
 				}
 				
 
-				std::cout << "Basestation " << i << " started recording." << std::endl;
+				LOGD("Basestation ", i, " started recording.");
 			}
 			
 		}
@@ -529,7 +536,7 @@ void NeuropixThread::setDirectoryForSlot(int slotIndex, File directory)
 
 	setRecordMode(true);
 
-	std::cout << "Thread setting directory for slot " << slotIndex << " to " << directory.getFileName() << std::endl;
+	LOGD("Thread setting directory for slot ", slotIndex, " to ", directory.getFileName());
 
 	if (slotIndex < basestations.size())
 	{
@@ -558,7 +565,7 @@ void NeuropixThread::stopRecording()
 			Neuropixels::enableFileStream(basestations[i]->slot, false);
 	}
 
-	std::cout << "NeuropixThread stopped recording." << std::endl;
+	LOGD("NeuropixThread stopped recording.");
 }
 
 /** Stops data transfer.*/
@@ -710,6 +717,7 @@ void NeuropixThread::sendSyncAsContinuousChannel(bool shouldSend)
 {
 	for (auto probe : getProbes())
 	{
+		LOGD("Setting sendSyncAsContinuousChannel to: ", shouldSend);
 		probe->sendSyncAsContinuousChannel(shouldSend);
 	}
 
@@ -735,7 +743,7 @@ int NeuropixThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int su
 	else
 		numChans = 0;
 
-	//std::cout << "Num chans for subprocessor " << subProcessorIdx << " = " << numChans << std::endl;
+	LOGDD("Num chans for subprocessor ", subProcessorIdx, " = ", numChans);
 	
 	return numChans;
 }
@@ -757,7 +765,6 @@ float NeuropixThread::getSampleRate(int subProcessorIdx) const
 /** Returns the volts per bit of the data source.*/
 float NeuropixThread::getBitVolts(const DataChannel* chan) const
 {
-	//std::cout << "BIT VOLTS == 0.195" << std::endl;
 	return 0.1950000f;
 }
 

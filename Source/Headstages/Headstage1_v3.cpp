@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Headstage1_v3.h"
 #include "../Probes/Neuropixels1_v3.h"
+#include "../Utils.h"
 
 #define MAXLEN 50
 
@@ -81,6 +82,7 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 
 	if (hasTestModule())
 	{
+		LOGD("Test module detected");
 		testModule = new HeadstageTestModule_v3(basestation, this);
 		testModule->runAll();
 		testModule->showResults();
@@ -96,7 +98,6 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 
 bool Headstage1_v3::hasTestModule()
 {
-	std::cout << "Checking for test module..." << std::endl;
 	int vmajor;
 	int vminor;
 	return Neuropixels::HST_GetVersion(basestation->slot, port, &vmajor, &vminor) == Neuropixels::SUCCESS;

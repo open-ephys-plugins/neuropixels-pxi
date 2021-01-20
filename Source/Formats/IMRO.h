@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../NeuropixComponents.h"
+#include "../Utils.h"
 
 class IMRO
 {
@@ -56,8 +57,8 @@ public:
             }
                 
             else {
-                channelInfo += " " + String(int(settings.probe->availableApGains[settings.apGainIndex]));
-                channelInfo += " " + String(int(settings.probe->availableLfpGains[settings.lfpGainIndex]));
+                channelInfo += " " + String(int(settings.availableApGains[settings.apGainIndex]));
+                channelInfo += " " + String(int(settings.availableLfpGains[settings.lfpGainIndex]));
                 channelInfo += " " + String(int(settings.apFilterState));
             }
 
@@ -79,7 +80,7 @@ public:
         bool foundHeader = false;
         int lastOpeningParen = 0;
 
-        std::cout << "Length: " << imro.length() << std::endl;
+        LOGD("Length: ", imro.length());
 
         for (int i = 0; i < imro.length(); i++)
         {

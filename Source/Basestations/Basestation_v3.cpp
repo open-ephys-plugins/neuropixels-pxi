@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage1_v3.h"
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
+#include "../Utils.h"
 
 #define MAXLEN 50
 
@@ -87,25 +88,24 @@ Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
 bool Basestation_v3::open()
 {
 
-	std::cout << "Basestation_v3::open()" << std::endl;
-
 	errorCode = Neuropixels::openBS(slot);
 
-	std::cout << "Opening bs on slot: " << slot << " errorCode: " << errorCode << std::endl;
-
-	if (errorCode == np::VERSION_MISMATCH)
+	if (errorCode == Neuropixels::VERSION_MISMATCH)
 	{
+		LOGD("Basestation at slot: ", slot, " API VERSION MISMATCH!");
 		return false;
 	}
 
 	if (errorCode == Neuropixels::SUCCESS)
 	{
 
-		std::cout << "  Opened BS on slot " << slot << std::endl;
+		LOGD("  Opened BS on slot ", slot);
 
 		basestationConnectBoard = new BasestationConnectBoard_v3(this);
 
 		savingDirectory = File();
+
+		LOGD("    Searching for probes...");
 
 		for (int port = 1; port <= 4; port++)
 		{
@@ -113,21 +113,21 @@ bool Basestation_v3::open()
 
 			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
 
-			std::cout << "Detecting headstage on slot: " << slot << " port: " << port << " detected: " << detected << " errorCode: " << errorCode << std::endl;
-
-			if (detected && errorCode == np::SUCCESS)
+			if (detected && errorCode == Neuropixels::SUCCESS)
 			{
+
 				char pn[MAXLEN];
 				Neuropixels::readHSPN(slot, port, pn, MAXLEN);
 
 				String hsPartNumber = String(pn);
 
-				std::cout << "Got part #: " << hsPartNumber << std::endl;
+				LOGDD("Got part #: ", hsPartNumber);
 
 				Headstage* headstage;
 
 				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
 				{
+					LOGD("      Found 1.0 single-dock headstage on port: ", port);
 					headstage = new Headstage1_v3(this, port);
 					if (headstage->testModule != nullptr)
 					{
@@ -136,10 +136,12 @@ bool Basestation_v3::open()
 				}
 				else if (hsPartNumber == "NPNH_HS_30") // 128-ch analog headstage
 				{
+					LOGD("      Found 128-ch analog headstage on port: ", port);
 					headstage = new Headstage_Analog128(this, port);
 				}
 				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 				{
+					LOGD("      Found 2.0 dual-dock headstage on port: ", port);
 					headstage = new Headstage2(this, port);
 				}
 				else
@@ -162,14 +164,21 @@ bool Basestation_v3::open()
 			}
 			else  
 			{
-				//TODO: Run other calls to help narrow down error
+				if (errorCode != Neuropixels::SUCCESS)
+				{
+					LOGD("***detectHeadstage failed w/ error code: ", errorCode);
+				}
+				else if (!detected)
+				{
+					LOGDD("  No headstage detected on port: ", port);
+				}
 				headstages.add(nullptr);
 			}
 
 
 		}
 
-		std::cout << "Found " << String(probes.size()) << (probes.size() == 1 ? " probe." : " probes.") << std::endl;
+		LOGD("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 	}
 
 	syncFrequencies.add(1);
@@ -183,7 +192,7 @@ void Basestation_v3::initialize()
 
 	if (!probesInitialized)
 	{
-		//errorCode = Neuropixels::setTriggerInput(slot, np::TRIGIN_SW);
+		//errorCode = Neuropixels::setTriggerInput(slot, Neuropixels::TRIGIN_SW);
 
 		for (auto probe : probes)
 		{
@@ -215,23 +224,23 @@ void Basestation_v3::close()
 void Basestation_v3::setSyncAsInput()
 {
 
-	std::cout << "Setting sync as input..." << std::endl;
+	LOGD("Setting sync as input...");
 
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set slot %d as sync master!\n");
+		LOGD("Failed to set slot", slot, "as sync master!");
 		return;
 	}
 
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, Neuropixels::SyncSource_SMA);
 	if (errorCode != Neuropixels::SUCCESS)
-		printf("Failed to set slot %d SMA as sync source!\n");
+		LOGD("Failed to set slot ", slot, "SMA as sync source!");
 
 	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, false);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set sync on SMA output on slot: %d\n", slot);
+		LOGD("Failed to set sync on SMA output on slot: ", slot);
 	}
 
 }
@@ -244,36 +253,36 @@ Array<int> Basestation_v3::getSyncFrequencies()
 void Basestation_v3::setSyncAsOutput(int freqIndex)
 {
 
-	std::cout << "Setting sync as output..." << std::endl;
+	LOGD("Setting sync as output...");
 	
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set slot %d as sync master!\n", slot);
+		LOGD("Failed to set slot ",  slot, " as sync master!");
 		return;
 	} 
 
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, Neuropixels::SyncSource_Clock);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set slot %d internal clock as sync source!\n", slot);
+		LOGD("Failed to set slot ", slot, " internal clock as sync source!");
 		return;
 	}
 
 	int freq = syncFrequencies[freqIndex];
 
-	printf("Setting slot %d sync frequency to %d Hz...\n", slot, freq);
+	LOGD("Setting slot ", slot, " sync frequency to ", freq, " Hz...");
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCFREQUENCY_HZ, freq);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set slot %d sync frequency to %d Hz!\n", slot, freq);
+		LOGD("Failed to set slot ", slot, " sync frequency to ", freq, " Hz!");
 		return;
 	}
 
 	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, true);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
-		printf("Failed to set sync on SMA output on slot: %d\n", slot);
+		LOGD("Failed to set sync on SMA output on slot: ", slot);
 	}
 
 }
@@ -289,7 +298,7 @@ float Basestation_v3::getFillPercentage()
 
 	for (int i = 0; i < getProbeCount(); i++)
 	{
-		//std::cout << "Percentage for probe " << i << ": " << probes[i]->fifoFillPercentage << std::endl;
+		LOGDD("Percentage for probe ", i, ": ", probes[i]->fifoFillPercentage);
 
 		if (probes[i]->fifoFillPercentage > perc)
 			perc = probes[i]->fifoFillPercentage;
@@ -341,7 +350,7 @@ void Basestation_v3::updateBscFirmware(File file)
 	Basestation::totalFirmwareBytes = (float)file.getSize();
 	Basestation::currentBasestation = this;
 
-	std::cout << bscFirmwarePath << std::endl;
+	LOGD("BSC Firmware path: ", bscFirmwarePath);
 
 	auto window = getAlertWindow();
 	window->setColour(AlertWindow::textColourId, Colours::white);
@@ -362,7 +371,7 @@ void Basestation_v3::updateBsFirmware(File file)
 	Basestation::totalFirmwareBytes = (float)file.getSize();
 	Basestation::currentBasestation = this;
 
-	std::cout << bsFirmwarePath << std::endl;
+	LOGD("BS Firmware path: ", bsFirmwarePath);
 
 	auto window = getAlertWindow();
 	window->setColour(AlertWindow::textColourId, Colours::white);
@@ -375,76 +384,4 @@ void Basestation_v3::updateBsFirmware(File file)
 
 	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
 		String("Please restart your computer and power cycle the PXI chassis for the changes to take effect."));
-}
-
-
-bool Basestation_v3::runBist(int port, int dock, BIST bistType)
-{
-
-	bool returnValue = false;
-
-	switch (bistType)
-	{
-	case BIST::SIGNAL:
-	{
-		if (Neuropixels::bistSignal(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::NOISE:
-	{
-		if (Neuropixels::bistNoise(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::PSB:
-	{
-		if (Neuropixels::bistPSB(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::SR:
-	{
-		if (Neuropixels::bistSR(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::EEPROM:
-	{
-		if (Neuropixels::bistEEPROM(slot, port) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::I2C:
-	{
-		if (Neuropixels::bistI2CMM(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::SERDES:
-	{
-		int errors;
-		Neuropixels::bistStartPRBS(slot, port);
-		Sleep(200);
-		Neuropixels::bistStopPRBS(slot, port, &errors);
-
-		if (errors == 0)
-			returnValue = true;
-		break;
-	}
-	case BIST::HB:
-	{
-		if (Neuropixels::bistHB(slot, port, dock) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	} case BIST::BS:
-	{
-		if (Neuropixels::bistBS(slot) == Neuropixels::SUCCESS)
-			returnValue = true;
-		break;
-	} default:
-		CoreServices::sendStatusMessage("Test not found.");
-	}
-
-	return returnValue;
 }

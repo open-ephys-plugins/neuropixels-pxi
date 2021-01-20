@@ -30,9 +30,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Basestation_v1.h"
 #include "../Probes/Neuropixels1_v1.h"
 #include "../Headstages/Headstage1_v1.h"
+#include "../Utils.h"
 
 #define MAXLEN 50
-
 
 
 void Basestation_v1::getInfo()
@@ -93,7 +93,6 @@ Basestation_v1::Basestation_v1(int slot_number) : Basestation(slot_number)
 
 bool Basestation_v1::open()
 {
-	std::cout << "OPENING PARENT" << std::endl;
 
 	errorCode = np::openBS(slot_c);
 
@@ -105,7 +104,7 @@ bool Basestation_v1::open()
 	if (errorCode == np::SUCCESS)
 	{
 
-		std::cout << "  Opened BSv1 on slot " << slot_c << std::endl;
+		LOGD("  Opened BSv1 on slot ", slot_c);
 
 		basestationConnectBoard = new BasestationConnectBoard_v1(this);
 
@@ -116,11 +115,12 @@ bool Basestation_v1::open()
 
 			errorCode = np::openProbe(slot_c, port); // check for probe on slot
 
-			std::cout << "Port: " << port << " errorCode: " << errorCode << std::endl;
+			LOGD("openProbe: Port: ", port, " errorCode: ", errorCode);
 
 			if (errorCode == np::NO_LOCK) 
 			{ //likely no cable connected 
 				headstages.add(nullptr);
+				LOGD("Check if cable is connected properly!")
 			} 
 			else if (errorCode == np::TIMEOUT)
 			{ //either headstage test module detected or broken connection to real probe
@@ -145,7 +145,7 @@ bool Basestation_v1::open()
 
 		}
 
-		std::cout << "Found " << String(probes.size()) << (probes.size() == 1 ? " probe." : " probes.") << std::endl;
+		LOGD("Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 	}
 
 	syncFrequencies.add(1);
@@ -203,13 +203,13 @@ void Basestation_v1::setSyncAsInput()
 	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot_c);
 	if (errorCode != np::SUCCESS)
 	{
-		printf("Failed to set slot %d as sync master!\n");
+		LOGD("Failed to set slot ", slot, " as sync master!");
 		return;
 	}
 
 	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SMA);
 	if (errorCode != np::SUCCESS)
-		printf("Failed to set slot %d SMA as sync input!\n");
+		LOGD("Failed to set slot ", slot, " SMA as sync input!");
 
 	/*
 	errorCode = setTriggerOutput(slot, np::TRIGOUT_PXI1, np::TRIGIN_SW);
@@ -232,24 +232,24 @@ void Basestation_v1::setSyncAsOutput(int freqIndex)
 	errorCode = setParameter(np::NP_PARAM_SYNCMASTER, slot_c);
 	if (errorCode != np::SUCCESS)
 	{
-		printf("Failed to set slot %d as sync master!\n", slot_c);
+		LOGD("Failed to set slot ", slot, " as sync master!");
 		return;
 	} 
 
 	errorCode = setParameter(np::NP_PARAM_SYNCSOURCE, np::TRIGIN_SYNCCLOCK);
 	if (errorCode != np::SUCCESS)
 	{
-		printf("Failed to set slot %d internal clock as sync source!\n", slot_c);
+		LOGD("Failed to set slot ", slot, " internal clock as sync source!");
 		return;
 	}
 
 	int freq = syncFrequencies[freqIndex];
 
-	printf("Setting slot %d sync frequency to %d Hz...\n", slot_c, freq);
+	LOGD("Setting slot ", slot_c, " sync frequency to ", freq, " Hz...");
 	errorCode = setParameter(np::NP_PARAM_SYNCFREQUENCY_HZ, freq);
 	if (errorCode != np::SUCCESS)
 	{
-		printf("Failed to set slot %d sync frequency to %d Hz!\n", slot_c, freq);
+		LOGD("Failed to set slot ", slot_c, " sync frequency to ", freq, " Hz");
 		return;
 	}
 
@@ -274,8 +274,6 @@ float Basestation_v1::getFillPercentage()
 
 	for (int i = 0; i < getProbeCount(); i++)
 	{
-		//std::cout << "Percentage for probe " << i << ": " << probes[i]->fifoFillPercentage << std::endl;
-
 		if (probes[i]->fifoFillPercentage > perc)
 			perc = probes[i]->fifoFillPercentage;
 	}
@@ -310,7 +308,7 @@ void Basestation_v1::updateBscFirmware(File file)
 	Basestation::totalFirmwareBytes = (float)file.getSize();
 	Basestation::currentBasestation = this;
 
-	std::cout << bscFirmwarePath << std::endl;
+	LOGD("BSC Firmware: ", bscFirmwarePath);
 
 	auto window = getAlertWindow();
 	window->setColour(AlertWindow::textColourId, Colours::white);
@@ -331,7 +329,7 @@ void Basestation_v1::updateBsFirmware(File file)
 	Basestation::totalFirmwareBytes = (float)file.getSize();
 	Basestation::currentBasestation = this;
 
-	std::cout << bsFirmwarePath << std::endl;
+	LOGD("BS Firmware: ", bsFirmwarePath);
 
 	auto window = getAlertWindow();
 	window->setColour(AlertWindow::textColourId, Colours::white);
@@ -360,76 +358,4 @@ void Basestation_v1::run()
 					  firmwareUpdateCallback);
 
 
-}
-
-
-bool Basestation_v1::runBist(int port, int dock, BIST bistType)
-{
-	signed char port_c = (signed char) port;
-
-	bool returnValue = false;
-
-	switch (bistType)
-	{
-	case BIST::SIGNAL:
-	{
-		np::NP_ErrorCode errorCode = np::bistSignal(slot_c, port_c, &returnValue, stats);
-		break;
-	}
-	case BIST::NOISE:
-	{
-		if (np::bistNoise(slot_c, port_c) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::PSB:
-	{
-		if (np::bistPSB(slot_c, port_c) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::SR:
-	{
-		if (np::bistSR(slot_c, port_c) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::EEPROM:
-	{
-		if (np::bistEEPROM(slot_c, port_c) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::I2C:
-	{
-		if (np::bistI2CMM(slot_c, port_c) == np::SUCCESS)
-			returnValue = true;
-		break;
-	}
-	case BIST::SERDES:
-	{
-		unsigned char errors;
-		np::bistStartPRBS(slot_c, port_c);
-		Sleep(200);
-		np::bistStopPRBS(slot_c, port_c, &errors);
-
-		if (errors == 0)
-			returnValue = true;
-		break;
-	}
-	case BIST::HB:
-	{
-		if (np::bistHB(slot_c, port_c) == np::SUCCESS)
-			returnValue = true;
-		break;
-	} case BIST::BS:
-	{
-		if (np::bistBS(slot_c) == np::SUCCESS)
-			returnValue = true;
-		break;
-	} default:
-		CoreServices::sendStatusMessage("Test not found.");
-	}
-
-	return returnValue;
 }

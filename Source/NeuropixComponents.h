@@ -86,7 +86,8 @@ enum Bank {
 	J = 9,
 	K = 10,
 	L = 11,
-	M = 12
+	M = 12,
+	OFF = 255 //used in v1 API
 };
 
 enum class ElectrodeStatus {
@@ -139,15 +140,24 @@ struct ElectrodeMetadata {
 };
 
 struct ProbeSettings {
+
+	Array<float> availableApGains; // Available AP gain values for each channel (if any)
+	Array<float> availableLfpGains; // Available LFP gain values for each channel (if any)
+	Array<String> availableReferences; // reference types
+	Array<Bank> availableBanks; // bank inds
+
 	int apGainIndex;
 	int lfpGainIndex;
 	int referenceIndex;
 	bool apFilterState;
+
 	Array<Bank> selectedBank;    // size = channels
 	Array<int> selectedShank;    // size = channels
 	Array<int> selectedChannel;  // size = channels
 	Array<int> selectedElectrode; // size = channels
+
 	ProbeType probeType;
+
 	Probe* probe; // pointer to the probe
 };
 
@@ -219,6 +229,9 @@ public:
 		headstage = hs_;
 		flex = fl_;
 		isValid = false;
+
+		isCalibrated = false;
+		calibrationWarningShown = false;
 	}
 
 	Basestation* basestation; // owned by NeuropixThread
@@ -227,6 +240,10 @@ public:
 
 	bool isValid; //True if the PN is supported by the API
 
+	bool isCalibrated;
+	bool calibrationWarningShown;
+
+	int port;
 	int dock;
 
 	DataBuffer* apBuffer;
@@ -241,19 +258,17 @@ public:
 	Array<ElectrodeMetadata> electrodeMetadata;
 	ProbeMetadata probeMetadata;
 
-	Array<float> availableApGains; // Available AP gain values for each channel (if any)
-	Array<float> availableLfpGains; // Available LFP gain values for each channel (if any)
-	Array<String> availableReferences; // reference types
-	Array<Bank> availableBanks; // bank inds
-
-	int lfpGainIndex;
-	int apGainIndex;
-	int referenceIndex;
-	bool apFilterState;
+	ProbeSettings settings;
 
 	Path shankOutline;
 
 	/** VIRTUAL METHODS */
+
+	/** Opens the connection to the probe */
+	virtual bool open() = 0;
+
+	/** Closes the connection to the probe */
+	virtual bool close() = 0;
 
 	/** Prepares the probe for data acquisition */
 	virtual void initialize() = 0;
@@ -265,16 +280,16 @@ public:
 	virtual bool hasApFilterSwitch() = 0;
 
 	/** Used to select channels. Returns the currently active electrodes*/
-	virtual void selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration = true) = 0;
+	virtual void selectElectrodes() = 0;
 
 	/** Used to set references (same for all channels).*/
-	virtual void setAllReferences(int referenceIndex, bool shouldWriteConfiguration = true) = 0;
+	virtual void setAllReferences() = 0;
 
 	/** Used to set gains (same for all channels).*/
-	virtual void setAllGains(int apGainIndex, int lfpGainIndex, bool shouldWriteConfiguration = true) = 0;
+	virtual void setAllGains() = 0;
 
 	/** Used to set AP filter cut (if available).*/
-	virtual void setApFilterState(bool disableHighPass, bool shouldWriteConfiguration = true) = 0;
+	virtual void setApFilterState() = 0;
 
 	/** Writes probe configuration after calling setAllReferences / setAllGains / selectElectrodes */
 	virtual void writeConfiguration() = 0;
@@ -288,10 +303,17 @@ public:
 	/** Stops data streaming.*/
 	virtual void stopAcquisition() = 0;
 
+	/** Runs a built-in self-test for a specified port */
+	virtual bool runBist(BIST bistType) = 0;
+
 	/** Main loop -- copies data from the probe into a DataBuffer object */
 	virtual void run() = 0;
 
 	/** NON-VIRTUAL METHODS */
+	void updateSettings(ProbeSettings p)
+	{
+		settings = p;
+	}
 
 	void setStatus(ProbeStatus status_) {
 		status = status_;
@@ -355,9 +377,6 @@ public:
 
 	/** Initializes all components for acquisition; may inclue some delays */
 	virtual void initialize() = 0;
-
-	/** Runs a built-in self-test for a specified port */
-	virtual bool runBist(int port, int dock, BIST bistType) = 0;
 
 	/** Sets the sync channel as an "input" (for external sync) */
 	virtual void setSyncAsInput() = 0;

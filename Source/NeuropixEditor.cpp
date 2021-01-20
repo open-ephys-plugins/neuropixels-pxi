@@ -26,6 +26,8 @@
 #include "NeuropixThread.h"
 #include "NeuropixCanvas.h"
 
+#include "Utils.h"
+
 EditorBackground::EditorBackground(int numBasestations, bool freqSelectEnabled)
 	: numBasestations(numBasestations), freqSelectEnabled(freqSelectEnabled) {}
 
@@ -217,7 +219,12 @@ void BackgroundLoader::run()
 {
 	/* Open the NPX-PXI probe connections in the background to prevent this plugin from blocking the main GUI*/
 	if (!isInitialized)
+	{
 		thread->initialize();
+		isInitialized = true;
+		thread->probeSettingsUpdateQueue.clear();
+		return;
+	}
 
 	/* Apply any saved settings */
 	//CoreServices::sendStatusMessage("Restoring saved probe settings...");
@@ -243,8 +250,6 @@ void BackgroundLoader::run()
 		CoreServices::updateSignalChain(editor);
 		CoreServices::sendStatusMessage("Neuropix-PXI plugin ready for acquisition!");
 	}*/
-
-	isInitialized = true;
 	
 }
 
@@ -409,8 +414,6 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 
 	int slotIndex = masterSelectBox->getSelectedId() - 1;
 
-	std::cout << "Slot index: " << slotIndex << std::endl;
-
 	if (comboBox == masterSelectBox)
 	{
 		thread->setMainSync(slotIndex);
@@ -500,8 +503,7 @@ void NeuropixEditor::buttonEvent(Button* button)
 		}
 		else if (button == addSyncChannelButton)
 		{
-			thread->sendSyncAsContinuousChannel(addSyncChannelButton->getState());
-
+			thread->sendSyncAsContinuousChannel(addSyncChannelButton->getToggleState());
 			CoreServices::updateSignalChain(this);
 		}
     }
@@ -510,7 +512,7 @@ void NeuropixEditor::buttonEvent(Button* button)
 
 void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 {
-	std::cout << "Saving Neuropix editor." << std::endl;
+	LOGD("Saving Neuropix editor.");
 
 	XmlElement* xmlNode = xml->createNewChildElement("NEUROPIXELS_EDITOR");
 
@@ -524,37 +526,54 @@ void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 	}
 
 	xmlNode->setAttribute("SendSyncAsContinuous", addSyncChannelButton->getToggleState());
+
+	xmlNode->setAttribute("SyncDirection", masterConfigBox->getSelectedItemIndex());
+
+	xmlNode->setAttribute("SyncFreq", freqSelectBox->getSelectedItemIndex());
+
+
 }
 
 void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 {
+
 	forEachXmlChildElement(*xml, xmlNode)
 	{
 		if (xmlNode->hasTagName("NEUROPIXELS_EDITOR"))
 		{
-			std::cout << "Found parameters for Neuropixels editor" << std::endl;
+			LOGDD("Found parameters for Neuropixels editor");
 
 			for (int slot = 0; slot < thread->getBasestations().size(); slot++)
 			{
 				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
-				std::cout << "Setting thread directory for slot " << slot << std::endl;
+				LOGDD("Setting thread directory for slot ", slot);
 				thread->setDirectoryForSlot(slot, directory);
 				directoryButtons[slot]->setLabel(directory.getFullPathName().substring(0, 2));
 				savingDirectories.set(slot, directory);
 			}
 
-			addSyncChannelButton->setToggleState(xmlNode->getBoolAttribute("SendSyncAsContinuous", false), sendNotification);
+			addSyncChannelButton->setToggleState(xmlNode->getBoolAttribute("SendSyncAsContinuous", false), false);
+			thread->sendSyncAsContinuousChannel(xmlNode->getBoolAttribute("SendSyncAsContinuous", false));
+
+			masterConfigBox->setSelectedItemIndex(xmlNode->getIntAttribute("SyncDirection", false), dontSendNotification);
+
+			if (xmlNode->getIntAttribute("SyncDirection", false))
+			{
+				background->setFreqSelectAvailable(true);
+				freqSelectBox->setVisible(true);
+				freqSelectBox->setSelectedId(xmlNode->getIntAttribute("SyncFreq", false)+1);
+			}
+
+			CoreServices::updateSignalChain(this);
+
 		}
 	}
 }
 
 Visualizer* NeuropixEditor::createNewCanvas(void)
 {
-    std::cout << "Button clicked..." << std::endl;
     GenericProcessor* processor = (GenericProcessor*) getProcessor();
-    std::cout << "Got processor." << std::endl;
     canvas = new NeuropixCanvas(processor, this, thread);
-    std::cout << "Created canvas." << std::endl;
     return canvas;
 }
 

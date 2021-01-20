@@ -160,13 +160,18 @@ void NeuropixCanvas::saveVisualizerParameters(XmlElement* xml)
 {
     editor->saveEditorParameters(xml);
 
+    LOGD("Saved ", neuropixInterfaces.size(), " interfaces.");
+
     for (int i = 0; i < neuropixInterfaces.size(); i++)
         neuropixInterfaces[i]->saveParameters(xml);
 }
 
 void NeuropixCanvas::loadVisualizerParameters(XmlElement* xml)
 {
+
     editor->loadEditorParameters(xml);
+
+    LOGD("Loaded ", neuropixInterfaces.size(), " interfaces.");
 
     for (int i = 0; i < neuropixInterfaces.size(); i++)
         neuropixInterfaces[i]->loadParameters(xml);
@@ -258,7 +263,7 @@ NeuropixInterface::NeuropixInterface(Probe* p,
     enableViewButton->setTooltip("View channel enabled state");
     addAndMakeVisible(enableViewButton);
 
-    if (probe->availableApGains.size() > 0)
+    if (probe->settings.availableApGains.size() > 0)
     {
         currentHeight += 55;
 
@@ -266,10 +271,10 @@ NeuropixInterface::NeuropixInterface(Probe* p,
         apGainComboBox->setBounds(450, currentHeight, 65, 22);
         apGainComboBox->addListener(this);
 
-        for (int i = 0; i < probe->availableApGains.size(); i++)
-            apGainComboBox->addItem(String(probe->availableApGains[i]) + "x", i + 1);
+        for (int i = 0; i < probe->settings.availableApGains.size(); i++)
+            apGainComboBox->addItem(String(probe->settings.availableApGains[i]) + "x", i + 1);
 
-        apGainComboBox->setSelectedId(probe->apGainIndex + 1, dontSendNotification);
+        apGainComboBox->setSelectedId(probe->settings.apGainIndex + 1, dontSendNotification);
         addAndMakeVisible(apGainComboBox);
 
         apGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
@@ -287,7 +292,7 @@ NeuropixInterface::NeuropixInterface(Probe* p,
 
     }
 
-    if (probe->availableLfpGains.size() > 0)
+    if (probe->settings.availableLfpGains.size() > 0)
     {
         currentHeight += 55;
 
@@ -295,10 +300,10 @@ NeuropixInterface::NeuropixInterface(Probe* p,
         lfpGainComboBox->setBounds(450, currentHeight, 65, 22);
         lfpGainComboBox->addListener(this);
 
-        for (int i = 0; i < probe->availableLfpGains.size(); i++)
-           lfpGainComboBox->addItem(String(probe->availableLfpGains[i]) + "x", i + 1);
+        for (int i = 0; i < probe->settings.availableLfpGains.size(); i++)
+           lfpGainComboBox->addItem(String(probe->settings.availableLfpGains[i]) + "x", i + 1);
 
-        lfpGainComboBox->setSelectedId(probe->lfpGainIndex + 1, dontSendNotification);
+        lfpGainComboBox->setSelectedId(probe->settings.lfpGainIndex + 1, dontSendNotification);
         addAndMakeVisible(lfpGainComboBox);
 
         lfpGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
@@ -315,7 +320,7 @@ NeuropixInterface::NeuropixInterface(Probe* p,
         addAndMakeVisible(lfpGainLabel);
     }
 
-    if (probe->availableReferences.size() > 0)
+    if (probe->settings.availableReferences.size() > 0)
     {
         currentHeight += 55;
 
@@ -323,12 +328,12 @@ NeuropixInterface::NeuropixInterface(Probe* p,
         referenceComboBox->setBounds(450, currentHeight, 65, 22);
         referenceComboBox->addListener(this);
 
-        for (int i = 0; i < probe->availableReferences.size(); i++)
+        for (int i = 0; i < probe->settings.availableReferences.size(); i++)
         {
-            referenceComboBox->addItem(probe->availableReferences[i], i+1);
+            referenceComboBox->addItem(probe->settings.availableReferences[i], i+1);
         }
 
-        referenceComboBox->setSelectedId(probe->referenceIndex + 1, dontSendNotification);
+        referenceComboBox->setSelectedId(probe->settings.referenceIndex + 1, dontSendNotification);
         addAndMakeVisible(referenceComboBox);
 
         referenceViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
@@ -631,7 +636,9 @@ void NeuropixInterface::updateProbeSettingsInBackground()
 {
     ProbeSettings settings = getProbeSettings();
 
+    probe->updateSettings(settings);
     thread->updateProbeSettingsQueue(settings);
+
     editor->uiLoader->startThread();
 }
 
@@ -803,8 +810,12 @@ void NeuropixInterface::buttonClicked(Button* button)
                 CoreServices::sendStatusMessage("Please select a test to run.");
             }
             else {
-                bool passed = probe->basestation->runBist(probe->headstage->port, probe->dock,
-                                                          availableBists[bistComboBox->getSelectedId()]);
+
+                //Save current probe settings
+                ProbeSettings settings = getProbeSettings();
+
+                //Run test
+                bool passed = probe->runBist(availableBists[bistComboBox->getSelectedId()]);
 
                 String testString = bistComboBox->getText();
 
@@ -826,6 +837,7 @@ void NeuropixInterface::buttonClicked(Button* button)
                 bistComboBox->changeItemText(bistComboBox->getSelectedId(), testString);
                 bistComboBox->setText(testString);
                 //bistComboBox->setSelectedId(bistComboBox->getSelectedId(), NotificationType::sendNotification);
+
             }
 
         }
@@ -1882,11 +1894,11 @@ Colour NeuropixInterface::getElectrodeColour(int i)
         }
         else if (mode == VisualizationMode::AP_GAIN_VIEW) // AP GAIN
         {
-            return  Colour(25 * probe->apGainIndex, 25 * probe->apGainIndex, 50);
+            return  Colour(25 * probe->settings.apGainIndex, 25 * probe->settings.apGainIndex, 50);
         }
         else if (mode == VisualizationMode::LFP_GAIN_VIEW) // LFP GAIN
         {
-            return Colour(66, 25 * probe->lfpGainIndex, 35 * probe->lfpGainIndex);
+            return Colour(66, 25 * probe->settings.lfpGainIndex, 35 * probe->settings.lfpGainIndex);
 
         }
         else if (mode == VisualizationMode::REFERENCE_VIEW)
@@ -2005,8 +2017,6 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
     
     }
 
-        
-
     // update selection state
     for (int i = 0; i < p.selectedChannel.size(); i++)
     {
@@ -2032,8 +2042,9 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
 
  
     // apply settings in background thread
-    if (shouldUpdateProbe)
+    if (shouldUpdateProbe) {
          updateProbeSettingsInBackground();
+    }
 
     repaint();
 
@@ -2041,8 +2052,16 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
 
 ProbeSettings NeuropixInterface::getProbeSettings()
 {
+
     ProbeSettings p;
 
+    // Get probe constants
+    p.availableApGains = probe->settings.availableApGains;
+    p.availableLfpGains = probe->settings.availableLfpGains;
+    p.availableReferences = probe->settings.availableReferences;
+    p.availableBanks = probe->settings.availableBanks;
+
+    // Set probe variables
     if (apGainComboBox != 0)
         p.apGainIndex = apGainComboBox->getSelectedId() - 1;
     else
@@ -2084,7 +2103,7 @@ ProbeSettings NeuropixInterface::getProbeSettings()
 void NeuropixInterface::saveParameters(XmlElement* xml)
 {
 
-    std::cout << "Saving Neuropix display." << std::endl;
+    LOGD("Saving Neuropix display.");
 
     XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
 
@@ -2179,9 +2198,9 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     ProbeSettings settings;
     settings.probe = probe;
     settings.probeType = probe->type;
-    settings.apFilterState = probe->apFilterState;
-    settings.lfpGainIndex = probe->lfpGainIndex;
-    settings.apGainIndex = probe->apGainIndex;
+    settings.apFilterState = probe->settings.apFilterState;
+    settings.lfpGainIndex = probe->settings.lfpGainIndex;
+    settings.apGainIndex = probe->settings.apGainIndex;
 
     for (int i = 0; i < probe->channel_count; i++)
     {
@@ -2317,8 +2336,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     }
 
     thread->updateProbeSettingsQueue(settings);
-
-    applyProbeSettings(settings, false);
+    applyProbeSettings(settings, true);
 }
 
 // --------------------------------------

@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Neuropixels2.h"
 #include "Geometry.h"
+#include "../Utils.h"
 
 #define MAXLEN 50
 
@@ -48,50 +49,56 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 	name = probeMetadata.name;
 	type = probeMetadata.type;
 
-	apGainIndex = -1;
-	lfpGainIndex = -1;
-	referenceIndex = 0;
-	apFilterState = false;
+	settings.apGainIndex = -1;
+	settings.lfpGainIndex = -1;
+	settings.referenceIndex = 0;
+	settings.apFilterState = false;
 
 	channel_count = 384;
 	lfp_sample_rate = 2500.0f; // not used
 	ap_sample_rate = 30000.0f;
 
+	for (int i = 0; i < channel_count; i++)
+    {
+        settings.selectedBank.add(Bank::A);
+        settings.selectedChannel.add(i);
+        settings.selectedShank.add(0);
+    }
 
 	if (probeMetadata.shank_count == 1)
 	{
-		availableReferences.add("Ext");
-		availableReferences.add("Tip");
-		availableReferences.add("128");
-		availableReferences.add("508");
-		availableReferences.add("888");
-		availableReferences.add("1252");
+		settings.availableReferences.add("Ext");
+		settings.availableReferences.add("Tip");
+		settings.availableReferences.add("128");
+		settings.availableReferences.add("508");
+		settings.availableReferences.add("888");
+		settings.availableReferences.add("1252");
 	}
 	else {
-		availableReferences.add("Ext");
-		availableReferences.add("1: Tip");
-		availableReferences.add("1: 128");
-		availableReferences.add("1: 512");
-		availableReferences.add("1: 896");
-		availableReferences.add("1: 1280");
-		availableReferences.add("2: Tip");
-		availableReferences.add("2: 128");
-		availableReferences.add("2: 512");
-		availableReferences.add("2: 896");
-		availableReferences.add("2: 1280");
-		availableReferences.add("3: Tip");
-		availableReferences.add("3: 128");
-		availableReferences.add("3: 512");
-		availableReferences.add("3: 896");
-		availableReferences.add("3: 1280");
-		availableReferences.add("4: Tip");
-		availableReferences.add("4: 128");
-		availableReferences.add("4: 512");
-		availableReferences.add("4: 896");
-		availableReferences.add("4: 1280");
+		settings.availableReferences.add("Ext");
+		settings.availableReferences.add("1: Tip");
+		settings.availableReferences.add("1: 128");
+		settings.availableReferences.add("1: 512");
+		settings.availableReferences.add("1: 896");
+		settings.availableReferences.add("1: 1280");
+		settings.availableReferences.add("2: Tip");
+		settings.availableReferences.add("2: 128");
+		settings.availableReferences.add("2: 512");
+		settings.availableReferences.add("2: 896");
+		settings.availableReferences.add("2: 1280");
+		settings.availableReferences.add("3: Tip");
+		settings.availableReferences.add("3: 128");
+		settings.availableReferences.add("3: 512");
+		settings.availableReferences.add("3: 896");
+		settings.availableReferences.add("3: 1280");
+		settings.availableReferences.add("4: Tip");
+		settings.availableReferences.add("4: 128");
+		settings.availableReferences.add("4: 512");
+		settings.availableReferences.add("4: 896");
+		settings.availableReferences.add("4: 1280");
 	}
 
-	availableBanks = { Bank::A,
+	settings.availableBanks = { Bank::A,
 		Bank::B,
 		Bank::C,
 		Bank::D,
@@ -102,29 +109,47 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 	
 	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
+	isCalibrated = false;
+
+}
+
+bool Neuropixels2::open()
+{
+	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
+	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	return errorCode == Neuropixels::SUCCESS;
+
+}
+
+bool Neuropixels2::close()
+{
+	errorCode = Neuropixels::closeProbe(basestation->slot, headstage->port, dock);
+	LOGD("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	return errorCode == Neuropixels::SUCCESS;
 }
 
 void Neuropixels2::initialize()
 {
 
-	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
-	std::cout << "openProbe: slot: " << basestation->slot << " port: " << headstage->port << " dock: " << dock << " errorCode: " << errorCode << std::endl;
-
-	std::cout << " slot: " << basestation->slot << " port: " << headstage->port << " dock: "<< dock << std::endl;
-	std::cout << "Neuropixels2::initialize() errorCode: " << errorCode << std::endl;
-
-	if (errorCode == Neuropixels::SUCCESS)
+	if (open())
 	{
 
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
+		selectElectrodes();
+		setAllReferences();
+
 		calibrate();
+
+		writeConfiguration();
+
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
 		eventCode = 0;
 		setStatus(ProbeStatus::CONNECTED);
 	}
+
 }
 
 
@@ -144,36 +169,47 @@ void Neuropixels2::calibrate()
 	
 	if (!probeDirectory.exists())
 	{
-		// show popup notification window
-		String message = "Missing calibration files for probe serial number " + String(info.serial_number) + ". ADC and Gain calibration files must be located in 'CalibrationInfo\\<serial_number>' folder in the directory where the Open Ephys GUI was launched. The GUI will proceed without calibration.";
-		AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
+
+		if (!calibrationWarningShown)
+		{
+			// show popup notification window
+			String message = "Missing calibration files for probe serial number " + String(info.serial_number);
+			message += ". ADC and Gain calibration files must be located in 'CalibrationInfo\\<serial_number>' folder in the directory where the Open Ephys GUI was launched.";
+			message += "The GUI will proceed without calibration.";
+			message += "The plugin must be deleted and re-inserted once calibration files have been added";
+
+			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
+
+			calibrationWarningShown = true;
+		}
+
 		return;
 	}
 
 	String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
 	String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
-	std::cout << adcFile << std::endl;
+	LOGD("ADC file: ", adcFile);
 
 	errorCode = Neuropixels::setADCCalibration(basestation->slot, headstage->port, adcFile.toRawUTF8());
 
-	if (errorCode == 0)
-		std::cout << "Successful ADC calibration." << std::endl;
-	else
-		std::cout << "Unsuccessful ADC calibration, failed with error code: " << errorCode << std::endl;
+	if (errorCode == 0) { LOGD("Successful ADC calibration."); }
+	else { LOGD("Unsuccessful ADC calibration, failed with error code: ", errorCode); }
 
-	std::cout << gainFile << std::endl;
+	LOGD("Gain file: ", gainFile);
 
 	errorCode = Neuropixels::setGainCalibration(basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
 
-	if (errorCode == 0)
-		std::cout << "Successful gain calibration." << std::endl;
-	else
-		std::cout << "Unsuccessful gain calibration, failed with error code: " << errorCode << std::endl;
+	if (errorCode == 0) { LOGD("Successful gain calibration."); }
+	else { LOGD("Unsuccessful gain calibration, failed with error code: ", errorCode); }
 
 	errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
+
+	if (!errorCode == Neuropixels::SUCCESS) { LOGD("Failed to write probe config w/ error code: ", errorCode); }
+	else { LOGD("Successfully wrote probe config "); }
+
 }
 
-void Neuropixels2::selectElectrodes(ProbeSettings settings, bool shouldWriteConfiguration)
+void Neuropixels2::selectElectrodes()
 {
 
 	Neuropixels::NP_ErrorCode ec;
@@ -189,46 +225,33 @@ void Neuropixels2::selectElectrodes(ProbeSettings settings, bool shouldWriteConf
 			dock,
 			settings.selectedChannel[ch],
 			settings.selectedShank[ch],
-			availableBanks.indexOf(settings.selectedBank[ch]));
+			settings.availableBanks.indexOf(settings.selectedBank[ch]));
 
 	}
 
-	std::cout << "Updating electrode settings for"
-		<< " slot: " << basestation->slot
-		<< " port: " << headstage->port 
-		<< " dock: " << dock << std::endl;
-
-	if (shouldWriteConfiguration)
-	{
-		ec = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-
-		if (!ec == np::SUCCESS)
-			std::cout << "Failed to write channel config " << std::endl;
-		else
-			std::cout << "Successfully wrote channel config " << std::endl;
-	}
+	LOGD("Updating electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
 
 }
 
-void Neuropixels2::setApFilterState(bool disableHighPass, bool shouldWriteConfiguration)
+void Neuropixels2::setApFilterState()
 {
 	// no filter cut available
 }
 
-void Neuropixels2::setAllGains(int apGain, int lfpGain, bool shouldWriteConfiguration)
+void Neuropixels2::setAllGains()
 {
 	// no gain available
 }
 
 
-void Neuropixels2::setAllReferences(int refIndex, bool shouldWriteConfiguration)
+void Neuropixels2::setAllReferences()
 {
 
 	Neuropixels::channelreference_t refId;
-	uint8_t refElectrodeBank = 0;
+	int refElectrodeBank = 0;
 	int shank = 0;
 
-	switch (referenceIndex)
+	switch (settings.referenceIndex)
 	{
 	case 0:
 		refId = Neuropixels::EXT_REF;
@@ -334,17 +357,11 @@ void Neuropixels2::setAllReferences(int refIndex, bool shouldWriteConfiguration)
 		Neuropixels::setReference(basestation->slot, 
 									headstage->port, 
 									dock,
-									shank,
-									channel, 
+									channel,
+									shank, 
 									refId, 
 									refElectrodeBank);
 
-	if (shouldWriteConfiguration)
-		errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-
-	//std::cout << "Wrote reference " << int(refId) << ", " << int(refElectrodeBank) << " with error code " << errorCode << std::endl;
-
-	referenceIndex = refIndex;
 }
 
 void Neuropixels2::writeConfiguration()
@@ -357,7 +374,7 @@ void Neuropixels2::startAcquisition()
 	ap_timestamp = 0;
 	apBuffer->clear();
 
-	std::cout << "  Starting thread." << std::endl;
+	LOGD("  Starting thread.");
 	startThread();
 }
 
@@ -392,7 +409,7 @@ void Neuropixels2::run()
 			count,
 			&count);
 
-		if (errorCode == np::SUCCESS && count > 0)
+		if (errorCode == Neuropixels::SUCCESS && count > 0)
 		{
 			float apSamples[385];
 
@@ -417,12 +434,13 @@ void Neuropixels2::run()
 
 				if (ap_timestamp % 30000 == 0)
 				{
-					size_t packetsAvailable;
-					size_t headroom;
+					int packetsAvailable;
+					int headroom;
 
-					np::getElectrodeDataFifoState(
+					Neuropixels::getElectrodeDataFifoState(
 						basestation->slot,
 						headstage->port,
+						dock,
 						&packetsAvailable,
 						&headroom);
 
@@ -434,10 +452,90 @@ void Neuropixels2::run()
 			}
 
 		}
-		else if (errorCode != np::SUCCESS)
+		else if (errorCode != Neuropixels::SUCCESS)
 		{
-			std::cout << "Error code: " << errorCode << "for Basestation " << int(basestation->slot) << ", probe " << int(headstage->port) << std::endl;
+			LOGD("readPackets error code: ", errorCode, " for Basestation ", int(basestation->slot), ", probe ", int(headstage->port));
 		}
 	}
 
+}
+
+bool Neuropixels2::runBist(BIST bistType)
+{
+
+	close();
+	open();
+
+	int slot = basestation->slot;
+	int port = headstage->port;
+
+	bool returnValue = false;
+
+	switch (bistType)
+	{
+	case BIST::SIGNAL:
+	{
+		if (Neuropixels::bistSignal(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::NOISE:
+	{
+		if (Neuropixels::bistNoise(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::PSB:
+	{
+		if (Neuropixels::bistPSB(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::SR:
+	{
+		if (Neuropixels::bistSR(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::EEPROM:
+	{
+		if (Neuropixels::bistEEPROM(slot, port) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::I2C:
+	{
+		if (Neuropixels::bistI2CMM(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	}
+	case BIST::SERDES:
+	{
+		int errors;
+		Neuropixels::bistStartPRBS(slot, port);
+		Sleep(200);
+		Neuropixels::bistStopPRBS(slot, port, &errors);
+
+		if (errors == 0)
+			returnValue = true;
+		break;
+	}
+	case BIST::HB:
+	{
+		if (Neuropixels::bistHB(slot, port, dock) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	} case BIST::BS:
+	{
+		if (Neuropixels::bistBS(slot) == Neuropixels::SUCCESS)
+			returnValue = true;
+		break;
+	} default:
+		CoreServices::sendStatusMessage("Test not found.");
+	}
+
+	close();
+	initialize();
+
+	return returnValue;
 }

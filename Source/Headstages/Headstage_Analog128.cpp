@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Headstage_Analog128.h"
 #include "../Probes/Neuropixels_NHP_Passive.h"
+#include "../Utils.h"
 
 #define MAXLEN 50
 
