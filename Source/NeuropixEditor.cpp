@@ -525,6 +525,8 @@ void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 		xmlNode->setAttribute("Slot" + String(slot) + "Directory", directory_name);
 	}
 
+	xmlNode->setAttribute("MasterSlot", masterSelectBox->getSelectedItemIndex());
+
 	xmlNode->setAttribute("SendSyncAsContinuous", addSyncChannelButton->getToggleState());
 
 	xmlNode->setAttribute("SyncDirection", masterConfigBox->getSelectedItemIndex());
@@ -552,16 +554,30 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 				savingDirectories.set(slot, directory);
 			}
 
-			addSyncChannelButton->setToggleState(xmlNode->getBoolAttribute("SendSyncAsContinuous", false), false);
-			thread->sendSyncAsContinuousChannel(xmlNode->getBoolAttribute("SendSyncAsContinuous", false));
+			int slotIndex = xmlNode->getIntAttribute("MasterSlot", masterSelectBox->getSelectedItemIndex());
 
-			masterConfigBox->setSelectedItemIndex(xmlNode->getIntAttribute("SyncDirection", false), dontSendNotification);
+			/*Configure master basestation */
+			thread->setMainSync(slotIndex);
+			masterConfigBox->setSelectedItemIndex(0,true);
+			freqSelectBox->setSelectedItemIndex(0, true);
 
-			if (xmlNode->getIntAttribute("SyncDirection", false))
+			/* Add sync as continuous channel */
+			bool addSyncAsContinuousChannel = xmlNode->getBoolAttribute("SendSyncAsContinuous", false);
+			addSyncChannelButton->setToggleState(addSyncAsContinuousChannel, false);
+			thread->sendSyncAsContinuousChannel(addSyncAsContinuousChannel);
+
+			/* Set SMA as input or output */
+			bool setAsOutput = (bool)xmlNode->getIntAttribute("SyncDirection", false);
+
+			if (setAsOutput)
 			{
-				background->setFreqSelectAvailable(true);
+				masterConfigBox->setSelectedItemIndex(1,true);
+				thread->setSyncOutput(slotIndex);
 				freqSelectBox->setVisible(true);
-				freqSelectBox->setSelectedId(xmlNode->getIntAttribute("SyncFreq", false)+1);
+				background->setFreqSelectAvailable(true);
+				int freqIndex = xmlNode->getIntAttribute("SyncFreq", false);
+				freqSelectBox->setSelectedItemIndex(freqIndex, true);
+				thread->setSyncFrequency(slotIndex, freqIndex);
 			}
 
 			CoreServices::updateSignalChain(this);

@@ -253,13 +253,12 @@ void Basestation_v1::setSyncAsOutput(int freqIndex)
 		return;
 	}
 
-	/*
 	errorCode = setTriggerOutput(slot_c, np::TRIGOUT_SMA, np::TRIGIN_SHAREDSYNC);
 	if (errorCode != np::SUCCESS)
 	{
 		printf("Failed to set sync on SMA output on slot: %d\n", slot);
 	}
-	*/
+
 
 }
 
