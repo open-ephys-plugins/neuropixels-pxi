@@ -207,6 +207,8 @@ void Basestation_v3::initialize()
 
 Basestation_v3::~Basestation_v3()
 {
+	/* As of API 3.31, closing a v3 basestation does not turn off the SMA output */
+	setSyncAsInput();
 	close();
 	
 }
@@ -219,6 +221,7 @@ void Basestation_v3::close()
 	}
 
 	errorCode = Neuropixels::closeBS(slot);
+	LOGD("Closed basestation on slot: ", slot, "w/ error code: ", errorCode);
 }
 
 void Basestation_v3::setSyncAsInput()
