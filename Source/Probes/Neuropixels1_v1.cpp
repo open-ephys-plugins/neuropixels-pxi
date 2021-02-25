@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+#include <ctime>
+
 #include "Neuropixels1_v1.h"
 #include "Geometry.h"
 #include "../Utils.h"
@@ -113,7 +115,7 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 bool Neuropixels1_v1::open()
 {
 	errorCode = np::openProbe(basestation->slot_c, headstage->port_c);
-	LOGD("openProbe: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGDD("openProbe: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
 	return errorCode == np::SUCCESS;
 
 }
@@ -121,7 +123,7 @@ bool Neuropixels1_v1::open()
 bool Neuropixels1_v1::close()
 {
 	errorCode = np::close(basestation->slot_c, headstage->port_c);
-	LOGD("close: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGDD("close: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
 	return errorCode == np::SUCCESS;
 }
 
@@ -131,11 +133,11 @@ void Neuropixels1_v1::initialize()
 	LOGD("Configuring probe...");
 
 	errorCode = np::init(basestation->slot_c, headstage->port_c);
-	LOGD("init: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGDD("init: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
 	errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);
-	LOGD("setOPMODE: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGDD("setOPMODE: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
 	errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
-	LOGD("setHSLed: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGDD("setHSLed: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
 
 	calibrate();
 
@@ -291,11 +293,24 @@ void Neuropixels1_v1::setAllReferences()
 void Neuropixels1_v1::writeConfiguration()
 {
 
-	LOGD("************WRITE PROBE CONFIGURATION****************");
-	LOGD("AP Gain: ", settings.availableApGains[settings.apGainIndex]);
-	LOGD("LFP Gain: ", settings.availableLfpGains[settings.lfpGainIndex]);
-	LOGD("REF: ", settings.availableReferences[settings.referenceIndex]);
-	LOGD("FILTER: ", settings.apFilterState);
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer[80];
+
+	time (&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	strftime(buffer,sizeof(buffer),"%d-%m-%Y %H:%M:%S",timeinfo);
+	std::string time_string(buffer);
+
+	LOGD("*************WROTE PROBE CONFIGURATION****************");
+	LOGD("* On: ",  basestation->slot, " port: ", headstage->port);
+	LOGD("* At: ", time_string);
+	LOGD("* AP Gain: ", settings.availableApGains[settings.apGainIndex]);
+	LOGD("* LFP Gain: ", settings.availableLfpGains[settings.lfpGainIndex]);
+	LOGD("* REF: ", settings.availableReferences[settings.referenceIndex]);
+	LOGD("* FILTER: ", settings.apFilterState);
+	LOGD("******************************************************");
 
 	errorCode = np::writeProbeConfiguration(basestation->slot_c, headstage->port_c, false);
 }

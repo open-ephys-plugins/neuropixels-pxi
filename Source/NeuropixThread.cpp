@@ -245,11 +245,6 @@ void NeuropixThread::initialize()
 {
 	// slower task, run in background thread
 
-	for (auto basestation : basestations)
-	{
-		basestation->initialize(); // prepares probes for acquisition; may be slow
-	}
-
 	if (api_v1.isActive)
 	{
 		np::setParameter(np::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
@@ -258,6 +253,11 @@ void NeuropixThread::initialize()
 	else {
 		Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
 		Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
+	}
+
+	for (auto basestation : basestations)
+	{
+		basestation->initialize(); // prepares probes for acquisition; may be slow
 	}
 
 	initializationComplete = true;

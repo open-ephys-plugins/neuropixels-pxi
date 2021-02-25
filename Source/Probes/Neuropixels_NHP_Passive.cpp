@@ -101,7 +101,7 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 bool Neuropixels_NHP_Passive::open()
 {
 	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
-	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	LOGD("init: slot: ", int(basestation->slot), " port: ", int(headstage->port), " dock: ", dock, " errorCode: ", errorCode);
 	return errorCode == Neuropixels::SUCCESS;
 
 }
