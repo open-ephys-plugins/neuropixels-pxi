@@ -83,10 +83,16 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 			Basestation* bs = new Basestation_v3(slotID); 
 
-			//Only add a basestation if it has at least one probe connected
-			if (bs->open() && bs->getProbeCount())
+			if (bs->open()) //returns true if BS firmware >= 2.0137
 			{
 				basestations.add(bs);
+
+				if (!bs->getProbeCount())
+					CoreServices::sendStatusMessage("Neuropixels PXI basestation found, no probes connected.");
+			}
+			else
+			{
+				delete bs;
 			}
 
 		}
