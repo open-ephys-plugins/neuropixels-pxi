@@ -103,6 +103,11 @@ bool Basestation_v3::open()
 
 		basestationConnectBoard = new BasestationConnectBoard_v3(this);
 
+		//Confirm v3 basestation by BS version 2.0 or greater.
+		LOGD("  BS firmware: ", info.boot_version);
+		if (std::stod((info.boot_version.toStdString())) < 2.0)
+			return false;
+
 		savingDirectory = File();
 
 		LOGD("    Searching for probes...");

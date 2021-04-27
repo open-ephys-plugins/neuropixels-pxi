@@ -50,7 +50,7 @@ public:
 	void LOGDebug(Args&& ...args)
 	{
 		std::lock_guard<std::mutex> lock(mt);
-        std::cout << "[Neuropixels-PXI] ";
+        std::cout << "[Neuropix-PXI] ";
 		(std::cout << ... << args);
 		std::cout << std::endl;
 	}
