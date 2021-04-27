@@ -218,6 +218,12 @@ void Neuropixels1_v1::selectElectrodes()
 	if (settings.selectedChannel.size() == 0)
 		return;
 
+	for (int ch = 0; ch < 384; ch++)
+	{
+		if (ch != 191)
+			errorCode = np::selectElectrode(basestation->slot_c, headstage->port_c, ch, 0xFF);
+	}
+
 	for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
 	{
 
