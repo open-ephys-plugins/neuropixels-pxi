@@ -26,6 +26,7 @@
 
 #include "Basestations/Basestation_v1.h"
 #include "Basestations/Basestation_v3.h"
+#include "Basestations/OneBox.h"
 #include "Basestations/SimulatedBasestation.h"
 
 #include <vector>
@@ -97,7 +98,20 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 		}
 		else {
-			CoreServices::sendStatusMessage("ONE Box not yet supported.");
+
+			Basestation* bs = new OneBox(slotID);
+
+			if (bs->open())
+			{
+				basestations.add(bs);
+
+				if (!bs->getProbeCount())
+					CoreServices::sendStatusMessage("OneBox found, no probes connected.");
+			}
+			else
+			{
+				delete bs;
+			}
 		}
 	}
 
