@@ -99,10 +99,11 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 		}
 		else {
 
-			Basestation* bs = new OneBox(slotID);
+			Basestation* bs = new OneBox(list[i].ID);
 
 			if (bs->open())
 			{
+
 				basestations.add(bs);
 
 				if (!bs->getProbeCount())

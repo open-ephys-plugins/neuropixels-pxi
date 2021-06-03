@@ -598,11 +598,11 @@ void NeuropixInterface::updateInfoString()
     infoString += "\n";
     infoString += "\n";
 
-    infoString += "Basestation connect board";
+   /* infoString += "Basestation connect board";
     infoString += "\n hardware version: " + probe->basestation->basestationConnectBoard->info.version;
     infoString += "\n firmware version: " + probe->basestation->basestationConnectBoard->info.boot_version;
     infoString += "\n";
-    infoString += "\n";
+    infoString += "\n";*/
 
     infoString += "Headstage: " + probe->headstage->info.part_number;
     infoString += "\n";
@@ -2113,10 +2113,10 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     xmlNode->setAttribute("bs_serial_number", String(probe->basestation->info.serial_number));
     xmlNode->setAttribute("bs_part_number", probe->basestation->info.part_number);
 
-    xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
+   /* xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
     xmlNode->setAttribute("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
     xmlNode->setAttribute("bsc_serial_number", String(probe->basestation->basestationConnectBoard->info.serial_number));
-    xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
+    xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);*/
 
     xmlNode->setAttribute("headstage_serial_number", String(probe->headstage->info.serial_number));
     xmlNode->setAttribute("headstage_part_number", probe->headstage->info.part_number);

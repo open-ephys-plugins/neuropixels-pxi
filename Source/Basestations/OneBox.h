@@ -33,7 +33,7 @@ class OneBox : public Basestation
 
 {
 public:
-	OneBox(int slot);
+	OneBox(int ID);
 	~OneBox();
 
 	int slot;
@@ -66,6 +66,10 @@ public:
 	//Neuropixels::bistElectrodeStats stats[960];
 
 	Neuropixels::NP_ErrorCode errorCode;
+
+	static int box_count;
+
+	const int first_available_slot = 16;
 
 };
 
