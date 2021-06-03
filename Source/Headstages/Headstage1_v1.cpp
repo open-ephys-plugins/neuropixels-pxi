@@ -87,7 +87,7 @@ Headstage1_v1::Headstage1_v1(Basestation* bs_, int port) : Headstage(bs_, port)
 		testModule = nullptr;
 		flexCables.add(new Flex1_v1(this));
 		probes.add(new Neuropixels1_v1(basestation, this, flexCables[0]));
-		probes[0]->setStatus(ProbeStatus::CONNECTING);
+		probes[0]->setStatus(SourceStatus::CONNECTING);
 	}
 
 }

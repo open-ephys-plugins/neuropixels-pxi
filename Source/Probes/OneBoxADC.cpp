@@ -1,0 +1,190 @@
+/*
+------------------------------------------------------------------
+
+This file is part of the Open Ephys GUI
+Copyright (C) 2018 Allen Institute for Brain Science and Open Ephys
+
+------------------------------------------------------------------
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
+#include "OneBoxADC.h"
+#include "Geometry.h"
+#include "../Utils.h"
+
+#define MAXLEN 50
+
+void OneBoxADC::getInfo()
+{
+	//errorCode = Neuropixels::readProbeSN(basestation->slot, headstage->port, dock, &info.serial_number);
+
+	//char pn[MAXLEN];
+	//errorCode = Neuropixels::readProbePN(basestation->slot_c, headstage->port_c, dock, pn, MAXLEN);
+
+	//info.part_number = String(pn);
+}
+
+OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
+{
+
+	getInfo();
+
+	//setStatus(ProbeStatus::ADC);
+
+	channel_count = 12;
+	sample_rate = 30000.0f;
+
+	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
+
+	sourceType = DataSourceType::ADC;
+	status = SourceStatus::CONNECTED;
+
+}
+
+bool OneBoxADC::open()
+{
+	return true;
+
+}
+
+bool OneBoxADC::close()
+{
+	return true;
+}
+
+void OneBoxADC::initialize()
+{
+
+	if (open())
+	{
+
+		setAdcInputRange(AdcInputRange::PLUSMINUS5V);
+
+		timestamp = 0;
+	}
+
+}
+
+void OneBoxADC::startAcquisition()
+{
+	timestamp = 0;
+	sampleBuffer->clear();
+
+	LOGD("  Starting thread.");
+	startThread();
+}
+
+void OneBoxADC::stopAcquisition()
+{
+	stopThread(1000);
+}
+
+void OneBoxADC::setAdcInputRange(AdcInputRange range)
+{
+	switch (range)
+	{
+	case AdcInputRange::PLUSMINUS2PT5V:
+		Neuropixels::ADC_setVoltageRange(basestation->slot, 2.5f);
+		bitVolts = 2.5f / pow(2, 15);
+		break;
+
+	case AdcInputRange::PLUSMINUS5V:
+		Neuropixels::ADC_setVoltageRange(basestation->slot, 5.0f);
+		bitVolts = 5.0f / pow(2, 15);
+		break;
+
+	case AdcInputRange::PLUSMINUS10V:
+		Neuropixels::ADC_setVoltageRange(basestation->slot, 10.0f);
+		bitVolts = 10.0f / pow(2, 15);
+		break;
+
+	default:
+		Neuropixels::ADC_setVoltageRange(basestation->slot, 5.0f);
+		bitVolts = 5.0f / pow(2, 15);
+		break;
+
+	}
+}
+
+void OneBoxADC::run()
+{
+
+	//std::cout << "Thread running." << std::endl;
+
+	Neuropixels::streamsource_t source = Neuropixels::SourceAP;
+
+	int16_t data[SAMPLECOUNT * 12];
+
+	Neuropixels::PacketInfo packetInfo[SAMPLECOUNT];
+
+	while (!threadShouldExit())
+	{
+		int count = SAMPLECOUNT;
+
+		errorCode = Neuropixels::ADC_readPackets(basestation->slot, 
+			&packetInfo[0],
+			&data[0], 
+			12,
+			count,
+			&count);
+
+		if (errorCode == Neuropixels::SUCCESS && count > 0)
+		{
+			float adcSamples[12];
+
+			for (int packetNum = 0; packetNum < count; packetNum++)
+			{
+
+				uint64 eventCode = 0; /// packetInfo[packetNum].Status >> 6; // AUX_IO<0:13>
+
+				uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
+
+				for (int j = 0; j < 12; j++)
+				{
+					adcSamples[j] = float(data[packetNum * 12 + j]) - 32768 / bitVolts; // convert to volts
+				}
+
+				timestamp += 1;
+
+				sampleBuffer->addToBuffer(adcSamples, &timestamp, &eventCode, 1);
+
+				/*if (ap_timestamp % 30000 == 0)
+				{
+					int packetsAvailable;
+					int headroom;
+
+					Neuropixels::getElectrodeDataFifoState(
+						basestation->slot,
+						headstage->port,
+						dock,
+						&packetsAvailable,
+						&headroom);
+
+					//std::cout << "Basestation " << int(basestation->slot) << ", probe " << int(port) << ", packets: " << packetsAvailable << std::endl;
+
+					fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+				}*/
+
+			}
+
+		}
+		else if (errorCode != Neuropixels::SUCCESS)
+		{
+			LOGD("readPackets error code: ", errorCode, " for ADCs");
+		}
+	}
+
+}

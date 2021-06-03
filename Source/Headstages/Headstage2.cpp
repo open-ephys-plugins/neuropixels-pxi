@@ -90,7 +90,7 @@ Headstage2::Headstage2(Basestation* bs_, int port) : Headstage(bs_, port)
 		{
 			flexCables.add(new Flex2(this, dock));
 			probes.add(new Neuropixels2(basestation, this, flexCables.getLast(), dock));
-			probes.getLast()->setStatus(ProbeStatus::CONNECTING);
+			probes.getLast()->setStatus(SourceStatus::CONNECTING);
 		}
 		else {
 			probes.add(nullptr);

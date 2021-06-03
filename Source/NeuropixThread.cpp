@@ -196,7 +196,11 @@ void NeuropixThread::updateSubprocessors()
 		SubprocessorInfo spInfo;
 		spInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
 		spInfo.sample_rate = probe->ap_sample_rate;
-		spInfo.type = AP_BAND;
+
+		if (spInfo.num_channels == 12)
+			spInfo.type = ADC;
+		else
+			spInfo.type = AP_BAND;
 		spInfo.sendSyncAsContinuousChannel = probe->sendSync;
 
 		subprocessorInfo.add(spInfo);
@@ -237,7 +241,7 @@ void NeuropixThread::applyProbeSettingsQueue()
 
 	for (auto settings : probeSettingsUpdateQueue)
 	{
-		settings.probe->setStatus(ProbeStatus::UPDATING);
+		settings.probe->setStatus(SourceStatus::UPDATING);
 	}
 
 	for (auto settings: probeSettingsUpdateQueue)
@@ -255,7 +259,7 @@ void NeuropixThread::applyProbeSettingsQueue()
 
 			settings.probe->writeConfiguration();
 
-			settings.probe->setStatus(ProbeStatus::CONNECTED);
+			settings.probe->setStatus(SourceStatus::CONNECTED);
 		}
 	}
 
@@ -310,6 +314,26 @@ Array<Probe*> NeuropixThread::getProbes()
 	}
 
 	return probes;
+}
+
+Array<DataSource*> NeuropixThread::getDataSources()
+{
+	Array<DataSource*> sources;
+
+	for (auto bs : basestations)
+	{
+		for (auto probe : bs->getProbes())
+		{
+			sources.add(probe);
+		}
+
+		for (auto additionalSource : bs->getAdditionalDataSources())
+		{
+			sources.add(additionalSource);
+		}
+	}
+
+	return sources;
 }
 
 String NeuropixThread::getApiVersion()
@@ -705,8 +729,10 @@ void NeuropixThread::setDefaultChannelNames()
 
 				if (spInfo.type == AP_BAND)
 					info.name = "AP";
-				else
+				else if (spInfo.type == LFP_BAND)
 					info.name = "LFP";
+				else if (spInfo.type == ADC)
+					info.name = "ADC";
 
 
 				if (spInfo.sendSyncAsContinuousChannel && (i == spInfo.num_channels - 1))

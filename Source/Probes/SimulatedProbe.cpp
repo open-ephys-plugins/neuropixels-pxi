@@ -168,7 +168,7 @@ void SimulatedProbe::initialize()
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
 	eventCode = 0;
-	setStatus(ProbeStatus::CONNECTED);
+	setStatus(SourceStatus::CONNECTED);
 	Sleep(200);
 }
 

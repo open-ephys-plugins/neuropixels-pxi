@@ -50,19 +50,19 @@ private:
 
 };
 
-class ProbeButton : public ToggleButton, public Timer
+class SourceButton : public ToggleButton, public Timer
 {
 public:
-	ProbeButton(int id, Probe* probe);
+	SourceButton(int id, DataSource* probe);
 
 	void setSelectedState(bool);
 
-	void setProbeStatus(ProbeStatus status);
-	ProbeStatus getProbeStatus();
+	void setSourceStatus(SourceStatus status);
+	SourceStatus getSourceStatus();
 
 	void timerCallback();
 
-	Probe* probe;
+	DataSource* dataSource;
 	bool connected;
 
 	int id;
@@ -70,7 +70,8 @@ public:
 private:
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
-	ProbeStatus status;
+	SourceStatus status;
+	DataSourceType sourceType;
 	bool selected;
 };
 
@@ -137,7 +138,7 @@ public:
 
 	Visualizer* createNewCanvas(void);
 
-	OwnedArray<ProbeButton> probeButtons;
+	OwnedArray<SourceButton> sourceButtons;
 
 	ScopedPointer<BackgroundLoader> uiLoader;
 

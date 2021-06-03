@@ -2,7 +2,7 @@
 ------------------------------------------------------------------
 
 This file is part of the Open Ephys GUI
-Copyright (C) 2021 Allen Institute for Brain Science and Open Ephys
+Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
 
 ------------------------------------------------------------------
 
@@ -21,65 +21,44 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef __ONEBOX_H_2C4C2D67__
-#define __ONEBOX_H_2C4C2D67__
+#ifndef __ONEBOX_ADC_H_2C4C2D67__
+#define __ONEBOX_ADC_H_2C4C2D67__
+
+#include "../NeuropixComponents.h"
 
 #include "../API/v3/NeuropixAPI.h"
-#include "../NeuropixComponents.h"
 
 # define SAMPLECOUNT 64
 
-class OneBoxADC;
-class OneBoxDAC;
 
-class OneBox : public Basestation
-
+class OneBoxADC : public DataSource
 {
 public:
-	OneBox(int ID);
-	~OneBox();
-
-	int slot;
-
-	bool open() override;
-	void close() override;
-	void initialize() override;
-
-	int getProbeCount() override;
-
-	//float getTemperature() override;
+	OneBoxADC(Basestation* bs);
 
 	void getInfo() override;
 
-	void setSyncAsInput() override;
-	void setSyncAsOutput(int freqIndex) override;
+	bool open() override;
+	bool close() override;
 
-	Array<int> getSyncFrequencies() override;
+	void initialize() override;
+
+	void setAdcInputRange(AdcInputRange range);
 
 	void startAcquisition() override;
 	void stopAcquisition() override;
 
-	float getFillPercentage() override;
-
-	void updateBsFirmware(File file) override;
-	void updateBscFirmware(File file) override;
-
-	void run() override;
-
-	Array<DataSource*> getAdditionalDataSources() override;
-
-	//Neuropixels::bistElectrodeStats stats[960];
+	void run() override; // acquire data
 
 	Neuropixels::NP_ErrorCode errorCode;
 
-	static int box_count;
+	float bitVolts;
 
-	const int first_available_slot = 16;
+	int64 timestamp;
 
-	ScopedPointer<OneBoxADC> adcSource;
-	ScopedPointer<OneBoxDAC> dacSource;
+	DataBuffer* sampleBuffer;
 
 };
 
 
-#endif  // __ONEBOX_H_2C4C2D67__
+#endif  // __ONEBOX_ADC_H_2C4C2D67__

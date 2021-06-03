@@ -80,7 +80,7 @@ Headstage_Analog128::Headstage_Analog128(Basestation* bs_, int port) : Headstage
 	flexCables.add(new Flex1_NHP(this));
 
 	probes.add(new Neuropixels_NHP_Passive(basestation, this, flexCables[0]));
-	probes[0]->setStatus(ProbeStatus::CONNECTING);
+	probes[0]->setStatus(SourceStatus::CONNECTING);
 }
 
 

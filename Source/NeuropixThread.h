@@ -48,7 +48,8 @@ public:
 
 typedef enum {
 	AP_BAND,
-	LFP_BAND
+	LFP_BAND,
+	ADC
 } subprocessor_type;
 
 struct SubprocessorInfo {
@@ -168,6 +169,7 @@ public:
 
 	Array<Basestation*> getBasestations();
 	Array<Probe*> getProbes();
+	Array<DataSource*> getDataSources();
 
 	void setMainSync(int slotIndex);
 	void setSyncOutput(int slotIndex);

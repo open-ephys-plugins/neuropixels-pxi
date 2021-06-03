@@ -38,7 +38,7 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 {
 	getInfo();
 
-	setStatus(ProbeStatus::DISCONNECTED);
+	setStatus(SourceStatus::DISCONNECTED);
 
 	channel_map = { 6,10,14,18,22,26,30,34,38,42,50,2,60,62,64,
 		54,58,103,56,115,107,46,119,111,52,123,4,127,8,12,16,20,
@@ -134,7 +134,7 @@ void Neuropixels_NHP_Passive::initialize()
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
 		eventCode = 0;
-		setStatus(ProbeStatus::CONNECTED);
+		setStatus(SourceStatus::CONNECTED);
 	}
 
 }

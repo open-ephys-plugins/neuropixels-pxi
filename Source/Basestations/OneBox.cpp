@@ -32,6 +32,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage1_v3.h"
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
+#include "../Probes/OneBoxADC.h"
+#include "../Probes/OneBoxDAC.h"
 #include "../Utils.h"
 
 #define MAXLEN 50
@@ -66,6 +68,14 @@ OneBox::OneBox(int ID) : Basestation(16)
 	box_count++;
 }
 
+OneBox::~OneBox()
+{
+	/* As of API 3.31, closing a v3 basestation does not turn off the SMA output */
+	setSyncAsInput();
+	close();
+
+}
+
 bool OneBox::open()
 {
 
@@ -93,7 +103,7 @@ bool OneBox::open()
 
 		LOGD("    Searching for probes...");
 
-		for (int port = 1; port <= 4; port++)
+		for (int port = 1; port <= 2; port++)
 		{
 			bool detected = false;
 
@@ -165,12 +175,27 @@ bool OneBox::open()
 		}
 
 		LOGD("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
+
+		adcSource = new OneBoxADC(this);
+		dacSource = new OneBoxDAC(this);
+		
+		headstages.add(nullptr);
+		headstages.add(nullptr);
 	}
 
 	syncFrequencies.add(1);
 	syncFrequencies.add(10);
 
 	return true;
+}
+
+Array<DataSource*> OneBox::getAdditionalDataSources()
+{
+	Array<DataSource*> sources;
+	sources.add((DataSource*) adcSource);
+	sources.add((DataSource*)dacSource);
+
+	return sources;
 }
 
 void OneBox::initialize()
@@ -194,13 +219,7 @@ void OneBox::initialize()
 	LOGD("One box is armed");
 }
 
-OneBox::~OneBox()
-{
-	/* As of API 3.31, closing a v3 basestation does not turn off the SMA output */
-	setSyncAsInput();
-	close();
-	
-}
+
 
 void OneBox::close()
 {

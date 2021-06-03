@@ -48,7 +48,12 @@ struct ComponentInfo
 	String boot_version = "";
 };
 
-
+enum class DataSourceType {
+	PROBE,
+	ADC,
+	DAC,
+	NONE
+};
 
 enum class ProbeType {
 	NONE,
@@ -63,13 +68,13 @@ enum class ProbeType {
 	NP2_4
 };
 
-enum class ProbeStatus {
+enum class SourceStatus {
 	DISCONNECTED, //There is no communication between probe and computer
 	CONNECTING,   //Computer has detected the probe and is attempting to connect
 	CONNECTED,    //Computer has established a valid connection with probe
 	UPDATING,	  //The probe is currently updating its settings
 	ACQUIRING,    //The probe is currently streaming data to computer
-	RECORDING     //The probe is recording the streaming data
+	RECORDING,    //The probe is recording the streaming data
 };
 
 enum Bank {
@@ -111,6 +116,11 @@ enum class BIST {
 	BS = 9
 };
 
+enum class AdcInputRange {
+	PLUSMINUS2PT5V = 0,
+	PLUSMINUS5V = 1,
+	PLUSMINUS10V = 2
+};
 
 struct ProbeMetadata {
 	int shank_count;
@@ -138,6 +148,8 @@ struct ElectrodeMetadata {
 	bool isSelected;
 	Colour colour;
 };
+
+
 
 struct ProbeSettings {
 
@@ -217,24 +229,67 @@ public:
 	bool isActive;
 };
 
-
-/** Represents a Neuropixels probe of any type */
-class Probe : public NeuropixComponent, public Thread
+class DataSource : public NeuropixComponent, public Thread
 {
 public:
-	Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) : NeuropixComponent(), Thread("ProbeThread")
+	DataSource(Basestation* bs_) : NeuropixComponent(), Thread("DataSourceThread")
+	{
+		basestation = bs_;
+	}
+
+	/** Opens the connection to the probe */
+	virtual bool open() = 0;
+
+	/** Closes the connection to the probe */
+	virtual bool close() = 0;
+
+	/** Prepares the probe for data acquisition */
+	virtual void initialize() = 0;
+
+	/** Starts data streaming.*/
+	virtual void startAcquisition() = 0;
+
+	/** Stops data streaming.*/
+	virtual void stopAcquisition() = 0;
+
+	Basestation* basestation;
+
+	int channel_count;
+
+	float sample_rate;
+
+	DataSourceType sourceType;
+
+	void setStatus(SourceStatus status_) {
+		status = status_;
+	}
+
+	SourceStatus getStatus() {
+		return status;
+	}
+
+protected:
+	SourceStatus status;
+};
+
+
+/** Represents a Neuropixels probe of any type */
+class Probe : public DataSource
+{
+public:
+	Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) : DataSource(bs_)
 	{
 		dock = dock_;
-		basestation = bs_;
 		headstage = hs_;
 		flex = fl_;
 		isValid = false;
 
 		isCalibrated = false;
 		calibrationWarningShown = false;
+
+		sourceType = DataSourceType::PROBE;
 	}
 
-	Basestation* basestation; // owned by NeuropixThread
 	Headstage* headstage; // owned by Basestation
 	Flex* flex; // owned by Headstage
 
@@ -264,15 +319,6 @@ public:
 
 	/** VIRTUAL METHODS */
 
-	/** Opens the connection to the probe */
-	virtual bool open() = 0;
-
-	/** Closes the connection to the probe */
-	virtual bool close() = 0;
-
-	/** Prepares the probe for data acquisition */
-	virtual void initialize() = 0;
-
 	/** Returns true if the probe generates LFP data */
 	virtual bool generatesLfpData() = 0;
 
@@ -297,12 +343,6 @@ public:
 	/** Applies calibration info from a file.*/
 	virtual void calibrate() = 0;
 
-	/** Starts data streaming.*/
-	virtual void startAcquisition() = 0;
-
-	/** Stops data streaming.*/
-	virtual void stopAcquisition() = 0;
-
 	/** Runs a built-in self-test for a specified port */
 	virtual bool runBist(BIST bistType) = 0;
 
@@ -315,17 +355,8 @@ public:
 		settings = p;
 	}
 
-	void setStatus(ProbeStatus status_) {
-		status = status_;
-	}
-
-	ProbeStatus getStatus() {
-		return status;
-	}
-
 	ProbeType type;
-
-	int channel_count;
+	
 	int electrode_count;
 	float ap_band_sample_rate;
 	float lfp_band_sample_rate;
@@ -344,7 +375,7 @@ public:
 
 protected:
 
-	ProbeStatus status;
+	
 
 	uint64 eventCode;
 	Array<int> gains; // available gain values
@@ -432,6 +463,12 @@ public:
 		}
 
 		return headstage_array;
+	}
+
+	virtual Array<DataSource*> getAdditionalDataSources() { 
+		
+		return Array<DataSource*>();
+
 	}
 	
 	/** Returns an array of probes connected to this basestation (cannot include null values) */

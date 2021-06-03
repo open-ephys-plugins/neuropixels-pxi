@@ -118,9 +118,17 @@ void FifoMonitor::paint(Graphics& g)
 	g.fillRoundedRectangle(2, this->getHeight()-2-barHeight, this->getWidth() - 4, barHeight, 2);
 }
 
-ProbeButton::ProbeButton(int id_, Probe* probe_) : id(id_), probe(probe_), selected(false)
+SourceButton::SourceButton(int id_, DataSource* source_) : id(id_), dataSource(source_), selected(false)
 {
-	status = ProbeStatus::DISCONNECTED;
+	status = SourceStatus::DISCONNECTED;
+
+	if (dataSource != nullptr)
+	{
+		sourceType = dataSource->sourceType;
+	}
+	else {
+		sourceType = DataSourceType::NONE;
+	}
 
 	setRadioGroupId(979);
 
@@ -128,12 +136,12 @@ ProbeButton::ProbeButton(int id_, Probe* probe_) : id(id_), probe(probe_), selec
 }
 
 
-void ProbeButton::setSelectedState(bool state)
+void SourceButton::setSelectedState(bool state)
 {
 	selected = state;
 }
 
-void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
+void SourceButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 {
 	if (isMouseOver && connected)
 		g.setColour(Colours::antiquewhite);
@@ -141,23 +149,41 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 		g.setColour(Colours::darkgrey);
 	g.fillEllipse(0, 0, 15, 15);
 
-	if (status == ProbeStatus::CONNECTED)
+	Colour baseColour;
+
+	if (sourceType == DataSourceType::PROBE)
+	{
+		baseColour = Colours::green;
+	}
+	else if (sourceType == DataSourceType::ADC)
+	{
+		baseColour = Colours::purple;
+	}
+	else if (sourceType == DataSourceType::DAC)
+	{
+		baseColour = Colours::blue;
+	}
+	else {
+		baseColour = Colours::grey;
+	}
+
+	if (status == SourceStatus::CONNECTED)
 	{
 		if (selected)
 		{
 			if (isMouseOver)
-				g.setColour(Colours::lightgreen);
+				g.setColour(baseColour.brighter(0.9f));
 			else
-				g.setColour(Colours::lightgreen);
+				g.setColour(baseColour.brighter(0.8f));
 		}
 		else {
 			if (isMouseOver)
-				g.setColour(Colours::green);
+				g.setColour(baseColour.brighter(0.2f));
 			else
-				g.setColour(Colours::green);
+				g.setColour(baseColour);
 		}
 	}
-	else if (status == ProbeStatus::CONNECTING || status == ProbeStatus::UPDATING)
+	else if (status == SourceStatus::CONNECTING || status == SourceStatus::UPDATING)
 	{
 		if (selected)
 		{
@@ -180,9 +206,9 @@ void ProbeButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 	g.fillEllipse(2, 2, 11, 11);
 }
 
-void ProbeButton::setProbeStatus(ProbeStatus status)
+void SourceButton::setSourceStatus(SourceStatus status)
 {
-	if (probe != nullptr)
+	if (dataSource != nullptr)
 	{
 		this->status = status;
 
@@ -191,17 +217,17 @@ void ProbeButton::setProbeStatus(ProbeStatus status)
 
 }
 
-ProbeStatus ProbeButton::getProbeStatus()
+SourceStatus SourceButton::getSourceStatus()
 {
 	return status;
 }
 
-void ProbeButton::timerCallback()
+void SourceButton::timerCallback()
 {
 
-	if (probe != nullptr)
+	if (dataSource != nullptr)
 	{
-		setProbeStatus(probe->getStatus());
+		setSourceStatus(dataSource->getStatus());
 		//std::cout << "Setting for slot: " << String(slot) << " port: " << String(port) << " status: " << String(status) << " selected: " << String(selected) << std::endl;
 	}
 }
@@ -295,25 +321,46 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 					int x_pos = slotIndex * 90 + 30 + offset;
 					int y_pos = 125 - (portIndex + 1) * 22;
 
-					ProbeButton* p = new ProbeButton(id++, probes[k]);
+					SourceButton* p = new SourceButton(id++, probes[k]);
 					p->setBounds(x_pos, y_pos, 15, 15);
 					p->addListener(this);
 					addAndMakeVisible(p);
-					probeButtons.add(p);
+					sourceButtons.add(p);
 				}
 			}
 			else {
 				int x_pos = slotIndex * 90 + 40;
 				int y_pos = 125 - (portIndex + 1) * 22;
 
-				ProbeButton* p = new ProbeButton(id++, nullptr);
+				SourceButton* p = new SourceButton(id++, nullptr);
 				p->setBounds(x_pos, y_pos, 15, 15);
 				p->addListener(this);
 				addAndMakeVisible(p);
-				probeButtons.add(p);
+				sourceButtons.add(p);
 			}
 		}
+
+		Array<DataSource*> additionalDataSources = basestations[i]->getAdditionalDataSources(); // can return null
+
+		for (int j = 0; j < additionalDataSources.size(); j++)
+		{
+			LOGD("Creating source button for ADCs");
+
+			int slotIndex = i;
+			int portIndex = j + 2;
+
+			int x_pos = slotIndex * 90 + 40;
+			int y_pos = 125 - (portIndex + 1) * 22;
+
+			SourceButton* p = new SourceButton(id++, additionalDataSources[j]);
+			p->setBounds(x_pos, y_pos, 15, 15);
+			p->addListener(this);
+			addAndMakeVisible(p);
+			sourceButtons.add(p);
+		}
 	}
+
+	
 
 	for (int i = 0; i < basestations.size(); i++)
 	{
@@ -464,19 +511,19 @@ void NeuropixEditor::stopAcquisition()
 void NeuropixEditor::buttonEvent(Button* button)
 {
 
-	if (probeButtons.contains((ProbeButton*) button))
+	if (sourceButtons.contains((SourceButton*) button))
 	{
-		for (auto button : probeButtons)
+		for (auto button : sourceButtons)
 		{
 			button->setSelectedState(false);
 		}
 
-		ProbeButton* probeButton = (ProbeButton*) button;
+		SourceButton* sourceButton = (SourceButton*) button;
 
-		probeButton->setSelectedState(true);
+		sourceButton->setSelectedState(true);
 
-		if (canvas != nullptr && probeButton->probe != nullptr)
-			canvas->setSelectedProbe(probeButton->probe);
+		if (canvas != nullptr && sourceButton->dataSource != nullptr)
+			canvas->setSelectedInterface(sourceButton->dataSource);
 
 		repaint();
 	}

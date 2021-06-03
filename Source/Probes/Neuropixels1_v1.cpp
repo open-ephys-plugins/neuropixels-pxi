@@ -44,7 +44,7 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	getInfo();
 
-	setStatus(ProbeStatus::DISCONNECTED);
+	setStatus(SourceStatus::DISCONNECTED);
 
 	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 
@@ -150,7 +150,7 @@ void Neuropixels1_v1::initialize()
 	lfp_timestamp = 0;
 	eventCode = 0;
 
-	setStatus(ProbeStatus::CONNECTED);
+	setStatus(SourceStatus::CONNECTED);
 
 }
 

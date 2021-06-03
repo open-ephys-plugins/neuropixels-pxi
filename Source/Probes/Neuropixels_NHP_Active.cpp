@@ -42,7 +42,7 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
 
     getInfo();
 
-	setStatus(ProbeStatus::DISCONNECTED);
+	setStatus(SourceStatus::DISCONNECTED);
 
     Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 
@@ -128,7 +128,7 @@ void Neuropixels_NHP_Active::initialize()
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
 		eventCode = 0;
-		setStatus(ProbeStatus::CONNECTED);
+		setStatus(SourceStatus::CONNECTED);
 	}
 }
 
