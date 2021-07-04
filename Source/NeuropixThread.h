@@ -207,8 +207,8 @@ public:
 
 	String getApiVersion();
 
-	void handleMessage(String msg) override;
-	String handleConfigMessage(String msg) override;
+	//void handleMessage(String msg) override;
+	//String handleConfigMessage(String msg) override;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 

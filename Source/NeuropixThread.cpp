@@ -906,7 +906,7 @@ void NeuropixThread::setAutoRestart(bool restart)
 }
 
 
-void NeuropixThread::handleMessage(String msg)
+/*void NeuropixThread::handleMessage(String msg)
 {
 	std::cout << "NeuropixThread received " << msg << std::endl;
 }
@@ -914,7 +914,7 @@ void NeuropixThread::handleMessage(String msg)
 String NeuropixThread::handleConfigMessage(String msg)
 {
 	return "GOT CONFIG MESSAGE.";
-}
+}*/
 
 bool NeuropixThread::updateBuffer()
 {
