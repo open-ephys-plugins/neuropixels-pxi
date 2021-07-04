@@ -488,6 +488,10 @@ void NeuropixInterface::updateProbeSettingsInBackground()
     ProbeSettings settings = getProbeSettings();
 
     probe->updateSettings(settings);
+
+    int ch0index = settings.selectedChannel.indexOf(0);
+    std::cout << "Ch 0 bank: " << settings.selectedBank[ch0index] << std::endl;
+
     thread->updateProbeSettingsQueue(settings);
 
     editor->uiLoader->startThread();
@@ -641,6 +645,8 @@ void NeuropixInterface::buttonClicked(Button* button)
         repaint();
 
         updateProbeSettingsInBackground();
+
+        CoreServices::updateSignalChain(editor);
     }
     else if (button == annotationButton)
     {

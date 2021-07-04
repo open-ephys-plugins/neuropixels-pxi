@@ -25,6 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Geometry.h"
 #include "../Utils.h"
 
+#include "OneBoxADC.h"
+
 #define MAXLEN 50
 
 void OneBoxDAC::getInfo()
@@ -37,7 +39,7 @@ void OneBoxDAC::getInfo()
 	//info.part_number = String(pn);
 }
 
-OneBoxDAC::OneBoxDAC(Basestation* bs) : DataSource(bs)
+OneBoxDAC::OneBoxDAC(Basestation* bs_) : DataSource(bs), bs(bs_)
 {
 
 	getInfo();
@@ -51,6 +53,8 @@ OneBoxDAC::OneBoxDAC(Basestation* bs) : DataSource(bs)
 
 	sourceType = DataSourceType::DAC;
 	status = SourceStatus::CONNECTED;
+
+	errorCode = Neuropixels::waveplayer_setSampleFrequency(bs->slot, 30000.0f);
 
 }
 
@@ -86,6 +90,63 @@ void OneBoxDAC::startAcquisition()
 void OneBoxDAC::stopAcquisition()
 {
 	//stopThread(1000);
+}
+
+void OneBoxDAC::playWaveform()
+{
+	errorCode = Neuropixels::setSWTriggerEx(bs->slot, Neuropixels::swtrigger2);
+
+	std::cout << "setSWTriggerEx error code: " << errorCode << std::endl;
+}
+
+void OneBoxDAC::setWaveform(Array<float> samples)
+{
+	
+	Array<int16_t> samples_t;
+
+	for (auto sample : samples)
+		samples_t.add(int(sample / 5.0f * 65535));
+
+	errorCode = Neuropixels::waveplayer_writeBuffer(bs->slot, samples_t.getRawDataPointer(), samples_t.size());
+
+	std::cout << "waveplayer_writeBuffer error code: " << errorCode << std::endl;
+
+	errorCode = Neuropixels::waveplayer_arm(bs->slot, true);
+
+	std::cout << "waveplayer_arm error code: " << errorCode << std::endl;
+
+	adc->disableInput(0);
+
+}
+
+void OneBoxDAC::configureDataPlayer(int DACChannel, int portID, int dockID, int channelnr, int sourceType)
+{
+	Neuropixels::streamsource_t sourcetype = Neuropixels::SourceAP;
+
+	if (sourceType == 1)
+		sourceType = Neuropixels::SourceAP;
+	else
+		sourceType = Neuropixels::SourceLFP;
+
+	errorCode = Neuropixels::DAC_setProbeSniffer(bs->slot, DACChannel, portID, dockID, channelnr, sourcetype);
+
+	std::cout << "DAC_setProbeSniffer error code: " << errorCode << std::endl;
+
+	adc->disableInput(DACChannel);
+}
+
+void OneBoxDAC::disableOutput(int chan)
+{
+	errorCode = Neuropixels::DAC_enableOutput(bs->slot, chan, false);
+
+	adc->enableInput(chan);
+}
+
+void OneBoxDAC::enableOutput(int chan)
+{
+	errorCode = Neuropixels::DAC_enableOutput(bs->slot, chan, true);
+
+	adc->disableInput(chan);
 }
 
 

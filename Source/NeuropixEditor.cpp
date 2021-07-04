@@ -347,7 +347,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, 
 			LOGD("Creating source button for ADCs");
 
 			int slotIndex = i;
-			int portIndex = j + 2;
+			int portIndex = j + 3;
 
 			int x_pos = slotIndex * 90 + 40;
 			int y_pos = 125 - (portIndex + 1) * 22;

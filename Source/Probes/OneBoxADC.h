@@ -30,6 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # define SAMPLECOUNT 64
 
+class OneBoxDAC;
+class OneBoxInterface;
 
 class OneBoxADC : public DataSource
 {
@@ -50,6 +52,11 @@ public:
 
 	void run() override; // acquire data
 
+	void enableInput(int chan);
+	void disableInput(int chan);
+
+	float getChannelGain(int chan);
+
 	Neuropixels::NP_ErrorCode errorCode;
 
 	float bitVolts;
@@ -57,6 +64,13 @@ public:
 	int64 timestamp;
 
 	DataBuffer* sampleBuffer;
+
+	OneBoxDAC* dac;
+
+	OneBoxInterface* ui;
+
+private:
+	Array<float> channelGains;
 
 };
 

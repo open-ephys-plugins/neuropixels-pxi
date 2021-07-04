@@ -24,8 +24,7 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "NeuropixCanvas.h"
 
 #include "UI/NeuropixInterface.h"
-#include "UI/AdcInterface.h"
-#include "UI/DacInterface.h"
+#include "UI/OneBoxInterface.h"
 #include "NeuropixEditor.h"
 #include "NeuropixThread.h"
 
@@ -52,14 +51,14 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
         }
         else if (source->sourceType == DataSourceType::ADC)
         {
-            AdcInterface* adcInterface = new AdcInterface(source, thread, editor, this);
-            settingsInterfaces.add(adcInterface);
+            OneBoxInterface* oneBoxInterface = new OneBoxInterface(source, thread, editor, this);
+            settingsInterfaces.add(oneBoxInterface);
         }
-        else if (source->sourceType == DataSourceType::DAC)
-        {
-            DacInterface* dacInterface = new DacInterface(source, thread, editor, this);
-            settingsInterfaces.add(dacInterface);
-        }
+       // else if (source->sourceType == DataSourceType::DAC)
+       // {
+       //     DacInterface* dacInterface = new DacInterface(source, thread, editor, this);
+        //    settingsInterfaces.add(dacInterface);
+        //}
 
         dataSources.add(source);
         

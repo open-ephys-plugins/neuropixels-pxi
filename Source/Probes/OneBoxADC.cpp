@@ -25,6 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Geometry.h"
 #include "../Utils.h"
 
+#include "../UI/OneBoxInterface.h"
+
 #define MAXLEN 50
 
 void OneBoxADC::getInfo()
@@ -40,6 +42,8 @@ void OneBoxADC::getInfo()
 OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 {
 
+	ui = nullptr;
+
 	getInfo();
 
 	//setStatus(ProbeStatus::ADC);
@@ -51,6 +55,9 @@ OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 
 	sourceType = DataSourceType::ADC;
 	status = SourceStatus::CONNECTED;
+
+	for (int i = 0; i < channel_count; i++)
+		channelGains.add(1.0f);
 
 }
 
@@ -78,10 +85,26 @@ void OneBoxADC::initialize()
 
 }
 
+void OneBoxADC::enableInput(int chan)
+{
+	if (ui != nullptr)
+	{
+		ui->enableInput(chan);
+	}
+}
+
+void OneBoxADC::disableInput(int chan)
+{
+	if (ui != nullptr)
+	{
+		ui->disableInput(chan);
+	}
+}
+
 void OneBoxADC::startAcquisition()
 {
 	timestamp = 0;
-	sampleBuffer->clear();
+	apBuffer->clear();
 
 	LOGD("  Starting thread.");
 	startThread();
@@ -116,6 +139,17 @@ void OneBoxADC::setAdcInputRange(AdcInputRange range)
 		bitVolts = 5.0f / pow(2, 15);
 		break;
 
+	}
+}
+
+float OneBoxADC::getChannelGain(int chan)
+{
+	if (chan < channelGains.size())
+	{
+		return channelGains[chan];
+	}
+	else {
+		return 1.0f;
 	}
 }
 
@@ -159,7 +193,7 @@ void OneBoxADC::run()
 
 				timestamp += 1;
 
-				sampleBuffer->addToBuffer(adcSamples, &timestamp, &eventCode, 1);
+				apBuffer->addToBuffer(adcSamples, &timestamp, &eventCode, 1);
 
 				/*if (ap_timestamp % 30000 == 0)
 				{

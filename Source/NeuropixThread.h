@@ -34,6 +34,7 @@
 
 class SourceNode;
 class NeuropixThread;
+class OneBoxADC;
 
 class RecordingTimer : public Timer
 {
@@ -57,6 +58,8 @@ struct SubprocessorInfo {
 	float sample_rate;
 	subprocessor_type type;
 	bool sendSyncAsContinuousChannel;
+	Probe* probe;
+	OneBoxADC* adc;
 };
 
 /**
@@ -203,6 +206,9 @@ public:
 	void updateSubprocessors();
 
 	String getApiVersion();
+
+	void handleMessage(String msg) override;
+	String handleConfigMessage(String msg) override;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 

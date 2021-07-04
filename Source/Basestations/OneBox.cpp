@@ -178,6 +178,9 @@ bool OneBox::open()
 
 		adcSource = new OneBoxADC(this);
 		dacSource = new OneBoxDAC(this);
+
+		adcSource->dac = dacSource;
+		dacSource->adc = adcSource;
 		
 		headstages.add(nullptr);
 		headstages.add(nullptr);
@@ -193,7 +196,7 @@ Array<DataSource*> OneBox::getAdditionalDataSources()
 {
 	Array<DataSource*> sources;
 	sources.add((DataSource*) adcSource);
-	sources.add((DataSource*)dacSource);
+	//sources.add((DataSource*) dacSource);
 
 	return sources;
 }
@@ -329,6 +332,8 @@ void OneBox::startAcquisition()
 		probe->startAcquisition();
 	}
 
+	adcSource->startAcquisition();
+
 	LOGD("OneBox software trigger");
 	errorCode = Neuropixels::setSWTrigger(slot);
 
@@ -340,6 +345,8 @@ void OneBox::stopAcquisition()
 	{
 		probe->stopAcquisition();
 	}
+
+	adcSource->stopAcquisition();
 
 	errorCode = Neuropixels::arm(slot);
 }

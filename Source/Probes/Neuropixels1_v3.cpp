@@ -246,7 +246,7 @@ void Neuropixels1_v3::selectElectrodes()
 		for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
 		{
 
-			LOGDD("Setting probe: ", headstage->port, " ch: ", settings.selectedChannel[ch], " to bank: ", settings.availableBanks.indexOf(settings.selectedBank[ch]));
+			//LOGD("Setting probe: ", headstage->port, " ch: ", settings.selectedChannel[ch], " to bank: ", settings.availableBanks.indexOf(settings.selectedBank[ch]));
 
 			ec = Neuropixels::selectElectrode(basestation->slot,
 				headstage->port,

@@ -260,6 +260,8 @@ public:
 
 	DataSourceType sourceType;
 
+	DataBuffer* apBuffer;
+
 	void setStatus(SourceStatus status_) {
 		status = status_;
 	}
@@ -301,7 +303,7 @@ public:
 	int port;
 	int dock;
 
-	DataBuffer* apBuffer;
+	
 	DataBuffer* lfpBuffer;
 
 	float ap_sample_rate;

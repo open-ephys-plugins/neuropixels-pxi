@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../API/v3/NeuropixAPI.h"
 
+class OneBoxADC;
 
 class OneBoxDAC : public DataSource
 {
@@ -46,11 +47,22 @@ public:
 
 	void run() override; // acquire data
 
+	void playWaveform();
+	void setWaveform(Array<float> samples);
+
+	void configureDataPlayer(int DACChannel, int portID, int dockID, int channelnr, int sourceType);
+
+	void disableOutput(int chan);
+	void enableOutput(int chan);
+
 	Neuropixels::NP_ErrorCode errorCode;
 
 	float bitVolts;
 
 	int64 timestamp;
+
+	OneBoxADC* adc;
+	Basestation* bs;
 
 };
 
