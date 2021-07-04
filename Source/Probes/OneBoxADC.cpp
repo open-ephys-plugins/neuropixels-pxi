@@ -182,7 +182,7 @@ void OneBoxADC::run()
 			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
 
-				uint64 eventCode = 0; /// packetInfo[packetNum].Status >> 6; // AUX_IO<0:13>
+				uint64 eventCode = packetInfo[packetNum].Status >> 6; 
 
 				uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
 
