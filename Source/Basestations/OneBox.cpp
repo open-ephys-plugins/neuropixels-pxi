@@ -218,6 +218,8 @@ void OneBox::initialize()
 		probesInitialized = true;
 	}
 
+	adcSource->initialize();
+
 	errorCode = Neuropixels::arm(slot);
 	LOGD("One box is armed");
 }
@@ -296,7 +298,7 @@ void OneBox::setSyncAsOutput(int freqIndex)
 		return;
 	}
 
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA1, Neuropixels::SM_Input_SMA, true);
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA1, Neuropixels::SM_Input_SyncClk, true);
 
 	if (errorCode != Neuropixels::SUCCESS)
 	{

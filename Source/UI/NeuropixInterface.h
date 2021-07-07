@@ -28,6 +28,7 @@
 
 #include "SettingsInterface.h"
 #include "../NeuropixComponents.h"
+#include "ColourScheme.h"
 
 class ColorSelector;
 class Annotation;
@@ -81,6 +82,7 @@ private:
 	ScopedPointer<ComboBox> apGainComboBox;
 	ScopedPointer<ComboBox> referenceComboBox;
 	ScopedPointer<ComboBox> filterComboBox;
+	ScopedPointer<ComboBox> activityViewComboBox;
 
 	// Combo box - basestation settings
 	ScopedPointer<ComboBox> bistComboBox;
@@ -97,6 +99,7 @@ private:
 	ScopedPointer<Label> referenceLabel;
 	ScopedPointer<Label> filterLabel;
 	ScopedPointer<Label> bankViewLabel;
+	ScopedPointer<Label> activityViewLabel;
 	
 	ScopedPointer<Label> bistLabel;
 	ScopedPointer<Label> bscFirmwareLabel;
@@ -116,7 +119,7 @@ private:
 	ScopedPointer<UtilityButton> apGainViewButton;
 	ScopedPointer<UtilityButton> referenceViewButton;
 	ScopedPointer<UtilityButton> bankViewButton;
-	//ScopedPointer<UtilityButton> activityViewButton;
+	ScopedPointer<UtilityButton> activityViewButton;
 
 	ScopedPointer<UtilityButton> annotationButton;
 	ScopedPointer<UtilityButton> bistButton;

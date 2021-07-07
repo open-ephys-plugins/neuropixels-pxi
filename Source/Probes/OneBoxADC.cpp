@@ -59,6 +59,8 @@ OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 	for (int i = 0; i < channel_count; i++)
 		channelGains.add(1.0f);
 
+	bitVolts = 5.0f / float(pow(2, 15));
+
 }
 
 bool OneBoxADC::open()
@@ -81,6 +83,14 @@ void OneBoxADC::initialize()
 		setAdcInputRange(AdcInputRange::PLUSMINUS5V);
 
 		timestamp = 0;
+
+		for (int i = 0; i < 12; i++)
+		{
+			std::cout << "Initializing ADC" << i << " on slot " << basestation->slot << std::endl;
+			Neuropixels::DAC_enableOutput(basestation->slot, i, false);
+			Neuropixels::ADC_setVoltageRange(basestation->slot, 5.0);
+		}
+			
 	}
 
 }
@@ -121,22 +131,22 @@ void OneBoxADC::setAdcInputRange(AdcInputRange range)
 	{
 	case AdcInputRange::PLUSMINUS2PT5V:
 		Neuropixels::ADC_setVoltageRange(basestation->slot, 2.5f);
-		bitVolts = 2.5f / pow(2, 15);
+		bitVolts = 2.5f / float(pow(2, 15));
 		break;
 
 	case AdcInputRange::PLUSMINUS5V:
 		Neuropixels::ADC_setVoltageRange(basestation->slot, 5.0f);
-		bitVolts = 5.0f / pow(2, 15);
+		bitVolts = 5.0f / float(pow(2, 15));
 		break;
 
 	case AdcInputRange::PLUSMINUS10V:
 		Neuropixels::ADC_setVoltageRange(basestation->slot, 10.0f);
-		bitVolts = 10.0f / pow(2, 15);
+		bitVolts = 10.0f / float(pow(2, 15));
 		break;
 
 	default:
 		Neuropixels::ADC_setVoltageRange(basestation->slot, 5.0f);
-		bitVolts = 5.0f / pow(2, 15);
+		bitVolts = 5.0f / float(pow(2, 15));
 		break;
 
 	}
@@ -146,19 +156,15 @@ float OneBoxADC::getChannelGain(int chan)
 {
 	if (chan < channelGains.size())
 	{
-		return channelGains[chan];
+		return bitVolts; // channelGains[chan];
 	}
 	else {
-		return 1.0f;
+		return bitVolts; // 1.0f;
 	}
 }
 
 void OneBoxADC::run()
 {
-
-	//std::cout << "Thread running." << std::endl;
-
-	Neuropixels::streamsource_t source = Neuropixels::SourceAP;
 
 	int16_t data[SAMPLECOUNT * 12];
 
@@ -188,7 +194,13 @@ void OneBoxADC::run()
 
 				for (int j = 0; j < 12; j++)
 				{
-					adcSamples[j] = float(data[packetNum * 12 + j]) - 32768 / bitVolts; // convert to volts
+					
+					adcSamples[j] = (float(data[packetNum * 12 + j]) - 16384.0f) * bitVolts; // convert to volts
+
+					//if (packetNum == 0 && j == 0)
+					//{
+					//	std::cout << float(data[packetNum * 12 + j]) << " : " << bitVolts << " : " << adcSamples[j] << std::endl;
+					//}
 				}
 
 				timestamp += 1;

@@ -37,6 +37,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 {
     cursorType = MouseCursor::NormalCursor;
 
+    ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
+
    // std::cout << slot << "--" << port << std::endl;
 
     isOverZoomRegion = false;
@@ -218,7 +220,30 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         filterLabel->setBounds(446, currentHeight - 20, 200, 20);
         filterLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(filterLabel);
+
+        currentHeight += 55;
     }
+
+    activityViewComboBox = new ComboBox("ActivityView Combo Box");
+    activityViewComboBox->setBounds(450, currentHeight, 65, 22);
+    activityViewComboBox->addListener(this);
+    activityViewComboBox->addItem("AP", 1);
+    activityViewComboBox->addItem("LFP", 2);
+    activityViewComboBox->setSelectedId(1, dontSendNotification);
+    addAndMakeVisible(activityViewComboBox);
+
+    activityViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+    activityViewButton->setRadius(3.0f);
+    activityViewButton->setBounds(530, currentHeight + 2, 45, 18);
+    activityViewButton->addListener(this);
+    activityViewButton->setTooltip("View neural activity on each channel");
+    addAndMakeVisible(activityViewButton);
+
+    activityViewLabel = new Label("ACTIVITY VIEW", "ACTIVITY VIEW");
+    activityViewLabel->setFont(Font("Small Text", 13, Font::plain));
+    activityViewLabel->setBounds(446, currentHeight - 20, 100, 20);
+    activityViewLabel->setColour(Label::textColourId, Colours::grey);
+    addAndMakeVisible(activityViewLabel);
 
     // BIST
     bistComboBox = new ComboBox("BistComboBox");
@@ -594,12 +619,12 @@ void NeuropixInterface::buttonClicked(Button* button)
         stopTimer();
         repaint();
     }
-    /*else if (button == activityViewButton)
+    else if (button == activityViewButton)
     {
         mode = ACTIVITY_VIEW;
-        startTimer();
+        startTimer(100);
         repaint();
-    }*/
+    }
     else if (button == enableButton)
     {
 
@@ -1777,21 +1802,17 @@ Colour NeuropixInterface::getElectrodeColour(int i)
             
             
         }
-        /*else if (mode == ACTIVITY_VIEW) // TODO
+        else if (mode == ACTIVITY_VIEW) // TODO
         {
-            if (channelStatus[i] == -1) // not available
+            if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED) // not available
             {
-                return Colours::grey;
-            }
-            else if (channelStatus[i] < -1) // reference
-            {
-                return Colours::black;
+                return electrodeMetadata.getReference(i).colour;
             }
             else
             {
-                return Colour(200 - 10 * channelReference[i], 110 - 10 * channelReference[i], 20 * channelReference[i]);
+                return Colours::grey;
             }
-        }*/
+        }
     }
 
     
@@ -1799,40 +1820,33 @@ Colour NeuropixInterface::getElectrodeColour(int i)
 
 void NeuropixInterface::timerCallback()
 {
+
+    if (mode != VisualizationMode::ACTIVITY_VIEW)
+        return;
+
+    if (!editor->acquisitionIsActive)
+        return;
+
     Random random;
-    uint64 timestamp;
-    uint64 eventCode;
 
-    int numSamples;
+    CriticalSection mutex;
 
-    if (editor->acquisitionIsActive)
-        numSamples = 10;
-    else
-        numSamples = 0;
+    const float* peakToPeakValues = probe->getPeakToPeakValues(mutex);
 
-    //
-
-    if (numSamples > 0)
     {
+        const ScopedLock scopedLock(mutex);
+
         for (int i = 0; i < electrodeMetadata.size(); i++)
         {
-            if (mode == VisualizationMode::ACTIVITY_VIEW)
-                electrodeMetadata.getReference(i).colour = Colour(random.nextInt(256), random.nextInt(256), 0);
-        }
-    }
-    else {
-        for (int i = 0; i < electrodeMetadata.size(); i++)
-        {
-            electrodeMetadata.getReference(i).colour = Colour(20, 20, 20);
+            if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
+            {
+                int channelNumber = electrodeMetadata[i].channel;
+                electrodeMetadata.getReference(i).colour = ColourScheme::getColourForNormalizedValue(peakToPeakValues[channelNumber] / 100.0f);
+            }
         }
     }
 
-    // NOT WORKING:
-    //{
-    //  ScopedLock(*thread->getMutex());
-    //  int numSamples2 = inputBuffer->readAllFromBuffer(displayBuffer, &timestamp, &eventCode, 10000);
-    //}
-    //
+    
 
     repaint();
 }

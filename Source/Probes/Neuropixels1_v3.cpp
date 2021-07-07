@@ -160,6 +160,12 @@ void Neuropixels1_v3::initialize()
 		eventCode = 0;
 
 		setStatus(SourceStatus::CONNECTED);
+
+		apView = new ActivityView(384, 3000);
+		lfpView = new ActivityView(384, 250);
+
+		currentView = ActivityToView::APVIEW;
+		
 	}
 }
 
@@ -346,8 +352,15 @@ void Neuropixels1_v3::startAcquisition()
 	//std::cout << "... and clearing buffers" << std::endl;
 	apBuffer->clear();
 	lfpBuffer->clear();
+
+	apView->reset();
+	lfpView->reset();
+	
+
 	LOGD("  Starting thread.");
 	startThread();
+
+
 }
 
 void Neuropixels1_v3::stopAcquisition()
@@ -390,8 +403,14 @@ void Neuropixels1_v3::run()
 
 						apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / settings.availableApGains[settings.apGainIndex]; // convert to microvolts
 
+						apView->addSample(apSamples[j], j);
+
 						if (i == 0)
+						{
 							lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / settings.availableLfpGains[settings.lfpGainIndex]; // convert to microvolts
+
+							lfpView->addSample(lfpSamples[j], j);
+						}
 					}
 
 					ap_timestamp += 1;

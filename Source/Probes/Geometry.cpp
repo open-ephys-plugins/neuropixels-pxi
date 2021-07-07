@@ -106,6 +106,7 @@ void Geometry::NP1(Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.column_index = i % 2;
 		metadata.row_index = i / 2;
 		metadata.isSelected = false;
+		metadata.colour = Colours::lightgrey;
 
 
 		if (i < 384)
