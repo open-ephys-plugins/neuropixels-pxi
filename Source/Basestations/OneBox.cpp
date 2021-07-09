@@ -44,7 +44,7 @@ void OneBox::getInfo()
 {
 	Neuropixels::firmware_Info firmwareInfo;
 
-	Neuropixels::bs_getFirmwareInfo(slot, &firmwareInfo);
+	errorCode = Neuropixels::bs_getFirmwareInfo(slot, &firmwareInfo);
 
 	info.boot_version = String(firmwareInfo.major) + "." + String(firmwareInfo.minor) + String(firmwareInfo.build);
 	 

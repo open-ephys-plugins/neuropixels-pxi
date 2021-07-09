@@ -195,7 +195,7 @@ void OneBoxADC::run()
 				for (int j = 0; j < 12; j++)
 				{
 					
-					adcSamples[j] = (float(data[packetNum * 12 + j]) - 16384.0f) * bitVolts; // convert to volts
+					adcSamples[j] = (float(data[packetNum * 12 + j]) - 32768.0f) * bitVolts; // convert to volts
 
 					//if (packetNum == 0 && j == 0)
 					//{
