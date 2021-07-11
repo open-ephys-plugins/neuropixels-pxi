@@ -1088,9 +1088,141 @@ namespace Neuropixels {
 	NP_EXPORT NP_ErrorCode readBSCMM(int slotID, uint32_t address, uint32_t* data);
 	NP_EXPORT NP_ErrorCode writeI2C(int slotID, int portID, uint8_t device, uint8_t address, uint8_t data);
 	NP_EXPORT NP_ErrorCode readI2C(int slotID, int portID, uint8_t device, uint8_t address, uint8_t* data);
+	NP_EXPORT NP_ErrorCode writeI2Cex(int slotID, int portID, uint8_t device, uint8_t address, const void* data, size_t len);
+	NP_EXPORT NP_ErrorCode readI2Cex(int slotID, int portID, uint8_t device, uint8_t address, void* data, size_t len);
 	NP_EXPORT NP_ErrorCode writeI2Cflex(int slotID, int portID, int dockID, uint8_t device, uint8_t address, uint8_t data);
 	NP_EXPORT NP_ErrorCode readI2Cflex(int slotID, int portID, int dockID, uint8_t device, uint8_t address, uint8_t* data);
 
+	/* Neuropixels OPTO specific **********************************************************************************************************************/
+	typedef enum
+	{
+		wavelength_blue, // 450nm
+		wavelength_red   // 638nm
+	}wavelength_t;
+
+	/*
+	 * \brief Program the optical switch calibration using a calibration file
+	 * A OPTO headstage must be attached to SlotID/PortID
+	 * dockID is ignored
+	 * 
+	 * @param slotID: which slot in the PXI chassis (valid range depends on the chassis)
+	 * @param portID: specifies the target port (valid range depends on slot type)
+	 * @param dockID: ignored
+	 * @param filename: comma separated text file (csv) containing following data:
+	 *       first line : probe serial number
+	 *       next lines: <wavelengthindex>, <thermalswitchindex>, <off_mA>, <on_mA>
+	 *        wavelengthindex    : 0 = blue(450nm), 1 = red(638nm)
+	 *        thermalswitchindex : 
+	 *                0    : 1_1
+	 *				  1..2 : 2_1, 2_2
+	 *				  3..8 : 3_1, 3_2, 3_3, 3_4
+	 *				  9..14: 4_1, 4_2, 4_3, 4_4, 4_5, 4_6, 4_7, 4_8
+	 *        off_mA/on_mA : on/off current setting
+	 * 
+	 * example csv file content: 
+	 * 21050005
+	 * 0, 0,  0.0, 4.0
+	 * 0, 1,  0.0, 4.0
+	 * 0, 2,  0.0, 4.0
+	 * 0, 3,  0.0, 4.0
+	 * 0, 4,  0.0, 4.0
+	 * 0, 5,  0.0, 4.0
+	 * 0, 6,  0.0, 4.0
+	 * 0, 7,  0.0, 4.0
+	 * 0, 8,  0.0, 4.0
+	 * 0, 9,  0.0, 4.0
+	 * 0, 10, 0.0, 4.0
+	 * 0, 11, 0.0, 4.0
+	 * 0, 12, 0.0, 4.0
+	 * 0, 13, 0.0, 4.0
+	 * 0, 14, 0.0, 4.0
+	 * 1, 0,  0.0, 4.0
+	 * 1, 1,  0.0, 4.0
+	 * 1, 2,  0.0, 4.0
+	 * 1, 3,  0.0, 4.0
+	 * 1, 4,  0.0, 4.0
+	 * 1, 5,  0.0, 4.0
+	 * 1, 6,  0.0, 4.0
+	 * 1, 7,  0.0, 4.0
+	 * 1, 8,  0.0, 4.0
+	 * 1, 9,  0.0, 4.0
+	 * 1, 10, 0.0, 4.0
+	 * 1, 11, 0.0, 4.0
+	 * 1, 12, 0.0, 4.0
+	 * 1, 13, 0.0, 4.0
+	 * 1, 14, 0.0, 4.0
+	 */
+	NP_EXPORT NP_ErrorCode setOpticalCalibration(int slotID, int portID, int dockID, const char* filename);
+	/*
+	 * \brief program calibration current for a single optical thermal switch.
+	 * @param slotID:    which slot in the PXI chassis (valid range depends on the chassis)
+	 * @param portID:    specifies the target port (valid range depends on slot type)
+	 * @param dockID:    ignored
+	 * @param wavelength : optical path selection
+	 * @param thermalswitchindex : thermal switch calibration target.
+	 *                0    : 1_1
+	 *				  1..2 : 2_1, 2_2
+	 *				  3..8 : 3_1, 3_2, 3_3, 3_4
+	 *				  9..14: 4_1, 4_2, 4_3, 4_4, 4_5, 4_6, 4_7, 4_8
+	 * @param On_mA:  ON current for the target switch
+	 * @param Off_mA: OFF current for the target switch
+	 */
+	NP_EXPORT NP_ErrorCode setOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermalswitchindex, double On_mA, double Off_mA);
+	/*
+	 * \brief get the calibration currents for a single optical thermal switch.
+	 * @param slotID:    which slot in the PXI chassis (valid range depends on the chassis)
+	 * @param portID:    specifies the target port (valid range depends on slot type)
+	 * @param dockID:    ignored
+	 * @param wavelength : optical path selection
+	 * @param thermalswitchindex : thermal switch calibration target.
+	 *                0    : 1_1
+	 *				  1..2 : 2_1, 2_2
+	 *				  3..8 : 3_1, 3_2, 3_3, 3_4
+	 *				  9..14: 4_1, 4_2, 4_3, 4_4, 4_5, 4_6, 4_7, 4_8
+	 * @param On_mA:  ON current for the target switch
+	 * @param Off_mA: OFF current for the target switch
+	 */
+	NP_EXPORT NP_ErrorCode getOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermalswitchindex, double* On_mA, double* Off_mA);
+	/*
+	 * \brief activate an optical emission site.
+	 * @param slotID:    which slot in the PXI chassis (valid range depends on the chassis)
+	 * @param portID:    specifies the target port (valid range depends on slot type)
+	 * @param dockID:    ignored
+	 * @param wavelength: optical path selection
+	 * @param site:      emission site index (0..13) or -1 to disable the optical path
+	 */
+	NP_EXPORT NP_ErrorCode setEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int site);
+	/*
+	 * \brief activate an optical emission site.
+	 * @param slotID:    which slot in the PXI chassis (valid range depends on the chassis)
+	 * @param portID:    specifies the target port (valid range depends on slot type)
+	 * @param dockID:    ignored
+	 * @param wavelength: optical path selection
+	 * @param site:      get the active emission site index (0..13, or -1 if the path is disabled)
+	 */
+	NP_EXPORT NP_ErrorCode getEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int* site);
+
+	/*
+	 * \brief get the light power attenuation factor for an emission site
+	 * @param slotID:    which slot in the PXI chassis (valid range depends on the chassis)
+	 * @param portID:    specifies the target port (valid range depends on slot type)
+	 * @param dockID:    ignored
+	 * @param wavelength: optical path selection
+	 * @param site:      the emission site index (0..13)
+	 * @param attenuation: get the laser power attenuation factor
+	 */
+	NP_EXPORT NP_ErrorCode getEmissionSiteAttenuation(int slotID, int portID, int dockID, wavelength_t wavelength, int site, double* attenuation);
+	/*
+	 * \brief Disable an optical emission path. 
+	 * Note: only the current to the optical thermal switches is disabled. Laser power is not affected
+	 * @param slotID:    which slot in the PXI chassis (valid range depends on the chassis)
+	 * @param portID:    specifies the target port (valid range depends on slot type)
+	 * @param dockID:    ignored
+	 * @param wavelength: optical path selection
+	 */
+	NP_EXPORT NP_ErrorCode disableEmissionPath(int slotID, int portID, int dockID, wavelength_t wavelength);
+
+	/* Debug support functions ************************************************************************************************************************/
 	NP_EXPORT void         dbg_setlevel(int level);
 	NP_EXPORT int          dbg_getlevel(void);
 	NP_EXPORT void         dbg_setlogcallback(int minlevel, void(*callback)(int level, time_t ts, const char* module, const char* msg));
@@ -1103,6 +1235,7 @@ namespace Neuropixels {
 	NP_EXPORT NP_ErrorCode dbg_diagstats_read(int slotID, struct np_diagstats* stats);
 	NP_EXPORT NP_ErrorCode dbg_sourcestats_read(int slotID, uint8_t sourceID, struct np_sourcestats* stats);
 	NP_EXPORT NP_ErrorCode dbg_read_srchain(int slotID, int portID, int dockID, uint8_t SRChain_registeraddress, uint8_t* dst, size_t len, size_t* actualread);
+	NP_EXPORT NP_ErrorCode setVirtualHeadstage(int slotID, int portID);
 
 
 	
@@ -1274,6 +1407,15 @@ namespace Neuropixels {
 		NP_EXPORT NP_ErrorCode NP_APIC np_dbg_diagstats_read(int slotID, struct np_diagstats* stats);
 		NP_EXPORT NP_ErrorCode NP_APIC np_dbg_sourcestats_read(int slotID, uint8_t sourceID, struct np_sourcestats* stats);
 		NP_EXPORT NP_ErrorCode NP_APIC np_dbg_read_srchain(int slotID, int portID, int dockID, uint8_t SRChain_registeraddress, uint8_t* dst, size_t len, size_t* actualread);
+		NP_EXPORT NP_ErrorCode NP_APIC np_setVirtualHeadstage(int slotID, int portID);
 
+		// Opto specific
+		NP_EXPORT NP_ErrorCode NP_APIC np_setOpticalCalibration(int slotID, int portID, int dockID, const char* filename);
+		NP_EXPORT NP_ErrorCode NP_APIC np_setOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermalswitchindex, double On_mA, double Off_mA);
+		NP_EXPORT NP_ErrorCode NP_APIC np_getOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermalswitchindex, double* On_mA, double* Off_mA);
+		NP_EXPORT NP_ErrorCode NP_APIC np_setEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int site);
+		NP_EXPORT NP_ErrorCode NP_APIC np_getEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int* site);
+		NP_EXPORT NP_ErrorCode NP_APIC np_getEmissionSiteAttenuation(int slotID, int portID, int dockID, wavelength_t wavelength, int site, double* attenuation);
+		NP_EXPORT NP_ErrorCode NP_APIC np_disableEmissionPath(int slotID, int portID, int dockID, wavelength_t wavelength);
 	}
 } // namespace Neuropixels
