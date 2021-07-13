@@ -51,9 +51,7 @@ public:
 		reset();
 	}
 
-	const float* getPeakToPeakValues(CriticalSection& displayMutex) {
-
-		const ScopedLock scopedLock(displayMutex);
+	const float* getPeakToPeakValues() {
 
 		for (int i = 0; i < peakToPeakValues.size(); i++)
 		{
@@ -65,9 +63,12 @@ public:
 
 	void addSample(float sample, int channel)
 	{
-		if (counter == updateInterval)
+		if (channel == 0)
 		{
-			reset();
+			if (counter == updateInterval)
+				reset();
+
+			counter++;
 		}
 
 		if (sample < minChannelValues[channel])
@@ -75,22 +76,20 @@ public:
 			minChannelValues.set(channel, sample);
 		}
 			
-
 		if (sample > maxChannelValues[channel])
+		{
 			maxChannelValues.set(channel, sample);
-
-		counter++;
+		}
+		
 	}
 
 	void reset()
 	{
-		minChannelValues.clear();
-		maxChannelValues.clear();
 
 		for (int i = 0; i < peakToPeakValues.size(); i++)
 		{
-			minChannelValues.add(999999.9f);
-			maxChannelValues.add(-999999.9f);
+			minChannelValues.set(i, 999999.9f);
+			maxChannelValues.set(i, -999999.9f);
 		}
 
 		counter = 0;
@@ -98,9 +97,9 @@ public:
 
 private:
 
-	Array<float> minChannelValues;
-	Array<float> maxChannelValues;
-	Array<float> peakToPeakValues;
+	Array<float, CriticalSection> minChannelValues;
+	Array<float, CriticalSection> maxChannelValues;
+	Array<float, CriticalSection> peakToPeakValues;
 
 	int counter;
 	int updateInterval;

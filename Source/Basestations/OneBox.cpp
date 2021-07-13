@@ -57,6 +57,12 @@ OneBox::OneBox(int ID) : Basestation(16)
 
 	errorCode = Neuropixels::mapBS(ID, first_available_slot + box_count); // assign to slot ID
 
+	if (errorCode == Neuropixels::NO_SLOT || errorCode == Neuropixels::IO_ERROR)
+	{
+		LOGD("NO_SLOT error");
+		return;
+	}
+		
 	LOGD("Mapped basestation ", ID, " to slot ", first_available_slot + box_count, ", error code: ", errorCode);
 
 	LOGD("Stored slot number: ", slot);
@@ -78,6 +84,9 @@ OneBox::~OneBox()
 
 bool OneBox::open()
 {
+
+	if (box_count == 0)
+		return false;
 
 	errorCode = Neuropixels::openBS(slot);
 

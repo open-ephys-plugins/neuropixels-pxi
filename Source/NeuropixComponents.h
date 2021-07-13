@@ -376,20 +376,18 @@ public:
 
 	bool sendSync;
 
-	const float* getPeakToPeakValues(CriticalSection& displayMutex)
+	const float* getPeakToPeakValues(ActivityToView currentView = ActivityToView::APVIEW)
 	{
 		if (currentView == ActivityToView::APVIEW)
-			return apView->getPeakToPeakValues(displayMutex);
+			return apView->getPeakToPeakValues();
 		else
-			return lfpView->getPeakToPeakValues(displayMutex);
+			return lfpView->getPeakToPeakValues();
 	}
 
 protected:
 
 	ScopedPointer<ActivityView> apView;
 	ScopedPointer<ActivityView> lfpView;
-
-	ActivityToView currentView;
 
 	uint64 eventCode;
 	Array<int> gains; // available gain values

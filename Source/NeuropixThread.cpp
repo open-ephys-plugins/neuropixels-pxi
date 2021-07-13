@@ -908,12 +908,25 @@ void NeuropixThread::setAutoRestart(bool restart)
 
 /*void NeuropixThread::handleMessage(String msg)
 {
-	std::cout << "NeuropixThread received " << msg << std::endl;
+	std::cout << "Neuropix-PXI received " << msg << std::endl;
+
+	StringArray parts = StringArray::fromTokens(msg, " ", "");
+
+	// NP <bs> <port> <probe> OPTO <wavelength> <site>
+	// NP <bs> WAVEPLAYER <start/stop>
 }
 
 String NeuropixThread::handleConfigMessage(String msg)
 {
-	return "GOT CONFIG MESSAGE.";
+	std::cout << "Neuropix-PXI received " << msg << std::endl;
+
+	StringArray parts = StringArray::fromTokens(msg, " ", "");
+
+	// NP <bs> <port> <probe> SELECT <electrode> <electrode> <electrode>
+	// NP <bs> <port> <probe> GAIN <gainval>
+	// NP <bs> <port> <probe> REFERENCE <refval>
+	// NP <bs> <port> <probe> FILTER <filterval>
+
 }*/
 
 bool NeuropixThread::updateBuffer()

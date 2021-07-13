@@ -168,6 +168,10 @@ void SimulatedProbe::initialize()
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
 	eventCode = 0;
+
+	apView = new ActivityView(384, 3000);
+	lfpView = new ActivityView(384, 250);
+
 	setStatus(SourceStatus::CONNECTED);
 	Sleep(200);
 }
@@ -218,6 +222,11 @@ void SimulatedProbe::writeConfiguration()
 
 void SimulatedProbe::startAcquisition() {
 
+
+	apView->reset();
+	lfpView->reset();
+
+
 }
 
 void SimulatedProbe::stopAcquisition()
@@ -251,9 +260,14 @@ void SimulatedProbe::run()
 					for (int j = 0; j < 384; j++)
 					{
 						apSamples[j] = 0;
+						apView->addSample(apSamples[j], j);
 
 						if (i == 0)
+						{
 							lfpSamples[j] = 0;
+							lfpView->addSample(lfpSamples[j], j);
+						}
+							
 					}
 
 					ap_timestamp += 1;

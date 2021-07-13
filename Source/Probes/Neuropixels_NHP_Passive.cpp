@@ -96,6 +96,9 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 
 	isCalibrated = false;
 
+	apView = new ActivityView(384, 3000);
+	lfpView = new ActivityView(384, 250);
+
 }
 
 bool Neuropixels_NHP_Passive::open()
@@ -269,6 +272,12 @@ void Neuropixels_NHP_Passive::startAcquisition()
 	apBuffer->clear();
 	lfpBuffer->clear();
 	LOGD("  Starting thread.");
+
+
+	apView->reset();
+	lfpView->reset();
+
+
 	startThread();
 }
 
@@ -311,9 +320,14 @@ void Neuropixels_NHP_Passive::run()
 					{
 
 						apSamples[j] = float(packet[packetNum].apData[i][channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / settings.availableApGains[settings.apGainIndex]; // convert to microvolts
+						apView->addSample(apSamples[j], j);
 
 						if (i == 0)
+						{
 							lfpSamples[j] = float(packet[packetNum].lfpData[channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / settings.availableLfpGains[settings.lfpGainIndex]; // convert to microvolts
+							lfpView->addSample(lfpSamples[j], j);
+
+						}
 					}
 
 					ap_timestamp += 1;

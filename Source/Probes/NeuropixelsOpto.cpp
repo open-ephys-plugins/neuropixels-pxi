@@ -163,9 +163,6 @@ void NeuropixelsOpto::initialize()
 
 		apView = new ActivityView(384, 3000);
 		lfpView = new ActivityView(384, 250);
-
-		currentView = ActivityToView::APVIEW;
-		
 	}
 }
 
