@@ -794,10 +794,15 @@ void NeuropixThread::setDefaultChannelNames()
 						int selectedBank = spInfo.probe->settings.availableBanks.indexOf(spInfo.probe->settings.selectedBank[chIndex]);
 
 						int selectedElectrode = i + selectedBank * 384;
-						float depth = float(spInfo.probe->electrodeMetadata[selectedElectrode].ypos) + float(i % 2) + 0.0001f * i;
+						int shank = spInfo.probe->settings.selectedShank[chIndex];
 
-						if (i == 0)
-							std::cout << " -- Ch 0 bank: " << selectedBank << std::endl;
+						float depth = float(spInfo.probe->electrodeMetadata[selectedElectrode].ypos)
+									    + shank * 1000.0f 
+										+ float(i % 2) 
+										+ 0.0001f * i; // each channel must have a unique depth value
+
+						//if (i == 0)
+						//	std::cout << " -- Ch 0 bank: " << selectedBank << std::endl;
 
 						//std::cout << "Channel " << i << ", electrode " << selectedElectrode << ", depth " << depth << std::endl;
 						//std::cout << "Channel " << i << " depth = " << depth << std::endl;
