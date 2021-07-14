@@ -8,16 +8,16 @@ class ProbeInterfaceJson
 {
 public:
 
-    static bool writeProbeSettingsToJson(File& file, ProbeSettings originalsettings)
+    static bool writeProbeSettingsToJson(File& file, ProbeSettings settings)
     {
 
         std::cout << "Writing JSON file." << std::endl;
 
-        DynamicObject settings;
+        DynamicObject output;
 
-        settings.setProperty(Identifier("specification"),
+        output.setProperty(Identifier("specification"),
             var("probeinterface"));
-        settings.setProperty(Identifier("version"),
+        output.setProperty(Identifier("version"),
             var("0.2.2dev0"));
 
         Array<var> contact_positions;
@@ -33,18 +33,21 @@ public:
 
         Array<int> xpositions = { 27, 59, 11, 43 };
 
-        DynamicObject::Ptr contact_shape_param = new DynamicObject;
-        contact_shape_param->setProperty(Identifier("width"), 12);
-
-        for (int ch = 0; ch < 24; ch++)
+        for (int ch = 0; ch < settings.selectedElectrode.size(); ch++)
         {
+
+            int elec = settings.selectedElectrode[ch];
+
             Array<var> contact_position;
-            contact_position.add(xpositions[ch % 4]);
-            contact_position.add((ch / 2) * 20);
+            contact_position.add(settings.probe->electrodeMetadata.getReference(elec).xpos + 250 * settings.selectedShank[ch]);
+            contact_position.add(settings.probe->electrodeMetadata.getReference(elec).ypos);
+
+            DynamicObject::Ptr contact_shape_param = new DynamicObject;
+            contact_shape_param->setProperty(Identifier("width"), settings.probe->electrodeMetadata.getReference(elec).site_width);
 
             contact_positions.add(contact_position);
-            shank_ids.add("0");
-            device_channel_indices.add(ch);
+            shank_ids.add(String(settings.selectedShank[ch]));
+            device_channel_indices.add(settings.selectedChannel[ch]);
             contact_plane_axes.add(contact_plane_axis);
             contact_shapes.add("square");
             contact_shape_params.add(contact_shape_param.get());
@@ -68,14 +71,14 @@ public:
         Array<var> probes;
         probes.add(probe.get());
 
-        settings.setProperty(Identifier("probes"), probes);
+        output.setProperty(Identifier("probes"), probes);
 
         if (file.exists())
             file.deleteFile();
 
         FileOutputStream f(file);
 
-        settings.writeAsJSON(f, 4, false);
+        output.writeAsJSON(f, 4, false);
 
         return true;
 
