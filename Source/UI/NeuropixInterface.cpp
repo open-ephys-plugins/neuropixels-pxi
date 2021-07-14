@@ -40,9 +40,6 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
     ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
 
-    activityToView = ActivityToView::APVIEW;
-    maxPeakToPeakAmplitude = 100.0f;
-
     // make a local copy
     electrodeMetadata = Array<ElectrodeMetadata>(probe->electrodeMetadata);
 
@@ -553,14 +550,14 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
         {
             if (comboBox->getSelectedId() == 1)
             {
-                activityToView = ActivityToView::APVIEW;
+                probeBrowser->activityToView = ActivityToView::APVIEW;
                 ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
-                maxPeakToPeakAmplitude = 100.0f;
+                probeBrowser->maxPeakToPeakAmplitude = 100.0f;
             }
             else {
-                activityToView = ActivityToView::LFPVIEW;
+                probeBrowser->activityToView = ActivityToView::LFPVIEW;
                 ColourScheme::setColourScheme(ColourSchemeId::VIRIDIS);
-                maxPeakToPeakAmplitude = 250.0f;
+                probeBrowser->maxPeakToPeakAmplitude = 250.0f;
             }
 
         }
@@ -573,14 +570,14 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
         {
             if (comboBox->getSelectedId() == 1)
             {
-                activityToView = ActivityToView::APVIEW;
+                probeBrowser->activityToView = ActivityToView::APVIEW;
                 ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
-                maxPeakToPeakAmplitude = 100.0f;
+                probeBrowser->maxPeakToPeakAmplitude = 100.0f;
             }
             else {
-                activityToView = ActivityToView::LFPVIEW;
+                probeBrowser->activityToView = ActivityToView::LFPVIEW;
                 ColourScheme::setColourScheme(ColourSchemeId::VIRIDIS);
-                maxPeakToPeakAmplitude = 250.0f;
+                probeBrowser->maxPeakToPeakAmplitude = 250.0f;
             }
 
             repaint();
@@ -1068,11 +1065,11 @@ void NeuropixInterface::drawLegend(Graphics& g)
         break;
 
     case ACTIVITY_VIEW:
-        g.drawMultiLineText("PEAK-TO-PEAK AMPLITUDE", xOffset, yOffset, 200);
+        g.drawMultiLineText("AMPLITUDE", xOffset, yOffset, 200);
 
         for (int i = 0; i < 6; i++)
         {
-            g.drawMultiLineText(String(float(maxPeakToPeakAmplitude) / 5.0f * float(i)) + " uV", xOffset + 30, yOffset + 22 + 20 * i, 200);
+            g.drawMultiLineText(String(float(probeBrowser->maxPeakToPeakAmplitude) / 5.0f * float(i)) + " uV", xOffset + 30, yOffset + 22 + 20 * i, 200);
 
         }
 
@@ -1287,7 +1284,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     }
     
     xmlNode->setAttribute("visualizationMode", mode);
-    xmlNode->setAttribute("activityToView", activityToView);
+    xmlNode->setAttribute("activityToView", probeBrowser->activityToView);
 
     // annotations
     for (int i = 0; i < annotations.size(); i++)

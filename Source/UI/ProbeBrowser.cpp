@@ -25,7 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
 {
+
 	cursorType = MouseCursor::NormalCursor;
+
+    activityToView = ActivityToView::APVIEW;
+    maxPeakToPeakAmplitude = 100.0f;
 
     isOverZoomRegion = false;
     isOverUpperBorder = false;
@@ -893,7 +897,7 @@ void ProbeBrowser::timerCallback()
     if (parent->mode != VisualizationMode::ACTIVITY_VIEW)
         return;
 
-    const float* peakToPeakValues = parent->probe->getPeakToPeakValues(parent->activityToView);
+    const float* peakToPeakValues = parent->probe->getPeakToPeakValues(activityToView);
 
     for (int i = 0; i < parent->electrodeMetadata.size(); i++)
     {
@@ -903,7 +907,7 @@ void ProbeBrowser::timerCallback()
             int channelNumber = parent->electrodeMetadata[i].channel;
 
             parent->electrodeMetadata.getReference(i).colour =
-                ColourScheme::getColourForNormalizedValue(peakToPeakValues[channelNumber] / parent->maxPeakToPeakAmplitude);
+                ColourScheme::getColourForNormalizedValue(peakToPeakValues[channelNumber] / maxPeakToPeakAmplitude);
         }
     }
 

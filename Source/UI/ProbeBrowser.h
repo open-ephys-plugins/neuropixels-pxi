@@ -52,6 +52,9 @@ public:
 	int zoomHeight;
 	int zoomOffset;
 
+	ActivityToView activityToView;
+	float maxPeakToPeakAmplitude;
+
 private:
 
 	bool isOverZoomRegion;

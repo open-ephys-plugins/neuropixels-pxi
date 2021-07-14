@@ -155,9 +155,6 @@ private:
 
 	Array<BIST> availableBists;
 
-	ActivityToView activityToView;
-	float maxPeakToPeakAmplitude;
-
 };
 
 class Annotation
