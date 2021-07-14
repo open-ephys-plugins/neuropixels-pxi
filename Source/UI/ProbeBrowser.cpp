@@ -78,7 +78,7 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
 
     zoomHeight = defaultZoomHeight; // number of rows
     lowerBound = 530; // bottom of interface
-    //zoomAreaMinRow = 0;
+
     zoomOffset = 50;
     dragZoneWidth = 10;
 }
@@ -161,14 +161,11 @@ void ProbeBrowser::mouseMove(const MouseEvent& event)
         repaint();
     }
 
-
-
     // check for movement over electrode
     if ((x > leftEdge)  // in electrode selection region
         && (x < rightEdge)
         && (y < lowerBound)
-        && (y > 18)
-        && (event.eventComponent->getWidth() > 800))
+        && (y > 18))
     {
         int index = getNearestElectrode(x, y);
 
@@ -194,15 +191,6 @@ void ProbeBrowser::mouseMove(const MouseEvent& event)
 
 int ProbeBrowser::getNearestElectrode(int x, int y)
 {
-
-    //int TOP_BORDER = 33;
-    //int SHANK_HEIGHT = 480;
-
-   // float xLoc = 220 + shankOffset - electrodeHeight * probeMetadata.columns_per_shank / 2
-   //     + electrodeHeight * electrodeMetadata[i].column_index + electrodeMetadata[i].shank_index * electrodeHeight * 4
-   //     - (probeMetadata.shank_count / 2 * electrodeHeight * 3);
-   // float yLoc = lowerBound - ((electrodeMetadata[i].row_index - int(lowestRow)) * electrodeHeight);
-
 
     int row = (lowerBound - y) / electrodeHeight + zoomAreaMinRow + 1;
 
@@ -749,16 +737,15 @@ void ProbeBrowser::paint(Graphics& g)
     if (isSelectionActive)
     {
         g.setColour(Colours::white.withAlpha(0.5f));
-        //        g.drawRect(selectionBox);
+        //g.drawRect(selectionBox);
     }
 
     if (isOverElectrode)
     {
-        //std::cout << "YES" << std::endl;
         g.setColour(Colour(55, 55, 55));
         g.setFont(15);
         g.drawMultiLineText(electrodeInfoString,
-            280 + shankOffset + 80, 340, 250);
+            250 + shankOffset + 80, 350, 250);
     }
 }
 

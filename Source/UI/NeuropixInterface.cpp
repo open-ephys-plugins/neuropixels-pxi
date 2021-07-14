@@ -176,6 +176,16 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         currentHeight += 55;
     }
 
+   
+    
+
+    activityViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+    activityViewButton->setRadius(3.0f);
+    
+    activityViewButton->addListener(this);
+    activityViewButton->setTooltip("View peak-to-peak amplitudes for each channel");
+    addAndMakeVisible(activityViewButton);
+
     activityViewComboBox = new ComboBox("ActivityView Combo Box");
 
     if (probe->settings.availableLfpGains.size() > 0)
@@ -186,18 +196,15 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         activityViewComboBox->addItem("LFP", 2);
         activityViewComboBox->setSelectedId(1, dontSendNotification);
         addAndMakeVisible(activityViewComboBox);
+        activityViewButton->setBounds(530, currentHeight + 2, 45, 18);
+    }
+    else {
+        activityViewButton->setBounds(450, currentHeight + 2, 45, 18);
     }
 
-    activityViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
-    activityViewButton->setRadius(3.0f);
-    activityViewButton->setBounds(530, currentHeight + 2, 45, 18);
-    activityViewButton->addListener(this);
-    activityViewButton->setTooltip("View peak-to-peak amplitudes for each channel");
-    addAndMakeVisible(activityViewButton);
-
-    activityViewLabel = new Label("ACTIVITY VIEW", "ACTIVITY VIEW");
+    activityViewLabel = new Label("PROBE SIGNAL", "PROBE SIGNAL");
     activityViewLabel->setFont(Font("Small Text", 13, Font::plain));
-    activityViewLabel->setBounds(446, currentHeight - 20, 100, 20);
+    activityViewLabel->setBounds(446, currentHeight - 20, 180, 20);
     activityViewLabel->setColour(Label::textColourId, Colours::grey);
     addAndMakeVisible(activityViewLabel);
 
