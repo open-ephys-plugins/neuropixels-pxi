@@ -400,7 +400,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     loadJsonButton->setBounds(175, 707, 130, 22);
     loadJsonButton->addListener(this);
     loadJsonButton->setTooltip("Load channel map from probeinterface .json file");
-    addAndMakeVisible(loadJsonButton);
+   // addAndMakeVisible(loadJsonButton);
 
     probeSettingsLabel = new Label("Settings", "Probe settings:");
     probeSettingsLabel->setFont(Font("Small Text", 13, Font::plain));
@@ -598,6 +598,20 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
         else if (comboBox == filterComboBox)
         {
             updateProbeSettingsInBackground();
+        } else if (comboBox == activityViewComboBox)
+        {
+            if (comboBox->getSelectedId() == 1)
+            {
+                activityToView = ActivityToView::APVIEW;
+                ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
+                maxPeakToPeakAmplitude = 100.0f;
+            }
+            else {
+                activityToView = ActivityToView::LFPVIEW;
+                ColourScheme::setColourScheme(ColourSchemeId::VIRIDIS);
+                maxPeakToPeakAmplitude = 250.0f;
+            }
+
         }
 
         repaint();
@@ -1828,6 +1842,23 @@ void NeuropixInterface::drawLegend(Graphics& g)
         }
 
         break;
+
+    case ACTIVITY_VIEW:
+        g.drawMultiLineText("PEAK-TO-PEAK AMPLITUDE", xOffset, yOffset, 200);
+
+        for (int i = 0; i < 6; i++)
+        {
+            g.drawMultiLineText(String(float(maxPeakToPeakAmplitude) / 5.0f * float(i)) + " uV", xOffset + 30, yOffset + 22 + 20 * i, 200);
+
+        }
+
+        for (int i = 0; i < 6; i++)
+        {
+            g.setColour(ColourScheme::getColourForNormalizedValue(float(i) / 5.0f));
+            g.fillRect(xOffset + 10, yOffset + 10 + 20 * i, 15, 15);
+        }
+
+        break;
     }
 }
 
@@ -1874,9 +1905,9 @@ Colour NeuropixInterface::getElectrodeColour(int i)
             
             
         }
-        else if (mode == ACTIVITY_VIEW) // TODO
+        else if (mode == ACTIVITY_VIEW) 
         {
-            if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED) // not available
+            if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED) 
             {
                 return electrodeMetadata.getReference(i).colour;
             }
@@ -1907,13 +1938,8 @@ void NeuropixInterface::timerCallback()
     {
 
         if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
-        {
-
-            
+        {   
             int channelNumber = electrodeMetadata[i].channel;
-
-            //if (channelNumber == 0)
-            //    std::cout << peakToPeakValues[channelNumber] << std::endl;
 
             electrodeMetadata.getReference(i).colour = 
                 ColourScheme::getColourForNormalizedValue(peakToPeakValues[channelNumber] / maxPeakToPeakAmplitude);
