@@ -132,6 +132,8 @@ private:
 	ScopedPointer<UtilityButton> applyToAllButton;
 	ScopedPointer<UtilityButton> loadImroButton;
 	ScopedPointer<UtilityButton> saveImroButton;
+	ScopedPointer<UtilityButton> loadJsonButton;
+	ScopedPointer<UtilityButton> saveJsonButton;
 
 	ScopedPointer<ColorSelector> colorSelector;
 

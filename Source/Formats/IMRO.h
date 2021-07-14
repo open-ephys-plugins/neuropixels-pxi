@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __IMRO_H__
+#define __IMRO_H_
 
 #include "../NeuropixComponents.h"
 #include "../Utils.h"
@@ -289,3 +290,5 @@ public:
 
 
 };
+
+#endif
