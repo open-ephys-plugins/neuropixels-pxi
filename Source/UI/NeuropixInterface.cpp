@@ -2128,6 +2128,8 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     }
 
     XmlElement* channelNode = xmlNode->createNewChildElement("CHANNELS");
+    XmlElement* xposNode = xmlNode->createNewChildElement("ELECTRODE_XPOS");
+    XmlElement* yposNode = xmlNode->createNewChildElement("ELECTRODE_YPOS");
 
     ProbeSettings p = getProbeSettings();
 
@@ -2136,6 +2138,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
         int bank = p.selectedBank[i];
         int shank = p.selectedShank[i];
         int channel = p.selectedChannel[i];
+        int elec = p.selectedElectrode[i];
 
         String chString = String(bank);
 
@@ -2143,9 +2146,12 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
             chString += ":" + String(shank);
 
         channelNode->setAttribute("CH" + String(channel), chString);
+        xposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].xpos + 250 * shank));
+        yposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].ypos + 250 * shank));
     }
     
     xmlNode->setAttribute("visualizationMode", mode);
+    xmlNode->setAttribute("activityToView", activityToView);
 
     // annotations
     for (int i = 0; i < annotations.size(); i++)
