@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "API/v1/NeuropixAPI.h"
 #include "API/v3/NeuropixAPI.h"
 
+#include "UI/ActivityView.h"
+
 # define SAMPLECOUNT 64
 
 class BasestationConnectBoard;
@@ -342,9 +344,23 @@ public:
 
 	bool sendSync;
 
+	const float* getPeakToPeakValues(CriticalSection& displayMutex)
+	{
+		if (currentView == ActivityToView::APVIEW)
+			return apView->getPeakToPeakValues(displayMutex);
+		else
+			return lfpView->getPeakToPeakValues(displayMutex);
+	}
+	
+
 protected:
 
 	ProbeStatus status;
+
+	ScopedPointer<ActivityView> apView;
+	ScopedPointer<ActivityView> lfpView;
+
+	ActivityToView currentView;
 
 	uint64 eventCode;
 	Array<int> gains; // available gain values
