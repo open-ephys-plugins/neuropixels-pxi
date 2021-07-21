@@ -33,24 +33,29 @@
 class ColorSelector;
 class Annotation;
 
+class ProbeBrowser;
+
+enum VisualizationMode {
+	ENABLE_VIEW,
+	AP_GAIN_VIEW,
+	LFP_GAIN_VIEW,
+	REFERENCE_VIEW,
+	ACTIVITY_VIEW
+};
+
 class NeuropixInterface : public SettingsInterface, 
 	public Button::Listener, 
 	public ComboBox::Listener, 
-	public Label::Listener, 
-	public Timer
+	public Label::Listener 
 {
 public:
+
+	friend class ProbeBrowser;
+
 	NeuropixInterface(Probe* probe, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas);
 	~NeuropixInterface();
 
 	void paint(Graphics& g);
-
-	void mouseMove(const MouseEvent& event);
-	void mouseDown(const MouseEvent& event);
-	void mouseDrag(const MouseEvent& event);
-	void mouseUp(const MouseEvent& event);
-	//void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel);
-	MouseCursor getMouseCursor();
 
 	void buttonClicked(Button*);
 	void comboBoxChanged(ComboBox*);
@@ -72,6 +77,9 @@ public:
 	void timerCallback();
 
 private:
+
+	Array<ElectrodeMetadata> electrodeMetadata;
+	ProbeMetadata probeMetadata;
 
 	Probe* probe;
 
@@ -137,57 +145,9 @@ private:
 
 	ScopedPointer<ColorSelector> colorSelector;
 
-	Array<ElectrodeMetadata> electrodeMetadata;
-	ProbeMetadata probeMetadata;
-
-	// display booleans
-	bool isOverZoomRegion;
-	bool isOverUpperBorder;
-	bool isOverLowerBorder;
-	bool isOverElectrode;
-	bool isSelectionActive;
-
-	// display variables
-	int zoomHeight;
-	int zoomOffset;
-	int initialOffset;
-	int initialHeight;
-	int lowerBound;
-	int dragZoneWidth;
-	int zoomAreaMinRow;
-	int minZoomHeight;
-	int maxZoomHeight;
-	int shankOffset;
-	int leftEdge;
-	int rightEdge;
-	int channelLabelSkip;
-	int pixelHeight;
-
-	int lowestElectrode;
-	int highestElectrode;
-
-	float electrodeHeight;
-
-	enum VisualizationMode {
-		ENABLE_VIEW,
-		AP_GAIN_VIEW,
-		LFP_GAIN_VIEW,
-		REFERENCE_VIEW,
-		ACTIVITY_VIEW
-	};
+	ScopedPointer<ProbeBrowser> probeBrowser;
 
 	VisualizationMode mode;
-
-	MouseCursor::StandardCursorType cursorType;
-
-	Path shankPath;
-
-	String electrodeInfoString;
-
-	Colour getElectrodeColour(int index);
-	int getNearestElectrode(int x, int y);
-	Array<int> getElectrodesWithinBounds(int x, int y, int w, int h);
-	String getElectrodeInfoString(int index);
 
 	void drawLegend(Graphics& g);
 	void drawAnnotations(Graphics& g);
@@ -197,9 +157,6 @@ private:
 	Array<int> getSelectedElectrodes();
 
 	Array<BIST> availableBists;
-
-	ActivityToView activityToView;
-	float maxPeakToPeakAmplitude;
 
 };
 
