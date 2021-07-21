@@ -677,6 +677,9 @@ bool NeuropixThread::isSelectedProbe(unsigned char slot, signed char port)
 void NeuropixThread::setDefaultChannelNames()
 {
 
+	MetaDataDescriptor descriptor = MetaDataDescriptor(MetaDataDescriptor::FLOAT, 1, "Depth", "Channel depth", "depth-value");
+	MetaDataValue depthValue = MetaDataValue(MetaDataDescriptor::FLOAT, 1);
+
 	if (subprocessorInfo.size() > 0)
 	{
 		
@@ -690,20 +693,54 @@ void NeuropixThread::setDefaultChannelNames()
 
 				if (spInfo.type == AP_BAND)
 					info.name = "AP";
-				else
+				else if (spInfo.type == LFP_BAND)
 					info.name = "LFP";
-
 
 				if (spInfo.sendSyncAsContinuousChannel && (i == spInfo.num_channels - 1))
 				{
 					info.name += "_SYNC";
 					info.gain = 1.0;
 				}
-				else {
+				else 
+				{
 					info.name += String(i + 1);
 					info.gain = 0.1950000f;
 				}
 
+				if (spInfo.num_channels == 384 && i < 384)
+				{
+					// this is a hack to add metadata to the channels
+					const DataChannel* dc0 = sn->getDataChannel(chan);
+					DataChannel* dc = const_cast<DataChannel*>(dc0);
+					
+					if (i < spInfo.probe->electrodeMetadata.size())
+					{
+
+						int chIndex = spInfo.probe->settings.selectedChannel.indexOf(i);
+						
+						int selectedBank = spInfo.probe->settings.availableBanks.indexOf(spInfo.probe->settings.selectedBank[chIndex]);
+
+						int selectedElectrode = i + selectedBank * 384;
+						int shank = spInfo.probe->settings.selectedShank[chIndex];
+
+						float depth = float(spInfo.probe->electrodeMetadata[selectedElectrode].ypos)
+									    + shank * 1000.0f 
+										+ float(i % 2) 
+										+ 0.0001f * i; // each channel must have a unique depth value
+
+						//if (i == 0)
+						//	std::cout << " -- Ch 0 bank: " << selectedBank << std::endl;
+
+						//std::cout << "Channel " << i << ", electrode " << selectedElectrode << ", depth " << depth << std::endl;
+						//std::cout << "Channel " << i << " depth = " << depth << std::endl;
+						depthValue.setValue(depth);
+					}
+					else
+						depthValue.setValue(-1.0f);
+
+					dc->addMetaData(descriptor, depthValue);
+				}
+				
 				channelInfo.set(chan, info);
 				chan++;
 			}

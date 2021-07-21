@@ -48,7 +48,7 @@ public:
 
 typedef enum {
 	AP_BAND,
-	LFP_BAND
+	LFP_BAND,
 } subprocessor_type;
 
 struct SubprocessorInfo {
@@ -56,6 +56,7 @@ struct SubprocessorInfo {
 	float sample_rate;
 	subprocessor_type type;
 	bool sendSyncAsContinuousChannel;
+	Probe* probe;
 };
 
 /**
