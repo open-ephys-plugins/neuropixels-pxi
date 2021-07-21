@@ -1,3 +1,6 @@
+#ifndef __UTILS_H__
+#define __UTILS_H__
+
 #include <chrono>
 #include <functional>
 #include <mutex>
@@ -86,3 +89,5 @@ std::vector<TV> extract_values(std::map<TK, TV> const& input_map) {
 	}
 	return retval;
 }
+
+#endif 

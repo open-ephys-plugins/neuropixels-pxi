@@ -28,6 +28,7 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "../NeuropixCanvas.h"
 
 #include "../Formats/IMRO.h"
+#include "../Formats/ProbeInterfaceJson.h"
 
 NeuropixInterface::NeuropixInterface(Probe* p,
                                      NeuropixThread* t, 
@@ -376,15 +377,30 @@ NeuropixInterface::NeuropixInterface(Probe* p,
     saveImroButton->setRadius(3.0f);
     saveImroButton->setBounds(45, 672, 120, 22);
     saveImroButton->addListener(this);
-    saveImroButton->setTooltip("Save channel map to .imro file");
+    saveImroButton->setTooltip("Save settings map to .imro file");
     addAndMakeVisible(saveImroButton);
 
     loadImroButton = new UtilityButton("LOAD FROM IMRO", Font("Small Text", 12, Font::plain));
     loadImroButton->setRadius(3.0f);
     loadImroButton->setBounds(175, 672, 130, 22);
     loadImroButton->addListener(this);
-    loadImroButton->setTooltip("Load channel map from .imro file");
+    loadImroButton->setTooltip("Load settings map from .imro file");
     addAndMakeVisible(loadImroButton);
+
+    saveJsonButton = new UtilityButton("SAVE TO JSON", Font("Small Text", 12, Font::plain));
+    saveJsonButton->setRadius(3.0f);
+    saveJsonButton->setBounds(45, 707, 120, 22);
+    saveJsonButton->addListener(this);
+    saveJsonButton->setTooltip("Save channel map to probeinterface .json file");
+    addAndMakeVisible(saveJsonButton);
+
+    loadJsonButton = new UtilityButton("LOAD FROM JSON", Font("Small Text", 12, Font::plain));
+    loadJsonButton->setRadius(3.0f);
+    loadJsonButton->setBounds(175, 707, 130, 22);
+    loadJsonButton->addListener(this);
+    loadJsonButton->setTooltip("Load channel map from probeinterface .json file");
+    addAndMakeVisible(loadJsonButton);
+
 
     probeSettingsLabel = new Label("Settings", "Probe settings:");
     probeSettingsLabel->setFont(Font("Small Text", 13, Font::plain));
@@ -780,6 +796,38 @@ void NeuropixInterface::buttonClicked(Button* button)
                 CoreServices::sendStatusMessage("Failed to write probe settings.");
             else
                 CoreServices::sendStatusMessage("Successfully wrote probe settings.");
+
+        }
+    }
+    else if (button == loadJsonButton)
+    {
+        FileChooser fileChooser("Select an probeinterface JSON file to load.", File(), "*.json");
+
+        if (fileChooser.browseForFileToOpen())
+        {
+            ProbeSettings settings = getProbeSettings();
+
+            bool success = ProbeInterfaceJson::readProbeSettingsFromJson(fileChooser.getResult(), settings);
+
+            if (success)
+            {
+                applyProbeSettings(settings);
+            }
+
+        }
+    }
+    else if (button == saveJsonButton)
+    {
+        FileChooser fileChooser("Save channel map to a probeinterface JSON file.", File(), "*.json");
+
+        if (fileChooser.browseForFileToSave(true))
+        {
+            bool success = ProbeInterfaceJson::writeProbeSettingsToJson(fileChooser.getResult(), getProbeSettings());
+
+            if (!success)
+                CoreServices::sendStatusMessage("Failed to write probe channel map.");
+            else
+                CoreServices::sendStatusMessage("Successfully wrote probe channel map.");
 
         }
     }
@@ -1607,7 +1655,7 @@ void NeuropixInterface::paint(Graphics& g)
     drawLegend(g);
 
     g.setColour(Colour(60, 60, 60));
-    g.fillRoundedRectangle(30, 600, 290, 110, 8.0f);
+    g.fillRoundedRectangle(30, 600, 290, 145, 8.0f);
 
 }
 

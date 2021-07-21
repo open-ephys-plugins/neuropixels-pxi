@@ -132,9 +132,9 @@ struct ElectrodeMetadata {
 	int column_index;
 	int channel;
 	int row_index;
-	int xpos;
-	int ypos;
-	//bool isReference;
+	int xpos; // position on shank
+	int ypos; // position on shank
+	int site_width;
 	Bank bank;
 	ElectrodeStatus status;
 	bool isSelected;

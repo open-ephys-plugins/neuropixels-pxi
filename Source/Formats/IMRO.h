@@ -3,6 +3,9 @@
 #include "../NeuropixComponents.h"
 #include "../Utils.h"
 
+#ifndef __IMRO_H__
+#define __IMRO_H_
+
 class IMRO
 {
 public:
@@ -289,3 +292,5 @@ public:
 
 
 };
+
+#endif
