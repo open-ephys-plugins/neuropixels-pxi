@@ -129,6 +129,9 @@ void Neuropixels_NHP_Active::initialize()
 		lfp_timestamp = 0;
 		eventCode = 0;
 		setStatus(ProbeStatus::CONNECTED);
+
+		apView = new ActivityView(384, 3000);
+		lfpView = new ActivityView(384, 250);
 	}
 }
 
@@ -275,6 +278,10 @@ void Neuropixels_NHP_Active::startAcquisition()
 	apBuffer->clear();
 	lfpBuffer->clear();
 	LOGD("  Starting thread.");
+
+	apView->reset();
+	lfpView->reset();
+
 	startThread();
 }
 
@@ -318,9 +325,13 @@ void Neuropixels_NHP_Active::run()
 					{
 
 						apSamples[j] = float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f / settings.availableApGains[settings.apGainIndex]; // convert to microvolts
+						apView->addSample(apSamples[j], j);
 
 						if (i == 0)
-							lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / settings.availableLfpGains[settings.lfpGainIndex]; // convert to microvolts
+						{
+								lfpSamples[j] = float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f / settings.availableLfpGains[settings.lfpGainIndex]; // convert to microvolts
+								lfpView->addSample(lfpSamples[j], j);
+						}
 					}
 
 					ap_timestamp += 1;

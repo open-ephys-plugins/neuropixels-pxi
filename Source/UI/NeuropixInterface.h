@@ -196,9 +196,8 @@ private:
 
 	Array<BIST> availableBists;
 
-	// For activity view, may use later
-	//DataBuffer* inputBuffer;
-	//AudioSampleBuffer displayBuffer;
+	ActivityToView activityToView;
+	float maxPeakToPeakAmplitude;
 
 };
 

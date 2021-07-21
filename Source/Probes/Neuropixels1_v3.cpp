@@ -164,8 +164,6 @@ void Neuropixels1_v3::initialize()
 		apView = new ActivityView(384, 3000);
 		lfpView = new ActivityView(384, 250);
 
-		currentView = ActivityToView::APVIEW;
-
 	}
 }
 

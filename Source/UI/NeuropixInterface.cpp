@@ -39,6 +39,9 @@ NeuropixInterface::NeuropixInterface(Probe* p,
 
     ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
 
+    activityToView = ActivityToView::APVIEW;
+    maxPeakToPeakAmplitude = 100.0f;
+
    // std::cout << slot << "--" << port << std::endl;
 
     isOverZoomRegion = false;
@@ -225,18 +228,21 @@ NeuropixInterface::NeuropixInterface(Probe* p,
     }
 
     activityViewComboBox = new ComboBox("ActivityView Combo Box");
-    activityViewComboBox->setBounds(450, currentHeight, 65, 22);
-    activityViewComboBox->addListener(this);
-    activityViewComboBox->addItem("AP", 1);
-    activityViewComboBox->addItem("LFP", 2);
-    activityViewComboBox->setSelectedId(1, dontSendNotification);
-    addAndMakeVisible(activityViewComboBox);
+    if (probe->settings.availableLfpGains.size() > 0)
+    {
+        activityViewComboBox->setBounds(450, currentHeight, 65, 22);
+        activityViewComboBox->addListener(this);
+        activityViewComboBox->addItem("AP", 1);
+        activityViewComboBox->addItem("LFP", 2);
+        activityViewComboBox->setSelectedId(1, dontSendNotification);
+        addAndMakeVisible(activityViewComboBox);
+    }
 
     activityViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
     activityViewButton->setRadius(3.0f);
     activityViewButton->setBounds(530, currentHeight + 2, 45, 18);
     activityViewButton->addListener(this);
-    activityViewButton->setTooltip("View neural activity on each channel");
+    activityViewButton->setTooltip("View peak-to-peak amplitudes for each channel");
     addAndMakeVisible(activityViewButton);
 
     activityViewLabel = new Label("ACTIVITY VIEW", "ACTIVITY VIEW");
@@ -581,8 +587,27 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
 
         repaint();
     }
-    else {
-        CoreServices::sendStatusMessage("Cannot update parameters while acquisition is active");// no parameter change while acquisition is active
+    else 
+    {
+        if (comboBox == activityViewComboBox)
+        {
+            if (comboBox->getSelectedId() == 1)
+            {
+                activityToView = ActivityToView::APVIEW;
+                ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
+                maxPeakToPeakAmplitude = 100.0f;
+            }
+            else {
+                activityToView = ActivityToView::LFPVIEW;
+                ColourScheme::setColourScheme(ColourSchemeId::VIRIDIS);
+                maxPeakToPeakAmplitude = 250.0f;
+            }
+
+            repaint();
+        }
+        else {
+            CoreServices::sendStatusMessage("Cannot update parameters while acquisition is active");// no parameter change while acquisition is active 
+        }
     }
 
 }
@@ -1829,24 +1854,21 @@ void NeuropixInterface::timerCallback()
 
     Random random;
 
-    CriticalSection mutex;
+    const float* peakToPeakValues = probe->getPeakToPeakValues(activityToView);
 
-    const float* peakToPeakValues = probe->getPeakToPeakValues(mutex);
-
+    for (int i = 0; i < electrodeMetadata.size(); i++)
     {
-        const ScopedLock scopedLock(mutex);
-
-        for (int i = 0; i < electrodeMetadata.size(); i++)
+        if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
         {
-            if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
-            {
-                int channelNumber = electrodeMetadata[i].channel;
-                electrodeMetadata.getReference(i).colour = ColourScheme::getColourForNormalizedValue(peakToPeakValues[channelNumber] / 100.0f);
-            }
+            int channelNumber = electrodeMetadata[i].channel;
+
+            //if (channelNumber == 0)
+            //    std::cout << peakToPeakValues[channelNumber] << std::endl;
+
+            electrodeMetadata.getReference(i).colour = 
+                ColourScheme::getColourForNormalizedValue(peakToPeakValues[channelNumber] / maxPeakToPeakAmplitude);
         }
     }
-
-    
 
     repaint();
 }

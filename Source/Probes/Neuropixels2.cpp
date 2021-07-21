@@ -148,6 +148,9 @@ void Neuropixels2::initialize()
 		lfp_timestamp = 0;
 		eventCode = 0;
 		setStatus(ProbeStatus::CONNECTED);
+
+		apView = new ActivityView(384, 3000);
+		
 	}
 
 }
@@ -374,6 +377,8 @@ void Neuropixels2::startAcquisition()
 	ap_timestamp = 0;
 	apBuffer->clear();
 
+	apView->reset();
+
 	LOGD("  Starting thread.");
 	startThread();
 }
@@ -423,6 +428,7 @@ void Neuropixels2::run()
 				for (int j = 0; j < 384; j++)
 				{
 					apSamples[j] = float(data[packetNum * 384 + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
+					apView->addSample(apSamples[j], j);
 				}
 
 				ap_timestamp += 1;
