@@ -51,12 +51,12 @@ typedef enum {
 	AP_BAND,
 	LFP_BAND,
 	ADC
-} subprocessor_type;
+} stream_type;
 
-struct SubprocessorInfo {
+struct StreamInfo {
 	int num_channels;
 	float sample_rate;
-	subprocessor_type type;
+	stream_type type;
 	bool sendSyncAsContinuousChannel;
 	Probe* probe;
 	OneBoxADC* adc;
@@ -70,8 +70,6 @@ struct SubprocessorInfo {
 
 */
 
-
-
 class NeuropixThread : public DataThread, public Timer
 {
 
@@ -81,8 +79,6 @@ public:
 	~NeuropixThread();
 
 	bool updateBuffer();
-
-	void updateChannels();
 
 	/** Returns true if the data source is connected, false otherwise.*/
 	bool foundInputSource();
@@ -102,40 +98,13 @@ public:
 	/** Stops data transfer.*/
 	bool stopAcquisition() override;
 
-	// DataThread Methods
-
-	/** Returns the number of virtual subprocessors this source can generate */
-	unsigned int getNumSubProcessors() const override;
-
-	/** Returns the number of continuous headstage channels the data source can provide.*/
-	int getNumDataOutputs(DataChannel::DataChannelTypes type, int subProcessorIdx) const override;
-
-	/** Returns the number of TTL channels that each subprocessor generates*/
-	int getNumTTLOutputs(int subProcessorIdx) const override;
-
-	/** Returns the sample rate of the data source.*/
-	float getSampleRate(int subProcessorIdx) const override;
-
-	/** Returns the volts per bit of the data source.*/
-	float getBitVolts(const DataChannel* chan) const override;
-
-	/** Used to set default channel names.*/
-	void setDefaultChannelNames() override;
-
-	/** Used to override default channel names.*/
-	bool usesCustomNames() const override;
-
-	/** Selects which electrode is connected to each channel. */
-	//void selectElectrodes(unsigned char slot, signed char port, Array<int> channelStatus);
-
-	/** Selects which reference is used for each channel. */
-	//void setAllReferences(unsigned char slot, signed char port, int refId);
-
-	/** Sets the gain for each channel. */
-	//void setAllGains(unsigned char slot, signed char port, unsigned char apGain, unsigned char lfpGain);
-
-	/** Sets the filter for all channels. */
-	//void setFilter(Probe* , bool filterState);
+	/** Update settings */
+	void updateSettings(OwnedArray<ContinuousChannel>* continuousChannels,
+		OwnedArray<EventChannel>* eventChannels,
+		OwnedArray<SpikeChannel>* spikeChannels,
+		OwnedArray<DataStream>* dataStreams,
+		OwnedArray<DeviceInfo>* devices,
+		OwnedArray<ConfigurationObject>* configurationObjects) override;
 
 	/** Toggles between internal and external triggering. */
 	void setTriggerMode(bool trigger);
@@ -168,7 +137,7 @@ public:
 
 	static DataThread* createDataThread(SourceNode* sn);
 
-	GenericEditor* createEditor(SourceNode* sn);
+	std::unique_ptr<GenericEditor> createEditor(SourceNode* sn);
 
 	Array<Basestation*> getBasestations();
 	Array<Probe*> getProbes();
@@ -180,19 +149,6 @@ public:
 	Array<int> getSyncFrequencies();
 
 	void setSyncFrequency(int slotIndex, int freqIndex);
-
-	//ProbeStatus getProbeStatus(unsigned char slot, signed char port);
-	//void setSelectedProbe(unsigned char slot, signed char probe);
-	//bool isSelectedProbe(unsigned char slot, signed char probe);
-
-	//bool checkSlotAndPortCombo(int slotIndex, int portIndex);
-	//unsigned char getSlotForIndex(int slotIndex, int portIndex);
-	//signed char getPortForIndex(int slotIndex, int portIndex);
-
-	//bool runBist(unsigned char slot, signed char port, int bistIndex);
-
-	ScopedPointer<ProgressBar> progressBar;
-	double initializationProgress;
 
 	/* Helper for loading probes in the background */
 	Array<ProbeSettings> probeSettingsUpdateQueue;
@@ -207,8 +163,12 @@ public:
 
 	String getApiVersion();
 
-	//void handleMessage(String msg) override;
-	//String handleConfigMessage(String msg) override;
+	void handleMessage(String msg) override;
+
+	String handleConfigMessage(String msg) override;
+
+	ScopedPointer<ProgressBar> progressBar;
+	double initializationProgress;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 
@@ -232,17 +192,10 @@ private:
 
 	Array<int> defaultSyncFrequencies;
 
-	Array<SubprocessorInfo> subprocessorInfo;
-
-	//Array<int> channelMap;
-	//Array<bool> outputOn;
-	//Array<int> refs;
-
-	//uint64_t probeId;
+	Array<StreamInfo> streamInfo;
 
 	int maxCounter;
 
-	//int numRefs;
 	int totalChans;
 	int totalProbes;
 
@@ -251,18 +204,10 @@ private:
 	Array<float> fillPercentage;
 
 	OwnedArray<Basestation> basestations;
+	OwnedArray<DataStream> sourceStreams;
 
 	NeuropixAPIv1 api_v1;
 	NeuropixAPIv3 api_v3;
-
-	//unsigned char selectedSlot;
-	//signed char selectedPort;
-
-
-	//std::vector<unsigned char> connected_basestations;
-	//std::vector<std::vector<int>> connected_probes;
-	
-	//np::bistElectrodeStats stats[960];
 
 	RecordingTimer recordingTimer;
 

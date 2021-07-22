@@ -175,7 +175,7 @@ public:
 
 };
 
-class ColorSelector : public Component, public ButtonListener
+class ColorSelector : public Component, public Button::Listener
 {
 public:
 	ColorSelector(NeuropixInterface* np);

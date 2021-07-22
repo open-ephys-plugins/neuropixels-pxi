@@ -78,7 +78,7 @@ public:
 
         FileOutputStream f(file);
 
-        output.writeAsJSON(f, 4, false);
+        output.writeAsJSON(f, 4, false, 4);
 
         return true;
 

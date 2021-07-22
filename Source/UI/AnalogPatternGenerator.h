@@ -98,7 +98,7 @@ protected:
 };
 
 template<typename T>
-class EditableTextInput : public Component, public LabelListener
+class EditableTextInput : public Component, public Label::Listener
 {
 public:
 	EditableTextInput<T>(String mainlabelText,

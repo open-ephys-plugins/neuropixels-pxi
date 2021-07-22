@@ -602,8 +602,21 @@ void ProbeBrowser::paint(Graphics& g)
         g.setColour(getElectrodeColour(i).withAlpha(0.5f));
 
         for (int px = 0; px < pixelHeight; px++)
-            g.setPixel(LEFT_BORDER + parent->electrodeMetadata[i].column_index * 2 + parent->electrodeMetadata[i].shank * INTERSHANK_DISTANCE,
-                TOP_BORDER + SHANK_HEIGHT - float(parent->electrodeMetadata[i].row_index) * float(SHANK_HEIGHT) / float(parent->probeMetadata.rows_per_shank) - px);
+            g.fillRect(
+                LEFT_BORDER 
+                + parent->electrodeMetadata[i].column_index 
+                * 2 
+                + parent->electrodeMetadata[i].shank 
+                * INTERSHANK_DISTANCE
+                ,
+                TOP_BORDER 
+                + SHANK_HEIGHT 
+                - int(float(parent->electrodeMetadata[i].row_index) 
+                * float(SHANK_HEIGHT) 
+                / float(parent->probeMetadata.rows_per_shank)) 
+                - px
+                , 1
+                , 1);
     }
 
     // channel 1 = pixel 513

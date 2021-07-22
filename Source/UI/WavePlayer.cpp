@@ -317,7 +317,9 @@ void WavePlayer::buttonClicked(Button* button)
 		selectPatternType(currentPattern->patternType);
 
 		CallOutBox& myBox
-			= CallOutBox::launchAsynchronously(patternGenerator, button->getScreenBounds(), nullptr);
+			= CallOutBox::launchAsynchronously(std::unique_ptr<Component>(patternGenerator),
+				button->getScreenBounds(), 
+				nullptr);
 
 	}
 	else if (button == sinePatternButton)
@@ -331,7 +333,9 @@ void WavePlayer::buttonClicked(Button* button)
 		selectPatternType(currentPattern->patternType);
 
 		CallOutBox& myBox
-			= CallOutBox::launchAsynchronously(patternGenerator, button->getScreenBounds(), nullptr);
+			= CallOutBox::launchAsynchronously(std::unique_ptr<Component>(patternGenerator),
+				button->getScreenBounds(), 
+				nullptr);
 
 	}
 	else if (button == customPatternButton)
@@ -343,7 +347,9 @@ void WavePlayer::buttonClicked(Button* button)
 		selectPatternType(currentPattern->patternType);
 
 		CallOutBox& myBox
-			= CallOutBox::launchAsynchronously(patternGenerator, button->getScreenBounds(), nullptr);
+			= CallOutBox::launchAsynchronously(std::unique_ptr<Component>(patternGenerator), 
+				button->getScreenBounds(), 
+				nullptr);
 
 	}
 	else if (button == startStopButton)
