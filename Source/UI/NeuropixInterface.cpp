@@ -184,10 +184,10 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         filterLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(filterLabel);
 
-        currentHeight += 55;
     }
 
-   
+    currentHeight += 55;
+
     activityViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
     activityViewButton->setRadius(3.0f);
     
