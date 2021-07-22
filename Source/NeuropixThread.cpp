@@ -179,8 +179,13 @@ void NeuropixThread::updateSubprocessors()
 	{
 
 		SubprocessorInfo spInfo;
+
+
+
 		spInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
 		spInfo.sample_rate = probe->ap_sample_rate;
+		spInfo.probe = probe;
+
 		spInfo.type = AP_BAND;
 		spInfo.sendSyncAsContinuousChannel = probe->sendSync;
 
@@ -197,6 +202,8 @@ void NeuropixThread::updateSubprocessors()
 			SubprocessorInfo spInfo;
 			spInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
 			spInfo.sample_rate = probe->lfp_sample_rate;
+			spInfo.probe = probe;
+
 			spInfo.type = LFP_BAND;
 			spInfo.sendSyncAsContinuousChannel = probe->sendSync;
 
