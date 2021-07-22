@@ -669,11 +669,34 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 	if (sourceStreams.size() == 0) // initialize data streams
 	{
+		int probeIndex = 0;
+		StringArray probeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O" , "P"};
+		String lastName;
+
 		for (auto info : streamInfo)
 		{
+			String probeName;
+
+			if (info.type == stream_type::ADC)
+			{
+				probeName = "OneBox-ADC";
+			}
+				
+			else if (info.type == stream_type::AP_BAND)
+			{
+				lastName = "Probe" + probeNames[probeIndex];
+				probeName = lastName + "-AP";
+				probeIndex++;
+			}
+			
+			else if (info.type == stream_type::LFP_BAND)
+			{
+				probeName = lastName + "-LFP";
+			}
+
 			DataStream::Settings settings
 			{
-				"name",
+				probeName,
 				"description",
 				"identifier",
 
