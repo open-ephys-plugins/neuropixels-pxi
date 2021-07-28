@@ -347,7 +347,10 @@ void Neuropixels1_v3::startAcquisition()
 {
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
-	//std::cout << "... and clearing buffers" << std::endl;
+	
+	last_npx_timestamp = 0;
+	passedOneSecond = false;
+
 	apBuffer->clear();
 	lfpBuffer->clear();
 
@@ -393,6 +396,19 @@ void Neuropixels1_v3::run()
 
 					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
 
+					if ((npx_timestamp - last_npx_timestamp) > 4)
+					{
+						if (passedOneSecond)
+						{
+							LOGD("NPX TIMESTAMP JUMP: ", npx_timestamp - last_npx_timestamp,
+								", expected 3 or 4...Possible data loss on slot ",
+								int(basestation->slot_c), ", probe ", int(headstage->port_c),
+								" at sample number ", ap_timestamp);
+						}
+					}
+
+					last_npx_timestamp = npx_timestamp;
+
 					for (int j = 0; j < 384; j++)
 					{
 
@@ -416,6 +432,9 @@ void Neuropixels1_v3::run()
 
 					if (ap_timestamp % 30000 == 0)
 					{
+
+						passedOneSecond = true;
+
 						int packetsAvailable;
 						int headroom;
 

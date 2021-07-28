@@ -344,6 +344,9 @@ public:
 
 	bool sendSync;
 
+	uint32_t last_npx_timestamp;
+	bool passedOneSecond;
+
 	const float* getPeakToPeakValues(ActivityToView currentView = ActivityToView::APVIEW)
 	{
 		if (currentView == ActivityToView::APVIEW)

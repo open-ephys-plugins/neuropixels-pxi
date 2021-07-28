@@ -375,6 +375,10 @@ void Neuropixels2::writeConfiguration()
 void Neuropixels2::startAcquisition()
 {
 	ap_timestamp = 0;
+
+	last_npx_timestamp = 0;
+	passedOneSecond = false;
+
 	apBuffer->clear();
 
 	apView->reset();
@@ -425,6 +429,19 @@ void Neuropixels2::run()
 
 				uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
 
+				if ((npx_timestamp - last_npx_timestamp) > 4)
+				{
+					if (passedOneSecond)
+					{
+						LOGD("NPX TIMESTAMP JUMP: ", npx_timestamp - last_npx_timestamp,
+							", expected 3 or 4...Possible data loss on slot ",
+							int(basestation->slot_c), ", probe ", int(headstage->port_c),
+							" at sample number ", ap_timestamp);
+					}
+				}
+
+				last_npx_timestamp = npx_timestamp;
+
 				for (int j = 0; j < 384; j++)
 				{
 					apSamples[j] = float(data[packetNum * 384 + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
@@ -440,6 +457,8 @@ void Neuropixels2::run()
 
 				if (ap_timestamp % 30000 == 0)
 				{
+					passedOneSecond = true;
+
 					int packetsAvailable;
 					int headroom;
 
