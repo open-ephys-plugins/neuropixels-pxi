@@ -104,7 +104,7 @@ bool Basestation_v1::open()
 	if (errorCode == np::SUCCESS)
 	{
 
-		LOGD("  Opened BSv1 on slot ", slot_c);
+		LOGD("  Opened BSv1 on slot ", int(slot_c));
 
 		basestationConnectBoard = new BasestationConnectBoard_v1(this);
 
@@ -115,7 +115,7 @@ bool Basestation_v1::open()
 
 			errorCode = np::openProbe(slot_c, port); // check for probe on slot
 
-			LOGD("openProbe: Port: ", port, " errorCode: ", errorCode);
+			LOGD("openProbe: Port: ", int(port), " errorCode: ", errorCode);
 
 			if (errorCode == np::NO_LOCK) 
 			{ //likely no cable connected 
@@ -245,11 +245,11 @@ void Basestation_v1::setSyncAsOutput(int freqIndex)
 
 	int freq = syncFrequencies[freqIndex];
 
-	LOGD("Setting slot ", slot_c, " sync frequency to ", freq, " Hz...");
+	LOGD("Setting slot ", int(slot_c), " sync frequency to ", freq, " Hz...");
 	errorCode = setParameter(np::NP_PARAM_SYNCFREQUENCY_HZ, freq);
 	if (errorCode != np::SUCCESS)
 	{
-		LOGD("Failed to set slot ", slot_c, " sync frequency to ", freq, " Hz");
+		LOGD("Failed to set slot ", int(slot_c), " sync frequency to ", freq, " Hz");
 		return;
 	}
 

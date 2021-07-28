@@ -113,7 +113,7 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 bool Neuropixels1_v1::open()
 {
 	errorCode = np::openProbe(basestation->slot_c, headstage->port_c);
-	LOGD("openProbe: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGD("openProbe: slot: ", int(basestation->slot_c), " port: ", int(headstage->port_c), " errorCode: ", errorCode);
 	return errorCode == np::SUCCESS;
 
 }
@@ -121,7 +121,7 @@ bool Neuropixels1_v1::open()
 bool Neuropixels1_v1::close()
 {
 	errorCode = np::close(basestation->slot_c, headstage->port_c);
-	LOGD("close: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGD("close: slot: ", int(basestation->slot_c), " port: ", int(headstage->port_c), " errorCode: ", errorCode);
 	return errorCode == np::SUCCESS;
 }
 
@@ -131,11 +131,11 @@ void Neuropixels1_v1::initialize()
 	LOGD("Configuring probe...");
 
 	errorCode = np::init(basestation->slot_c, headstage->port_c);
-	LOGD("init: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGD("init: slot: ", int(basestation->slot_c), " port: ", int(headstage->port_c), " errorCode: ", errorCode);
 	errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);
-	LOGD("setOPMODE: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGD("setOPMODE: slot: ", int(basestation->slot_c), " port: ", int(headstage->port_c), " errorCode: ", errorCode);
 	errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
-	LOGD("setHSLed: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGD("setHSLed: slot: ", int(basestation->slot_c), " port: ", int(headstage->port_c), " errorCode: ", errorCode);
 
 	calibrate();
 
@@ -154,6 +154,8 @@ void Neuropixels1_v1::initialize()
 
 	apView = new ActivityView(384, 3000);
 	lfpView = new ActivityView(384, 250);
+
+	
 
 }
 
@@ -237,7 +239,7 @@ void Neuropixels1_v1::selectElectrodes()
 
 	}
 
-	LOGD("Updating electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
+	LOGD("Updating electrode settings for slot: ", int(basestation->slot_c), " port: ", int(headstage->port_c));
 
 }
 
@@ -313,12 +315,16 @@ void Neuropixels1_v1::startAcquisition()
 {
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
+	
 	//std::cout << "... and clearing buffers" << std::endl;
 	apBuffer->clear();
 	lfpBuffer->clear();
 
 	apView->reset();
 	lfpView->reset();
+
+	last_npx_timestamp = 0;
+	passedOneSecond = false;
 
 	LOGD("  Starting thread.");
 	startThread();
@@ -361,6 +367,19 @@ void Neuropixels1_v1::run()
 
 					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
 
+					if ((npx_timestamp - last_npx_timestamp) > 4)
+					{
+						if (passedOneSecond)
+						{
+							LOGD("NPX TIMESTAMP JUMP: ", npx_timestamp - last_npx_timestamp,
+								", expected 3 or 4...Possible data loss on slot ",
+								int(basestation->slot_c), ", probe ", int(headstage->port_c),
+								" at sample number ", ap_timestamp);
+						}
+					}
+
+					last_npx_timestamp = npx_timestamp;
+
 					for (int j = 0; j < 384; j++)
 					{
 						
@@ -383,6 +402,9 @@ void Neuropixels1_v1::run()
 
 					if (ap_timestamp % 30000 == 0)
 					{
+
+						passedOneSecond = true;
+
 						size_t packetsAvailable;
 						size_t headroom;
 

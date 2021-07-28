@@ -67,6 +67,9 @@ public:
 	np::electrodePacket packet[SAMPLECOUNT];
 	np::NP_ErrorCode errorCode;
 
+	uint32_t last_npx_timestamp;
+	bool passedOneSecond;
+
 };
 
 
