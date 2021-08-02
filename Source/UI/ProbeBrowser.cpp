@@ -28,7 +28,7 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
 	cursorType = MouseCursor::NormalCursor;
 
     activityToView = ActivityToView::APVIEW;
-    maxPeakToPeakAmplitude = 100.0f;
+    maxPeakToPeakAmplitude = 200.0f;
 
     isOverZoomRegion = false;
     isOverUpperBorder = false;
