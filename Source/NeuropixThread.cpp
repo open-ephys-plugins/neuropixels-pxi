@@ -890,10 +890,30 @@ void NeuropixThread::handleMessage(String msg)
 					String wavelength = parts[5];
 					int emitter = parts[6].getIntValue();
 
+					if (emitter < -1 || emitter > 14)
+					{
+						LOGD("Invalid site number, must be between -1 and 13")
+						return;
+					}
+						
+
 					for (auto bs : getOptoBasestations())
 					{
 						if (bs->slot == slot)
-							bs->selectEmissionSite(port, dock, wavelength, emitter);
+						{
+							for (auto probe : getProbes())
+							{
+
+								if (probe->basestation->slot == slot &&
+									probe->headstage->port == port &&
+									probe->dock == dock)
+								{
+									probe->ui->setEmissionSite(wavelength, emitter);
+								}
+
+							}
+						}
+							
 
 					}
 				}

@@ -77,6 +77,7 @@ public:
 	void setLfpGain(int index);
 	void setReference(int index);
 	void setApFilterState(bool state);
+	void setEmissionSite(String wavelength, int site);
 	void selectElectrodes(Array<int> electrodes);
 
 private:
@@ -94,6 +95,8 @@ private:
 	ScopedPointer<ComboBox> referenceComboBox;
 	ScopedPointer<ComboBox> filterComboBox;
 	ScopedPointer<ComboBox> activityViewComboBox;
+	ScopedPointer<ComboBox> redEmissionSiteComboBox;
+	ScopedPointer<ComboBox> blueEmissionSiteComboBox;
 
 	// Combo box - basestation settings
 	ScopedPointer<ComboBox> bistComboBox;
@@ -111,6 +114,8 @@ private:
 	ScopedPointer<Label> filterLabel;
 	ScopedPointer<Label> bankViewLabel;
 	ScopedPointer<Label> activityViewLabel;
+	ScopedPointer<Label> redEmissionSiteLabel;
+	ScopedPointer<Label> blueEmissionSiteLabel;
 	
 	ScopedPointer<Label> bistLabel;
 	ScopedPointer<Label> bscFirmwareLabel;

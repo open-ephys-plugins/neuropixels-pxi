@@ -28,6 +28,8 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "../NeuropixEditor.h"
 #include "../NeuropixCanvas.h"
 
+#include "../Basestations/Basestation_v3.h"
+
 #include "../Formats/IMRO.h"
 #include "../Formats/ProbeInterfaceJson.h"
 
@@ -209,6 +211,47 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     activityViewLabel->setBounds(446, currentHeight - 20, 180, 20);
     activityViewLabel->setColour(Label::textColourId, Colours::grey);
     addAndMakeVisible(activityViewLabel);
+
+    currentHeight += 55;
+
+    if (probe->info.part_number == "NP1300") // Neuropixels Opto
+    {
+        redEmissionSiteLabel = new Label("RED EMISSION SITE", "RED EMISSION SITE");
+        redEmissionSiteLabel->setFont(Font("Small Text", 13, Font::plain));
+        redEmissionSiteLabel->setBounds(446, currentHeight - 20, 180, 20);
+        redEmissionSiteLabel->setColour(Label::textColourId, Colours::red);
+        addAndMakeVisible(redEmissionSiteLabel);
+
+        redEmissionSiteComboBox = new ComboBox("Red Emission Site Combo Box");
+        redEmissionSiteComboBox->addListener(this);
+        redEmissionSiteComboBox->setBounds(450, currentHeight, 65, 22);
+        redEmissionSiteComboBox->addItem("OFF", 1);
+        
+        for (int i = 0; i < 14; i++)
+            redEmissionSiteComboBox->addItem(String(i+1), i+2);
+
+        redEmissionSiteComboBox->setSelectedId(1, dontSendNotification);
+        addAndMakeVisible(redEmissionSiteComboBox);
+
+        currentHeight += 55;
+
+        blueEmissionSiteLabel = new Label("BLUE EMISSION SITE", "BLUE EMISSION SITE");
+        blueEmissionSiteLabel->setFont(Font("Small Text", 13, Font::plain));
+        blueEmissionSiteLabel->setBounds(446, currentHeight - 20, 180, 20);
+        blueEmissionSiteLabel->setColour(Label::textColourId, Colours::blue);
+        addAndMakeVisible(blueEmissionSiteLabel);
+
+        blueEmissionSiteComboBox = new ComboBox("Blue Emission Site Combo Box");
+        blueEmissionSiteComboBox->addListener(this);
+        blueEmissionSiteComboBox->setBounds(450, currentHeight, 65, 22);
+        blueEmissionSiteComboBox->addItem("OFF", 1);
+
+        for (int i = 0; i < 14; i++)
+            blueEmissionSiteComboBox->addItem(String(i+1), i + 2);
+
+        blueEmissionSiteComboBox->setSelectedId(1, dontSendNotification);
+        addAndMakeVisible(blueEmissionSiteComboBox);
+    }
 
     // BIST
     bistComboBox = new ComboBox("BistComboBox");
@@ -570,6 +613,16 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
             }
 
         }
+        else if (comboBox == redEmissionSiteComboBox)
+        {
+
+            setEmissionSite("red", comboBox->getSelectedId() - 2);
+
+        }
+        else if (comboBox == blueEmissionSiteComboBox)
+        {
+            setEmissionSite("blue", comboBox->getSelectedId() - 2);
+        }
 
         repaint();
     }
@@ -590,6 +643,16 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
             }
 
             repaint();
+        }
+        else if (comboBox == redEmissionSiteComboBox)
+        {
+
+            setEmissionSite("red", comboBox->getSelectedId() - 2);
+
+        }
+        else if (comboBox == blueEmissionSiteComboBox)
+        {
+            setEmissionSite("blue", comboBox->getSelectedId() - 2);
         }
         else {
             CoreServices::sendStatusMessage("Cannot update parameters while acquisition is active");// no parameter change while acquisition is active 
@@ -853,6 +916,18 @@ void NeuropixInterface::setApFilterState(bool state)
     filterComboBox->setSelectedId(int(!state) + 1, true);
 }
 
+void NeuropixInterface::setEmissionSite(String wavelength, int site)
+{
+    if (probe->basestation->type == BasestationType::V3)
+    {
+        Basestation_v3* optoBs = (Basestation_v3*)probe->basestation;
+
+        optoBs->selectEmissionSite(probe->headstage->port,
+            probe->dock,
+            wavelength,
+            site);
+    }
+}
 
 void NeuropixInterface::selectElectrodes(Array<int> electrodes)
 {
@@ -1011,7 +1086,7 @@ void NeuropixInterface::drawLegend(Graphics& g)
     g.setFont(15);
 
     int xOffset = 500;
-    int yOffset = 480;
+    int yOffset = 490;
 
     switch (mode)
     {
