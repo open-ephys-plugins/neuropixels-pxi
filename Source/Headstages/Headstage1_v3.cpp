@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Headstage1_v3.h"
 #include "../Probes/Neuropixels1_v3.h"
+#include "../Probes/NeuropixelsOpto.h"
 #include "../Utils.h"
 
 #define MAXLEN 50
@@ -90,7 +91,15 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 	else
 	{
 		flexCables.add(new Flex1_v3(this));
-		probes.add(new Neuropixels1_v3(basestation, this, flexCables[0]));
+
+		char partNumber[MAXLEN];
+		errorCode = Neuropixels::readProbePN(basestation->slot, port, 0, partNumber, MAXLEN);
+
+		if (String(partNumber).equalsIgnoreCase("NP1300"))
+			probes.add(new NeuropixelsOpto(basestation, this, flexCables[0]));
+		else
+			probes.add(new Neuropixels1_v3(basestation, this, flexCables[0]));
+		
 		probes[0]->setStatus(SourceStatus::CONNECTING);
 	}
 

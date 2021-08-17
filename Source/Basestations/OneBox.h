@@ -68,6 +68,8 @@ public:
 
 	Array<DataSource*> getAdditionalDataSources() override;
 
+	void triggerWaveplayer(bool shouldStart);
+
 	//Neuropixels::bistElectrodeStats stats[960];
 
 	Neuropixels::NP_ErrorCode errorCode;

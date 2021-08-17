@@ -50,7 +50,10 @@ bool Geometry::forPartNumber(String PN,
 	else if (PN.equalsIgnoreCase("PRB2_4_2_0640_0") || PN.equalsIgnoreCase("NP2010"))
 		NP2(4, em, pm);
 
-	else if (PN.equalsIgnoreCase("PRB_1_4_0480_1") || PN.equalsIgnoreCase("PRB_1_4_0480_1_C") || PN.equalsIgnoreCase("PRB_1_2_0480_2"))
+	else if (PN.equalsIgnoreCase("PRB_1_4_0480_1")
+		|| PN.equalsIgnoreCase("PRB_1_4_0480_1_C")
+		|| PN.equalsIgnoreCase("PRB_1_2_0480_2")
+		|| PN.equalsIgnoreCase("NP1300"))
 		NP1(em, pm);
 
 	else if (PN.equalsIgnoreCase("NP1100"))

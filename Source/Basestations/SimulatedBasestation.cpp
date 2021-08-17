@@ -47,6 +47,13 @@ void SimulatedBasestation::getInfo()
 
 /// ###########################################
 
+SimulatedBasestation::SimulatedBasestation(int slot) : Basestation(slot) {
+	
+	type = BasestationType::SIMULATED;
+	
+	getInfo();
+}
+
 bool SimulatedBasestation::open()
 {
 

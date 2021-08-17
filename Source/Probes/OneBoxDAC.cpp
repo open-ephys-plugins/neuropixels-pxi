@@ -99,6 +99,14 @@ void OneBoxDAC::playWaveform()
 	std::cout << "setSWTriggerEx error code: " << errorCode << std::endl;
 }
 
+void OneBoxDAC::stopWaveform()
+{
+	//errorCode = Neuropixels::setSWTriggerEx(bs->slot, Neuropixels::swtrigger2);
+
+	//std::cout << "setSWTriggerEx error code: " << errorCode << std::endl;
+	std::cout << "NOT IMPLEMENTED." << std::endl;
+}
+
 void OneBoxDAC::setWaveform(Array<float> samples)
 {
 	

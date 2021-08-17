@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class SimulatedBasestation : public Basestation
 {
 public:
-	SimulatedBasestation(int slot) : Basestation(slot) { getInfo();  }
+	SimulatedBasestation(int slot);
 	~SimulatedBasestation() { }
 
 	void getInfo() override;

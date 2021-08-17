@@ -55,6 +55,8 @@ void OneBox::getInfo()
 OneBox::OneBox(int ID) : Basestation(16)
 {
 
+	type = BasestationType::ONEBOX;
+
 	errorCode = Neuropixels::mapBS(ID, first_available_slot + box_count); // assign to slot ID
 
 	if (errorCode == Neuropixels::NO_SLOT || errorCode == Neuropixels::IO_ERROR)
@@ -334,6 +336,22 @@ float OneBox::getFillPercentage()
 	}
 
 	return perc;
+}
+
+void OneBox::triggerWaveplayer(bool shouldStart)
+{
+
+	if (shouldStart)
+	{
+		LOGD("OneBox starting waveplayer.");
+		dacSource->playWaveform();
+	}
+	else
+	{
+		LOGD("OneBox stopping waveplayer.");
+		dacSource->stopWaveform();
+	}
+		
 }
 
 void OneBox::startAcquisition()

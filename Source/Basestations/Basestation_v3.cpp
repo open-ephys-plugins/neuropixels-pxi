@@ -81,6 +81,8 @@ BasestationConnectBoard_v3::BasestationConnectBoard_v3(Basestation* bs) : Basest
 
 Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
 {
+	type = BasestationType::V3;
+
 	slot = slot_number;
 	getInfo();
 }
@@ -184,6 +186,12 @@ bool Basestation_v3::open()
 		}
 
 		LOGD("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
+
+		for (auto probe : probes)
+		{
+			if (probe->info.part_number.equalsIgnoreCase("NP1300"))
+				type = BasestationType::OPTO;
+		}
 	}
 
 	syncFrequencies.add(1);
@@ -336,6 +344,40 @@ void Basestation_v3::stopAcquisition()
 	errorCode = Neuropixels::arm(slot);
 }
 
+
+void Basestation_v3::selectEmissionSite(int port, int dock, String wavelength, int site)
+{
+
+	if (type == BasestationType::OPTO)
+	{
+		LOGD("Opto basestation on slot ", slot, " selecting emission site on port ", port, ", dock ", dock);
+
+		Neuropixels::wavelength_t wv;
+
+		if (wavelength.equalsIgnoreCase("red"))
+		{
+			wv = Neuropixels::wavelength_red;
+		}
+		else if (wavelength.equalsIgnoreCase("blue"))
+		{
+			wv = Neuropixels::wavelength_blue;
+		}
+		else {
+			LOGD("Wavelength not recognized. No emission site selected.");
+			return;
+		}
+
+		if (site < -1 || site > 13)
+		{
+			LOGD("Invalid site number.");
+			return;
+		}
+
+		errorCode = Neuropixels::setEmissionSite(slot, port, dock, wv, site);
+
+		LOGD(wavelength, " site ", site, " selected with error code ", errorCode);
+	}
+}
 
 void Basestation_v3::run()
 {

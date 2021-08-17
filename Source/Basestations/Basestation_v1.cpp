@@ -88,6 +88,8 @@ BasestationConnectBoard_v1::BasestationConnectBoard_v1(Basestation* bs) : Basest
 
 Basestation_v1::Basestation_v1(int slot_number) : Basestation(slot_number)
 {
+	type = BasestationType::V1;
+
 	getInfo();
 }
 

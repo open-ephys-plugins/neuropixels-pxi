@@ -81,6 +81,8 @@ BasestationConnectBoard_opto::BasestationConnectBoard_opto(Basestation* bs) : Ba
 
 Basestation_opto::Basestation_opto(int slot_number) : Basestation(slot_number)
 {
+	type = BasestationType::OPTO;
+
 	slot = slot_number;
 	getInfo();
 }

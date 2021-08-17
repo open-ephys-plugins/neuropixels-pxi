@@ -329,6 +329,32 @@ Array<Basestation*> NeuropixThread::getBasestations()
 	return bs;
 }
 
+Array<OneBox*> NeuropixThread::getOneBoxes()
+{
+	Array<OneBox*> bs;
+
+	for (auto bs_ : basestations)
+	{
+		if (bs_->type == BasestationType::ONEBOX)
+			bs.add((OneBox*)bs_);
+	}
+
+	return bs;
+}
+
+Array<Basestation*> NeuropixThread::getOptoBasestations()
+{
+	Array<Basestation*> bs;
+
+	for (auto bs_ : basestations)
+	{
+		if (bs_->type == BasestationType::OPTO)
+			bs.add( bs_);
+	}
+
+	return bs;
+}
+
 Array<Probe*> NeuropixThread::getProbes()
 {
 	Array<Probe*> probes;
@@ -832,12 +858,68 @@ void NeuropixThread::setAutoRestart(bool restart)
 
 void NeuropixThread::handleMessage(String msg)
 {
-	std::cout << "Neuropix-PXI received " << msg << std::endl;
+	// Available commands:
+	//
+	// NP OPTO <bs> <port> <probe> <wavelength> <site>
+	// NP WAVEPLAYER <bs> <"start"/"stop">
+	//
+
+	LOGD("Neuropix-PXI received ", msg);
 
 	StringArray parts = StringArray::fromTokens(msg, " ", "");
 
-	// NP <bs> <port> <probe> OPTO <wavelength> <site>
-	// NP <bs> WAVEPLAYER <start/stop>
+	if (parts[0].equalsIgnoreCase("NP"))
+	{
+		if (parts.size() > 0)
+		{
+
+			String command = parts[1];
+
+			if (command.equalsIgnoreCase("OPTO"))
+			{
+				if (parts.size() == 7)
+				{
+					int slot = parts[2].getIntValue();
+					int port = parts[3].getIntValue();
+					int dock = parts[4].getIntValue();
+					String wavelength = parts[5];
+					int emitter = parts[6].getIntValue();
+
+					for (auto bs : getOptoBasestations())
+					{
+						if (bs->slot == slot)
+							bs->selectEmissionSite(port, dock, wavelength, emitter);
+
+					}
+				}
+				else {
+					LOGD("Incorrect number of argument for OPTO command. Found ", parts.size(), ", requires 7.");
+				}
+			}
+			else if (command.equalsIgnoreCase("OPTO"))
+
+			{
+				if (parts.size() == 4)
+				{
+					int slot = parts[2].getIntValue();
+					bool shouldStart = parts[3].equalsIgnoreCase("start");
+
+					for (auto bs : getOneBoxes())
+					{
+						if (bs->slot == slot)
+							bs->triggerWaveplayer(shouldStart);
+
+					}
+				}
+				else {
+					LOGD("Incorrect number of argument for WAVEPLAYER message. Found ", parts.size(), ", requires 4.");
+				}
+			}
+		}
+		
+	}
+
+
 }
 
 String NeuropixThread::handleConfigMessage(String msg)

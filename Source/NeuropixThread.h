@@ -35,6 +35,7 @@
 class SourceNode;
 class NeuropixThread;
 class OneBoxADC;
+class OneBox;
 
 class RecordingTimer : public Timer
 {
@@ -140,6 +141,9 @@ public:
 	std::unique_ptr<GenericEditor> createEditor(SourceNode* sn);
 
 	Array<Basestation*> getBasestations();
+	Array<OneBox*> getOneBoxes();
+	Array<Basestation*> getOptoBasestations();
+
 	Array<Probe*> getProbes();
 	Array<DataSource*> getDataSources();
 

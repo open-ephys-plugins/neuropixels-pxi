@@ -57,6 +57,14 @@ enum class DataSourceType {
 	NONE
 };
 
+enum class BasestationType {
+	V1,
+	V3,
+	OPTO,
+	ONEBOX,
+	SIMULATED
+};
+
 enum class ProbeType {
 	NONE,
 	NP1,
@@ -459,6 +467,8 @@ public:
 
 	static Basestation* currentBasestation;
 	static float totalFirmwareBytes;
+
+	BasestationType type;
 	
 	/** NON-VIRTUAL METHODS */
 

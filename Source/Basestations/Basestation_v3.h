@@ -63,6 +63,9 @@ public:
 
 	void run() override;
 
+	void selectEmissionSite(int port, int dock, String wavelength, int site);
+
+
 	//Neuropixels::bistElectrodeStats stats[960];
 
 	Neuropixels::NP_ErrorCode errorCode;
