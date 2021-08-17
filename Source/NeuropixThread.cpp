@@ -872,6 +872,9 @@ void NeuropixThread::handleMessage(String msg)
 
 	if (parts[0].equalsIgnoreCase("NP"))
 	{
+
+		LOGD("Found NP command.");
+
 		if (parts.size() > 0)
 		{
 
@@ -938,10 +941,15 @@ String NeuropixThread::handleConfigMessage(String msg)
 
 	if (parts[0].equalsIgnoreCase("NP"))
 	{
+
+		LOGD("Found NP command.");
+
 		if (parts.size() > 0)
 		{
 
 			String command = parts[1];
+
+			LOGD("Command: ", command);
 
 			if (command.equalsIgnoreCase("SELECT") ||
 				command.equalsIgnoreCase("GAIN") || 
@@ -954,10 +962,13 @@ String NeuropixThread::handleConfigMessage(String msg)
 					int port = parts[3].getIntValue();
 					int dock = parts[4].getIntValue();
 
+					LOGD("Slot: ", slot, ", Port: ", port, ", Dock: ", dock);
+
 					for (auto probe : getProbes())
 					{
+
 						if (probe->basestation->slot == slot &&
-							probe->port == port &&
+							probe->headstage->port == port &&
 							probe->dock == dock)
 						{
 							if (command.equalsIgnoreCase("GAIN"))
@@ -1016,12 +1027,16 @@ String NeuropixThread::handleConfigMessage(String msg)
 							{
 								Array<int> electrodes;
 
+								std::cout << "Selecting " << std::endl;
+
 								for (int i = 5; i < parts.size(); i++)
 								{
 									int electrode = parts[i].getIntValue();
 
-									if (electrode > -1 && electrode < 384)
-										electrodes.add(electrode);
+									std::cout << electrode << std::endl;
+
+									if (electrode > 0 && electrode < probe->electrodeMetadata.size() + 1)
+										electrodes.add(electrode - 1);
 								}
 								
 								probe->ui->selectElectrodes(electrodes);

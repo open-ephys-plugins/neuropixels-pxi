@@ -834,6 +834,7 @@ Array<int> NeuropixInterface::getSelectedElectrodes()
 
 void NeuropixInterface::setApGain(int index)
 {
+    std::cout << "Setting AP gain to index " << index;
     apGainComboBox->setSelectedId(index + 1, true);
 }
 
@@ -849,15 +850,21 @@ void NeuropixInterface::setReference(int index)
 
 void NeuropixInterface::setApFilterState(bool state)
 {
-    filterComboBox->setSelectedId(int(state) + 1, true);
+    filterComboBox->setSelectedId(int(!state) + 1, true);
 }
 
 
 void NeuropixInterface::selectElectrodes(Array<int> electrodes)
 {
     // update selection state
+
+    std::cout << "Selecting " << electrodes.size() << " electrodes." << std::endl;
+
     for (int i = 0; i <electrodes.size(); i++)
     {
+
+        std::cout << electrodes[i] << std::endl;
+
         Bank bank = electrodeMetadata[electrodes[i]].bank;
         int channel = electrodeMetadata[electrodes[i]].channel;
         int shank = electrodeMetadata[electrodes[i]].shank;
