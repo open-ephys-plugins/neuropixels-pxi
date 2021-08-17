@@ -73,6 +73,12 @@ public:
 	void setAnnotationLabel(String, Colour);
 	void updateInfoString();
 
+	void setApGain(int index);
+	void setLfpGain(int index);
+	void setReference(int index);
+	void setApFilterState(bool state);
+	void selectElectrodes(Array<int> electrodes);
+
 private:
 
 	Array<ElectrodeMetadata> electrodeMetadata;

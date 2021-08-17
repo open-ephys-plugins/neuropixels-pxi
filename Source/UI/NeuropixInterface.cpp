@@ -40,6 +40,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
     ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
 
+    probe->ui = this;
+
     // make a local copy
     electrodeMetadata = Array<ElectrodeMetadata>(probe->electrodeMetadata);
 
@@ -639,48 +641,9 @@ void NeuropixInterface::buttonClicked(Button* button)
 
         Array<int> selection = getSelectedElectrodes();
 
-        // update selection state
-        for (int i = 0; i < selection.size(); i++)
-        {
-            Bank bank = electrodeMetadata[selection[i]].bank;
-            int channel = electrodeMetadata[selection[i]].channel;
-            int shank = electrodeMetadata[selection[i]].shank;
-            
-            for (int j = 0; j < electrodeMetadata.size(); j++)
-            {
-                if (electrodeMetadata[j].channel == channel)
-                {
-                    if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
-                    {
-                        if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE ||
-                            electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
-                            electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
-                        else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
-                            ; // skip
-                        else
-                            electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
-                    }
-                        
-                    else
-                    {
-                        if (electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE ||
-                            electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
-                            electrodeMetadata.getReference(j).status = ElectrodeStatus::OPTIONAL_REFERENCE;
-                        else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
-                            ; // skipp
-                        else
-                            electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
-                    }
-                        
-                }
-            }
-        }
+        selectElectrodes(selection);
 
-        repaint();
-
-        updateProbeSettingsInBackground();
-
-        CoreServices::updateSignalChain(editor);
+     
     }
     else if (button == annotationButton)
     {
@@ -868,6 +831,74 @@ Array<int> NeuropixInterface::getSelectedElectrodes()
 
     return electrodeIndices;
 }
+
+void NeuropixInterface::setApGain(int index)
+{
+    apGainComboBox->setSelectedId(index + 1, true);
+}
+
+void NeuropixInterface::setLfpGain(int index)
+{
+    lfpGainComboBox->setSelectedId(index + 1, true);
+}
+
+void NeuropixInterface::setReference(int index)
+{
+    referenceComboBox->setSelectedId(index + 1, true);
+}
+
+void NeuropixInterface::setApFilterState(bool state)
+{
+    filterComboBox->setSelectedId(int(state) + 1, true);
+}
+
+
+void NeuropixInterface::selectElectrodes(Array<int> electrodes)
+{
+    // update selection state
+    for (int i = 0; i <electrodes.size(); i++)
+    {
+        Bank bank = electrodeMetadata[electrodes[i]].bank;
+        int channel = electrodeMetadata[electrodes[i]].channel;
+        int shank = electrodeMetadata[electrodes[i]].shank;
+
+        for (int j = 0; j < electrodeMetadata.size(); j++)
+        {
+            if (electrodeMetadata[j].channel == channel)
+            {
+                if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
+                {
+                    if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE ||
+                        electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
+                        electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
+                    else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
+                        ; // skip
+                    else
+                        electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
+                }
+
+                else
+                {
+                    if (electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE ||
+                        electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
+                        electrodeMetadata.getReference(j).status = ElectrodeStatus::OPTIONAL_REFERENCE;
+                    else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
+                        ; // skip
+                    else
+                        electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
+                }
+
+            }
+        }
+    }
+
+    repaint();
+
+    updateProbeSettingsInBackground();
+
+    CoreServices::updateSignalChain(editor);
+}
+
 
 void NeuropixInterface::startAcquisition()
 {

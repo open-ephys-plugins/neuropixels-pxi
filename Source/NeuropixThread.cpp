@@ -30,6 +30,8 @@
 #include "Basestations/SimulatedBasestation.h"
 #include "Probes/OneBoxADC.h"
 
+#include "UI/NeuropixInterface.h"
+
 #include <vector>
 
 #include "Utils.h"
@@ -924,14 +926,120 @@ void NeuropixThread::handleMessage(String msg)
 
 String NeuropixThread::handleConfigMessage(String msg)
 {
-	std::cout << "Neuropix-PXI received " << msg << std::endl;
+	// Available commands:
+	// NP SELECT <bs> <port> <dock> <electrode> <electrode> <electrode> ...
+	// NP GAIN <bs> <port> <dock> <AP/LFP> <gainval>
+	// NP REFERENCE <bs> <port> <dock> <EXT/TIP>
+	// NP FILTER <bs> <port> <dock> <ON/OFF>
+
+	LOGD("Neuropix-PXI received ", msg);
 
 	StringArray parts = StringArray::fromTokens(msg, " ", "");
 
-	// NP <bs> <port> <probe> SELECT <electrode> <electrode> <electrode>
-	// NP <bs> <port> <probe> GAIN <gainval>
-	// NP <bs> <port> <probe> REFERENCE <refval>
-	// NP <bs> <port> <probe> FILTER <filterval>
+	if (parts[0].equalsIgnoreCase("NP"))
+	{
+		if (parts.size() > 0)
+		{
+
+			String command = parts[1];
+
+			if (command.equalsIgnoreCase("SELECT") ||
+				command.equalsIgnoreCase("GAIN") || 
+				command.equalsIgnoreCase("REFERENCE") || 
+				command.equalsIgnoreCase("FILTER"))
+			{
+				if (parts.size() > 5)
+				{
+					int slot = parts[2].getIntValue();
+					int port = parts[3].getIntValue();
+					int dock = parts[4].getIntValue();
+
+					for (auto probe : getProbes())
+					{
+						if (probe->basestation->slot == slot &&
+							probe->port == port &&
+							probe->dock == dock)
+						{
+							if (command.equalsIgnoreCase("GAIN"))
+							{
+								bool isApBand = parts[5].equalsIgnoreCase("AP");
+								float gain = parts[6].getFloatValue();
+
+								if (isApBand)
+								{
+									if (probe->settings.availableApGains.size() > 0)
+									{
+										int gainIndex = probe->settings.availableApGains.indexOf(gain);
+
+										if (gainIndex > -1)
+										{
+											probe->ui->setApGain(gainIndex);
+										}
+									}
+								}
+								else {
+									if (probe->settings.availableLfpGains.size() > 0)
+									{
+										int gainIndex = probe->settings.availableLfpGains.indexOf(gain);
+
+										if (gainIndex > -1)
+										{
+											probe->ui->setLfpGain(gainIndex);
+										}
+									}
+								}
+							}
+							else if (command.equalsIgnoreCase("REFERENCE"))
+							{
+
+								int referenceIndex;
+
+								if (parts[5].equalsIgnoreCase("EXT"))
+								{
+									referenceIndex = 0;
+								}
+								else if (parts[5].equalsIgnoreCase("TIP"))
+								{
+									referenceIndex = 1;
+								}
+
+								probe->ui->setReference(referenceIndex);
+							}
+							else if (command.equalsIgnoreCase("FILTER"))
+							{
+								if (probe->hasApFilterSwitch())
+								{
+									probe->ui->setApFilterState(parts[5].equalsIgnoreCase("ON"));
+								}
+							}
+							else if (command.equalsIgnoreCase("SELECT"))
+							{
+								Array<int> electrodes;
+
+								for (int i = 5; i < parts.size(); i++)
+								{
+									int electrode = parts[i].getIntValue();
+
+									if (electrode > -1 && electrode < 384)
+										electrodes.add(electrode);
+								}
+								
+								probe->ui->selectElectrodes(electrodes);
+							}
+						}
+					}
+				}
+				else {
+					LOGD("Incorrect number of argument for ", command, ". Found ", parts.size(), ", requires 6.");
+				}
+			}
+			else
+			{
+				LOGD("Command ", command , " not recognized.");
+			}
+		}
+
+	}
 
 	return " ";
 

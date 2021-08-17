@@ -40,6 +40,7 @@ class Flex;
 class Headstage;
 class Probe;
 class Basestation;
+class NeuropixInterface;
 
 struct ComponentInfo
 {
@@ -326,6 +327,8 @@ public:
 	ProbeSettings settings;
 
 	Path shankOutline;
+	
+	NeuropixInterface* ui;
 
 	/** VIRTUAL METHODS */
 
