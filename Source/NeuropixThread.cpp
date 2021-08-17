@@ -342,14 +342,14 @@ Array<OneBox*> NeuropixThread::getOneBoxes()
 	return bs;
 }
 
-Array<Basestation*> NeuropixThread::getOptoBasestations()
+Array<Basestation_v3*> NeuropixThread::getOptoBasestations()
 {
-	Array<Basestation*> bs;
+	Array<Basestation_v3*> bs;
 
 	for (auto bs_ : basestations)
 	{
 		if (bs_->type == BasestationType::OPTO)
-			bs.add( bs_);
+			bs.add((Basestation_v3*) bs_);
 	}
 
 	return bs;

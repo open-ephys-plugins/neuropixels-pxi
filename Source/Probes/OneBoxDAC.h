@@ -48,6 +48,8 @@ public:
 	void run() override; // acquire data
 
 	void playWaveform();
+	void stopWaveform();
+
 	void setWaveform(Array<float> samples);
 
 	void configureDataPlayer(int DACChannel, int portID, int dockID, int channelnr, int sourceType);

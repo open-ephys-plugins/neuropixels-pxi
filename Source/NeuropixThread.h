@@ -36,6 +36,7 @@ class SourceNode;
 class NeuropixThread;
 class OneBoxADC;
 class OneBox;
+class Basestation_v3;
 
 class RecordingTimer : public Timer
 {
@@ -142,7 +143,7 @@ public:
 
 	Array<Basestation*> getBasestations();
 	Array<OneBox*> getOneBoxes();
-	Array<Basestation*> getOptoBasestations();
+	Array<Basestation_v3*> getOptoBasestations();
 
 	Array<Probe*> getProbes();
 	Array<DataSource*> getDataSources();
