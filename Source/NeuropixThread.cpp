@@ -69,6 +69,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	LOGD("Scanning for devices...");
 
+	Neuropixels::np_dbg_setlevel(5);
+
 	Neuropixels::scanBS();
 	Neuropixels::basestationID list[16];
 	int count = getDeviceList(&list[0], 16);
@@ -873,7 +875,7 @@ void NeuropixThread::handleMessage(String msg)
 	if (parts[0].equalsIgnoreCase("NP"))
 	{
 
-		LOGD("Found NP command.");
+		LOGD("Found NP command: ", msg);
 
 		if (parts.size() > 0)
 		{
@@ -890,9 +892,9 @@ void NeuropixThread::handleMessage(String msg)
 					String wavelength = parts[5];
 					int emitter = parts[6].getIntValue();
 
-					if (emitter < -1 || emitter > 14)
+					if (emitter < 0 || emitter > 14)
 					{
-						LOGD("Invalid site number, must be between -1 and 13")
+						LOGD("Invalid site number, must be between 0 and 14, got ", emitter);
 						return;
 					}
 						

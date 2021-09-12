@@ -206,7 +206,7 @@ void NeuropixelsOpto::calibrate()
 
 	String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
 	String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
-	String opticalFile = probeDirectory.getChildFile(String(info.serial_number) + "opticalCalValues.csv").getFullPathName();
+	String opticalFile = probeDirectory.getChildFile(String(info.serial_number) + "_optoCalibration.csv").getFullPathName();
 
 	LOGDD("ADC file: ", adcFile);
 
@@ -372,7 +372,7 @@ void NeuropixelsOpto::startAcquisition()
 	lfpView->reset();
 	
 
-	LOGD("  Starting thread.");
+	LOGD("  NP Opto starting thread.");
 	startThread();
 
 

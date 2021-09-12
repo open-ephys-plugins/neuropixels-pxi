@@ -114,25 +114,28 @@ bool Basestation_v3::open()
 
 		LOGD("    Searching for probes...");
 
-		for (int port = 1; port <= 4; port++)
+		for (int port = 1; port <= 2; port++)
 		{
 			bool detected = false;
 
 			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
 
+			LOGD("Port ", port, " errorCode: ", errorCode);
+			LOGD("Detected: ", detected);
+
 			if (detected && errorCode == Neuropixels::SUCCESS)
 			{
-
+				LOGD("HS Detected");
 				char pn[MAXLEN];
 				Neuropixels::readHSPN(slot, port, pn, MAXLEN);
 
 				String hsPartNumber = String(pn);
 
-				LOGDD("Got part #: ", hsPartNumber);
+				LOGD("Got HS part #: ", hsPartNumber);
 
 				Headstage* headstage;
 
-				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
+				if (true) //hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
 				{
 					LOGD("      Found 1.0 single-dock headstage on port: ", port);
 					headstage = new Headstage1_v3(this, port);
@@ -175,7 +178,7 @@ bool Basestation_v3::open()
 				{
 					LOGD("***detectHeadstage failed w/ error code: ", errorCode);
 				}
-				else if (!detected)
+				else //if (!detected)
 				{
 					LOGDD("  No headstage detected on port: ", port);
 				}
@@ -369,13 +372,17 @@ void Basestation_v3::selectEmissionSite(int port, int dock, String wavelength, i
 
 		if (site < -1 || site > 13)
 		{
-			LOGD("Invalid site number.");
+			LOGD(site, ": invalid site number.");
 			return;
 		}
 
 		errorCode = Neuropixels::setEmissionSite(slot, port, dock, wv, site);
 
 		LOGD(wavelength, " site ", site, " selected with error code ", errorCode);
+
+		errorCode = Neuropixels::getEmissionSite(slot, port, dock, wv, &site);
+
+		LOGD(wavelength, " actual site: ", site, " selected with error code ", errorCode);
 	}
 }
 

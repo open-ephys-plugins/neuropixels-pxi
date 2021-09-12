@@ -616,12 +616,12 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
         else if (comboBox == redEmissionSiteComboBox)
         {
 
-            setEmissionSite("red", comboBox->getSelectedId() - 2);
+            setEmissionSite("red", comboBox->getSelectedId() - 1);
 
         }
         else if (comboBox == blueEmissionSiteComboBox)
         {
-            setEmissionSite("blue", comboBox->getSelectedId() - 2);
+            setEmissionSite("blue", comboBox->getSelectedId() - 1);
         }
 
         repaint();
@@ -646,13 +646,14 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
         }
         else if (comboBox == redEmissionSiteComboBox)
         {
-
-            setEmissionSite("red", comboBox->getSelectedId() - 2);
+            LOGD("Select red emission site.");
+            setEmissionSite("red", comboBox->getSelectedId() - 1);
 
         }
         else if (comboBox == blueEmissionSiteComboBox)
         {
-            setEmissionSite("blue", comboBox->getSelectedId() - 2);
+            LOGD("Select blue emission site.");
+            setEmissionSite("blue", comboBox->getSelectedId() - 1);
         }
         else {
             CoreServices::sendStatusMessage("Cannot update parameters while acquisition is active");// no parameter change while acquisition is active 
@@ -918,14 +919,26 @@ void NeuropixInterface::setApFilterState(bool state)
 
 void NeuropixInterface::setEmissionSite(String wavelength, int site)
 {
-    if (probe->basestation->type == BasestationType::V3)
+
+    LOGD("Emission site selection.");
+
+    if (probe->basestation->type == BasestationType::OPTO)
     {
+
+       // if (wavelength.equalsIgnoreCase("red"))
+       //     redEmissionSiteComboBox->setSelectedId(site + 1, false);
+       // else
+        //    blueEmissionSiteComboBox->setSelectedId(site + 1, false);
+
         Basestation_v3* optoBs = (Basestation_v3*)probe->basestation;
 
         optoBs->selectEmissionSite(probe->headstage->port,
             probe->dock,
             wavelength,
-            site);
+            site - 1);
+    }
+    else {
+        LOGD("Wrong basestation type: ", int(probe->basestation->type));
     }
 }
 
