@@ -71,6 +71,9 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 		type == ProbeType::UHD1 ||
 		type == ProbeType::NHP1)
 	{
+
+		apFilterSwitch = true;
+
 		settings.availableApGains.add(50.0f);
 		settings.availableApGains.add(125.0f);
 		settings.availableApGains.add(250.0f);
@@ -145,8 +148,6 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	settings.referenceIndex = 0;
 
 	isCalibrated = false;
-
-	apFilterSwitch = true;
 	
 }
 
@@ -239,31 +240,77 @@ bool SimulatedProbe::runBist(BIST bistType)
 	return true;
 }
 
+#define INITIATION_POTENTIAL_START_TIME_IN_MS 0
+#define DEPOLARIZATION_START_TIME_IN_MS 0.8f
+#define REPOLARIZATION_START_TIME_IN_MS 1.3f
+#define HYPERPOLARIZATION_START_TIME_IN_MS 1.8f
+#define REFRACTORY_PERIOD_DURATION_IN_MS 5.0f
+
+#define RESTING_MEMBRANE_POTENTIAL_IN_MV 10.0f
+#define THRESHOLD_POTENTIAL_IN_MV -25.0f
+#define PEAK_DEPOLARIZATION_POTENTIAL_IN_MV -100.0f
+#define REFRACTORY_POTENTIAL_RANGE_IN_MV 50
+
+std::random_device dev;
+std::mt19937 rng(dev());
+
 void SimulatedProbe::run()
 {
 
 	while (!threadShouldExit())
 	{
 
-		if (1) // every 1/300 s
+		float sampleRate = 30000.0f;
+
+		if (info.part_number == "PRB_1_4_0480_1")
 		{
-			Sleep(3);
+
+			std::uniform_int_distribution<std::mt19937::result_type> data(1,REFRACTORY_POTENTIAL_RANGE_IN_MV); 
+
+			Sleep(25); //TODO: This is just an estimate on my machine for now, should be a function of nSamples
 
 			float apSamples[384];
 			float lfpSamples[384];
 
 			for (int packetNum = 0; packetNum < 100; packetNum++)
 			{
+
 				for (int i = 0; i < 12; i++)
 				{
+
+					float time = 1000.0f * float(ap_timestamp % int(sampleRate)) / sampleRate;
+					float sample_out;
+
+					if (time < DEPOLARIZATION_START_TIME_IN_MS) 
+					{
+						sample_out = RESTING_MEMBRANE_POTENTIAL_IN_MV + (THRESHOLD_POTENTIAL_IN_MV) * time / (DEPOLARIZATION_START_TIME_IN_MS);
+						eventCode = 1;
+					}
+					else if (time < REPOLARIZATION_START_TIME_IN_MS)
+					{
+						time -= DEPOLARIZATION_START_TIME_IN_MS;
+						sample_out = THRESHOLD_POTENTIAL_IN_MV + (PEAK_DEPOLARIZATION_POTENTIAL_IN_MV - THRESHOLD_POTENTIAL_IN_MV) * time / (REPOLARIZATION_START_TIME_IN_MS - DEPOLARIZATION_START_TIME_IN_MS);
+					}
+					else if (time < HYPERPOLARIZATION_START_TIME_IN_MS)
+					{ 
+						time -= REPOLARIZATION_START_TIME_IN_MS;
+						sample_out = PEAK_DEPOLARIZATION_POTENTIAL_IN_MV + (RESTING_MEMBRANE_POTENTIAL_IN_MV - PEAK_DEPOLARIZATION_POTENTIAL_IN_MV) * time / (HYPERPOLARIZATION_START_TIME_IN_MS - REPOLARIZATION_START_TIME_IN_MS);
+					}
+					else
+					{
+						eventCode = 0;
+						sample_out = data(rng) - float(REFRACTORY_POTENTIAL_RANGE_IN_MV) / 2.0f;
+					}
+
 					for (int j = 0; j < 384; j++)
 					{
-						apSamples[j] = 0;
-						apView->addSample(apSamples[j], j);
+
+						apSamples[j] = abs(sin(j))*sample_out;
+						apView->addSample(sin(j)*sample_out, j);
 
 						if (i == 0)
 						{
-							lfpSamples[j] = 0;
+							lfpSamples[j] = 1000.0f*sin(ap_timestamp);
 							lfpView->addSample(lfpSamples[j], j);
 						}
 						
@@ -281,8 +328,53 @@ void SimulatedProbe::run()
 				lfp_timestamp += 1;
 
 				lfpBuffer->addToBuffer(lfpSamples, &lfp_timestamp, &eventCode, 1);
-			}
-		}
-	}
 
+			}	
+		}
+		/* Only generate simulated data for one probe model to minimize CPU usage.
+		else 
+		{
+			Sleep(25);
+
+			float apSamples[384];
+			float lfpSamples[384];
+
+			for (int packetNum = 0; packetNum < 100; packetNum++)
+			{
+
+				for (int i = 0; i < 12; i++)
+				{
+
+					for (int j = 0; j < 384; j++)
+					{
+
+						apSamples[j] = 0;
+						//apView->addSample(sin(j)*sample_out, j); //No reason to update view if just generating 0s
+
+						if (i == 0)
+						{
+							lfpSamples[j] = 0;
+							//lfpView->addSample(sin(j)*sample_out, j);
+						}
+						
+					}
+
+					ap_timestamp += 1;
+
+					apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, 1);
+
+					if (ap_timestamp % 30000 == 0)
+					{
+						fifoFillPercentage = 0;
+					}
+				}
+				lfp_timestamp += 1;
+
+				lfpBuffer->addToBuffer(lfpSamples, &lfp_timestamp, &eventCode, 1);
+
+			}	
+
+		}
+		*/
+	}
 }
