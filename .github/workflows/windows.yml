@@ -48,7 +48,7 @@ jobs:
         artifactoryApiKey: ${{ secrets.artifactoryApiKey }}
         build_dir: "Build/Release"
         repo: ${{ github.event.repository.name }}
-        package: ${{ github.event.repository.name }}-windows
+        package: NeuropixelsPXI-windows
       run: |
         plugin_api=$(grep -rnw ../../plugin-GUI/Source -e '#define PLUGIN_API_VER' | grep -Eo "[0-9]*" | tail -1)
         tag=$(git describe --tags $(git rev-list --tags --max-count=1))
@@ -66,5 +66,5 @@ jobs:
         then
           powershell Compress-Archive -U -Path "shared" -DestinationPath ${zipfile}
         fi
-        curl -H "X-JFrog-Art-Api:$artifactoryApiKey" -T $zipfile "https://openephys.jfrog.io/artifactory/NetworkEvents-plugin/windows/$zipfile"
+        curl -H "X-JFrog-Art-Api:$artifactoryApiKey" -T $zipfile "https://openephys.jfrog.io/artifactory/NeuropixelsPXI-plugin/windows/$zipfile"
       shell: bash
