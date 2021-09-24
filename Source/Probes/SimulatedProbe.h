@@ -68,7 +68,16 @@ public:
 
 	void getInfo() override;
 
-	bool generatesLfpData() { return true; }
+	bool generatesLfpData() {
+
+		if (info.part_number == "PRB_1_4_0480_1" ||
+			info.part_number == "NP1030")
+		{
+			return true;
+		}
+		return false;
+	}
+
 	bool hasApFilterSwitch() {
 		return apFilterSwitch;
 	}
