@@ -142,7 +142,7 @@ public:
 
     static void parseValues(Array<int> values, ProbeType probeType, ProbeSettings& settings)
     {
-        if (probeType == ProbeType::NP1)
+        if (probeType == ProbeType::NP1 || probeType == ProbeType::NHP10)
         {
             // 0 = 1.0 probe
            // channel ID
