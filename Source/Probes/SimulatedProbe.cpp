@@ -308,7 +308,7 @@ void SimulatedProbe::run()
 						apSamples[j] = abs(sin(j))*sample_out;
 						apView->addSample(sin(j)*sample_out, j);
 
-						if (i == 0)
+						if (i == 0 && generatesLfpData())
 						{
 							lfpSamples[j] = 1000.0f*sin(ap_timestamp);
 							lfpView->addSample(lfpSamples[j], j);
@@ -327,7 +327,8 @@ void SimulatedProbe::run()
 				}
 				lfp_timestamp += 1;
 
-				lfpBuffer->addToBuffer(lfpSamples, &lfp_timestamp, &eventCode, 1);
+				if (generatesLfpData())
+					lfpBuffer->addToBuffer(lfpSamples, &lfp_timestamp, &eventCode, 1);
 
 			}	
 		}

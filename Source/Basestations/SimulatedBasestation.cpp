@@ -136,9 +136,12 @@ void SimulatedBasestation::startAcquisition()
 	{
 
 		probes[i]->ap_timestamp = 0;
-		probes[i]->lfp_timestamp = 0;
 		probes[i]->apBuffer->clear();
-		probes[i]->lfpBuffer->clear();
+		if (probes[i]->generatesLfpData())
+		{
+			probes[i]->lfp_timestamp = 0;
+			probes[i]->lfpBuffer->clear();
+		}
 		probes[i]->startThread();
 	}
 
