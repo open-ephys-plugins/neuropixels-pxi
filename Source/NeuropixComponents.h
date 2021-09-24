@@ -234,6 +234,8 @@ public:
 
 		isCalibrated = false;
 		calibrationWarningShown = false;
+
+		sendSync = false;
 	}
 
 	Basestation* basestation; // owned by NeuropixThread
