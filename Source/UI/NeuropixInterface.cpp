@@ -744,7 +744,11 @@ void NeuropixInterface::buttonClicked(Button* button)
 
         if (fileChooser.browseForFileToOpen())
         {
+
             ProbeSettings settings = getProbeSettings();
+
+            settings.clearElectrodeSelection();
+
             bool success = IMRO::readSettingsFromImro(fileChooser.getResult(), settings);
 
             if (success)
