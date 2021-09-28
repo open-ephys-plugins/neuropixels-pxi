@@ -960,7 +960,7 @@ void NeuropixInterface::stopAcquisition()
 
 void NeuropixInterface::paint(Graphics& g)
 {
-    probeBrowser->repaint();
+    //probeBrowser->repaint();
 
     drawLegend(g);
 
