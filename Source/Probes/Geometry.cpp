@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "Geometry.h"
-#include "../Utils.h"
 
 bool Geometry::forPartNumber(String PN,
 	Array<ElectrodeMetadata>& em,

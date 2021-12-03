@@ -116,16 +116,18 @@ User interface for the Neuropixels source module.
 @see SourceNode
 
 */
-class NeuropixEditor : public VisualizerEditor, public ComboBox::Listener
+class NeuropixEditor : public VisualizerEditor, 
+					   public ComboBox::Listener, 
+					   public Button::Listener
 {
 public:
-	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread, bool useDefaultParameterEditors);
+	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread);
 	virtual ~NeuropixEditor();
 
 	void collapsedStateChanged() override;
 
 	void comboBoxChanged(ComboBox*);
-	void buttonEvent(Button* button);
+	void buttonClicked(Button* button) override;
 
 	void saveEditorParameters(XmlElement*);
 	void loadEditorParameters(XmlElement*);

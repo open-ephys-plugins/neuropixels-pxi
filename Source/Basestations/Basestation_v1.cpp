@@ -30,7 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Basestation_v1.h"
 #include "../Probes/Neuropixels1_v1.h"
 #include "../Headstages/Headstage1_v1.h"
-#include "../Utils.h"
 
 #define MAXLEN 50
 

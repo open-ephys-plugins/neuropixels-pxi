@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Neuropixels1_v1.h"
 #include "Geometry.h"
-#include "../Utils.h"
 
 #include "../Headstages/Headstage1_v1.h"
 

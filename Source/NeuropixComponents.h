@@ -88,7 +88,7 @@ enum class SourceStatus {
 	RECORDING,    //The probe is recording the streaming data
 };
 
-enum Bank {
+enum class Bank {
 	NONE = -1,
 	A = 0,
 	B = 1,

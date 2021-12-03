@@ -24,7 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Headstage1_v3.h"
 #include "../Probes/Neuropixels1_v3.h"
 #include "../Probes/NeuropixelsOpto.h"
-#include "../Utils.h"
 
 #define MAXLEN 50
 

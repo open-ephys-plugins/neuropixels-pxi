@@ -537,7 +537,7 @@ void NeuropixInterface::updateProbeSettingsInBackground()
     probe->updateSettings(settings);
 
     int ch0index = settings.selectedChannel.indexOf(0);
-    std::cout << "Ch 0 bank: " << settings.selectedBank[ch0index] << std::endl;
+    std::cout << "Ch 0 bank: " << int(settings.selectedBank[ch0index]) << std::endl;
 
     thread->updateProbeSettingsQueue(settings);
 
@@ -1401,7 +1401,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
     for (int i = 0; i < p.selectedChannel.size(); i++)
     {
-        int bank = p.selectedBank[i];
+        int bank = int(p.selectedBank[i]);
         int shank = p.selectedShank[i];
         int channel = p.selectedChannel[i];
         int elec = p.selectedElectrode[i];

@@ -2,7 +2,6 @@
 #define __IMRO_H_
 
 #include "../NeuropixComponents.h"
-#include "../Utils.h"
 
 class IMRO
 {
@@ -47,7 +46,7 @@ public:
             if (settings.probeType == ProbeType::NP2_1)
                 channelInfo += " " + String(pow(2,int(settings.selectedBank[i]))); // bank
             else
-                channelInfo += " " + String(settings.selectedBank[i]);
+                channelInfo += " " + String(int(settings.selectedBank[i]));
 
             channelInfo += " " + String(settings.referenceIndex); // reference
 

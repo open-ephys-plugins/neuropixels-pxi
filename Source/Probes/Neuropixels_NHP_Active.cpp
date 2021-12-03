@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Neuropixels_NHP_Active.h"
 #include "Geometry.h"
-#include "../Utils.h"
 
 #define MAXLEN 50
 

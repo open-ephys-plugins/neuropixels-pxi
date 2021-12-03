@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "OneBoxADC.h"
 #include "Geometry.h"
-#include "../Utils.h"
 
 #include "../UI/OneBoxInterface.h"
 

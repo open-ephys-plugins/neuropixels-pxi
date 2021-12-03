@@ -26,7 +26,6 @@
 #include "NeuropixThread.h"
 #include "NeuropixCanvas.h"
 
-#include "Utils.h"
 
 EditorBackground::EditorBackground(int numBasestations, bool freqSelectEnabled)
 	: numBasestations(numBasestations), freqSelectEnabled(freqSelectEnabled) {}
@@ -280,8 +279,8 @@ void BackgroundLoader::run()
 }
 
 
-NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t, bool useDefaultParameterEditors)
- : VisualizerEditor(parentNode, useDefaultParameterEditors)
+NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
+ : VisualizerEditor(parentNode)
 {
 
     thread = t;
@@ -508,7 +507,7 @@ void NeuropixEditor::stopAcquisition()
 		canvas->stopAcquisition();
 }
 
-void NeuropixEditor::buttonEvent(Button* button)
+void NeuropixEditor::buttonClicked(Button* button)
 {
 
 	if (sourceButtons.contains((SourceButton*) button))

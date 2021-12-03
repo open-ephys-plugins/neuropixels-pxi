@@ -34,7 +34,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage_Analog128.h"
 #include "../Probes/OneBoxADC.h"
 #include "../Probes/OneBoxDAC.h"
-#include "../Utils.h"
 
 #define MAXLEN 50
 

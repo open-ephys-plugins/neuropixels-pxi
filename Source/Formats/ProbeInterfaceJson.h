@@ -2,7 +2,6 @@
 #define __PROBEINTERFACEJSON_H__
 
 #include "../NeuropixComponents.h"
-#include "../Utils.h"
 
 class ProbeInterfaceJson
 {

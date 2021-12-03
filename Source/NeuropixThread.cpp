@@ -34,7 +34,6 @@
 
 #include <vector>
 
-#include "Utils.h"
 
 DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 {
@@ -43,7 +42,7 @@ DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 
 std::unique_ptr<GenericEditor> NeuropixThread::createEditor(SourceNode* sn)
 {
-	std::unique_ptr<NeuropixEditor> editor = std::make_unique<NeuropixEditor>(sn, this, true);
+	std::unique_ptr<NeuropixEditor> editor = std::make_unique<NeuropixEditor>(sn, this);
 
 	return editor;
 }
