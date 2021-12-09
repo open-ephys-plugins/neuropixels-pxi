@@ -43,7 +43,7 @@ public:
 	bool open() override;
 	bool close() override;
 
-	void initialize() override;
+	void initialize(bool signalChainIsLoading) override;
 
 	void setAdcInputRange(AdcInputRange range);
 

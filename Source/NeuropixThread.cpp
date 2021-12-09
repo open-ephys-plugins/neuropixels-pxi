@@ -42,9 +42,11 @@ DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 
 std::unique_ptr<GenericEditor> NeuropixThread::createEditor(SourceNode* sn)
 {
-	std::unique_ptr<NeuropixEditor> editor = std::make_unique<NeuropixEditor>(sn, this);
+	std::unique_ptr<NeuropixEditor> ed = std::make_unique<NeuropixEditor>(sn, this);
 
-	return editor;
+	editor = ed.get();
+
+	return ed;
 }
 
 NeuropixThread::NeuropixThread(SourceNode* sn) :
@@ -297,13 +299,19 @@ void NeuropixThread::applyProbeSettingsQueue()
 	probeSettingsUpdateQueue.clear();
 }
 
-void NeuropixThread::initialize()
+void NeuropixThread::initialize(bool signalChainIsLoading)
+{
+	editor->initialize(signalChainIsLoading);
+
+}
+
+void NeuropixThread::initializeBasestations(bool signalChainIsLoading)
 {
 	// slower task, run in background thread
 
 	for (auto basestation : basestations)
 	{
-		basestation->initialize(); // prepares probes for acquisition; may be slow
+		basestation->initialize(signalChainIsLoading); // prepares probes for acquisition; may be slow
 	}
 
 	if (api_v1.isActive)
@@ -699,7 +707,8 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 	if (sourceStreams.size() == 0) // initialize data streams
 	{
 		int probeIndex = 0;
-		StringArray probeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O" , "P"};
+		StringArray probeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
+								   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
 		String lastName;
 
 		for (auto info : streamInfo)
@@ -741,6 +750,8 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 	{
 		DataStream* currentStream = sourceStreams[i];
 
+		currentStream->clearChannels();
+
 		StreamInfo info = streamInfo[i];
 
 		ContinuousChannel::Type type;
@@ -755,7 +766,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 			float bitVolts;
 
 			if (info.type == stream_type::ADC) {
-				bitVolts = info.adc->getChannelGain(i);
+				bitVolts = info.adc->getChannelGain(ch);
 			}
 			else {
 				bitVolts = 0.1950000f;
@@ -794,17 +805,19 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 				currentStream
 			};
 
-			int chIndex = info.probe->settings.selectedChannel.indexOf(i);
+			int chIndex = info.probe->settings.selectedChannel.indexOf(ch);
 
-			int selectedBank = info.probe->settings.availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
+			Array<Bank> availableBanks = info.probe->settings.availableBanks;
 
-			int selectedElectrode = i + selectedBank * 384;
+			int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
+
+			int selectedElectrode = ch + selectedBank * 384;
 			int shank = info.probe->settings.selectedShank[chIndex];
 
 			float depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
-				+ shank * 1000.0f
-				+ float(i % 2)
-				+ 0.0001f * i; // each channel must have a unique depth value
+				+ shank * 10000.0f
+				+ float(ch % 2)
+				+ 0.0001f * ch; // each channel must have a unique depth value
 
 			continuousChannels->add(new ContinuousChannel(settings));
 			continuousChannels->getLast()->position.y = depth;

@@ -68,7 +68,7 @@ bool OneBoxDAC::close()
 	return true;
 }
 
-void OneBoxDAC::initialize()
+void OneBoxDAC::initialize(bool signalChainIsLoading)
 {
 
 	if (open())

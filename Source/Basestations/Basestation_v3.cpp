@@ -202,7 +202,7 @@ bool Basestation_v3::open()
 	return true;
 }
 
-void Basestation_v3::initialize()
+void Basestation_v3::initialize(bool signalChainIsLoading)
 {
 
 	if (!probesInitialized)
@@ -211,7 +211,7 @@ void Basestation_v3::initialize()
 
 		for (auto probe : probes)
 		{
-			probe->initialize();
+			probe->initialize(signalChainIsLoading);
 		}
 
 		probesInitialized = true;

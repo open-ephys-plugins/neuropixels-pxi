@@ -211,7 +211,7 @@ Array<DataSource*> OneBox::getAdditionalDataSources()
 	return sources;
 }
 
-void OneBox::initialize()
+void OneBox::initialize(bool signalChainIsLoading)
 {
 
 	Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
@@ -222,13 +222,13 @@ void OneBox::initialize()
 
 		for (auto probe : probes)
 		{
-			probe->initialize();
+			probe->initialize(signalChainIsLoading);
 		}
 
 		probesInitialized = true;
 	}
 
-	adcSource->initialize();
+	adcSource->initialize(signalChainIsLoading);
 
 	errorCode = Neuropixels::arm(slot);
 	LOGD("One box is armed");

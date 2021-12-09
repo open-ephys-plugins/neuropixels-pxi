@@ -141,6 +141,7 @@ struct ProbeMetadata {
 	int rows_per_shank;
 	ProbeType type;
 	String name;
+	Array<Bank> availableBanks;
 };
 
 struct ElectrodeMetadata {
@@ -150,9 +151,9 @@ struct ElectrodeMetadata {
 	int column_index;
 	int channel;
 	int row_index;
-	int xpos; // position on shank
-	int ypos; // position on shank
-	int site_width;
+	float xpos; // position on shank, in microns
+	float ypos; // position on shank, in microns
+	float site_width; // in microns
 	Bank bank;
 	ElectrodeStatus status;
 	bool isSelected;
@@ -254,7 +255,7 @@ public:
 	virtual bool close() = 0;
 
 	/** Prepares the probe for data acquisition */
-	virtual void initialize() = 0;
+	virtual void initialize(bool signalChainIsLoading) = 0;
 
 	/** Starts data streaming.*/
 	virtual void startAcquisition() = 0;
@@ -429,7 +430,7 @@ public:
 	virtual void close() = 0;
 
 	/** Initializes all components for acquisition; may inclue some delays */
-	virtual void initialize() = 0;
+	virtual void initialize(bool signalChainIsLoading) = 0;
 
 	/** Sets the sync channel as an "input" (for external sync) */
 	virtual void setSyncAsInput() = 0;

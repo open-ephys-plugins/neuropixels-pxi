@@ -64,8 +64,8 @@ public:
 
 	ProbeSettings savedSettings;
 
-	void saveVisualizerParameters(XmlElement* xml);
-	void loadVisualizerParameters(XmlElement* xml);
+	void saveCustomParametersToXml(XmlElement* xml) override;
+	void loadCustomParametersFromXml(XmlElement* xml) override;
 
 	void resized();
 

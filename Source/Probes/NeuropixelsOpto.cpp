@@ -133,7 +133,7 @@ bool NeuropixelsOpto::close()
 	return errorCode == Neuropixels::SUCCESS;
 }
 
-void NeuropixelsOpto::initialize()
+void NeuropixelsOpto::initialize(bool signalChainIsLoading)
 {
 
 	if (open())
@@ -145,20 +145,23 @@ void NeuropixelsOpto::initialize()
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 		LOGDD("Neuropixels::setHSLed: errorCode: ", errorCode);
 
-		selectElectrodes();
-		setAllReferences();
-		setAllGains();
-		setApFilterState();
+		if (!signalChainIsLoading)
+		{
+			selectElectrodes();
+			setAllReferences();
+			setAllGains();
+			setApFilterState();
 
-		calibrate();
+			calibrate();
 
-		writeConfiguration();
+			writeConfiguration();
 
+			setStatus(SourceStatus::CONNECTED);
+		}
+		
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
 		eventCode = 0;
-
-		setStatus(SourceStatus::CONNECTED);
 
 		apView = new ActivityView(384, 3000);
 		lfpView = new ActivityView(384, 250);
@@ -546,7 +549,7 @@ bool NeuropixelsOpto::runBist(BIST bistType)
 	}
 
 	close();
-	initialize();
+	initialize(false);
 
 	errorCode = Neuropixels::setSWTrigger(slot);
 	errorCode = Neuropixels::arm(slot);

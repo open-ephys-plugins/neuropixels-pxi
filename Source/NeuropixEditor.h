@@ -102,11 +102,14 @@ public:
 	~BackgroundLoader();
 	void run();
 
+	bool signalChainIsLoading;
+
 private:
 	NeuropixThread* thread;
 	NeuropixEditor* editor;
 
 	bool isInitialized;
+
 };
 
 /**
@@ -121,16 +124,27 @@ class NeuropixEditor : public VisualizerEditor,
 					   public Button::Listener
 {
 public:
-	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread);
-	virtual ~NeuropixEditor();
 
+	/** Constructor */
+	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread);
+
+	/** Destructor */
+	virtual ~NeuropixEditor() { }
+
+	/** Called when editor is collapsed */
 	void collapsedStateChanged() override;
 
+	/** Respond to combo box changes*/
 	void comboBoxChanged(ComboBox*);
+
+	/** Respond to button presses */
 	void buttonClicked(Button* button) override;
 
-	void saveEditorParameters(XmlElement*);
-	void loadEditorParameters(XmlElement*);
+	/** Save editor parameters (e.g. sync settings)*/
+	void saveVisualizerEditorParameters(XmlElement*) override;
+
+	/** Load editor parameters (e.g. sync settings)*/
+	void loadVisualizerEditorParameters(XmlElement*) override;
 
 	/** Called just prior to the start of acquisition, to allow custom commands. */
 	void startAcquisition() override;
@@ -138,7 +152,11 @@ public:
 	/** Called after the end of acquisition, to allow custom commands .*/
 	void stopAcquisition() override;
 
+	/** Creates the Neuropixels settings interface*/
 	Visualizer* createNewCanvas(void);
+
+	/** Initializes the probes in a background thread */
+	void initialize(bool signalChainIsLoading);
 
 	OwnedArray<SourceButton> sourceButtons;
 
@@ -155,7 +173,6 @@ private:
 
 	Array<File> savingDirectories;
 
-	
 	ScopedPointer<EditorBackground> background;
 
 	ScopedPointer<UtilityButton> addSyncChannelButton;

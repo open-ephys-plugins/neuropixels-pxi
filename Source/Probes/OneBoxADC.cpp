@@ -73,7 +73,7 @@ bool OneBoxADC::close()
 	return true;
 }
 
-void OneBoxADC::initialize()
+void OneBoxADC::initialize(bool signalChainIsLoading)
 {
 
 	if (open())

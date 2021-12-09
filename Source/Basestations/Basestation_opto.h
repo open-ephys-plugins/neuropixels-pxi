@@ -40,7 +40,7 @@ public:
 
 	bool open() override;
 	void close() override;
-	void initialize() override;
+	void initialize(bool signalChainIsLoading) override;
 
 	int getProbeCount() override;
 

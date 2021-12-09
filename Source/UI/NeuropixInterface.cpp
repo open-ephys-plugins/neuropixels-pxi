@@ -1437,12 +1437,16 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     String mySerialNumber = String(probe->info.serial_number);
 
     // first, set defaults
-    ProbeSettings settings;
+    ProbeSettings settings; // = ProbeSettings(probe->settings);
     settings.probe = probe;
     settings.probeType = probe->type;
     settings.apFilterState = probe->settings.apFilterState;
     settings.lfpGainIndex = probe->settings.lfpGainIndex;
     settings.apGainIndex = probe->settings.apGainIndex;
+    settings.availableApGains = probe->settings.availableApGains;
+    settings.availableLfpGains = probe->settings.availableLfpGains;
+    settings.availableBanks = probe->settings.availableBanks;
+    settings.availableReferences = probe->settings.availableReferences;
 
     for (int i = 0; i < probe->channel_count; i++)
     {
@@ -1555,8 +1559,8 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
         probeBrowser->zoomHeight = matchingNode->getIntAttribute("ZoomHeight");
         probeBrowser->zoomOffset = matchingNode->getIntAttribute("ZoomOffset");
 
-        settings.apGainIndex = matchingNode->getIntAttribute("apGainIndex", -1);
-        settings.lfpGainIndex = matchingNode->getIntAttribute("lfpGainIndex", -1);
+        settings.apGainIndex = matchingNode->getIntAttribute("apGainIndex", 3);
+        settings.lfpGainIndex = matchingNode->getIntAttribute("lfpGainIndex", 2);
         settings.referenceIndex = matchingNode->getIntAttribute("referenceChannelIndex", 0);
         settings.apFilterState = matchingNode->getIntAttribute("filterCutIndex", 1) == 1;
 
@@ -1577,7 +1581,6 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
         
     }
 
-    thread->updateProbeSettingsQueue(settings);
     applyProbeSettings(settings, true);
 }
 

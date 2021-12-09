@@ -48,6 +48,8 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 	name = probeMetadata.name;
 	type = probeMetadata.type;
 
+	settings.availableBanks = probeMetadata.availableBanks;
+
 	settings.apGainIndex = -1;
 	settings.lfpGainIndex = -1;
 	settings.referenceIndex = 0;
@@ -96,15 +98,6 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 		settings.availableReferences.add("4: 896");
 		settings.availableReferences.add("4: 1280");
 	}
-
-	settings.availableBanks = { Bank::A,
-		Bank::B,
-		Bank::C,
-		Bank::D,
-		Bank::E,
-		Bank::F,
-		Bank::G,
-		Bank::H };
 	
 	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
@@ -127,7 +120,7 @@ bool Neuropixels2::close()
 	return errorCode == Neuropixels::SUCCESS;
 }
 
-void Neuropixels2::initialize()
+void Neuropixels2::initialize(bool signalChainIsLoading)
 {
 
 	if (open())
@@ -136,18 +129,23 @@ void Neuropixels2::initialize()
 		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
 		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
 
-		selectElectrodes();
-		setAllReferences();
+		if (!signalChainIsLoading)
+		{
+			selectElectrodes();
+			setAllReferences();
 
-		calibrate();
+			calibrate();
 
+			setStatus(SourceStatus::CONNECTED);
+
+		}
+		
 		writeConfiguration();
 
 		ap_timestamp = 0;
 		lfp_timestamp = 0;
 		eventCode = 0;
-		setStatus(SourceStatus::CONNECTED);
-
+		
 		apView = new ActivityView(384, 3000);
 	}
 
@@ -540,7 +538,8 @@ bool Neuropixels2::runBist(BIST bistType)
 	}
 
 	close();
-	initialize();
+
+	initialize(false);
 
 	return returnValue;
 }

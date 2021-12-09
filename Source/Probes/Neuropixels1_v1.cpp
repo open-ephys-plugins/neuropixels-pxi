@@ -50,6 +50,8 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	name = probeMetadata.name;
 	type = probeMetadata.type;
 
+	settings.availableBanks = probeMetadata.availableBanks; 
+	
 	settings.apGainIndex = 3;
 	settings.lfpGainIndex = 2;
 	settings.referenceIndex = 0;
@@ -97,12 +99,6 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	shankOutline.lineTo(27 + 10, 31);
 	shankOutline.closeSubPath();
 
-	settings.availableBanks = { Bank::A,
-		Bank::B,
-		Bank::C,
-		Bank::OFF //disconnected
-	};
-
 	errorCode = np::NP_ErrorCode::SUCCESS;
 
 	isCalibrated = false;
@@ -124,7 +120,7 @@ bool Neuropixels1_v1::close()
 	return errorCode == np::SUCCESS;
 }
 
-void Neuropixels1_v1::initialize()
+void Neuropixels1_v1::initialize(bool signalChainIsLoading)
 {
 
 	LOGD("Configuring probe...");
@@ -136,20 +132,23 @@ void Neuropixels1_v1::initialize()
 	errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
 	LOGD("setHSLed: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
 
-	calibrate();
+	if (!signalChainIsLoading)
+	{
+		calibrate();
 
-	selectElectrodes();
-	setAllReferences();
-	setAllGains();
-	setApFilterState();
+		selectElectrodes();
+		setAllReferences();
+		setAllGains();
+		setApFilterState();
 
-	writeConfiguration();
+		writeConfiguration();
 
+		setStatus(SourceStatus::CONNECTED);
+	}
+	
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
 	eventCode = 0;
-
-	setStatus(SourceStatus::CONNECTED);
 
 	apView = new ActivityView(384, 3000);
 	lfpView = new ActivityView(384, 250);
@@ -494,7 +493,7 @@ bool Neuropixels1_v1::runBist(BIST bistType)
 
 	close();
 	open();
-	initialize();
+	initialize(false);
 
 	np::setTriggerInput(basestation->slot_c, np::TRIGIN_SW);
 	np::arm(basestation->slot_c);

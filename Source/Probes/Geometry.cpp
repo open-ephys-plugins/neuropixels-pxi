@@ -94,7 +94,14 @@ void Geometry::NP1(Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
 
-	Array<int> xpositions = { 27, 59, 11, 43 };
+	probeMetadata.availableBanks = 
+	{	Bank::A,
+		Bank::B,
+		Bank::C,
+		Bank::OFF //disconnected
+	};
+
+	Array<float> xpositions = { 27.0f, 59.0f, 11.0f, 43.0f };
 
 	for (int i = 0; i < probeMetadata.electrodes_per_shank * probeMetadata.shank_count; i++)
 	{
@@ -104,7 +111,7 @@ void Geometry::NP1(Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.shank_local_index = i % probeMetadata.electrodes_per_shank;
 		metadata.global_index = i;
 		metadata.xpos = xpositions[i % 4];
-		metadata.ypos = i / 2 * 20;
+		metadata.ypos = (i - (i % 2)) * 10.0f;
 		metadata.site_width = 12;
 		metadata.column_index = i % 2;
 		metadata.row_index = i / 2;
@@ -171,6 +178,14 @@ void Geometry::NP2(int shank_count,
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
 
+	probeMetadata.availableBanks =
+		{   Bank::A,
+			Bank::B,
+			Bank::C,
+			Bank::D,
+			Bank::OFF //disconnected
+		};
+
 	for (int i = 0; i < probeMetadata.electrodes_per_shank * probeMetadata.shank_count; i++)
 	{
 		ElectrodeMetadata metadata;
@@ -180,8 +195,8 @@ void Geometry::NP2(int shank_count,
 		metadata.shank = i / probeMetadata.electrodes_per_shank;
 		metadata.shank_local_index = i % probeMetadata.electrodes_per_shank;
 
-		metadata.xpos = i % 2 * 32 + 8; 
-		metadata.ypos = metadata.shank_local_index / 2 * 15;
+		metadata.xpos = i % 2 * 32.0f + 8.0f; 
+		metadata.ypos = (metadata.shank_local_index - (metadata.shank_local_index % 2)) * 7.5f;
 		metadata.site_width = 12;
 
 		metadata.column_index = i % 2;
@@ -457,6 +472,10 @@ void Geometry::NHP1(Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
 
+	probeMetadata.availableBanks =
+		{ Bank::A
+		};
+
 	Array<int> channel_map = { 6,10,14,18,22,26,30,34,38,42,50,2,60,62,64,
 		54,58,103,56,115,107,46,119,111,52,123,4,127,8,12,16,20,
 		24,28,32,36,40,44,48,121,105,93,125,101,89,99,97,85,95,109,
@@ -465,7 +484,7 @@ void Geometry::NHP1(Array<ElectrodeMetadata>& electrodeMetadata,
 		88,92,96,100,104,108,112,116,120,124,3,128,7,80,19,11,82,23,15,
 		76,27,70,74,68,66,72,126,78,86,90,94,98,102,106,110,114,118,122 };
 
-	Array<int> xpositions = { 27, 59, 11, 43 };
+	Array<float> xpositions = { 27.0f, 59.0f, 11.0f, 43.0f };
 
 	for (int i = 0; i < probeMetadata.electrodes_per_shank * probeMetadata.shank_count; i++)
 	{
@@ -477,7 +496,7 @@ void Geometry::NHP1(Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.shank_local_index = i;
 
 		metadata.xpos = xpositions[i % 4]; 
-		metadata.ypos = metadata.shank_local_index / 2 * 20;
+		metadata.ypos = (metadata.shank_local_index - (metadata.shank_local_index % 2)) * 10.0f;
 		metadata.site_width = 12;
 
 		metadata.column_index = i % 2;
@@ -535,7 +554,7 @@ void Geometry::NHP2(int length,
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
 
-	Array<Bank> availableBanks = { 
+	probeMetadata.availableBanks = { 
 		Bank::A,
 		Bank::B,
 		Bank::C,
@@ -550,7 +569,7 @@ void Geometry::NHP2(int length,
 		Bank::L
 	};
 
-	Array<int> xpositions = { 27, 59, 11, 43 };
+	Array<float> xpositions = { 27.0f, 59.0f, 11.0f, 43.0f };
 
 	for (int i = 0; i < probeMetadata.electrodes_per_shank; i++)
 	{
@@ -562,7 +581,7 @@ void Geometry::NHP2(int length,
 		metadata.shank_local_index = i;
 
 		metadata.xpos = xpositions[i % 4]; 
-		metadata.ypos = metadata.shank_local_index / 2 * 20;
+		metadata.ypos = (metadata.shank_local_index - (metadata.shank_local_index % 2)) * 10.0f;
 		metadata.site_width = 12;
 
 		metadata.column_index = i % 2;
@@ -570,7 +589,7 @@ void Geometry::NHP2(int length,
 
 		int bank_index = i / 384;
 
-		metadata.bank = availableBanks[bank_index];
+		metadata.bank = probeMetadata.availableBanks[bank_index];
 		metadata.channel = i % 384;
 
 		metadata.isSelected = false;
@@ -611,6 +630,11 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.columns_per_shank = 8;
 	probeMetadata.shankOutline = path;
 
+	probeMetadata.availableBanks =
+		{ Bank::A
+		};
+
+
 	for (int i = 0; i < probeMetadata.electrodes_per_shank; i++)
 	{
 		ElectrodeMetadata metadata;
@@ -618,8 +642,8 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.shank = 0;
 		metadata.shank_local_index = i;
 		metadata.global_index = i;
-		metadata.xpos = i % 8 * 6 + 12; 
-		metadata.ypos = i / 8 * 6; 
+		metadata.xpos = i % 8 * 6.0f + 12.0f; 
+		metadata.ypos = (i - (i % 8)) * 6.0f; 
 		metadata.column_index = i % 8;
 		metadata.row_index = i / 8;
 		metadata.site_width = 5;

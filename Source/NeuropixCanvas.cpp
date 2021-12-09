@@ -175,22 +175,15 @@ void NeuropixCanvas::applyParametersToAllProbes(ProbeSettings p)
     }
 }
 
-void NeuropixCanvas::saveVisualizerParameters(XmlElement* xml)
+void NeuropixCanvas::saveCustomParametersToXml(XmlElement* xml)
 {
-    editor->saveEditorParameters(xml);
-
-    //LOGD("Saved ", neuropixInterfaces.size(), " interfaces.");
 
     for (int i = 0; i < settingsInterfaces.size(); i++)
         settingsInterfaces[i]->saveParameters(xml);
 }
 
-void NeuropixCanvas::loadVisualizerParameters(XmlElement* xml)
+void NeuropixCanvas::loadCustomParametersFromXml(XmlElement* xml)
 {
-
-    editor->loadEditorParameters(xml);
-
-    //LOGD("Loaded ", neuropixInterfaces.size(), " interfaces.");
 
     for (int i = 0; i < settingsInterfaces.size(); i++)
         settingsInterfaces[i]->loadParameters(xml);

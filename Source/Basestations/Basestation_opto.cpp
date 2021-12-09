@@ -193,7 +193,7 @@ bool Basestation_opto::open()
 	return true;
 }
 
-void Basestation_opto::initialize()
+void Basestation_opto::initialize(bool signalChainIsLoading)
 {
 
 	if (!probesInitialized)
@@ -202,7 +202,7 @@ void Basestation_opto::initialize()
 
 		for (auto probe : probes)
 		{
-			probe->initialize();
+			probe->initialize(signalChainIsLoading);
 		}
 
 		probesInitialized = true;

@@ -34,6 +34,7 @@
 
 class SourceNode;
 class NeuropixThread;
+class NeuropixEditor;
 class OneBoxADC;
 class OneBox;
 class Basestation_v3;
@@ -91,8 +92,11 @@ public:
 	/** Returns version and serial number info for hardware and API as XML.*/
 	XmlElement getInfoXml();
 
-	/** Prepares probes for data acquisition */
-	void initialize();
+	/** Called by ProcessorGraph to inform the thread whether the signal chain is loading */
+	void initialize(bool signalChainIsLoading) override;
+
+	/** Prepares probes for data acquisition*/
+	void initializeBasestations(bool signalChainIsLoading);
 
 	/** Starts data transfer.*/
 	bool startAcquisition() override;
@@ -213,6 +217,8 @@ private:
 
 	NeuropixAPIv1 api_v1;
 	NeuropixAPIv3 api_v3;
+
+	NeuropixEditor* editor;
 
 	RecordingTimer recordingTimer;
 

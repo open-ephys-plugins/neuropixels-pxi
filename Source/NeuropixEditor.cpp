@@ -232,7 +232,11 @@ void SourceButton::timerCallback()
 }
 
 BackgroundLoader::BackgroundLoader(NeuropixThread* thread_, NeuropixEditor* editor_) 
-	: Thread("Neuropix Loader"), thread(thread_), editor(editor_), isInitialized(false)
+	: Thread("Neuropix Loader"), 
+      thread(thread_), 
+	  editor(editor_), 
+	  isInitialized(false),
+	  signalChainIsLoading(false)
 {
 }
 
@@ -245,37 +249,22 @@ void BackgroundLoader::run()
 	/* Open the NPX-PXI probe connections in the background to prevent this plugin from blocking the main GUI*/
 	if (!isInitialized)
 	{
-		thread->initialize();
+		thread->initializeBasestations(signalChainIsLoading);
 		isInitialized = true;
+		signalChainIsLoading = false;
 		thread->probeSettingsUpdateQueue.clear();
 		return;
 	}
 
 	/* Apply any saved settings */
-	//CoreServices::sendStatusMessage("Restoring saved probe settings...");
 	thread->applyProbeSettingsQueue();
-
-	 /* Remove button callback timers and select first avalable probe by default*/
-
-	/*if (!isInitialized)
-	{
-		bool selectedFirstAvailableProbe = false;
-
-		for (auto button : editor->probeButtons)
-		{
-			if (button->getProbeStatus() == ProbeStatus::CONNECTED && (!selectedFirstAvailableProbe))
-			{
-				editor->buttonEvent(button);
-				selectedFirstAvailableProbe = true;
-			}
-			//button->stopTimer();
-		}
-
-		MessageManagerLock mml;
-		CoreServices::updateSignalChain(editor);
-		CoreServices::sendStatusMessage("Neuropix-PXI plugin ready for acquisition!");
-	}*/
 	
+}
+
+void NeuropixEditor::initialize(bool signalChainIsLoading)
+{
+	uiLoader->signalChainIsLoading = signalChainIsLoading;
+	uiLoader->startThread();
 }
 
 
@@ -438,15 +427,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
 	}
 
 	uiLoader = new BackgroundLoader(t, this);
-	uiLoader->startThread();
-
 	
-	
-}
-
-NeuropixEditor::~NeuropixEditor()
-{
-
 }
 
 void NeuropixEditor::collapsedStateChanged()
@@ -556,7 +537,7 @@ void NeuropixEditor::buttonClicked(Button* button)
 }
 
 
-void NeuropixEditor::saveEditorParameters(XmlElement* xml)
+void NeuropixEditor::saveVisualizerEditorParameters(XmlElement* xml)
 {
 	LOGD("Saving Neuropix editor.");
 
@@ -582,7 +563,7 @@ void NeuropixEditor::saveEditorParameters(XmlElement* xml)
 
 }
 
-void NeuropixEditor::loadEditorParameters(XmlElement* xml)
+void NeuropixEditor::loadVisualizerEditorParameters(XmlElement* xml)
 {
 
 	forEachXmlChildElement(*xml, xmlNode)
@@ -625,8 +606,6 @@ void NeuropixEditor::loadEditorParameters(XmlElement* xml)
 				freqSelectBox->setSelectedItemIndex(freqIndex, true);
 				thread->setSyncFrequency(slotIndex, freqIndex);
 			}
-
-			CoreServices::updateSignalChain(this);
 
 		}
 	}

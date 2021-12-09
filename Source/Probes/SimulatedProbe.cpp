@@ -52,6 +52,8 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	name = probeMetadata.name;
 	type = probeMetadata.type;
 
+	settings.availableBanks = probeMetadata.availableBanks;
+
 	channel_count = 384;
 	lfp_sample_rate = 2500.0f;
 	ap_sample_rate = 30000.0f;
@@ -138,7 +140,6 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 			settings.availableReferences.add("4: 896");
 			settings.availableReferences.add("4: 1280");
 		}
-		
 	}
 
 	settings.referenceIndex = 0;
@@ -146,6 +147,8 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	isCalibrated = false;
 
 	apFilterSwitch = true;
+
+	setStatus(SourceStatus::CONNECTING);
 	
 }
 
@@ -161,37 +164,46 @@ bool SimulatedProbe::close()
 	return true;
 }
 
-void SimulatedProbe::initialize()
+void SimulatedProbe::initialize(bool signalChainIsLoading)
 {
-	calibrate();
+	
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
 	eventCode = 0;
 
+	if (!signalChainIsLoading)
+	{
+		calibrate();
+
+		writeConfiguration();
+
+		setStatus(SourceStatus::CONNECTED);
+		
+	}
+
 	apView = new ActivityView(384, 3000);
 	lfpView = new ActivityView(384, 250);
 
-	setStatus(SourceStatus::CONNECTED);
-	Sleep(200);
+	
 }
 
 void SimulatedProbe::calibrate()
 {
 	Sleep(1);
-	LOGD("Calibrating simulated probe.");
+	LOGC("Calibrating simulated probe.");
 }
 
 void SimulatedProbe::selectElectrodes()
 {
 
-	LOGD("Selecting channels for simulated probe.");
+	LOGC("Selecting channels for simulated probe.");
 
 }
 
 void SimulatedProbe::setApFilterState()
 {
 
-	LOGD("Wrote filter state for simulated probe.");
+	LOGC("Wrote filter state for simulated probe.");
 }
 
 void SimulatedProbe::setAllGains()
@@ -202,20 +214,20 @@ void SimulatedProbe::setAllGains()
 	//	lfpGains.set(channel, int(lfpGain));
 	//}
 
-	LOGD("Wrote gain state for simulated probe.");
+	LOGC("Wrote gain state for simulated probe.");
 }
 
 
 void SimulatedProbe::setAllReferences()
 {
-	LOGD("Wrote reference state for simulated probe.");
+	LOGC("Wrote reference state for simulated probe.");
 }
 
 void SimulatedProbe::writeConfiguration()
 {
-	Sleep(1000);
+	Sleep(500);
 
-	LOGD("Wrote configuration for simulated probe.");
+	LOGC("Wrote configuration for simulated probe.");
 	
 }
 
