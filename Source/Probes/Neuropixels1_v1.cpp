@@ -50,6 +50,8 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	name = probeMetadata.name;
 	type = probeMetadata.type;
 
+	settings.probe = this;
+
 	settings.availableBanks = probeMetadata.availableBanks; 
 	
 	settings.apGainIndex = 3;
@@ -99,6 +101,8 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	shankOutline.lineTo(27 + 10, 31);
 	shankOutline.closeSubPath();
 
+	open();
+
 	errorCode = np::NP_ErrorCode::SUCCESS;
 
 	isCalibrated = false;
@@ -109,7 +113,21 @@ bool Neuropixels1_v1::open()
 {
 	errorCode = np::openProbe(basestation->slot_c, headstage->port_c);
 	LOGD("openProbe: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-	return errorCode == np::SUCCESS;
+	errorCode = np::init(basestation->slot_c, headstage->port_c);
+	LOGD("init: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);
+	LOGD("setOPMODE: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
+	LOGD("setHSLed: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+
+	ap_timestamp = 0;
+	lfp_timestamp = 0;
+	eventCode = 0;
+
+	apView = new ActivityView(384, 3000);
+	lfpView = new ActivityView(384, 250);
+
+	return true;
 
 }
 
@@ -123,35 +141,7 @@ bool Neuropixels1_v1::close()
 void Neuropixels1_v1::initialize(bool signalChainIsLoading)
 {
 
-	LOGD("Configuring probe...");
-
-	errorCode = np::init(basestation->slot_c, headstage->port_c);
-	LOGD("init: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-	errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);
-	LOGD("setOPMODE: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-	errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
-	LOGD("setHSLed: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-
-	if (!signalChainIsLoading)
-	{
-		calibrate();
-
-		selectElectrodes();
-		setAllReferences();
-		setAllGains();
-		setApFilterState();
-
-		writeConfiguration();
-
-		setStatus(SourceStatus::CONNECTED);
-	}
 	
-	ap_timestamp = 0;
-	lfp_timestamp = 0;
-	eventCode = 0;
-
-	apView = new ActivityView(384, 3000);
-	lfpView = new ActivityView(384, 250);
 
 }
 

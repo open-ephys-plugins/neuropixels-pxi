@@ -70,7 +70,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	LOGD("Scanning for devices...");
 
-	Neuropixels::np_dbg_setlevel(5);
+	Neuropixels::np_dbg_setlevel(3);
 
 	Neuropixels::scanBS();
 	Neuropixels::basestationID list[16];
@@ -266,6 +266,9 @@ NeuropixThread::~NeuropixThread()
 
 void NeuropixThread::updateProbeSettingsQueue(ProbeSettings settings)
 {
+	
+	LOGC("Updating queue for probe ", settings.probe->name);
+
 	probeSettingsUpdateQueue.add(settings);
 }
 
@@ -280,8 +283,12 @@ void NeuropixThread::applyProbeSettingsQueue()
 	for (auto settings: probeSettingsUpdateQueue)
 	{
 
+		LOGC("0x000 APPLYING PROBE SETTINGS FOR ", settings.probe->name);
+
 		if (settings.probe != nullptr)
 		{
+
+			LOGC("Writing configuration");
 
 			settings.probe->selectElectrodes();
 			settings.probe->setAllGains();

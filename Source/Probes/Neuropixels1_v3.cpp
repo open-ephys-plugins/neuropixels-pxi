@@ -50,6 +50,7 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 		name = probeMetadata.name;
 		type = probeMetadata.type;
 
+		settings.probe = this;
 		settings.availableBanks = probeMetadata.availableBanks;
 
 		settings.apGainIndex = 3;
@@ -92,7 +93,7 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 		settings.availableReferences.add("576");
 		settings.availableReferences.add("960");
 
-		errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
+		open(); // Neuropixels::NP_ErrorCode::SUCCESS;
 
 	}
 	else
@@ -110,6 +111,21 @@ bool Neuropixels1_v3::open()
 	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
 	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
+	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
+	LOGD("Neuropixels::init: errorCode: ", errorCode);
+
+	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+	LOGDD("Neuropixels::setHSLed: errorCode: ", errorCode);
+
+	//writeConfiguration();
+
+	ap_timestamp = 0;
+	lfp_timestamp = 0;
+	eventCode = 0;
+
+	apView = new ActivityView(384, 3000);
+	lfpView = new ActivityView(384, 250);
+
 	return errorCode == Neuropixels::SUCCESS;
 
 }
@@ -125,37 +141,21 @@ bool Neuropixels1_v3::close()
 void Neuropixels1_v3::initialize(bool signalChainIsLoading)
 {
 
-	if (open())
-	{
-		
-		errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
-		LOGD("Neuropixels::init: errorCode: ", errorCode);
+	//if (!signalChainIsLoading) //)
+	//{
+		//selectElectrodes();
+		//setAllReferences();
+		//setAllGains();
+		//setApFilterState();
 
-		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
-		LOGDD("Neuropixels::setHSLed: errorCode: ", errorCode);
+		//calibrate();
 
-		if (!signalChainIsLoading)
-		{
-			selectElectrodes();
-			setAllReferences();
-			setAllGains();
-			setApFilterState();
+		//writeConfiguration();
 
-			calibrate();
+		//setStatus(SourceStatus::CONNECTED);
 
-			writeConfiguration();
-
-			setStatus(SourceStatus::CONNECTED);
-		}
-		
-		ap_timestamp = 0;
-		lfp_timestamp = 0;
-		eventCode = 0;
-
-		apView = new ActivityView(384, 3000);
-		lfpView = new ActivityView(384, 250);
-
-	}
+		//thread->upd
+	//}
 }
 
 

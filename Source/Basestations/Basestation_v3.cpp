@@ -113,7 +113,7 @@ bool Basestation_v3::open()
 
 		LOGD("    Searching for probes...");
 
-		for (int port = 1; port <= 2; port++)
+		for (int port = 1; port <= 4; port++)
 		{
 			bool detected = false;
 

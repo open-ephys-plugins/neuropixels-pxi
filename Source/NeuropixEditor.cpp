@@ -246,15 +246,24 @@ BackgroundLoader::~BackgroundLoader()
 
 void BackgroundLoader::run()
 {
+
+	LOGC("Running background thread...");
+
 	/* Open the NPX-PXI probe connections in the background to prevent this plugin from blocking the main GUI*/
 	if (!isInitialized)
 	{
+		LOGC("Not initialized.");
 		thread->initializeBasestations(signalChainIsLoading);
 		isInitialized = true;
-		signalChainIsLoading = false;
-		thread->probeSettingsUpdateQueue.clear();
-		return;
+
+		if (!signalChainIsLoading)
+		{
+			for (auto probe : thread->getProbes())
+				thread->updateProbeSettingsQueue(ProbeSettings(probe->settings));
+		}
 	}
+
+	LOGC("Initialized, applying probe settings...");
 
 	/* Apply any saved settings */
 	thread->applyProbeSettingsQueue();

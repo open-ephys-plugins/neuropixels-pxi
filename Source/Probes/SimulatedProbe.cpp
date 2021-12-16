@@ -52,6 +52,8 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	name = probeMetadata.name;
 	type = probeMetadata.type;
 
+	settings.probe = this;
+
 	settings.availableBanks = probeMetadata.availableBanks;
 
 	channel_count = 384;
@@ -148,6 +150,8 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 
 	apFilterSwitch = true;
 
+	open();
+
 	setStatus(SourceStatus::CONNECTING);
 	
 }
@@ -155,6 +159,14 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 bool SimulatedProbe::open()
 {
 	LOGD("Opened connection to probe.");
+
+	ap_timestamp = 0;
+	lfp_timestamp = 0;
+	eventCode = 0;
+
+	apView = new ActivityView(384, 3000);
+	lfpView = new ActivityView(384, 250);
+
 	return true;
 }
 
@@ -166,23 +178,7 @@ bool SimulatedProbe::close()
 
 void SimulatedProbe::initialize(bool signalChainIsLoading)
 {
-	
-	ap_timestamp = 0;
-	lfp_timestamp = 0;
-	eventCode = 0;
 
-	if (!signalChainIsLoading)
-	{
-		calibrate();
-
-		writeConfiguration();
-
-		setStatus(SourceStatus::CONNECTED);
-		
-	}
-
-	apView = new ActivityView(384, 3000);
-	lfpView = new ActivityView(384, 250);
 
 	
 }

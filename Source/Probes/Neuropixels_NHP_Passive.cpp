@@ -53,6 +53,8 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 	name = probeMetadata.name;
 	type = probeMetadata.type;
 
+	settings.probe = this;
+
 	settings.availableBanks = probeMetadata.availableBanks;
 
 	settings.apGainIndex = 3;
@@ -95,10 +97,11 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 
 	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
+	open();
+
 	isCalibrated = false;
 
-	apView = new ActivityView(384, 3000);
-	lfpView = new ActivityView(384, 250);
+
 
 }
 
@@ -107,6 +110,16 @@ bool Neuropixels_NHP_Passive::open()
 	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
 	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 	return errorCode == Neuropixels::SUCCESS;
+
+	errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
+	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+
+	ap_timestamp = 0;
+	lfp_timestamp = 0;
+	eventCode = 0;
+
+	apView = new ActivityView(384, 3000);
+	lfpView = new ActivityView(384, 250);
 
 }
 
@@ -120,32 +133,6 @@ bool Neuropixels_NHP_Passive::close()
 void Neuropixels_NHP_Passive::initialize(bool signalChainIsLoading)
 {
 
-	if (open())
-	{
-
-		errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
-		errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
-
-		if (!signalChainIsLoading)
-		{
-			selectElectrodes();
-			setAllReferences();
-			setAllGains();
-			setApFilterState();
-
-			calibrate();
-
-			writeConfiguration();
-
-			setStatus(SourceStatus::CONNECTED);
-		}
-		
-
-		ap_timestamp = 0;
-		lfp_timestamp = 0;
-		eventCode = 0;
-		
-	}
 
 }
 

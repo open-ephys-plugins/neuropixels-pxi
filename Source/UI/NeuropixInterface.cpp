@@ -537,9 +537,13 @@ void NeuropixInterface::updateProbeSettingsInBackground()
     probe->updateSettings(settings);
 
     int ch0index = settings.selectedChannel.indexOf(0);
-    std::cout << "Ch 0 bank: " << int(settings.selectedBank[ch0index]) << std::endl;
+    //std::cout << "Ch 0 bank: " << int(settings.selectedBank[ch0index]) << std::endl;
 
     thread->updateProbeSettingsQueue(settings);
+
+    LOGC("NeuropixInterface requesting thread start");
+
+    //thread->applyProbeSettingsQueue();
 
     editor->uiLoader->startThread();
 }
@@ -1219,6 +1223,8 @@ void NeuropixInterface::drawLegend(Graphics& g)
 
 void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdateProbe)
 {
+    LOGC("Apply probe settings for ", p.probe->name, " shouldUpdate: ", shouldUpdateProbe);
+
     if (p.probeType != probe->type)
     {
         CoreServices::sendStatusMessage("Probe types do not match.");
@@ -1331,6 +1337,8 @@ ProbeSettings NeuropixInterface::getProbeSettings()
     
     p.probe = probe;
     p.probeType = probe->type;
+
+    LOGC("Got probe settings.");
 
     return p;
 }
@@ -1581,7 +1589,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
         
     }
 
-    applyProbeSettings(settings, true);
+    applyProbeSettings(settings, false);
 }
 
 // --------------------------------------
