@@ -266,13 +266,13 @@ void SimulatedProbe::run()
 			{
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j + i * 384 + packetNum * 12 * 384] = 0;
-					apView->addSample(apSamples[j], j);
+					apSamples[j + i * 384 + packetNum * 12 * 384] = simulatedData.ap_band[ap_timestamp % 3000];
+					apView->addSample(apSamples[j + i * 384 + packetNum * 12 * 384], j);
 					
 					if (i == 0)
 					{
-						lfpSamples[j + packetNum * 384] = 0;
-						lfpView->addSample(lfpSamples[j], j);
+						lfpSamples[j + packetNum * 384] = simulatedData.lfp_band[lfp_timestamp % 250] * float(j % 24) / 24.0f;
+						lfpView->addSample(lfpSamples[j + packetNum * 384], j);
 					}
 							
 				}
