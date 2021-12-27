@@ -701,7 +701,7 @@ void NeuropixInterface::buttonClicked(Button* button)
     else if (button == activityViewButton)
     {
         mode = ACTIVITY_VIEW;
-        //probeBrowser->startTimer(100);
+        probeBrowser->startTimer(100);
         repaint();
     }
     else if (button == enableButton)
@@ -1087,8 +1087,6 @@ void NeuropixInterface::stopAcquisition()
 void NeuropixInterface::paint(Graphics& g)
 {
 
-    //probeBrowser->repaint();
-
     drawLegend(g);
 
     g.setColour(Colour(60, 60, 60));
@@ -1282,6 +1280,7 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
         }
     }
 
+    thread->updateProbeSettingsQueue(p);
  
     // apply settings in background thread
     if (shouldUpdateProbe) {

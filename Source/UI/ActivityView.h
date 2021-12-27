@@ -71,14 +71,18 @@ public:
 			counter++;
 		}
 
-		if (sample < minChannelValues[channel])
+		if (counter % 10 == 0)
 		{
-			minChannelValues.set(channel, sample);
-		}
-			
-		if (sample > maxChannelValues[channel])
-		{
-			maxChannelValues.set(channel, sample);
+			if (sample < minChannelValues[channel])
+			{
+				minChannelValues.set(channel, sample);
+				return;
+			}
+
+			if (sample > maxChannelValues[channel])
+			{
+				maxChannelValues.set(channel, sample);
+			}
 		}
 		
 	}

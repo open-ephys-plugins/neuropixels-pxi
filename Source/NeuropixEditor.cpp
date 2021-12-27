@@ -259,10 +259,14 @@ void BackgroundLoader::run()
 
 		if (!signalChainIsLoading)
 		{
-			LOGC("Updating settings for probe");
+			LOGC("Updating settings for ", thread->getProbes().size(), " probes.");
 
 			for (auto probe : thread->getProbes())
+			{
+				LOGC(" Updating queue for probe ", probe->name);
 				thread->updateProbeSettingsQueue(ProbeSettings(probe->settings));
+			}
+				
 		}
 	}
 

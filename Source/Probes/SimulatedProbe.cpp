@@ -267,12 +267,12 @@ void SimulatedProbe::run()
 				for (int j = 0; j < 384; j++)
 				{
 					apSamples[j + i * 384 + packetNum * 12 * 384] = 0;
-					//apView->addSample(apSamples[j], j);
+					apView->addSample(apSamples[j], j);
 					
 					if (i == 0)
 					{
 						lfpSamples[j + packetNum * 384] = 0;
-						//lfpView->addSample(lfpSamples[j], j);
+						lfpView->addSample(lfpSamples[j], j);
 					}
 							
 				}
