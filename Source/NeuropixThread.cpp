@@ -216,7 +216,7 @@ void NeuropixThread::updateSubprocessors()
 
 			streamInfo.add(apInfo);
 
-			sourceBuffers.add(new DataBuffer(apInfo.num_channels, 10000));  // AP band buffer
+			sourceBuffers.add(new DataBuffer(apInfo.num_channels, 460800));  // AP band buffer
 			probe->apBuffer = sourceBuffers.getLast();
 
 			if (probe->generatesLfpData())
@@ -229,7 +229,7 @@ void NeuropixThread::updateSubprocessors()
 				lfpInfo.probe = probe;
 				lfpInfo.sendSyncAsContinuousChannel = probe->sendSync;
 
-				sourceBuffers.add(new DataBuffer(lfpInfo.num_channels, 10000));  // LFP band buffer
+				sourceBuffers.add(new DataBuffer(lfpInfo.num_channels, 38400));  // LFP band buffer
 				probe->lfpBuffer = sourceBuffers.getLast();
 
 				streamInfo.add(lfpInfo);
@@ -283,7 +283,7 @@ void NeuropixThread::applyProbeSettingsQueue()
 	for (auto settings: probeSettingsUpdateQueue)
 	{
 
-		LOGC("0x000 APPLYING PROBE SETTINGS FOR ", settings.probe->name);
+		LOGC("APPLYING PROBE SETTINGS FOR ", settings.probe->name);
 
 		if (settings.probe != nullptr)
 		{
@@ -315,6 +315,8 @@ void NeuropixThread::initialize(bool signalChainIsLoading)
 void NeuropixThread::initializeBasestations(bool signalChainIsLoading)
 {
 	// slower task, run in background thread
+
+	LOGD("NeuropixThread::initializeBasestations");
 
 	for (auto basestation : basestations)
 	{
@@ -419,17 +421,19 @@ String NeuropixThread::getApiVersion()
 
 void NeuropixThread::setMainSync(int slotIndex)
 {
-	basestations[slotIndex]->setSyncAsInput();
+	if (foundInputSource() && slotIndex > -1)
+		basestations[slotIndex]->setSyncAsInput();
 }
 
 void NeuropixThread::setSyncOutput(int slotIndex)
 {
-	basestations[slotIndex]->setSyncAsOutput(0);
+	if (basestations.size() && slotIndex > -1)
+		basestations[slotIndex]->setSyncAsOutput(0);
 }
 
 Array<int> NeuropixThread::getSyncFrequencies()
 {
-	if (basestations.size() > 0)
+	if (foundInputSource())
 		return basestations[0]->getSyncFrequencies();
 	else
 		return defaultSyncFrequencies;
@@ -439,7 +443,8 @@ Array<int> NeuropixThread::getSyncFrequencies()
 
 void NeuropixThread::setSyncFrequency(int slotIndex, int freqIndex)
 {
-	basestations[slotIndex]->setSyncAsOutput(freqIndex);
+	if (foundInputSource() && slotIndex > -1)
+		basestations[slotIndex]->setSyncAsOutput(freqIndex);
 }
 
 
@@ -1119,6 +1124,8 @@ bool NeuropixThread::updateBuffer()
 			isRecording = false;
 			stopRecording();
 		}
+
+		Sleep(1000);
 
 	}
 

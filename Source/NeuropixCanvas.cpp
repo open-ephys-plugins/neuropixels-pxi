@@ -79,6 +79,7 @@ NeuropixCanvas::~NeuropixCanvas()
 
 void NeuropixCanvas::paint(Graphics& g)
 {
+    std::cout << "Repaint" << std::endl;
     g.fillAll(Colours::darkgrey);
 }
 

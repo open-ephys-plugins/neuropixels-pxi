@@ -308,7 +308,7 @@ public:
 
 	bool isValid; //True if the PN is supported by the API
 
-	bool isCalibrated;
+	bool isCalibrated = false;
 	bool calibrationWarningShown;
 
 	int port;

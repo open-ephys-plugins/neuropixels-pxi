@@ -74,7 +74,7 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
         channelLabelSkip = 500;
 
 
-    addMouseListener(this, true);
+    //addMouseListener(this, false);
 
     zoomHeight = defaultZoomHeight; // number of rows
     lowerBound = 530; // bottom of interface
@@ -893,6 +893,8 @@ Colour ProbeBrowser::getElectrodeColour(int i)
 
 void ProbeBrowser::timerCallback()
 {
+
+    std::cout << "Probe browser render" << std::endl;
 
     if (parent->mode != VisualizationMode::ACTIVITY_VIEW)
         return;

@@ -95,25 +95,16 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 	settings.availableReferences.add("TIP_REF");
 	settings.availableReferences.add("INT_REF");
 
-	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
-
 	open();
-
-	isCalibrated = false;
-
-
 
 }
 
 bool Neuropixels_NHP_Passive::open()
 {
-	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
-	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
-	return errorCode == Neuropixels::SUCCESS;
 
-	errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
-	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
-
+	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
+	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
 	eventCode = 0;
@@ -121,18 +112,29 @@ bool Neuropixels_NHP_Passive::open()
 	apView = new ActivityView(384, 3000);
 	lfpView = new ActivityView(384, 250);
 
+	return errorCode == Neuropixels::SUCCESS;
+
 }
 
 bool Neuropixels_NHP_Passive::close()
 {
 	errorCode = Neuropixels::closeProbe(basestation->slot, headstage->port, dock);
 	LOGD("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	
 	return errorCode == Neuropixels::SUCCESS;
 }
 
 void Neuropixels_NHP_Passive::initialize(bool signalChainIsLoading)
 {
 
+	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
+	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	
+	errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
+	LOGD("setOPMODE: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+
+	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+	LOGD("setHSLed: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
 }
 

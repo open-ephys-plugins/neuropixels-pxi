@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Geometry.h"
 #include "../Headstages/SimulatedHeadstage.h"
 
+#define SAMPLE_COUNT 50
 
 void SimulatedProbe::getInfo()
 {
@@ -59,6 +60,10 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	channel_count = 384;
 	lfp_sample_rate = 2500.0f;
 	ap_sample_rate = 30000.0f;
+
+	settings.referenceIndex = 0;
+
+	apFilterSwitch = true;
 
 	for (int i = 0; i < channel_count; i++)
     {
@@ -144,16 +149,8 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 		}
 	}
 
-	settings.referenceIndex = 0;
-
-	isCalibrated = false;
-
-	apFilterSwitch = true;
-
 	open();
 
-	setStatus(SourceStatus::CONNECTING);
-	
 }
 
 bool SimulatedProbe::open()
@@ -179,8 +176,9 @@ bool SimulatedProbe::close()
 void SimulatedProbe::initialize(bool signalChainIsLoading)
 {
 
+	LOGD("Initializing probe...");
+	Sleep(1000);
 
-	
 }
 
 void SimulatedProbe::calibrate()
@@ -253,44 +251,62 @@ void SimulatedProbe::run()
 	while (!threadShouldExit())
 	{
 
-		if (1) // every 1/300 s
+		int64 start = Time::getHighResolutionTicks();
+
+		float apSamples[384 * 12 * SAMPLE_COUNT];
+		float lfpSamples[384 * SAMPLE_COUNT];
+		int64 ap_timestamps[12 * SAMPLE_COUNT];
+		uint64 event_codes[12 * SAMPLE_COUNT];
+		int64 lfp_timestamps[SAMPLE_COUNT];
+		uint64 lfp_event_codes[SAMPLE_COUNT];
+
+		for (int packetNum = 0; packetNum < SAMPLE_COUNT; packetNum++)
 		{
-			Sleep(3);
-
-			float apSamples[384];
-			float lfpSamples[384];
-
-			for (int packetNum = 0; packetNum < 100; packetNum++)
+			for (int i = 0; i < 12; i++)
 			{
-				for (int i = 0; i < 12; i++)
+				for (int j = 0; j < 384; j++)
 				{
-					for (int j = 0; j < 384; j++)
+					apSamples[j + i * 384 + packetNum * 12 * 384] = 0;
+					//apView->addSample(apSamples[j], j);
+					
+					if (i == 0)
 					{
-						apSamples[j] = 0;
-						apView->addSample(apSamples[j], j);
-
-						if (i == 0)
-						{
-							lfpSamples[j] = 0;
-							lfpView->addSample(lfpSamples[j], j);
-						}
+						lfpSamples[j + packetNum * 384] = 0;
+						//lfpView->addSample(lfpSamples[j], j);
+					}
 							
-					}
-
-					ap_timestamp += 1;
-
-					apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, 1);
-
-					if (ap_timestamp % 30000 == 0)
-					{
-						fifoFillPercentage = 0;
-					}
 				}
-				lfp_timestamp += 1;
 
-				lfpBuffer->addToBuffer(lfpSamples, &lfp_timestamp, &eventCode, 1);
+				ap_timestamps[i + packetNum * 12] = ap_timestamp++;
+
+				if (ap_timestamp % 15000 == 0)
+				{
+					if (eventCode == 0)
+						eventCode = 1;
+					else
+						eventCode = 0;
+				}
+
+				event_codes[i + packetNum * 12] = eventCode;
+
 			}
+
+			lfp_timestamps[packetNum] = lfp_timestamp++;
+			lfp_event_codes[packetNum] = eventCode;
 		}
+
+		apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * SAMPLE_COUNT);
+		lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, SAMPLE_COUNT);
+
+		fifoFillPercentage = 0;
+		
+		int64 uSecElapsed = int64 (Time::highResolutionTicksToSeconds(Time::getHighResolutionTicks() - start) * 1e6);
+
+		if (uSecElapsed < 400 * SAMPLE_COUNT)
+		{
+			std::this_thread::sleep_for(std::chrono::microseconds(400 * SAMPLE_COUNT - uSecElapsed));
+		}
+
 	}
 
 }

@@ -30,7 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # define SAMPLECOUNT 64
 
-
 class Neuropixels1_v3 : public Probe
 {
 public:

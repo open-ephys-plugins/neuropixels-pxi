@@ -93,7 +93,7 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 		settings.availableReferences.add("576");
 		settings.availableReferences.add("960");
 
-		open(); // Neuropixels::NP_ErrorCode::SUCCESS;
+		open();
 
 	}
 	else
@@ -101,23 +101,12 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 		/* code */
 	}
 
-	isCalibrated = false;
-	
-
 }
 
 bool Neuropixels1_v3::open()
 {
 	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
 	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
-
-	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
-	LOGD("Neuropixels::init: errorCode: ", errorCode);
-
-	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
-	LOGDD("Neuropixels::setHSLed: errorCode: ", errorCode);
-
-	//writeConfiguration();
 
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
@@ -141,21 +130,15 @@ bool Neuropixels1_v3::close()
 void Neuropixels1_v3::initialize(bool signalChainIsLoading)
 {
 
-	//if (!signalChainIsLoading) //)
-	//{
-		//selectElectrodes();
-		//setAllReferences();
-		//setAllGains();
-		//setApFilterState();
+	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
+	LOGD("Neuropixels::init: errorCode: ", errorCode);
 
-		//calibrate();
+	errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
+	LOGD("Neuropixels::setOPMODE: errorCode: ", errorCode);
 
-		//writeConfiguration();
+	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+	LOGDD("Neuropixels::setHSLed: errorCode: ", errorCode);
 
-		//setStatus(SourceStatus::CONNECTED);
-
-		//thread->upd
-	//}
 }
 
 
@@ -409,22 +392,7 @@ void Neuropixels1_v3::run()
 
 					apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, 1);
 
-					if (ap_timestamp % 30000 == 0)
-					{
-						int packetsAvailable;
-						int headroom;
-
-						Neuropixels::getElectrodeDataFifoState(
-							basestation->slot,
-							headstage->port,
-							dock,
-							&packetsAvailable,
-							&headroom);
-
-						//std::cout << "Basestation " << int(basestation->slot) << ", probe " << int(port) << ", packets: " << packetsAvailable << std::endl;
-
-						fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
-					}
+					
 
 
 				}
@@ -442,6 +410,26 @@ void Neuropixels1_v3::run()
 		{
 			LOGD("readPackets error code: ", errorCode, " for Basestation ", int(basestation->slot), ", probe ", int(headstage->port));
 		}
+
+		int packetsAvailable;
+		int headroom;
+
+		Neuropixels::getElectrodeDataFifoState(
+			basestation->slot,
+			headstage->port,
+			dock,
+			&packetsAvailable,
+			&headroom);
+
+		fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+
+		if (packetsAvailable < SAMPLECOUNT)
+		{
+			int64 uSecToWait = int64((SAMPLECOUNT - packetsAvailable) * 400);
+
+			std::this_thread::sleep_for(std::chrono::microseconds(uSecToWait));
+		}
+		
 	}
 
 }

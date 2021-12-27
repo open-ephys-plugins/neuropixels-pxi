@@ -114,7 +114,8 @@ void SimulatedBasestation::initialize(bool signalChainIsLoading)
 {
 	if (!probesInitialized)
 	{
-		
+		LOGD("Basestation initializing probes...");
+
 		for (auto probe: probes)
 		{
 			probe->initialize(signalChainIsLoading);

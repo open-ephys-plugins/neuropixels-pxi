@@ -103,23 +103,13 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	open();
 
-	errorCode = np::NP_ErrorCode::SUCCESS;
-
-	isCalibrated = false;
-
 }
 
 bool Neuropixels1_v1::open()
 {
 	errorCode = np::openProbe(basestation->slot_c, headstage->port_c);
-	LOGD("openProbe: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-	errorCode = np::init(basestation->slot_c, headstage->port_c);
-	LOGD("init: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-	errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);
-	LOGD("setOPMODE: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-	errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
-	LOGD("setHSLed: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
-
+	LOGD("openProbe: slot: ", (int) basestation->slot_c, " port: ", (int) headstage->port_c, " errorCode: ", errorCode);
+	
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
 	eventCode = 0;
@@ -134,14 +124,22 @@ bool Neuropixels1_v1::open()
 bool Neuropixels1_v1::close()
 {
 	errorCode = np::close(basestation->slot_c, headstage->port_c);
-	LOGD("close: slot: ", basestation->slot_c, " port: ", headstage->port_c, " errorCode: ", errorCode);
+	LOGD("close: slot: ", (int) basestation->slot_c, " port: ", (int) headstage->port_c, " errorCode: ", errorCode);
+
 	return errorCode == np::SUCCESS;
 }
 
 void Neuropixels1_v1::initialize(bool signalChainIsLoading)
 {
 
-	
+	errorCode = np::init(basestation->slot_c, headstage->port_c);
+	LOGD("init: slot: ", (int) basestation->slot_c, " port: ", (int) headstage->port_c, " errorCode: ", errorCode);
+
+	errorCode = np::setOPMODE(basestation->slot_c, headstage->port_c, np::RECORDING);
+	LOGD("setOPMODE: slot: ", (int) basestation->slot_c, " port: ", (int) headstage->port_c, " errorCode: ", errorCode);
+
+	errorCode = np::setHSLed(basestation->slot_c, headstage->port_c, false);
+	LOGD("setHSLed: slot: ", (int) basestation->slot_c, " port: ", (int) headstage->port_c, " errorCode: ", errorCode);
 
 }
 
@@ -301,14 +299,12 @@ void Neuropixels1_v1::startAcquisition()
 {
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
-	//std::cout << "... and clearing buffers" << std::endl;
+
 	apBuffer->clear();
 	lfpBuffer->clear();
 
-
 	apView->reset();
 	lfpView->reset();
-
 
 	LOGD("  Starting thread.");
 	startThread();
@@ -321,8 +317,6 @@ void Neuropixels1_v1::stopAcquisition()
 
 void Neuropixels1_v1::run()
 {
-
-	//std::cout << "Thread running." << std::endl;
 
 	while (!threadShouldExit())
 	{

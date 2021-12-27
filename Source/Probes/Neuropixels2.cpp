@@ -103,16 +103,19 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 	
 	open();
 
-	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
-
-	isCalibrated = false;
-
 }
 
 bool Neuropixels2::open()
 {
 	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
 	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	
+	ap_timestamp = 0;
+	lfp_timestamp = 0;
+	eventCode = 0;
+
+	apView = new ActivityView(384, 3000);
+
 	return errorCode == Neuropixels::SUCCESS;
 
 }
@@ -122,20 +125,19 @@ bool Neuropixels2::close()
 	errorCode = Neuropixels::closeProbe(basestation->slot, headstage->port, dock);
 	LOGD("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
-	errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
-	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
-
-	ap_timestamp = 0;
-	lfp_timestamp = 0;
-	eventCode = 0;
-
-	apView = new ActivityView(384, 3000);
-
 	return errorCode == Neuropixels::SUCCESS;
 }
 
 void Neuropixels2::initialize(bool signalChainIsLoading)
 {
+	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
+	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+
+	errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
+	LOGD("setOPMODE: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+
+	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+	LOGD("setHSLed: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
 }
 

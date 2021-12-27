@@ -91,20 +91,13 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
 	settings.availableReferences.add("INT_REF");
 
 	open();
-
-	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
-
-	isCalibrated = false;
 }
 
 bool Neuropixels_NHP_Active::open()
 {
-	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
-	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
-	LOGD("Configuring probe...");
-	errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
-	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
+	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
@@ -126,6 +119,14 @@ bool Neuropixels_NHP_Active::close()
 
 void Neuropixels_NHP_Active::initialize(bool signalChainIsLoading)
 {
+	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
+	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+
+	errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
+	LOGD("setOPMODE: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+
+	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+	LOGD("setHSLed: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
 }
 
@@ -135,6 +136,14 @@ void Neuropixels_NHP_Active::calibrate()
 	File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
 	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
 	File probeDirectory = calibrationDirectory.getChildFile(String(info.serial_number));
+	
+	if (!probeDirectory.exists())
+	{
+		// check alternate location
+		baseDirectory = CoreServices::getSavedStateDirectory();
+		calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
+		probeDirectory = calibrationDirectory.getChildFile(String(info.serial_number));
+	}
 
 	if (probeDirectory.exists())
 	{
