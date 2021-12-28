@@ -253,8 +253,13 @@ void SimulatedProbe::run()
 
 		int64 start = Time::getHighResolutionTicks();
 
-		float apSamples[384 * 12 * SAMPLE_COUNT];
-		float lfpSamples[384 * SAMPLE_COUNT];
+		int SKIP = 384;
+
+		if (sendSync)
+			SKIP = 385;
+
+		float apSamples[385 * 12 * SAMPLE_COUNT];
+		float lfpSamples[385 * SAMPLE_COUNT];
 		int64 ap_timestamps[12 * SAMPLE_COUNT];
 		uint64 event_codes[12 * SAMPLE_COUNT];
 		int64 lfp_timestamps[SAMPLE_COUNT];
@@ -266,13 +271,13 @@ void SimulatedProbe::run()
 			{
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j + i * 384 + packetNum * 12 * 384] = simulatedData.ap_band[ap_timestamp % 3000] + float(j * 2) - ap_offsets[j][0];
-					apView->addSample(apSamples[j + i * 384 + packetNum * 12 * 384], j);
+					apSamples[j + i * SKIP + packetNum * 12 * SKIP] = simulatedData.ap_band[ap_timestamp % 3000] + float(j * 2) - ap_offsets[j][0];
+					apView->addSample(apSamples[j + i * SKIP + packetNum * 12 * SKIP], j);
 					
 					if (i == 0)
 					{
-						lfpSamples[j + packetNum * 384] = simulatedData.lfp_band[lfp_timestamp % 250] * float(j % 24) / 24.0f - lfp_offsets[j][0];
-						lfpView->addSample(lfpSamples[j + packetNum * 384], j);
+						lfpSamples[j + packetNum * SKIP] = simulatedData.lfp_band[lfp_timestamp % 250] * float(j % 24) / 24.0f - lfp_offsets[j][0];
+						lfpView->addSample(lfpSamples[j + packetNum * SKIP], j);
 					}
 							
 				}
@@ -289,18 +294,28 @@ void SimulatedProbe::run()
 
 				event_codes[i + packetNum * 12] = eventCode;
 
+				if (sendSync)
+					apSamples[384 + i * SKIP + packetNum * 12 * SKIP] = (float)eventCode;
+
 			}
 
 			lfp_timestamps[packetNum] = lfp_timestamp++;
 			lfp_event_codes[packetNum] = eventCode;
+
+			if (sendSync)
+				lfpSamples[384 + packetNum * SKIP] = (float)eventCode;
 		}
 
 		apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * SAMPLE_COUNT);
 		lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, SAMPLE_COUNT);
 
-		updateOffsets(apSamples, ap_timestamp, true);
-		updateOffsets(lfpSamples, lfp_timestamp, false);
+		if (ap_offsets[0][0] == 0)
+		{
+			updateOffsets(apSamples, ap_timestamp, true);
+			updateOffsets(lfpSamples, lfp_timestamp, false);
+		}
 		
+
 		fifoFillPercentage = 0;
 		
 		int64 uSecElapsed = int64 (Time::highResolutionTicksToSeconds(Time::getHighResolutionTicks() - start) * 1e6);
