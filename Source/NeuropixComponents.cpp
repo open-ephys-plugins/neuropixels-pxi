@@ -29,19 +29,19 @@ Basestation* Basestation::currentBasestation = nullptr;
 void Probe::updateOffsets(float* samples, int64 timestamp, bool isApBand)
 {
 
-	if (isApBand)
+	if (isApBand && timestamp > 30000 * 5) // wait for amplifiers to settle
 	{
 		
-		if (ap_offset_counter < 100)
+		if (ap_offset_counter < 99)
 		{
 			for (int i = 0; i < 384; i++)
 			{
-				ap_offsets[i][ap_offset_counter] = samples[i];
+				ap_offsets[i][ap_offset_counter+1] = samples[i];
 			}
 
 			ap_offset_counter++;
 		}
-		else if (ap_offset_counter == 100)
+		else if (ap_offset_counter == 99)
 		{
 			for (int i = 0; i < 384; i++)
 			{
@@ -51,7 +51,7 @@ void Probe::updateOffsets(float* samples, int64 timestamp, bool isApBand)
 					ap_offsets[i][0] += ap_offsets[i][j];
 				}
 				
-				ap_offsets[i][0] /= 100;
+				ap_offsets[i][0] /= 99;
 
 			}
 
@@ -59,18 +59,19 @@ void Probe::updateOffsets(float* samples, int64 timestamp, bool isApBand)
 		}
 
 	}
-	else {
+	else if (!isApBand && timestamp > 2500 * 5) // wait for amplifiers to settle
+	{
 
-		if (lfp_offset_counter < 100)
+		if (lfp_offset_counter < 99)
 		{
 			for (int i = 0; i < 384; i++)
 			{
-				lfp_offsets[i][lfp_offset_counter] = samples[i];
+				lfp_offsets[i][lfp_offset_counter+1] = samples[i];
 			}
 
 			lfp_offset_counter++;
 		}
-		else if (lfp_offset_counter == 100)
+		else if (lfp_offset_counter == 99)
 		{
 			for (int i = 0; i < 384; i++)
 			{
@@ -80,7 +81,7 @@ void Probe::updateOffsets(float* samples, int64 timestamp, bool isApBand)
 					lfp_offsets[i][0] += lfp_offsets[i][j];
 				}
 
-				lfp_offsets[i][0] /= 100;
+				lfp_offsets[i][0] /= 99;
 
 			}
 
