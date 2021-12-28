@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../API/v3/NeuropixAPI.h"
 
-# define SAMPLECOUNT 64
+# define MAXPACKETS 64
 
 class Neuropixels1_v3 : public Probe
 {
@@ -65,6 +65,13 @@ public:
 
 	Neuropixels::electrodePacket packet[SAMPLECOUNT];
 	Neuropixels::NP_ErrorCode errorCode;
+
+	float apSamples[385 * 12 * MAXPACKETS];
+	float lfpSamples[385 * MAXPACKETS];
+	int64 ap_timestamps[12 * MAXPACKETS];
+	uint64 event_codes[12 * MAXPACKETS];
+	int64 lfp_timestamps[MAXPACKETS];
+	uint64 lfp_event_codes[MAXPACKETS];
 
 };
 

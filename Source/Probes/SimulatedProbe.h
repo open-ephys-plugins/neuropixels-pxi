@@ -34,6 +34,8 @@ class SimulatedFlex;
 class SimulatedHeadstage;
 class SimulatedProbe;
 
+#define MAXPACKETS 64
+
 struct SimulatedData {
 
 	std::vector<float> ap_band
@@ -89,6 +91,13 @@ public:
 	bool apFilterSwitch;
 
 	SimulatedData simulatedData;
+
+	float apSamples[385 * 12 * MAXPACKETS];
+	float lfpSamples[385 * MAXPACKETS];
+	int64 ap_timestamps[12 * MAXPACKETS];
+	uint64 event_codes[12 * MAXPACKETS];
+	int64 lfp_timestamps[MAXPACKETS];
+	uint64 lfp_event_codes[MAXPACKETS];
 
 };
 

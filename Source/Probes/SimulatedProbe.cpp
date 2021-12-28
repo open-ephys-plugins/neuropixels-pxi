@@ -25,16 +25,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Geometry.h"
 #include "../Headstages/SimulatedHeadstage.h"
 
-#define SAMPLE_COUNT 50
-
 void SimulatedProbe::getInfo()
 {
 	info.part_number = "Simulated probe";
 	info.serial_number = 123456789;
 
 }
-
-
 
 SimulatedProbe::SimulatedProbe(Basestation* bs,
 	Headstage* hs,
@@ -258,14 +254,7 @@ void SimulatedProbe::run()
 		if (sendSync)
 			SKIP = 385;
 
-		float apSamples[385 * 12 * SAMPLE_COUNT];
-		float lfpSamples[385 * SAMPLE_COUNT];
-		int64 ap_timestamps[12 * SAMPLE_COUNT];
-		uint64 event_codes[12 * SAMPLE_COUNT];
-		int64 lfp_timestamps[SAMPLE_COUNT];
-		uint64 lfp_event_codes[SAMPLE_COUNT];
-
-		for (int packetNum = 0; packetNum < SAMPLE_COUNT; packetNum++)
+		for (int packetNum = 0; packetNum < MAXPACKETS; packetNum++)
 		{
 			for (int i = 0; i < 12; i++)
 			{
@@ -306,8 +295,8 @@ void SimulatedProbe::run()
 				lfpSamples[384 + packetNum * SKIP] = (float)eventCode;
 		}
 
-		apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * SAMPLE_COUNT);
-		lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, SAMPLE_COUNT);
+		apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * MAXPACKETS);
+		lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, MAXPACKETS);
 
 		if (ap_offsets[0][0] == 0)
 		{
@@ -320,9 +309,9 @@ void SimulatedProbe::run()
 		
 		int64 uSecElapsed = int64 (Time::highResolutionTicksToSeconds(Time::getHighResolutionTicks() - start) * 1e6);
 
-		if (uSecElapsed < 400 * SAMPLE_COUNT)
+		if (uSecElapsed < 400 * MAXPACKETS)
 		{
-			std::this_thread::sleep_for(std::chrono::microseconds(400 * SAMPLE_COUNT - uSecElapsed));
+			std::this_thread::sleep_for(std::chrono::microseconds(400 * MAXPACKETS - uSecElapsed));
 		}
 
 	}

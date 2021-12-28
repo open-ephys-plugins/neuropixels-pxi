@@ -346,7 +346,7 @@ void Neuropixels1_v3::run()
 	while (!threadShouldExit())
 	{
 
-		int count = SAMPLECOUNT;
+		int count = MAXPACKETS;
 
 		errorCode = Neuropixels::readElectrodeData(
 			basestation->slot,
@@ -366,13 +366,7 @@ void Neuropixels1_v3::run()
 		if (errorCode == Neuropixels::SUCCESS &&
 			count > 0)
 		{
-			float apSamples[385 * 12 * SAMPLECOUNT];
-			float lfpSamples[385 * SAMPLECOUNT];
-			int64 ap_timestamps[12 * SAMPLECOUNT];
-			uint64 event_codes[12 * SAMPLECOUNT];
-			int64 lfp_timestamps[SAMPLECOUNT];
-			uint64 lfp_event_codes[SAMPLECOUNT];
-
+			
 			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
 				for (int i = 0; i < 12; i++)
@@ -437,9 +431,9 @@ void Neuropixels1_v3::run()
 
 		fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
 
-		if (packetsAvailable < SAMPLECOUNT)
+		if (packetsAvailable < MAXPACKETS)
 		{
-			int uSecToWait = (SAMPLECOUNT - packetsAvailable) * 400;
+			int uSecToWait = (MAXPACKETS - packetsAvailable) * 400;
 
 			std::this_thread::sleep_for(std::chrono::microseconds(uSecToWait));
 		}
