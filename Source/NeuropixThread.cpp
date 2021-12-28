@@ -695,6 +695,8 @@ void NeuropixThread::stopRecording()
 bool NeuropixThread::stopAcquisition()
 {
 
+	LOGC("Stopping Neuropixels thread.");
+
     if (isThreadRunning())
     {
         signalThreadShouldExit();
