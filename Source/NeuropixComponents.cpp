@@ -25,3 +25,68 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 float Basestation::totalFirmwareBytes = 0;
 Basestation* Basestation::currentBasestation = nullptr;
+
+void Probe::updateOffsets(float* samples, int64 timestamp, bool isApBand)
+{
+
+	if (isApBand)
+	{
+		
+		if (ap_offset_counter < 100)
+		{
+			for (int i = 0; i < 384; i++)
+			{
+				ap_offsets[i][ap_offset_counter] = samples[i];
+			}
+
+			ap_offset_counter++;
+		}
+		else if (ap_offset_counter == 100)
+		{
+			for (int i = 0; i < 384; i++)
+			{
+
+				for (int j = 1; j < 100; j++)
+				{
+					ap_offsets[i][0] += ap_offsets[i][j];
+				}
+				
+				ap_offsets[i][0] /= 100;
+
+			}
+
+			ap_offset_counter++;
+		}
+
+	}
+	else {
+
+		if (lfp_offset_counter < 100)
+		{
+			for (int i = 0; i < 384; i++)
+			{
+				lfp_offsets[i][lfp_offset_counter] = samples[i];
+			}
+
+			lfp_offset_counter++;
+		}
+		else if (lfp_offset_counter == 100)
+		{
+			for (int i = 0; i < 384; i++)
+			{
+
+				for (int j = 1; j < 100; j++)
+				{
+					lfp_offsets[i][0] += lfp_offsets[i][j];
+				}
+
+				lfp_offsets[i][0] /= 100;
+
+			}
+
+			lfp_offset_counter++;
+		}
+
+	}
+
+}

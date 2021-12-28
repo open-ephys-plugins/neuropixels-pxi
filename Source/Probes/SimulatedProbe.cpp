@@ -266,12 +266,12 @@ void SimulatedProbe::run()
 			{
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j + i * 384 + packetNum * 12 * 384] = simulatedData.ap_band[ap_timestamp % 3000];
+					apSamples[j + i * 384 + packetNum * 12 * 384] = simulatedData.ap_band[ap_timestamp % 3000] + float(j * 2) - ap_offsets[j][0];
 					apView->addSample(apSamples[j + i * 384 + packetNum * 12 * 384], j);
 					
 					if (i == 0)
 					{
-						lfpSamples[j + packetNum * 384] = simulatedData.lfp_band[lfp_timestamp % 250] * float(j % 24) / 24.0f;
+						lfpSamples[j + packetNum * 384] = simulatedData.lfp_band[lfp_timestamp % 250] * float(j % 24) / 24.0f - lfp_offsets[j][0];
 						lfpView->addSample(lfpSamples[j + packetNum * 384], j);
 					}
 							
@@ -298,6 +298,9 @@ void SimulatedProbe::run()
 		apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * SAMPLE_COUNT);
 		lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, SAMPLE_COUNT);
 
+		updateOffsets(apSamples, ap_timestamp, true);
+		updateOffsets(lfpSamples, lfp_timestamp, false);
+		
 		fifoFillPercentage = 0;
 		
 		int64 uSecElapsed = int64 (Time::highResolutionTicksToSeconds(Time::getHighResolutionTicks() - start) * 1e6);

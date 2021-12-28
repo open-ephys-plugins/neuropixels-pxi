@@ -301,6 +301,15 @@ public:
 		calibrationWarningShown = false;
 
 		sourceType = DataSourceType::PROBE;
+
+		for (int i = 0; i < 384; i++)
+		{
+			for (int j = 0; j < 100; j++)
+			{
+				ap_offsets[i][j] = 0;
+				lfp_offsets[i][j] = 0;
+			}
+		}
 	}
 
 	Headstage* headstage; // owned by Basestation
@@ -318,6 +327,9 @@ public:
 
 	float ap_sample_rate;
 	float lfp_sample_rate;
+
+	float ap_offsets[384][100];
+	float lfp_offsets[384][100];
 
 	int64 ap_timestamp;
 	int64 lfp_timestamp;
@@ -368,6 +380,11 @@ public:
 	{
 		settings = p;
 	}
+
+	void updateOffsets(float* samples, int64 timestamp, bool isApBand);
+
+	int ap_offset_counter = 0;
+	int lfp_offset_counter = 0;
 
 	ProbeType type;
 	
