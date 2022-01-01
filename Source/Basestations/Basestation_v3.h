@@ -29,6 +29,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # define SAMPLECOUNT 64
 
+class ArmBasestation : public Thread
+{
+public:
+	ArmBasestation(int slot_) : 
+		Thread("Arm Basestation in Slot " + String(slot))
+		, slot(slot_) { }
+
+	~ArmBasestation() { }
+	
+	void run()
+	{
+		LOGC("Arming PXI slot ", slot, "...");
+		Neuropixels::arm(slot);
+		LOGC("Arming complete.");
+	}
+
+private:
+
+	int slot;
+};
+
 class Basestation_v3 : public Basestation
 
 {
@@ -65,8 +86,7 @@ public:
 
 	void selectEmissionSite(int port, int dock, String wavelength, int site);
 
-
-	//Neuropixels::bistElectrodeStats stats[960];
+	std::unique_ptr<ArmBasestation> armBasestation;
 
 	Neuropixels::NP_ErrorCode errorCode;
 

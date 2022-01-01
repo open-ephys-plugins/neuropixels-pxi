@@ -337,7 +337,8 @@ void Neuropixels1_v3::startAcquisition()
 
 void Neuropixels1_v3::stopAcquisition()
 {
-	stopThread(1000);
+	LOGC("Probe stopping thread.");
+	signalThreadShouldExit();
 }
 
 void Neuropixels1_v3::run()
@@ -356,12 +357,10 @@ void Neuropixels1_v3::run()
 			&count,
 			count);
 
-		int SKIP;
+		int SKIP = 384;
 
 		if (sendSync)
 			SKIP = 385;
-		else
-			SKIP = 384;
 
 		if (errorCode == Neuropixels::SUCCESS &&
 			count > 0)
@@ -380,7 +379,8 @@ void Neuropixels1_v3::run()
 
 						apSamples[j + i * SKIP + packetNum * 12 * SKIP] = 
 							float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f
-							      / settings.availableApGains[settings.apGainIndex]; // convert to microvolts
+							      / settings.availableApGains[settings.apGainIndex]
+								  - ap_offsets[j][0]; // convert to microvolts
 
 						apView->addSample(apSamples[j + i * SKIP + packetNum * 12 * SKIP], j);
 
@@ -388,7 +388,8 @@ void Neuropixels1_v3::run()
 						{
 							lfpSamples[j + packetNum * SKIP] = 
 								float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f 
-								/ settings.availableLfpGains[settings.lfpGainIndex]; // convert to microvolts
+								/ settings.availableLfpGains[settings.lfpGainIndex]
+								- lfp_offsets[j][0]; // convert to microvolts
 
 							lfpView->addSample(lfpSamples[j + packetNum * SKIP], j);
 						}
@@ -411,7 +412,13 @@ void Neuropixels1_v3::run()
 			}
 
 			apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * count);
-			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, count);
+			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, count); 
+			
+			if (ap_offsets[0][0] == 0)
+			{
+				updateOffsets(apSamples, ap_timestamp, true);
+				updateOffsets(lfpSamples, lfp_timestamp, false);
+			}
 
 		}
 		else if (errorCode != Neuropixels::SUCCESS)

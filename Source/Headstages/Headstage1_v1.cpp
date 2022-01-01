@@ -102,7 +102,7 @@ void Headstage1_v1::runTestModule()
 	testModule->showResults();
 }
 
-Flex1_v1::Flex1_v1(Headstage* hs_) : Flex(hs_, 0)
+Flex1_v1::Flex1_v1(Headstage* hs_) : Flex(hs_, 1)
 {
 	getInfo();
 

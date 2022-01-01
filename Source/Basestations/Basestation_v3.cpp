@@ -82,6 +82,8 @@ Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
 {
 	type = BasestationType::V3;
 
+	armBasestation = std::make_unique<ArmBasestation>(slot_number);
+
 	slot = slot_number;
 	getInfo();
 }
@@ -217,7 +219,7 @@ void Basestation_v3::initialize(bool signalChainIsLoading)
 		probesInitialized = true;
 	}
 
-	errorCode = Neuropixels::arm(slot);
+	armBasestation->startThread();
 }
 
 Basestation_v3::~Basestation_v3()
@@ -338,12 +340,15 @@ void Basestation_v3::startAcquisition()
 
 void Basestation_v3::stopAcquisition()
 {
+
+	LOGC("Basestation stopping acquisition.");
+
 	for (auto probe : probes)
 	{
 		probe->stopAcquisition();
 	}
-
-	errorCode = Neuropixels::arm(slot);
+	
+	armBasestation->startThread();
 }
 
 

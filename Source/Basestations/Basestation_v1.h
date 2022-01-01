@@ -29,7 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # define SAMPLECOUNT 64
 
-
 class Basestation_v1 : public Basestation
 {
 public:
