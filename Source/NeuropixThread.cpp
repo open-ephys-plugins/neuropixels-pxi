@@ -613,7 +613,7 @@ void NeuropixThread::startRecording()
 {
 	recordingNumber++;
 
-	File rootFolder = CoreServices::getDefaultRecordingDirectory();
+	File rootFolder = CoreServices::getRecordingParentDirectory();
 	String pathName = rootFolder.getFileName();
 	
 	for (int i = 0; i < basestations.size(); i++)
