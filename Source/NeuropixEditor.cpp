@@ -27,8 +27,8 @@
 #include "NeuropixCanvas.h"
 
 
-EditorBackground::EditorBackground(int numBasestations, bool freqSelectEnabled)
-	: numBasestations(numBasestations), freqSelectEnabled(freqSelectEnabled) {}
+EditorBackground::EditorBackground(Array<Basestation*> basestations_, bool freqSelectEnabled)
+	: basestations(basestations_), numBasestations(basestations_.size()), freqSelectEnabled(freqSelectEnabled) {}
 
 void EditorBackground::setFreqSelectAvailable(bool isAvailable)
 {
@@ -48,8 +48,10 @@ void EditorBackground::paint(Graphics& g)
 			g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 1);
 
 			g.setColour(Colours::darkgrey);
-			g.setFont(20);
-			g.drawText(String(i + 1), 90 * i + 72, 15, 10, 10, Justification::centred);
+			g.setFont(10);
+			g.drawText("SLOT", 90 * i + 72, 15, 50, 12, Justification::centredLeft);
+			g.setFont(26);
+			g.drawText(String(basestations[i]->slot), 90 * i + 72, 28, 25, 26, Justification::centredLeft);
 			g.setFont(8);
 			g.drawText(String("0"), 90 * i + 87, 100, 50, 10, Justification::centredLeft);
 			g.drawText(String("100"), 90 * i + 87, 60, 50, 10, Justification::centredLeft);
@@ -374,7 +376,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
 		UtilityButton* b = new UtilityButton("", Font("Small Text", 13, Font::plain));
 		b->setBounds(x_pos, y_pos, 30, 20);
 		b->addListener(this);
-		addAndMakeVisible(b);
+		//addAndMakeVisible(b);
 		directoryButtons.add(b);
 
 		savingDirectories.add(File());
@@ -417,7 +419,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
 	addChildComponent(freqSelectBox);
 
 
-	background = new EditorBackground(basestations.size(), false);
+	background = new EditorBackground(basestations, false);
 	background->setBounds(0, 15, 500, 150);
 	addAndMakeVisible(background);
 	background->toBack();

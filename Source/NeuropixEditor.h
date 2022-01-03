@@ -39,7 +39,7 @@ class NeuropixThread;
 class EditorBackground : public Component
 {
 public:
-	EditorBackground(int numBasestations, bool freqSelectEnabled);
+	EditorBackground(Array<Basestation*> basestations, bool freqSelectEnabled);
 	void setFreqSelectAvailable(bool available);
 
 private:
@@ -47,6 +47,8 @@ private:
 
 	int numBasestations;
 	bool freqSelectEnabled;
+
+	Array<Basestation*> basestations;
 
 };
 
