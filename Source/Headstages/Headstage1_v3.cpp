@@ -92,7 +92,7 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 		flexCables.add(new Flex1_v3(this));
 
 		char partNumber[MAXLEN];
-		errorCode = Neuropixels::readProbePN(basestation->slot, port, 0, partNumber, MAXLEN);
+		errorCode = Neuropixels::readProbePN(basestation->slot, port, 1, partNumber, MAXLEN);
 
 		if (String(partNumber).equalsIgnoreCase("NP1300"))
 			probes.add(new NeuropixelsOpto(basestation, this, flexCables[0]));

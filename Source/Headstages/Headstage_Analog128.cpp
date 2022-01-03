@@ -32,14 +32,14 @@ void Headstage_Analog128::getInfo()
 	int version_major;
 	int version_minor;
 
-	errorCode = Neuropixels::getHSVersion(basestation->slot_c, port_c, &version_major, &version_minor);
+	errorCode = Neuropixels::getHSVersion(basestation->slot, port, &version_major, &version_minor);
 
 	info.version = String(version_major) + "." + String(version_minor);
 
-	errorCode = Neuropixels::readHSSN(basestation->slot_c, port_c, &info.serial_number);
+	errorCode = Neuropixels::readHSSN(basestation->slot, port, &info.serial_number);
 
 	char pn[MAXLEN];
-	errorCode = Neuropixels::readHSPN(basestation->slot_c, port_c, pn, MAXLEN);
+	errorCode = Neuropixels::readHSPN(basestation->slot, port, pn, MAXLEN);
 
 	info.part_number = String(pn);
 
@@ -52,8 +52,8 @@ void Flex1_NHP::getInfo()
 	int version_major;
 	int version_minor;
 
-	errorCode = Neuropixels::getFlexVersion(headstage->basestation->slot_c, 
-								   headstage->port_c, 
+	errorCode = Neuropixels::getFlexVersion(headstage->basestation->slot, 
+								   headstage->port, 
 								   dock,
 								   &version_major, 
 								   &version_minor);
@@ -61,8 +61,8 @@ void Flex1_NHP::getInfo()
 	info.version = String(version_major) + "." + String(version_minor);
 
 	char pn[MAXLEN];
-	errorCode = Neuropixels::readFlexPN(headstage->basestation->slot_c,
-								headstage->port_c, 
+	errorCode = Neuropixels::readFlexPN(headstage->basestation->slot,
+								headstage->port, 
 								dock,
 								pn, 
 								MAXLEN);
