@@ -428,7 +428,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
     infoLabel = new Label("INFO", "INFO");
     infoLabelView->setViewedComponent(infoLabel, false);
-    infoLabel->setFont(Font("Small Text", 13, Font::plain));
+    infoLabel->setFont(Font("Fira Code", "Retina", 15));
     infoLabel->setBounds(0, 0, 750, 350);
     infoLabel->setJustificationType(Justification::topLeft);
     infoLabel->setColour(Label::textColourId, Colours::lightgrey);
@@ -485,22 +485,21 @@ void NeuropixInterface::updateInfoString()
     
     nameString = probe->name;
 
-    infoString += "API VERSION: ";
+    infoString += "API version: ";
     infoString += thread->getApiVersion();
     infoString += "\n";
     infoString += "\n";
 
     infoString += "Basestation";
-    infoString += "\n hardware version: " + probe->basestation->info.version;
-    infoString += "\n firmware version: " + probe->basestation->info.boot_version;
+    infoString += "\n Firmware version: " + probe->basestation->info.boot_version;
     infoString += "\n";
     infoString += "\n";
 
-   /* infoString += "Basestation connect board";
-    infoString += "\n hardware version: " + probe->basestation->basestationConnectBoard->info.version;
-    infoString += "\n firmware version: " + probe->basestation->basestationConnectBoard->info.boot_version;
+    infoString += "Basestation connect board";
+    infoString += "\n Hardware version: " + probe->basestation->basestationConnectBoard->info.version;
+    infoString += "\n Firmware version: " + probe->basestation->basestationConnectBoard->info.boot_version;
     infoString += "\n";
-    infoString += "\n";*/
+    infoString += "\n";
 
     infoString += "Headstage: " + probe->headstage->info.part_number;
     infoString += "\n";
@@ -701,7 +700,10 @@ void NeuropixInterface::buttonClicked(Button* button)
     else if (button == activityViewButton)
     {
         mode = ACTIVITY_VIEW;
-        probeBrowser->startTimer(100);
+
+        if (acquisitionIsActive)
+            probeBrowser->startTimer(100);
+
         repaint();
     }
     else if (button == enableButton)
@@ -1003,6 +1005,7 @@ void NeuropixInterface::startAcquisition()
 {
 
     bool enabledState = false;
+    acquisitionIsActive = true;
 
     if (enableButton != nullptr)
         enableButton->setEnabled(enabledState);
@@ -1024,11 +1027,15 @@ void NeuropixInterface::startAcquisition()
 
     if (bistButton != nullptr)
         bistButton->setEnabled(enabledState);
+
+    if (mode == ACTIVITY_VIEW)
+        probeBrowser->startTimer(100);
 }
 
 void NeuropixInterface::stopAcquisition()
 {
     bool enabledState = true;
+    acquisitionIsActive = false;
 
     if (enableButton != nullptr)
         enableButton->setEnabled(enabledState);
@@ -1050,6 +1057,8 @@ void NeuropixInterface::stopAcquisition()
 
     if (bistButton != nullptr)
         bistButton->setEnabled(enabledState);
+
+    probeBrowser->stopTimer();
 }
 
 

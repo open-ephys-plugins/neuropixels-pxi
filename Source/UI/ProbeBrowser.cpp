@@ -894,8 +894,6 @@ Colour ProbeBrowser::getElectrodeColour(int i)
 void ProbeBrowser::timerCallback()
 {
 
-    std::cout << "Probe browser render" << std::endl;
-
     if (parent->mode != VisualizationMode::ACTIVITY_VIEW)
         return;
 

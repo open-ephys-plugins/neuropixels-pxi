@@ -89,6 +89,8 @@ private:
 
 	XmlElement neuropix_info;
 
+	bool acquisitionIsActive = false;
+
 	// Combo box - probe-specific settings
 	ScopedPointer<ComboBox> lfpGainComboBox;
 	ScopedPointer<ComboBox> apGainComboBox;
