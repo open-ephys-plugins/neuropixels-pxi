@@ -219,7 +219,7 @@ void Basestation_v3::initialize(bool signalChainIsLoading)
 		probesInitialized = true;
 	}
 
-	armBasestation->startThread();
+	Neuropixels::arm(slot); //armBasestation->startThread();
 }
 
 Basestation_v3::~Basestation_v3()
@@ -335,6 +335,9 @@ void Basestation_v3::startAcquisition()
 	}
 
 	errorCode = Neuropixels::setSWTrigger(slot);
+
+	if (armBasestation->isThreadRunning())
+		armBasestation->waitForThreadToExit(2000);
 
 }
 
