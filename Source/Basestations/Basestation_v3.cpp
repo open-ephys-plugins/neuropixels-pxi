@@ -329,15 +329,16 @@ float Basestation_v3::getFillPercentage()
 
 void Basestation_v3::startAcquisition()
 {
+
+	if (armBasestation->isThreadRunning())
+		armBasestation->waitForThreadToExit(2000);
+
 	for (auto probe : probes)
 	{
 		probe->startAcquisition();
 	}
 
 	errorCode = Neuropixels::setSWTrigger(slot);
-
-	if (armBasestation->isThreadRunning())
-		armBasestation->waitForThreadToExit(2000);
 
 }
 

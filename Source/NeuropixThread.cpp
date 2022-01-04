@@ -283,7 +283,7 @@ void NeuropixThread::applyProbeSettingsQueue()
 	for (auto settings: probeSettingsUpdateQueue)
 	{
 
-		LOGC("APPLYING PROBE SETTINGS FOR ", settings.probe->name);
+		LOGC("Applying probe settings for ", settings.probe->name);
 
 		if (settings.probe != nullptr)
 		{
@@ -759,6 +759,13 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 			sourceStreams.add(new DataStream(settings));
 		}
 	}
+
+	dataStreams->clear();
+	eventChannels->clear();
+	continuousChannels->clear();
+	spikeChannels->clear();
+	devices->clear();
+	configurationObjects->clear();
 
 	for (int i = 0; i < sourceStreams.size(); i++)
 	{

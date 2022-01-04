@@ -1346,8 +1346,6 @@ ProbeSettings NeuropixInterface::getProbeSettings()
     p.probe = probe;
     p.probeType = probe->type;
 
-    LOGC("Got probe settings.");
-
     return p;
 }
 

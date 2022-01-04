@@ -92,6 +92,8 @@ public:
 
 	SimulatedData simulatedData;
 
+	int SKIP;
+
 	float apSamples[385 * 12 * MAXPACKETS];
 	float lfpSamples[385 * MAXPACKETS];
 	int64 ap_timestamps[12 * MAXPACKETS];

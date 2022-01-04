@@ -198,11 +198,6 @@ void SimulatedProbe::setApFilterState()
 
 void SimulatedProbe::setAllGains()
 {
-	//for (int channel = 0; channel < 384; channel++)
-	//{
-	//	apGains.set(channel, int(apGain));
-	//	lfpGains.set(channel, int(lfpGain));
-	//}
 
 	LOGC("Wrote gain state for simulated probe.");
 }
@@ -221,18 +216,25 @@ void SimulatedProbe::writeConfiguration()
 	
 }
 
-void SimulatedProbe::startAcquisition() {
+void SimulatedProbe::startAcquisition() 
+{
 
+	ap_timestamp = 0;
+	lfp_timestamp = 0;
+	apBuffer->clear();
+	lfpBuffer->clear();
 
 	apView->reset();
 	lfpView->reset();
 
+	SKIP = sendSync ? 385 : 384;
 
+	startThread();
 }
 
 void SimulatedProbe::stopAcquisition()
 {
-
+	signalThreadShouldExit();
 }
 
 bool SimulatedProbe::runBist(BIST bistType)
@@ -248,11 +250,6 @@ void SimulatedProbe::run()
 	{
 
 		int64 start = Time::getHighResolutionTicks();
-
-		int SKIP = 384;
-
-		if (sendSync)
-			SKIP = 385;
 
 		for (int packetNum = 0; packetNum < MAXPACKETS; packetNum++)
 		{

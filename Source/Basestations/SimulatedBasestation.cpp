@@ -141,12 +141,7 @@ void SimulatedBasestation::startAcquisition()
 {
 	for (int i = 0; i < probes.size(); i++)
 	{
-
-		probes[i]->ap_timestamp = 0;
-		probes[i]->lfp_timestamp = 0;
-		probes[i]->apBuffer->clear();
-		probes[i]->lfpBuffer->clear();
-		probes[i]->startThread();
+		probes[i]->startAcquisition();
 	}
 
 }
@@ -155,7 +150,7 @@ void SimulatedBasestation::stopAcquisition()
 {
 	for (int i = 0; i < probes.size(); i++)
 	{
-		probes[i]->stopThread(1000);
+		probes[i]->stopAcquisition();
 	}
 
 }
