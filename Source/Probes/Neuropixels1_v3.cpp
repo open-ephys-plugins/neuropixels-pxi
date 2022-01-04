@@ -199,7 +199,7 @@ void Neuropixels1_v3::calibrate()
 
 }
 
-void Neuropixels1_v3::getGain()
+void Neuropixels1_v3::printSettings()
 {
 	int apGainIndex;
 	int lfpGainIndex;
@@ -223,8 +223,6 @@ void Neuropixels1_v3::selectElectrodes()
 	{
 		for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
 		{
-
-			//LOGD("Setting probe: ", headstage->port, " ch: ", settings.selectedChannel[ch], " to bank: ", settings.availableBanks.indexOf(settings.selectedBank[ch]));
 
 			ec = Neuropixels::selectElectrode(basestation->slot,
 				headstage->port,
@@ -308,7 +306,7 @@ void Neuropixels1_v3::writeConfiguration()
 	if (errorCode == Neuropixels::SUCCESS)
 	{
 		LOGD("Succesfully wrote probe configuration");
-		getGain();
+		printSettings();
 	}
 	else
 	{
@@ -321,17 +319,17 @@ void Neuropixels1_v3::startAcquisition()
 {
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
-	//std::cout << "... and clearing buffers" << std::endl;
+
 	apBuffer->clear();
 	lfpBuffer->clear();
 
 	apView->reset();
 	lfpView->reset();
-	
 
+	SKIP = sendSync ? 385 : 384;
+	
 	LOGD("  Starting thread.");
 	startThread();
-
 
 }
 
@@ -356,11 +354,6 @@ void Neuropixels1_v3::run()
 			&packet[0],
 			&count,
 			count);
-
-		int SKIP = 384;
-
-		if (sendSync)
-			SKIP = 385;
 
 		if (errorCode == Neuropixels::SUCCESS &&
 			count > 0)

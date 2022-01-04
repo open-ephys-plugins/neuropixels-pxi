@@ -24,8 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Neuropixels_NHP_Passive.h"
 #include "Geometry.h"
 
-#define MAXLEN 50
-
 void Neuropixels_NHP_Passive::getInfo()
 {
 	info.serial_number = 0;
@@ -267,19 +265,20 @@ void Neuropixels_NHP_Passive::startAcquisition()
 
 	apBuffer->clear();
 	lfpBuffer->clear();
-	LOGD("  Starting thread.");
-
 
 	apView->reset();
 	lfpView->reset();
 
+	SKIP = sendSync ? 129 : 128;
 
+	LOGD("  Starting thread.");
 	startThread();
 }
 
 void Neuropixels_NHP_Passive::stopAcquisition()
 {
-	stopThread(1000);
+	LOGC("Probe stopping thread.");
+	signalThreadShouldExit();
 }
 
 void Neuropixels_NHP_Passive::run()
@@ -301,8 +300,6 @@ void Neuropixels_NHP_Passive::run()
 		if (errorCode == Neuropixels::SUCCESS &&
 			count > 0)
 		{
-			float apSamples[129];
-			float lfpSamples[129];
 
 			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
@@ -315,54 +312,71 @@ void Neuropixels_NHP_Passive::run()
 					for (int j = 0; j < 128; j++)
 					{
 
-						apSamples[j] = float(packet[packetNum].apData[i][channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / settings.availableApGains[settings.apGainIndex]; // convert to microvolts
-						apView->addSample(apSamples[j], j);
+						apSamples[j + i * SKIP + packetNum * 12 * SKIP] =
+							float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f
+							/ settings.availableApGains[settings.apGainIndex]
+							- ap_offsets[j][0]; // convert to microvolts
+
+						apView->addSample(apSamples[j + i * SKIP + packetNum * 12 * SKIP], j);
 
 						if (i == 0)
 						{
-							lfpSamples[j] = float(packet[packetNum].lfpData[channel_map[j]]) * 1.2f / 1024.0f * 1000000.0f / settings.availableLfpGains[settings.lfpGainIndex]; // convert to microvolts
-							lfpView->addSample(lfpSamples[j], j);
+							lfpSamples[j + packetNum * SKIP] =
+								float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f
+								/ settings.availableLfpGains[settings.lfpGainIndex]
+								- lfp_offsets[j][0]; // convert to microvolts
 
+							lfpView->addSample(lfpSamples[j + packetNum * SKIP], j);
 						}
 					}
 
-					ap_timestamp += 1;
+					ap_timestamps[i + packetNum * 12] = ap_timestamp++;
+					event_codes[i + packetNum * 12] = eventCode;
 
 					if (sendSync)
-						apSamples[128] = (float)eventCode;
-
-					apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, 1);
-
-					if (ap_timestamp % 30000 == 0)
-					{
-						int packetsAvailable;
-						int headroom;
-
-						Neuropixels::getElectrodeDataFifoState(
-							basestation->slot,
-							headstage->port,
-							dock,
-							&packetsAvailable,
-							&headroom);
-
-						fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
-					}
-
+						apSamples[128 + i * SKIP + packetNum * 12 * SKIP] = (float)eventCode;
 
 				}
-				lfp_timestamp += 1;
+
+				lfp_timestamps[packetNum] = lfp_timestamp++;
+				lfp_event_codes[packetNum] = eventCode;
 
 				if (sendSync)
-					lfpSamples[128] = (float)eventCode;
-
-				lfpBuffer->addToBuffer(lfpSamples, &lfp_timestamp, &eventCode, 1);
+					lfpSamples[128 + packetNum * SKIP] = (float)eventCode;
 
 			}
 
+			apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * count);
+			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, count);
+
+			if (ap_offsets[0][0] == 0)
+			{
+				updateOffsets(apSamples, ap_timestamp, true);
+				updateOffsets(lfpSamples, lfp_timestamp, false);
+			}
 		}
 		else if (errorCode != Neuropixels::SUCCESS)
 		{
 			LOGD("readPackets error code: ", errorCode, " for Basestation ", int(basestation->slot), ", probe ", int(headstage->port));
+		}
+
+		int packetsAvailable;
+		int headroom;
+
+		Neuropixels::getElectrodeDataFifoState(
+			basestation->slot,
+			headstage->port,
+			dock,
+			&packetsAvailable,
+			&headroom);
+
+		fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+
+		if (packetsAvailable < MAXPACKETS)
+		{
+			int uSecToWait = (MAXPACKETS - packetsAvailable) * 400;
+
+			std::this_thread::sleep_for(std::chrono::microseconds(uSecToWait));
 		}
 	}
 

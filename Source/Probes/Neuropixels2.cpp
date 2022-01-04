@@ -365,29 +365,24 @@ void Neuropixels2::startAcquisition()
 
 	apView->reset();
 
+	SKIP = sendSync ? 385 : 384;
+
 	LOGD("  Starting thread.");
 	startThread();
 }
 
 void Neuropixels2::stopAcquisition()
 {
-	stopThread(1000);
+	LOGC("Probe stopping thread.");
+	signalThreadShouldExit();
 }
 
 void Neuropixels2::run()
 {
 
-	//std::cout << "Thread running." << std::endl;
-
-	Neuropixels::streamsource_t source = Neuropixels::SourceAP;
-
-	int16_t data[SAMPLECOUNT * 384];
-
-	Neuropixels::PacketInfo packetInfo[SAMPLECOUNT];
-
 	while (!threadShouldExit())
 	{
-		int count = SAMPLECOUNT;
+		int count = MAXPACKETS;
 
 		errorCode = Neuropixels::readPackets(
 			basestation->slot,
@@ -402,8 +397,6 @@ void Neuropixels2::run()
 
 		if (errorCode == Neuropixels::SUCCESS && count > 0)
 		{
-			float apSamples[385];
-
 			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
 
@@ -413,42 +406,52 @@ void Neuropixels2::run()
 
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j] = float(data[packetNum * 384 + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
-					apView->addSample(apSamples[j], j);
+					apSamples[j + packetNum * SKIP] =
+						float(data[packetNum * 384 + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f
+						- ap_offsets[j][0]; // convert to microvolts
+
+					apView->addSample(apSamples[j + packetNum * SKIP], j);
 
 				}
 
-				ap_timestamp += 1;
+				ap_timestamps[packetNum] = ap_timestamp++;
 
 				if (sendSync)
-					apSamples[384] = (float) eventCode;
-
-				apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, 1);
-
-				if (ap_timestamp % 30000 == 0)
-				{
-					int packetsAvailable;
-					int headroom;
-
-					Neuropixels::getElectrodeDataFifoState(
-						basestation->slot,
-						headstage->port,
-						dock,
-						&packetsAvailable,
-						&headroom);
-
-					//std::cout << "Basestation " << int(basestation->slot) << ", probe " << int(port) << ", packets: " << packetsAvailable << std::endl;
-
-					fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
-				}
+					apSamples[384 + SKIP * packetNum] = (float)eventCode;
 
 			}
 
+			apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, count);
+
+			if (ap_offsets[0][0] == 0)
+			{
+				updateOffsets(apSamples, ap_timestamp, true);
+			}
 		}
 		else if (errorCode != Neuropixels::SUCCESS)
 		{
 			LOGD("readPackets error code: ", errorCode, " for Basestation ", int(basestation->slot), ", probe ", int(headstage->port));
 		}
+
+		int packetsAvailable;
+		int headroom;
+
+		Neuropixels::getElectrodeDataFifoState(
+			basestation->slot,
+			headstage->port,
+			dock,
+			&packetsAvailable,
+			&headroom);
+
+		fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+
+		if (packetsAvailable < MAXPACKETS)
+		{
+			int uSecToWait = (MAXPACKETS - packetsAvailable) * 30;
+
+			std::this_thread::sleep_for(std::chrono::microseconds(uSecToWait));
+		}
+
 	}
 
 }
