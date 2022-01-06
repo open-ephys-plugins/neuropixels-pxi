@@ -133,11 +133,11 @@ void Neuropixels2::initialize(bool signalChainIsLoading)
 	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
 	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
-	errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
-	LOGD("setOPMODE: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	//errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
+	//LOGD("setOPMODE: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
-	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
-	LOGD("setHSLed: slot: ", basestation->slot, " port: ", headstage->port, " errorCode: ", errorCode);
+	//errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
+	//LOGD("setHSLed: slot: ", basestation->slot, " port: ", headstage->port, " errorCode: ", errorCode);
 
 }
 
