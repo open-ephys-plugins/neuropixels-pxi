@@ -936,11 +936,6 @@ void NeuropixInterface::setEmissionSite(String wavelength, int site)
     if (probe->basestation->type == BasestationType::OPTO)
     {
 
-       // if (wavelength.equalsIgnoreCase("red"))
-       //     redEmissionSiteComboBox->setSelectedId(site + 1, false);
-       // else
-        //    blueEmissionSiteComboBox->setSelectedId(site + 1, false);
-
         Basestation_v3* optoBs = (Basestation_v3*)probe->basestation;
 
         optoBs->selectEmissionSite(probe->headstage->port,

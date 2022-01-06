@@ -39,8 +39,6 @@ public:
 	OneBox(int ID);
 	~OneBox();
 
-	int slot;
-
 	bool open() override;
 	void close() override;
 	void initialize(bool signalChainIsLoading) override;
@@ -69,8 +67,6 @@ public:
 	Array<DataSource*> getAdditionalDataSources() override;
 
 	void triggerWaveplayer(bool shouldStart);
-
-	//Neuropixels::bistElectrodeStats stats[960];
 
 	Neuropixels::NP_ErrorCode errorCode;
 

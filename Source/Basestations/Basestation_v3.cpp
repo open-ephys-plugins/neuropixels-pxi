@@ -84,7 +84,6 @@ Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
 
 	armBasestation = std::make_unique<ArmBasestation>(slot_number);
 
-	slot = slot_number;
 	getInfo();
 }
 
@@ -117,6 +116,10 @@ bool Basestation_v3::open()
 
 		for (int port = 1; port <= 4; port++)
 		{
+
+			if (type == BasestationType::OPTO && port > 2)
+				break;
+
 			bool detected = false;
 
 			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
@@ -167,7 +170,13 @@ bool Basestation_v3::open()
 					for (auto probe : headstage->probes)
 					{
 						if (probe != nullptr)
+						{
 							probes.add(probe);
+
+							if (probe->info.part_number.equalsIgnoreCase("NP1300"))
+								type = BasestationType::OPTO;
+						}
+							
 					}
 				}
 			
@@ -191,11 +200,6 @@ bool Basestation_v3::open()
 
 		LOGD("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 
-		for (auto probe : probes)
-		{
-			if (probe->info.part_number.equalsIgnoreCase("NP1300"))
-				type = BasestationType::OPTO;
-		}
 	}
 
 	syncFrequencies.add(1);
@@ -331,7 +335,7 @@ void Basestation_v3::startAcquisition()
 {
 
 	if (armBasestation->isThreadRunning())
-		armBasestation->waitForThreadToExit(2000);
+		armBasestation->waitForThreadToExit(5000);
 
 	for (auto probe : probes)
 	{
@@ -353,6 +357,21 @@ void Basestation_v3::stopAcquisition()
 	}
 	
 	armBasestation->startThread();
+}
+
+
+void Basestation_v3::run()
+{
+	if (bscFirmwarePath.length() > 0)
+		errorCode = Neuropixels::bsc_updateFirmware(slot,
+									bscFirmwarePath.getCharPointer(),
+									firmwareUpdateCallback);
+
+	if (bsFirmwarePath.length() > 0)
+	   errorCode = Neuropixels::bs_updateFirmware(slot,
+						  bsFirmwarePath.getCharPointer(), 
+						  firmwareUpdateCallback);
+	
 }
 
 
@@ -392,20 +411,6 @@ void Basestation_v3::selectEmissionSite(int port, int dock, String wavelength, i
 
 		LOGD(wavelength, " actual site: ", site, " selected with error code ", errorCode);
 	}
-}
-
-void Basestation_v3::run()
-{
-	if (bscFirmwarePath.length() > 0)
-		errorCode = Neuropixels::bsc_updateFirmware(slot,
-									bscFirmwarePath.getCharPointer(),
-									firmwareUpdateCallback);
-
-	if (bsFirmwarePath.length() > 0)
-	   errorCode = Neuropixels::bs_updateFirmware(slot,
-						  bsFirmwarePath.getCharPointer(), 
-						  firmwareUpdateCallback);
-	
 }
 
 

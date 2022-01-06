@@ -51,7 +51,10 @@ public:
 
 	friend class ProbeBrowser;
 
+	/** Constructor */
 	NeuropixInterface(DataSource* probe, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas);
+
+	/** Destructor */
 	~NeuropixInterface();
 
 	void paint(Graphics& g);

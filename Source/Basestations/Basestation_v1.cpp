@@ -89,6 +89,8 @@ Basestation_v1::Basestation_v1(int slot_number) : Basestation(slot_number)
 {
 	type = BasestationType::V1;
 
+	armBasestation = std::make_unique<ArmBasestationV1>(slot_c);
+
 	getInfo();
 }
 
@@ -283,6 +285,10 @@ float Basestation_v1::getFillPercentage()
 
 void Basestation_v1::startAcquisition()
 {
+
+	if (armBasestation->isThreadRunning())
+		armBasestation->waitForThreadToExit(5000);
+
 	for (auto probe : probes)
 	{
 		probe->startAcquisition();
@@ -294,12 +300,15 @@ void Basestation_v1::startAcquisition()
 
 void Basestation_v1::stopAcquisition()
 {
+
+	LOGC("Basestation stopping acquisition.");
+
 	for (auto probe : probes)
 	{
 		probe->stopAcquisition();
 	}
 
-	errorCode = np::arm(slot_c);
+	armBasestation->startThread();
 }
 
 void Basestation_v1::updateBscFirmware(File file)

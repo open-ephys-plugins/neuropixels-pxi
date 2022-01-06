@@ -26,35 +26,61 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../NeuropixComponents.h"
 
+/** 
+
+	Simulates a PXI basestation when none is connected
+
+*/
 class SimulatedBasestation : public Basestation
 {
 public:
+
+	/** Constructor */
 	SimulatedBasestation(int slot);
+
+	/** Destructor */
 	~SimulatedBasestation() { }
 
+	/** Gets part number, firmware version, etc.*/
 	void getInfo() override;
 
+	/** Opens connection to the basestation */
 	bool open() override;
+
+	/** Closes connection to the basestation */
 	void close() override;
 
+	/** Initializes probes in a background thread */
 	void initialize(bool signalChainIsLoading) override;
 
+	/** Returns the total number of probes connected to this basestation*/
 	int getProbeCount() override;
 
+	/** Set basestation SMA connector as input*/
 	void setSyncAsInput() override;
+
+	/** Set basestation SMA connector as output (and set frequency)*/
 	void setSyncAsOutput(int freqIndex) override;
 
+	/** Starts probe data streaming */
 	void startAcquisition() override;
+
+	/** Stops probe data streaming*/
 	void stopAcquisition() override;
 
+	/** Returns an array of available frequencies when SMA is in "output" mode */
 	Array<int> getSyncFrequencies() override;
 
+	/** Returns the fraction of the basestation FIFO that is filled */
 	float getFillPercentage() override;
 
+	/** Updates the basestation firmware (simulated) */
 	void updateBsFirmware(File file) override;
 
+	/** Updates the basestation connect board firmware (simulated) */
 	void updateBscFirmware(File file) override;
 
+	/** Launches the firmware update thread*/
 	void run() override;
 
 };
@@ -62,7 +88,11 @@ public:
 class SimulatedBasestationConnectBoard : public BasestationConnectBoard
 {
 public:
+
+	/** Constructor */
 	SimulatedBasestationConnectBoard(Basestation* bs) : BasestationConnectBoard(bs) { getInfo(); }
+
+	/** Returns part number, firmware version, etc.*/
 	void getInfo() override;
 };
 
