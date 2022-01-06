@@ -118,6 +118,10 @@ public:
 	/** Launches the firmware update thread*/
 	void run() override;
 
+	bool isBusy() override;
+
+	void waitForThreadToExit() override;
+
 private:
 	std::unique_ptr<ArmBasestation> armBasestation;
 

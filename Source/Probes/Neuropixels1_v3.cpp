@@ -308,6 +308,9 @@ void Neuropixels1_v3::setAllReferences()
 void Neuropixels1_v3::writeConfiguration()
 {
 
+	if (basestation->isBusy())
+		basestation->waitForThreadToExit();
+
 	errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 
 	if (errorCode == Neuropixels::SUCCESS)

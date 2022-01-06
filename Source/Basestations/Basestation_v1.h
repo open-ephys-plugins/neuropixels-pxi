@@ -114,6 +114,10 @@ public:
 	/** Launches the firmware update thread*/
 	void run() override;
 
+	bool isBusy() override;
+
+	void waitForThreadToExit() override;
+
 private:
 	np::bistElectrodeStats stats[960];
 

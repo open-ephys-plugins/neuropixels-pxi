@@ -1294,9 +1294,12 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
     
  
     // apply settings in background thread
-    if (shouldUpdateProbe) {
+    if (shouldUpdateProbe) 
+    {
+        
         thread->updateProbeSettingsQueue(p);
          updateProbeSettingsInBackground();
+         CoreServices::saveRecoveryConfig();
     }
 
     repaint();

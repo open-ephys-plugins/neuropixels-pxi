@@ -479,6 +479,10 @@ public:
 	/** Thread for firmware update */
 	virtual void run() = 0;
 
+	virtual bool isBusy() { return false;  }
+
+	virtual void waitForThreadToExit() { }
+
 	static int firmwareUpdateCallback(size_t bytes)
 	{
 		currentBasestation->setProgress(float(bytes) / totalFirmwareBytes);

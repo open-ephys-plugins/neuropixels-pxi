@@ -191,6 +191,16 @@ void Basestation_v1::close()
 	errorCode = np::closeBS(slot_c);
 }
 
+bool Basestation_v1::isBusy()
+{
+	return armBasestation->isThreadRunning();
+}
+
+void Basestation_v1::waitForThreadToExit()
+{
+	armBasestation->waitForThreadToExit(10000);
+}
+
 void Basestation_v1::setSyncAsInput()
 {
 

@@ -286,6 +286,9 @@ void NeuropixThread::applyProbeSettingsQueue()
 	for (auto settings: probeSettingsUpdateQueue)
 	{
 
+		if (settings.probe->basestation->isBusy())
+			settings.probe->basestation->waitForThreadToExit();
+
 		LOGC("Applying probe settings for ", settings.probe->name);
 
 		if (settings.probe != nullptr)
@@ -599,6 +602,10 @@ bool NeuropixThread::startAcquisition()
 
 void NeuropixThread::timerCallback()
 {
+
+	if (editor->uiLoader->isThreadRunning())
+		editor->uiLoader->waitForThreadToExit(10000);
+
 	for (int i = 0; i < basestations.size(); i++)
 	{
 		basestations[i]->startAcquisition();

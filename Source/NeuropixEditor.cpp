@@ -496,6 +496,7 @@ void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)
 
 void NeuropixEditor::startAcquisition()
 {
+
 	if (canvas)
 		canvas->startAcquisition();
 }

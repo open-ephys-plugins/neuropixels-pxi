@@ -245,6 +245,16 @@ void Basestation_v3::close()
 	LOGD("Closed basestation on slot: ", slot, "w/ error code: ", errorCode);
 }
 
+bool Basestation_v3::isBusy()
+{
+	return armBasestation->isThreadRunning();
+}
+
+void Basestation_v3::waitForThreadToExit()
+{
+	armBasestation->waitForThreadToExit(10000);
+}
+
 void Basestation_v3::setSyncAsInput()
 {
 
@@ -268,6 +278,7 @@ void Basestation_v3::setSyncAsInput()
 	}
 
 }
+
 
 Array<int> Basestation_v3::getSyncFrequencies()
 {
