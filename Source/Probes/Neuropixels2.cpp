@@ -133,12 +133,6 @@ void Neuropixels2::initialize(bool signalChainIsLoading)
 	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
 	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
-	//errorCode = Neuropixels::setOPMODE(basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
-	//LOGD("setOPMODE: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
-
-	//errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
-	//LOGD("setHSLed: slot: ", basestation->slot, " port: ", headstage->port, " errorCode: ", errorCode);
-
 }
 
 
@@ -400,8 +394,7 @@ void Neuropixels2::run()
 				for (int j = 0; j < 384; j++)
 				{
 					apSamples[j + packetNum * SKIP] =
-						float(data[packetNum * 384 + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f
-						- ap_offsets[j][0]; // convert to microvolts
+						float(data[packetNum * 384 + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
 
 					apView->addSample(apSamples[j + packetNum * SKIP], j);
 
@@ -417,10 +410,6 @@ void Neuropixels2::run()
 
 			apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, count);
 
-			if (ap_offsets[0][0] == 0)
-			{
-				updateOffsets(apSamples, ap_timestamp, true);
-			}
 		}
 		else if (errorCode != Neuropixels::SUCCESS)
 		{

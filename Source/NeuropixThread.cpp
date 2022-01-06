@@ -68,24 +68,26 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	api_v1.isActive = false;
 	api_v3.isActive = true;
 
-	LOGD("Scanning for devices...");
+	LOGC("Scanning for devices...");
 
-	Neuropixels::np_dbg_setlevel(3);
+	Neuropixels::np_dbg_setlevel(4);
 
 	Neuropixels::scanBS();
 	Neuropixels::basestationID list[16];
 	int count = getDeviceList(&list[0], 16);
 
-	LOGD("  Found ", count, " device", count == 1 ? "." : "s.");
+	LOGC("  Found ", count, " device", count == 1 ? "." : "s.");
 
 	for (int i = 0; i < count; i++)
 	{
 
-		Neuropixels::NP_ErrorCode ec = getDeviceInfo(list[i].ID, &list[i]);
-
 		int slotID;
 
-		bool foundSlot = tryGetSlotID(&list[i], &slotID);
+		bool foundSlot = Neuropixels::tryGetSlotID(&list[i], &slotID);
+
+		Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo(list[i].ID, &list[i]);
+
+		LOGC("  Opening device on slot ", slotID);
 
 		if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
 		{
@@ -96,11 +98,14 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 			{
 				basestations.add(bs);
 
+				LOGC("  Adding basestation");
+
 				if (!bs->getProbeCount())
 					CoreServices::sendStatusMessage("Neuropixels PXI basestation found, no probes connected.");
 			}
 			else
 			{
+				LOGC("  Could not open basestation");
 				delete bs;
 			}
 
@@ -267,8 +272,6 @@ NeuropixThread::~NeuropixThread()
 void NeuropixThread::updateProbeSettingsQueue(ProbeSettings settings)
 {
 	
-	LOGC("Updating queue for probe ", settings.probe->name);
-
 	probeSettingsUpdateQueue.add(settings);
 }
 
@@ -288,8 +291,6 @@ void NeuropixThread::applyProbeSettingsQueue()
 		if (settings.probe != nullptr)
 		{
 
-			LOGC("Writing configuration");
-
 			settings.probe->selectElectrodes();
 			settings.probe->setAllGains();
 			settings.probe->setAllReferences();
@@ -300,6 +301,8 @@ void NeuropixThread::applyProbeSettingsQueue()
 			settings.probe->writeConfiguration();
 
 			settings.probe->setStatus(SourceStatus::CONNECTED);
+
+			LOGC("Wrote configuration");
 		}
 	}
 

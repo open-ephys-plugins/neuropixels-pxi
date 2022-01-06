@@ -259,17 +259,17 @@ void BackgroundLoader::run()
 		thread->initializeBasestations(signalChainIsLoading);
 		isInitialized = true;
 
-		if (!signalChainIsLoading)
-		{
-			LOGC("Updating settings for ", thread->getProbes().size(), " probes.");
+		//if (!signalChainIsLoading)
+		//{
+		LOGC("Updating settings for ", thread->getProbes().size(), " probes.");
 
-			for (auto probe : thread->getProbes())
-			{
-				LOGC(" Updating queue for probe ", probe->name);
-				thread->updateProbeSettingsQueue(ProbeSettings(probe->settings));
-			}
-				
+		for (auto probe : thread->getProbes())
+		{
+			LOGC(" Updating queue for probe ", probe->name);
+			thread->updateProbeSettingsQueue(ProbeSettings(probe->settings));
 		}
+				
+		//}
 	}
 
 	LOGC("Initialized, applying probe settings...");

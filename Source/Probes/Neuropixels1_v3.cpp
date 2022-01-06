@@ -105,8 +105,11 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 bool Neuropixels1_v3::open()
 {
+	LOGC("Opening probe...");
 	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
-	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+
+	LOGC("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+
 
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
@@ -114,6 +117,7 @@ bool Neuropixels1_v3::open()
 
 	apView = new ActivityView(384, 3000);
 	lfpView = new ActivityView(384, 250);
+
 
 	return errorCode == Neuropixels::SUCCESS;
 
@@ -224,13 +228,16 @@ void Neuropixels1_v3::selectElectrodes()
 		for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
 		{
 
-			ec = Neuropixels::selectElectrode(basestation->slot,
-				headstage->port,
-				dock,
-				settings.selectedChannel[ch],
-				settings.selectedShank[ch],
-				settings.availableBanks.indexOf(settings.selectedBank[ch]));
-
+			if (ch != 191)
+			{
+				ec = Neuropixels::selectElectrode(basestation->slot,
+					headstage->port,
+					dock,
+					settings.selectedChannel[ch],
+					settings.selectedShank[ch],
+					settings.availableBanks.indexOf(settings.selectedBank[ch]));
+			}
+			
 		}
 	}
 

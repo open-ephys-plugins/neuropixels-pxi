@@ -668,6 +668,8 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
         }
     }
 
+    MouseCursor::hideWaitCursor();
+
 }
 
 void NeuropixInterface::setAnnotationLabel(String s, Colour c)
@@ -1240,21 +1242,21 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
 
     // update display
     if (apGainComboBox != 0)
-        apGainComboBox->setSelectedId(p.apGainIndex + 1);
+        apGainComboBox->setSelectedId(p.apGainIndex + 1, dontSendNotification);
 
     if (lfpGainComboBox != 0)
-        lfpGainComboBox->setSelectedId(p.lfpGainIndex + 1);
+        lfpGainComboBox->setSelectedId(p.lfpGainIndex + 1, dontSendNotification);
 
     if (filterComboBox != 0)
     {
         if (p.apFilterState)
-            filterComboBox->setSelectedId(1);
+            filterComboBox->setSelectedId(1, dontSendNotification);
         else
-            filterComboBox->setSelectedId(2);
+            filterComboBox->setSelectedId(2, dontSendNotification);
     }
 
     if (referenceComboBox != 0)
-        referenceComboBox->setSelectedId(p.referenceIndex + 1);
+        referenceComboBox->setSelectedId(p.referenceIndex + 1, dontSendNotification);
 
     for (int i = 0; i < electrodeMetadata.size(); i++)
     {
@@ -1289,10 +1291,11 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
         }
     }
 
-    thread->updateProbeSettingsQueue(p);
+    
  
     // apply settings in background thread
     if (shouldUpdateProbe) {
+        thread->updateProbeSettingsQueue(p);
          updateProbeSettingsInBackground();
     }
 
@@ -1594,6 +1597,8 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 
         
     }
+
+    probe->updateSettings(settings);
 
     applyProbeSettings(settings, false);
 }

@@ -94,25 +94,25 @@ bool Basestation_v3::open()
 
 	if (errorCode == Neuropixels::VERSION_MISMATCH)
 	{
-		LOGD("Basestation at slot: ", slot, " API VERSION MISMATCH!");
+		LOGC("Basestation at slot: ", slot, " API VERSION MISMATCH!");
 		return false;
 	}
 
 	if (errorCode == Neuropixels::SUCCESS)
 	{
 
-		LOGD("  Opened BS on slot ", slot);
+		LOGC("  Opened BS on slot ", slot);
 
 		basestationConnectBoard = new BasestationConnectBoard_v3(this);
 
 		//Confirm v3 basestation by BS version 2.0 or greater.
-		LOGD("  BS firmware: ", info.boot_version);
+		LOGC("  BS firmware: ", info.boot_version);
 		if (std::stod((info.boot_version.toStdString())) < 2.0)
 			return false;
 
 		savingDirectory = File();
 
-		LOGD("    Searching for probes...");
+		LOGC("    Searching for probes...");
 
 		for (int port = 1; port <= 4; port++)
 		{
@@ -124,24 +124,24 @@ bool Basestation_v3::open()
 
 			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
 
-			LOGD("Port ", port, " errorCode: ", errorCode);
-			LOGD("Detected: ", detected);
+			LOGC("Port ", port, " errorCode: ", errorCode);
+			LOGC("Detected: ", detected);
 
 			if (detected && errorCode == Neuropixels::SUCCESS)
 			{
-				LOGD("HS Detected");
+				LOGC("HS Detected");
 				char pn[MAXLEN];
 				Neuropixels::readHSPN(slot, port, pn, MAXLEN);
 
 				String hsPartNumber = String(pn);
 
-				LOGD("Got HS part #: ", hsPartNumber);
+				LOGC("Got HS part #: ", hsPartNumber);
 
 				Headstage* headstage;
 
 				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
 				{
-					LOGD("      Found 1.0 single-dock headstage on port: ", port);
+					LOGC("      Found 1.0 single-dock headstage on port: ", port);
 					headstage = new Headstage1_v3(this, port);
 					if (headstage->testModule != nullptr)
 					{
@@ -150,12 +150,12 @@ bool Basestation_v3::open()
 				}
 				else if (hsPartNumber == "NPNH_HS_30") // 128-ch analog headstage
 				{
-					LOGD("      Found 128-ch analog headstage on port: ", port);
+					LOGC("      Found 128-ch analog headstage on port: ", port);
 					headstage = new Headstage_Analog128(this, port);
 				}
 				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 				{
-					LOGD("      Found 2.0 dual-dock headstage on port: ", port);
+					LOGC("      Found 2.0 dual-dock headstage on port: ", port);
 					headstage = new Headstage2(this, port);
 				}
 				else
@@ -186,11 +186,11 @@ bool Basestation_v3::open()
 			{
 				if (errorCode != Neuropixels::SUCCESS)
 				{
-					LOGD("***detectHeadstage failed w/ error code: ", errorCode);
+					LOGC("***detectHeadstage failed w/ error code: ", errorCode);
 				}
-				else //if (!detected)
+				else
 				{
-					LOGDD("  No headstage detected on port: ", port);
+					LOGC("  No headstage detected on port: ", port);
 				}
 				headstages.add(nullptr);
 			}
@@ -198,7 +198,7 @@ bool Basestation_v3::open()
 
 		}
 
-		LOGD("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
+		LOGC("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 
 	}
 
