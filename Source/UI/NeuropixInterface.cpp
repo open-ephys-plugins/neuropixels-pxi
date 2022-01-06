@@ -72,9 +72,10 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     enableViewButton->setTooltip("View channel enabled state");
     addAndMakeVisible(enableViewButton);
 
+    currentHeight += 55;
+
     if (probe->settings.availableApGains.size() > 0)
     {
-        currentHeight += 55;
 
         apGainComboBox = new ComboBox("apGainComboBox");
         apGainComboBox->setBounds(450, currentHeight, 65, 22);
@@ -99,11 +100,13 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         apGainLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(apGainLabel);
 
+        currentHeight += 55;
+
     }
 
     if (probe->settings.availableLfpGains.size() > 0)
     {
-        currentHeight += 55;
+        
 
         lfpGainComboBox = new ComboBox("lfpGainComboBox");
         lfpGainComboBox->setBounds(450, currentHeight, 65, 22);
@@ -127,11 +130,13 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         lfpGainLabel->setBounds(446, currentHeight - 20, 100, 20);
         lfpGainLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(lfpGainLabel);
+
+        currentHeight += 55;
     }
 
     if (probe->settings.availableReferences.size() > 0)
     {
-        currentHeight += 55;
+        
 
         referenceComboBox = new ComboBox("ReferenceComboBox");
         referenceComboBox->setBounds(450, currentHeight, 65, 22);
@@ -157,11 +162,13 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         referenceLabel->setBounds(446, currentHeight - 20, 100, 20);
         referenceLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(referenceLabel);
+
+        currentHeight += 55;
     }
 
     if (probe->hasApFilterSwitch())
     {
-        currentHeight += 55;
+        
 
         filterComboBox = new ComboBox("FilterComboBox");
         filterComboBox->setBounds(450, currentHeight, 75, 22);
@@ -181,8 +188,6 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     }
 
    
-    
-
     activityViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
     activityViewButton->setRadius(3.0f);
     

@@ -136,7 +136,7 @@ bool Basestation_v3::open()
 
 				Headstage* headstage;
 
-				if (true) //hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
+				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
 				{
 					LOGD("      Found 1.0 single-dock headstage on port: ", port);
 					headstage = new Headstage1_v3(this, port);
@@ -318,7 +318,7 @@ float Basestation_v3::getFillPercentage()
 
 	for (int i = 0; i < getProbeCount(); i++)
 	{
-		LOGDD("Percentage for probe ", i, ": ", probes[i]->fifoFillPercentage);
+		//LOGDD("Percentage for probe ", i, ": ", probes[i]->fifoFillPercentage);
 
 		if (probes[i]->fifoFillPercentage > perc)
 			perc = probes[i]->fifoFillPercentage;

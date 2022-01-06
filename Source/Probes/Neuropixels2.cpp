@@ -137,7 +137,7 @@ void Neuropixels2::initialize(bool signalChainIsLoading)
 	LOGD("setOPMODE: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
 	errorCode = Neuropixels::setHSLed(basestation->slot, headstage->port, false);
-	LOGD("setHSLed: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	LOGD("setHSLed: slot: ", basestation->slot, " port: ", headstage->port, " errorCode: ", errorCode);
 
 }
 
@@ -175,14 +175,7 @@ void Neuropixels2::calibrate()
 		return;
 	}
 
-	String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
 	String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
-	LOGD("ADC file: ", adcFile);
-
-	errorCode = Neuropixels::setADCCalibration(basestation->slot, headstage->port, adcFile.toRawUTF8());
-
-	if (errorCode == 0) { LOGD("Successful ADC calibration."); }
-	else { LOGD("Unsuccessful ADC calibration, failed with error code: ", errorCode); }
 
 	LOGD("Gain file: ", gainFile);
 
@@ -400,7 +393,7 @@ void Neuropixels2::run()
 			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
 
-				eventCode = packetInfo[packetNum].Status >> 6; // AUX_IO<0:13>
+				eventCode = packetInfo[packetNum].Status >> 6;
 
 				uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
 
@@ -415,13 +408,14 @@ void Neuropixels2::run()
 				}
 
 				ap_timestamps[packetNum] = ap_timestamp++;
+				event_codes[packetNum] = eventCode;
 
 				if (sendSync)
 					apSamples[384 + SKIP * packetNum] = (float)eventCode;
 
 			}
 
-			apBuffer->addToBuffer(apSamples, &ap_timestamp, &eventCode, count);
+			apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, count);
 
 			if (ap_offsets[0][0] == 0)
 			{
@@ -436,10 +430,11 @@ void Neuropixels2::run()
 		int packetsAvailable;
 		int headroom;
 
-		Neuropixels::getElectrodeDataFifoState(
+		Neuropixels::getPacketFifoStatus(
 			basestation->slot,
 			headstage->port,
 			dock,
+			source,
 			&packetsAvailable,
 			&headroom);
 
