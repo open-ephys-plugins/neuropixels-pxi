@@ -183,6 +183,9 @@ void Neuropixels2::calibrate()
 	if (!errorCode == Neuropixels::SUCCESS) { LOGD("Failed to write probe config w/ error code: ", errorCode); }
 	else { LOGD("Successfully wrote probe config "); }
 
+	errorCode = Neuropixels::np_setHSLed(basestation->slot, headstage->port, false);
+
+
 }
 
 void Neuropixels2::selectElectrodes()
@@ -342,6 +345,7 @@ void Neuropixels2::setAllReferences()
 
 void Neuropixels2::writeConfiguration()
 {
+
 	errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 }
 

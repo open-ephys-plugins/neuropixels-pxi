@@ -86,9 +86,6 @@ Headstage2::Headstage2(Basestation* bs_, int port) : Headstage(bs_, port)
 
 		Neuropixels::detectFlex(basestation->slot, port, dock, &flexDetected);
 
-		errorCode = Neuropixels::np_setHSLed(basestation->slot, port, false);
-
-
 		if (flexDetected)
 		{
 			flexCables.add(new Flex2(this, dock));
