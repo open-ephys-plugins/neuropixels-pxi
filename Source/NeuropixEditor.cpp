@@ -244,6 +244,12 @@ BackgroundLoader::BackgroundLoader(NeuropixThread* thread_, NeuropixEditor* edit
 
 BackgroundLoader::~BackgroundLoader()
 {
+
+	if (isThreadRunning())
+	{
+		waitForThreadToExit(30000);
+	}
+		
 }
 
 void BackgroundLoader::run()
