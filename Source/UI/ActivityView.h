@@ -53,9 +53,13 @@ public:
 
 	const float* getPeakToPeakValues() {
 
-		for (int i = 0; i < peakToPeakValues.size(); i++)
+
+		if (counter > 100)
 		{
-			peakToPeakValues.set(i, maxChannelValues[i] - minChannelValues[i]);
+			for (int i = 0; i < peakToPeakValues.size(); i++)
+			{
+				peakToPeakValues.set(i, maxChannelValues[i] - minChannelValues[i]);
+			}
 		}
 
 		return peakToPeakValues.getRawDataPointer();
