@@ -541,13 +541,10 @@ void NeuropixInterface::updateProbeSettingsInBackground()
     probe->updateSettings(settings);
 
     int ch0index = settings.selectedChannel.indexOf(0);
-    //std::cout << "Ch 0 bank: " << int(settings.selectedBank[ch0index]) << std::endl;
 
     thread->updateProbeSettingsQueue(settings);
 
     LOGC("NeuropixInterface requesting thread start");
-
-    //thread->applyProbeSettingsQueue();
 
     editor->uiLoader->startThread();
 }
@@ -911,7 +908,6 @@ Array<int> NeuropixInterface::getSelectedElectrodes()
 
 void NeuropixInterface::setApGain(int index)
 {
-    std::cout << "Setting AP gain to index " << index;
     apGainComboBox->setSelectedId(index + 1, true);
 }
 
@@ -954,12 +950,8 @@ void NeuropixInterface::selectElectrodes(Array<int> electrodes)
 {
     // update selection state
 
-    std::cout << "Selecting " << electrodes.size() << " electrodes." << std::endl;
-
     for (int i = 0; i <electrodes.size(); i++)
     {
-
-        std::cout << electrodes[i] << std::endl;
 
         Bank bank = electrodeMetadata[electrodes[i]].bank;
         int channel = electrodeMetadata[electrodes[i]].channel;
