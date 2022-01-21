@@ -53,15 +53,6 @@ public:
 
 	const float* getPeakToPeakValues() {
 
-
-		if (counter > 100)
-		{
-			for (int i = 0; i < peakToPeakValues.size(); i++)
-			{
-				peakToPeakValues.set(i, maxChannelValues[i] - minChannelValues[i]);
-			}
-		}
-
 		return peakToPeakValues.getRawDataPointer();
 	}
 
@@ -96,11 +87,15 @@ public:
 
 		for (int i = 0; i < peakToPeakValues.size(); i++)
 		{
+
+			peakToPeakValues.set(i, maxChannelValues[i] - minChannelValues[i]);
+
 			minChannelValues.set(i, 999999.9f);
 			maxChannelValues.set(i, -999999.9f);
 		}
 
 		counter = 0;
+		
 	}
 
 private:

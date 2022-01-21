@@ -609,12 +609,12 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
             {
                 probeBrowser->activityToView = ActivityToView::APVIEW;
                 ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
-                probeBrowser->maxPeakToPeakAmplitude = 100.0f;
+                probeBrowser->maxPeakToPeakAmplitude = 250.0f;
             }
             else {
                 probeBrowser->activityToView = ActivityToView::LFPVIEW;
                 ColourScheme::setColourScheme(ColourSchemeId::VIRIDIS);
-                probeBrowser->maxPeakToPeakAmplitude = 250.0f;
+                probeBrowser->maxPeakToPeakAmplitude = 500.0f;
             }
 
         }
@@ -639,12 +639,12 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
             {
                 probeBrowser->activityToView = ActivityToView::APVIEW;
                 ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
-                probeBrowser->maxPeakToPeakAmplitude = 100.0f;
+                probeBrowser->maxPeakToPeakAmplitude = 250.0f;
             }
             else {
                 probeBrowser->activityToView = ActivityToView::LFPVIEW;
                 ColourScheme::setColourScheme(ColourSchemeId::VIRIDIS);
-                probeBrowser->maxPeakToPeakAmplitude = 250.0f;
+                probeBrowser->maxPeakToPeakAmplitude = 500.0f;
             }
 
             repaint();

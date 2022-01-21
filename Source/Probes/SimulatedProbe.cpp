@@ -257,7 +257,8 @@ void SimulatedProbe::run()
 			{
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j + i * SKIP + packetNum * 12 * SKIP] = simulatedData.ap_band[ap_timestamp % 3000] + float(j * 2) - ap_offsets[j][0];
+					apSamples[j + i * SKIP + packetNum * 12 * SKIP] = (simulatedData.ap_band[ap_timestamp % 3000] + float(j * 2) - ap_offsets[j][0]) 
+						* (float((ap_timestamp + j * 78) % 60000) / 60000.0f);
 					apView->addSample(apSamples[j + i * SKIP + packetNum * 12 * SKIP], j);
 					
 					if (i == 0)
