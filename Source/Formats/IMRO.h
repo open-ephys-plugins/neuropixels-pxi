@@ -103,7 +103,10 @@ public:
                     std::cout << value << std::endl;
 
                     if (value == 0)
-                        settings.probeType = ProbeType::NP1;
+                    {
+                        if (!(settings.probeType == ProbeType::NP1) && !(settings.probeType == ProbeType::NHP10))
+                            settings.probeType == ProbeType::NP1;
+                    }
                     else if (value == 21)
                         settings.probeType = ProbeType::NP2_1;
                     else if (value == 24)
@@ -139,7 +142,7 @@ public:
 
     static void parseValues(Array<int> values, ProbeType probeType, ProbeSettings& settings)
     {
-        if (probeType == ProbeType::NP1)
+        if (probeType == ProbeType::NP1 || probeType == ProbeType::NHP10)
         {
             // 0 = 1.0 probe
            // channel ID

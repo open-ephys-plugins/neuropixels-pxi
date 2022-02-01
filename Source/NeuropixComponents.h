@@ -179,6 +179,13 @@ struct ProbeSettings {
 	Array<int> selectedChannel;  // size = channels
 	Array<int> selectedElectrode; // size = channels
 
+	void clearElectrodeSelection() {
+		selectedBank.clear();
+		selectedShank.clear();
+		selectedChannel.clear();
+		selectedElectrode.clear();
+	}
+
 	ProbeType probeType;
 
 	Probe* probe; // pointer to the probe
