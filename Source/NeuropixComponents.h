@@ -34,6 +34,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "UI/ActivityView.h"
 
 # define SAMPLECOUNT 64
+# define MAX_HEADSTAGE_CLK_SAMPLE 3221225475
+# define MAX_ALLOWABLE_TIMESTAMP_JUMP 4
 
 class BasestationConnectBoard;
 class Flex;
@@ -410,6 +412,9 @@ public:
 	}
 
 	bool sendSync;
+
+	uint32_t last_npx_timestamp;
+	bool passedOneSecond;
 
 	const float* getPeakToPeakValues(ActivityToView currentView = ActivityToView::APVIEW)
 	{

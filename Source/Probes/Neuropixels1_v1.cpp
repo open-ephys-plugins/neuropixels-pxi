@@ -306,6 +306,9 @@ void Neuropixels1_v1::startAcquisition()
 	apView->reset();
 	lfpView->reset();
 
+	last_npx_timestamp = 0;
+	passedOneSecond = false;
+
 	SKIP = sendSync ? 385 : 384;
 
 	LOGD("  Starting thread.");
@@ -344,6 +347,21 @@ void Neuropixels1_v1::run()
 					eventCode = packet[packetNum].Status[i] >> 6;
 
 					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
+
+					uint32_t timestamp_jump = npx_timestamp - last_npx_timestamp;
+
+					if (timestamp_jump > MAX_ALLOWABLE_TIMESTAMP_JUMP)
+					{
+						if (passedOneSecond && timestamp_jump < MAX_HEADSTAGE_CLK_SAMPLE)
+						{
+							LOGD("NPX TIMESTAMP JUMP: ", npx_timestamp - last_npx_timestamp,
+								", expected 3 or 4...Possible data loss on slot ",
+								int(basestation->slot_c), ", probe ", int(headstage->port_c),
+								" at sample number ", ap_timestamp);
+						}
+					}
+
+					last_npx_timestamp = npx_timestamp;
 
 					for (int j = 0; j < 384; j++)
 					{
@@ -395,6 +413,9 @@ void Neuropixels1_v1::run()
 		{
 			LOGD("readPackets error code: ", errorCode, " for Basestation ", int(basestation->slot), ", probe ", int(headstage->port));
 		}
+
+		if (ap_timestamp % 30000 == 0)
+			passedOneSecond = true;
 
 		size_t packetsAvailable;
 		size_t headroom;
