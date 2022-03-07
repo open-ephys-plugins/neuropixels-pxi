@@ -43,7 +43,9 @@ public:
 		Thread("Arm Basestation in Slot " + String(slot))
 		, slot(slot_) { }
 
-	~ArmBasestation() { }
+	~ArmBasestation() { 
+		stopThread(200);
+	}
 	
 	void run()
 	{
