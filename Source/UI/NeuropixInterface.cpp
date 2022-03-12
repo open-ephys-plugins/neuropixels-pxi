@@ -58,12 +58,23 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
     int currentHeight = 55;
 
-    enableButton = new UtilityButton("ENABLE", Font("Small Text", 13, Font::plain));
-    enableButton->setRadius(3.0f);
-    enableButton->setBounds(450, currentHeight, 65, 22);
-    enableButton->addListener(this);
-    enableButton->setTooltip("Enable selected channel(s)");
-    addAndMakeVisible(enableButton);
+    if (probe->settings.availableApGains.size() > 0) { //probe->type == UHD_*
+
+        electrodeConfigurationComboBox = new ComboBox("electrodeConfigurationComboBox");
+        electrodeConfigurationComboBox->setBounds(450, currentHeight, 65, 22);
+        electrodeConfigurationComboBox->addListener(this);
+        electrodeConfigurationComboBox->setTooltip("Enable a pre-configured set of channels");
+        addAndMakeVisible(electrodeConfigurationComboBox);
+    }
+    else
+    {
+        enableButton = new UtilityButton("ENABLE", Font("Small Text", 13, Font::plain));
+        enableButton->setRadius(3.0f);
+        enableButton->setBounds(450, currentHeight, 65, 22);
+        enableButton->addListener(this);
+        enableButton->setTooltip("Enable selected channel(s)");
+        addAndMakeVisible(enableButton);
+    }
 
     enableViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
     enableViewButton->setRadius(3.0f);
@@ -554,7 +565,11 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
 
     if (!editor->acquisitionIsActive)
     {
-        if ((comboBox == apGainComboBox) || (comboBox == lfpGainComboBox))
+        if (comboBox == electrodeConfigurationComboBox)
+        {
+
+        }
+        else if ((comboBox == apGainComboBox) || (comboBox == lfpGainComboBox))
         {
             updateProbeSettingsInBackground();
         }
@@ -1314,6 +1329,11 @@ ProbeSettings NeuropixInterface::getProbeSettings()
     p.availableBanks = probe->settings.availableBanks;
 
     // Set probe variables
+    if (electrodeConfigurationComboBox != 0)
+        p.electrodeConfigurationIndex = electrodeConfigurationComboBox->getSelectedId() - 1;
+    else
+        p.electrodeConfigurationIndex = -1;
+
     if (apGainComboBox != 0)
         p.apGainIndex = apGainComboBox->getSelectedId() - 1;
     else

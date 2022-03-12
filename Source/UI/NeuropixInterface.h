@@ -95,6 +95,7 @@ private:
 	bool acquisitionIsActive = false;
 
 	// Combo box - probe-specific settings
+	ScopedPointer<ComboBox> electrodeConfigurationComboBox;
 	ScopedPointer<ComboBox> lfpGainComboBox;
 	ScopedPointer<ComboBox> apGainComboBox;
 	ScopedPointer<ComboBox> referenceComboBox;
