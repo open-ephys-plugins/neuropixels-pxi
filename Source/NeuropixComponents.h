@@ -166,11 +166,13 @@ struct ElectrodeMetadata {
 
 struct ProbeSettings {
 
+	Array<String> availableElectrodeConfigurations;
 	Array<float> availableApGains; // Available AP gain values for each channel (if any)
 	Array<float> availableLfpGains; // Available LFP gain values for each channel (if any)
 	Array<String> availableReferences; // reference types
 	Array<Bank> availableBanks; // bank inds
 
+	int electrodeConfigurationIndex; //UHD probes only
 	int apGainIndex;
 	int lfpGainIndex;
 	int referenceIndex;
