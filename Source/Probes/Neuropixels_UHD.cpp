@@ -251,19 +251,86 @@ void Neuropixels_UHD::selectElectrodes()
 void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 {
 
+	/*
+	*           ---------BANK 0--------|---------BANK 1--------
+	*         /| 0 | 4 | 8 | 12| 16| 20| 2 | 6 | 10| 14| 18| 22|         |
+	* PROBE  / | 2 | 6 | 10| 14| 18| 22| 0 | 4 | 8 | 12| 16| 20| ... x 8 | PROBE
+	*  TIP   \ | 1 | 5 | 9 | 13| 17| 21| 3 | 7 | 11| 15| 19| 23|         | BASE
+	*         \| 3 | 7 | 11| 15| 19| 23| 1 | 5 |  9| 13| 17| 21|         |
+	*           --------24 GROUPS------|-------24 GROUPS-------
+	*/
+
+	int banksPerProbe		= 16;
+	int groupsPerBank		= 24;
+	int groupsPerBankRow	= 6;
+	int electrodesPerGroup	= 16;
+
     Neuropixels::NP_ErrorCode ec;
 
-    if (index < 16)
+	// Disconnect all groups
+	for (int group = 0; group < groupsPerBank; group++)
+		ec = Neuropixels::selectElectrodeGroup(
+			basestation->slot,	// slot
+			headstage->port,	// port
+			dock,				// dock
+			group,				// group number
+			0xFF);				// bank index (0xFF == the channelgroup is disconnected from all banks)
+
+	// Select all groups in a particular bank
+    if (index < banksPerProbe)
     {
-		//Select all available electrodes at bank index
+		// Select all groups at this bank index
+		for (int group = 0; group < groupsPerBank; group++)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				index);				// bank index
+
+		return;
     }
-    else if (index == 16)
+
+	// Select a subset of groups in multiple banks to span half of the probe
+	//   0 = Select groups from middle to tip of probe (Banks 0-7)
+	//   1 = Select groups from middle to base of probe (Banks 8-15)
+	int verticalConfiguration = index - banksPerProbe;
+
+	int offset = 0; //controls offset of selected groups in vertical arrangement
+
+    if (verticalConfiguration == 0)
     {
-        //Vertical line in banks 0-7
+		// Vertical line in banks 0-7
+		for (int bank = 0; bank < banksPerProbe / 2; bank++) {
+
+			// Direct vs. Group Cross numbering based on bank index
+			int local_offset = (bank % 2 == 0) ? offset : (offset + 2);
+
+			for (int group = local_offset; group < groupsPerBankRow; group += 4)
+				ec = Neuropixels::selectElectrodeGroup(
+					basestation->slot,	// slot
+					headstage->port,	// port
+					dock,				// dock
+					group,				// group number
+					bank);				// bank index
+		}
     }
     else
     {
-        //Vertical line in banks 8-15
+        // Vertical line in banks 8-15
+		for (int bank = banksPerProbe / 2; bank < banksPerProbe; bank++) {
+
+			// Direct vs. Group Cross numbering based on bank index
+			int local_offset = (bank % 2 == 0) ? offset : (offset + 2);
+
+			for (int group = local_offset; group < groupsPerBankRow; group += 4)
+				ec = Neuropixels::selectElectrodeGroup(
+					basestation->slot,	// slot
+					headstage->port,	// port
+					dock,				// dock
+					group,				// group number
+					bank);				// bank index
+		}
     }
 
 }
