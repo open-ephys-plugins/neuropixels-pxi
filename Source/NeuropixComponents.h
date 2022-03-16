@@ -144,6 +144,7 @@ struct ProbeMetadata {
 	ProbeType type;
 	String name;
 	Array<Bank> availableBanks;
+	bool switchable;
 };
 
 struct ElectrodeMetadata {

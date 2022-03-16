@@ -58,12 +58,22 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
     int currentHeight = 55;
 
-    if (probe->settings.availableApGains.size() > 0) { //probe->type == UHD_*
+    if (probe->info.part_number.equalsIgnoreCase("NP1110"))
+    {
 
         electrodeConfigurationComboBox = new ComboBox("electrodeConfigurationComboBox");
         electrodeConfigurationComboBox->setBounds(450, currentHeight, 65, 22);
         electrodeConfigurationComboBox->addListener(this);
         electrodeConfigurationComboBox->setTooltip("Enable a pre-configured set of channels");
+
+        for (int i = 0; i < probe->settings.availableElectrodeConfigurations.size(); i++)
+        {
+            electrodeConfigurationComboBox->addItem(probe->settings.availableElectrodeConfigurations[i], i + 1);
+        }
+
+        if (electrodeConfigurationComboBox->getNumItems() > 0)
+            electrodeConfigurationComboBox->setSelectedId(1);
+
         addAndMakeVisible(electrodeConfigurationComboBox);
     }
     else
@@ -1023,6 +1033,9 @@ void NeuropixInterface::startAcquisition()
     if (enableButton != nullptr)
         enableButton->setEnabled(enabledState);
 
+    if (electrodeConfigurationComboBox != nullptr)
+        electrodeConfigurationComboBox->setEnabled(enabledState);
+
     if (apGainComboBox != nullptr)
         apGainComboBox->setEnabled(enabledState);
 
@@ -1052,6 +1065,9 @@ void NeuropixInterface::stopAcquisition()
 
     if (enableButton != nullptr)
         enableButton->setEnabled(enabledState);
+
+    if (electrodeConfigurationComboBox != nullptr)
+        electrodeConfigurationComboBox->setEnabled(enabledState);
 
     if (apGainComboBox != nullptr)
         apGainComboBox->setEnabled(enabledState);
@@ -1332,7 +1348,7 @@ ProbeSettings NeuropixInterface::getProbeSettings()
     p.availableBanks = probe->settings.availableBanks;
 
     // Set probe variables
-    if (electrodeConfigurationComboBox != 0)
+    if (electrodeConfigurationComboBox != nullptr)
         p.electrodeConfigurationIndex = electrodeConfigurationComboBox->getSelectedId() - 1;
     else
         p.electrodeConfigurationIndex = -1;

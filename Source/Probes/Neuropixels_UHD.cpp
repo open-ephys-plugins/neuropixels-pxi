@@ -49,6 +49,7 @@ Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 		name = probeMetadata.name;
 		type = probeMetadata.type;
+		switchable = probeMetadata.switchable;
 
 		settings.probe = this;
 		settings.availableBanks = probeMetadata.availableBanks;
@@ -66,6 +67,8 @@ Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 			settings.availableElectrodeConfigurations.add("Bank: " + String(i));
 		settings.availableElectrodeConfigurations.add("Tip Half");
 		settings.availableElectrodeConfigurations.add("Base Half");
+
+		settings.electrodeConfigurationIndex = 1;
 
 		for (int i = 0; i < channel_count; i++)
 		{
@@ -225,7 +228,7 @@ void Neuropixels_UHD::printSettings()
 
 void Neuropixels_UHD::selectElectrodes()
 {
-	if (settings.electrodeConfigurationIndex >= 0) {
+	if (settings.electrodeConfigurationIndex >= 0 && switchable) {
 		selectElectrodeConfiguration(settings.electrodeConfigurationIndex);
 	}
 }

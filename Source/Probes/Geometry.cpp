@@ -614,7 +614,16 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 {
 	// need to implement switchable case
 	probeMetadata.type = ProbeType::UHD1;
-	probeMetadata.name = "Neuropixels Ultra";
+
+	if (switchable)
+	{
+		probeMetadata.name = "Neuropixels Ultra (Switchable)";
+	}
+	else {
+		probeMetadata.name = "Neuropixels Ultra";
+	}
+	
+	probeMetadata.switchable = switchable;
 
 	Path path;
 	path.startNewSubPath(27, 31);

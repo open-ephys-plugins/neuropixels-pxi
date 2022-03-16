@@ -21,8 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef __NEUROPIX1V3_H_2C4C2D67__
-#define __NEUROPIX1V3_H_2C4C2D67__
+#ifndef __NEUROPIXUHD_H_2C4C2D67__
+#define __NEUROPIXUHD_H_2C4C2D67__
 
 #include "../NeuropixComponents.h"
 
@@ -103,6 +103,8 @@ private:
 	Neuropixels::electrodePacket packet[MAXPACKETS];
 	Neuropixels::NP_ErrorCode errorCode;
 
+	bool switchable;
+
 	int SKIP;
 
 	float apSamples[385 * 12 * MAXPACKETS];
@@ -115,4 +117,4 @@ private:
 };
 
 
-#endif  // _NEUROPIX1V3_H_2C4C2D67__
+#endif  // _NEUROPIXUHD_H_2C4C2D67__

@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Headstage1_v3.h"
 #include "../Probes/Neuropixels1_v3.h"
 #include "../Probes/NeuropixelsOpto.h"
+#include "../Probes/Neuropixels_UHD.h"
 
 #define MAXLEN 50
 
@@ -96,8 +97,13 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 
 		if (String(partNumber).equalsIgnoreCase("NP1300"))
 			probes.add(new NeuropixelsOpto(basestation, this, flexCables[0]));
-		else
+		else if (String(partNumber).equalsIgnoreCase("NP1110"))
+		{
+			probes.add(new Neuropixels_UHD(basestation, this, flexCables[0]));
+		}
+		else {
 			probes.add(new Neuropixels1_v3(basestation, this, flexCables[0]));
+		}
 		
 		probes[0]->setStatus(SourceStatus::CONNECTING);
 	}
