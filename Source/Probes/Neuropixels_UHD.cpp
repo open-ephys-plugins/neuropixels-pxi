@@ -65,7 +65,7 @@ Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 		for (int i = 0; i < 16; i++)
 			settings.availableElectrodeConfigurations.add("Bank: " + String(i));
 		settings.availableElectrodeConfigurations.add("Tip Half");
-		settings.availableElectrodeConfigurations.add("Bank Half");
+		settings.availableElectrodeConfigurations.add("Base Half");
 
 		for (int i = 0; i < channel_count; i++)
 		{
@@ -225,27 +225,9 @@ void Neuropixels_UHD::printSettings()
 
 void Neuropixels_UHD::selectElectrodes()
 {
-
-	Neuropixels::NP_ErrorCode ec;
-
-	if (settings.selectedChannel.size() > 0)
-	{
-		for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
-		{
-
-			if (ch != 191)
-			{
-				ec = Neuropixels::selectElectrode(basestation->slot,
-					headstage->port,
-					dock,
-					settings.selectedChannel[ch],
-					settings.selectedShank[ch],
-					settings.availableBanks.indexOf(settings.selectedBank[ch]));
-			}
-
-		}
+	if (settings.electrodeConfigurationIndex >= 0) {
+		selectElectrodeConfiguration(settings.electrodeConfigurationIndex);
 	}
-
 }
 
 void Neuropixels_UHD::selectElectrodeConfiguration(int index)

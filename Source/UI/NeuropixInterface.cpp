@@ -567,7 +567,7 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
     {
         if (comboBox == electrodeConfigurationComboBox)
         {
-
+            updateProbeSettingsInBackground();
         }
         else if ((comboBox == apGainComboBox) || (comboBox == lfpGainComboBox))
         {
@@ -1250,6 +1250,9 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
         CoreServices::sendStatusMessage("Probe types do not match.");
         return;
     }
+
+    if (electrodeConfigurationComboBox != 0)
+        electrodeConfigurationComboBox->setSelectedId(p.electrodeConfigurationIndex + 1, dontSendNotification);
 
     // update display
     if (apGainComboBox != 0)
