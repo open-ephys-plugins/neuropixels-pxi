@@ -53,6 +53,7 @@ public:
 typedef enum {
 	AP_BAND,
 	LFP_BAND,
+	BROAD_BAND,
 	ADC
 } stream_type;
 

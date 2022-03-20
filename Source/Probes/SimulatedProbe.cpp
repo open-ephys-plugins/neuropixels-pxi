@@ -149,6 +149,11 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 
 }
 
+bool SimulatedProbe::generatesLfpData()
+{
+	return apFilterSwitch;
+}
+
 bool SimulatedProbe::open()
 {
 	LOGD("Opened connection to probe.");
