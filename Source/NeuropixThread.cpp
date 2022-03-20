@@ -889,7 +889,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 			continuousChannels->add(new ContinuousChannel(settings));
 			continuousChannels->getLast()->position.y = depth;
 
-		}
+		} // end channel loop
 
 		EventChannel::Settings settings{
 			EventChannel::Type::TTL,
@@ -904,7 +904,22 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		dataStreams->add(new DataStream(*currentStream)); // copy existing stream
 
-	}
+		DeviceInfo::Settings deviceSettings{
+			info.probe->name,
+			"Neuropixels probe",
+			info.probe->info.part_number,
+
+			String(info.probe->info.serial_number),
+			"imec"
+		};
+
+		DeviceInfo* device = new DeviceInfo(deviceSettings);
+
+		devices->add(device); // unique device object owned by SourceNode
+
+		dataStreams->getLast()->device = device; // DataStream object just gets a pointer
+
+	} // end source stream loop
 
 }
 
