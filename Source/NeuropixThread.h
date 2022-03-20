@@ -172,7 +172,7 @@ public:
 
 	String getApiVersion();
 
-	void handleMessage(String msg) override;
+	void handleBroadcastMessage(String msg) override;
 
 	String handleConfigMessage(String msg) override;
 

@@ -903,7 +903,7 @@ void NeuropixThread::setAutoRestart(bool restart)
 }
 
 
-void NeuropixThread::handleMessage(String msg)
+void NeuropixThread::handleBroadcastMessage(String msg)
 {
 	// Available commands:
 	//
