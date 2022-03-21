@@ -216,7 +216,11 @@ void NeuropixThread::updateSubprocessors()
 			apInfo.sample_rate = probe->ap_sample_rate;
 			apInfo.probe = probe;
 
-			apInfo.type = AP_BAND;
+			if (probe->generatesLfpData())
+				apInfo.type = AP_BAND;
+			else
+				apInfo.type = BROAD_BAND;
+
 			apInfo.sendSyncAsContinuousChannel = probe->sendSync;
 
 			streamInfo.add(apInfo);
@@ -737,23 +741,37 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		for (auto info : streamInfo)
 		{
-			String probeName;
+			String probeName, description, identifier;
 
 			if (info.type == stream_type::ADC)
 			{
 				probeName = "OneBox-ADC";
+				description = "OneBox ADC data stream";
+				identifier = "onebox.adc";
 			}
 				
 			else if (info.type == stream_type::AP_BAND)
 			{
 				lastName = "Probe" + probeNames[probeIndex];
 				probeName = lastName + "-AP";
+				description = "Neuropixels AP band data stream";
+				identifier = "neuropixels.data.ap";
+				probeIndex++;
+			}
+
+			else if (info.type == stream_type::BROAD_BAND)
+			{
+				probeName = "Probe" + probeNames[probeIndex];
+				description = "Neuropixels data stream";
+				identifier = "neuropixels.data";
 				probeIndex++;
 			}
 			
 			else if (info.type == stream_type::LFP_BAND)
 			{
 				probeName = lastName + "-LFP";
+				description = "Neuropixels LFP band data stream";
+				identifier = "neuropixels.data.lfp";
 			}
 
 			DataStream::Settings settings
@@ -787,11 +805,21 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		ContinuousChannel::Type type;
 
-		if (info.type == stream_type::ADC)
-			type = ContinuousChannel::Type::ADC;
-		else
-			type = ContinuousChannel::Type::ELECTRODE;
+		String description, identifier;
 
+		if (info.type == stream_type::ADC)
+		{
+			type = ContinuousChannel::Type::ADC;
+			description = "OneBox ADC channel";
+			identifier = "neuropixels.adc";
+		}
+		else
+		{
+			type = ContinuousChannel::Type::ELECTRODE;
+			description = "Neuropixels electrode";
+			identifier = "neuropixels.electrode";
+		}
+			
 		for (int ch = 0; ch < info.num_channels; ch++)
 		{
 			float bitVolts;
@@ -811,30 +839,14 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 			}
 			else if (info.type == stream_type::AP_BAND) {
 				name = "AP";
-			}
-			else {
+			} 
+			else if (info.type == stream_type::LFP_BAND) {
 				name = "LFP";
 			}
-
-			if (info.sendSyncAsContinuousChannel && (ch == info.num_channels - 1))
+			else
 			{
-				name += "_SYNC";
-				bitVolts = 1.0;
+				name = "CH";
 			}
-			else {
-				name += String(ch + 1);
-			}
-
-			ContinuousChannel::Settings settings{
-				type,
-				name,
-				"description",
-				"identifier",
-
-				bitVolts,
-
-				currentStream
-			};
 
 			int chIndex = info.probe->settings.selectedChannel.indexOf(ch);
 
@@ -850,16 +862,40 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 				+ float(ch % 2)
 				+ 0.0001f * ch; // each channel must have a unique depth value
 
+			if (info.sendSyncAsContinuousChannel && (ch == info.num_channels - 1))
+			{
+				type = ContinuousChannel::Type::ADC;
+				name += "_SYNC";
+				bitVolts = 1.0;
+				depth = -1.0f;
+				description = "Neuropixels sync line (continuously sampled)";
+				identifier = "neuropixels.sync";
+			}
+			else {
+				name += String(ch + 1);
+			}
+
+			ContinuousChannel::Settings settings{
+				type,
+				name,
+				description,
+				identifier,
+
+				bitVolts,
+
+				currentStream
+			};
+
 			continuousChannels->add(new ContinuousChannel(settings));
 			continuousChannels->getLast()->position.y = depth;
 
-		}
+		} // end channel loop
 
 		EventChannel::Settings settings{
 			EventChannel::Type::TTL,
-			"name",
-			"description",
-			"identifier",
+			"Neuropixels PXI Sync",
+			"Status of SMA sync line on PXI card",
+			"neuropixels.sync",
 			currentStream,
 			1
 		};
@@ -868,7 +904,22 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		dataStreams->add(new DataStream(*currentStream)); // copy existing stream
 
-	}
+		DeviceInfo::Settings deviceSettings{
+			info.probe->name,
+			"Neuropixels probe",
+			info.probe->info.part_number,
+
+			String(info.probe->info.serial_number),
+			"imec"
+		};
+
+		DeviceInfo* device = new DeviceInfo(deviceSettings);
+
+		devices->add(device); // unique device object owned by SourceNode
+
+		dataStreams->getLast()->device = device; // DataStream object just gets a pointer
+
+	} // end source stream loop
 
 }
 
@@ -903,7 +954,7 @@ void NeuropixThread::setAutoRestart(bool restart)
 }
 
 
-void NeuropixThread::handleMessage(String msg)
+void NeuropixThread::handleBroadcastMessage(String msg)
 {
 	// Available commands:
 	//

@@ -81,7 +81,7 @@ public:
 
 	void getInfo() override;
 
-	bool generatesLfpData() { return true; }
+	bool generatesLfpData(); 
 	bool hasApFilterSwitch() {
 		return apFilterSwitch;
 	}

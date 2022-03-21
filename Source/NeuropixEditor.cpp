@@ -293,13 +293,11 @@ void NeuropixEditor::initialize(bool signalChainIsLoading)
 
 
 NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
- : VisualizerEditor(parentNode)
+ : VisualizerEditor(parentNode, "Neuropix PXI")
 {
 
     thread = t;
     canvas = nullptr;
-
-    tabText = "Neuropix PXI";
 
 	Array<Basestation*> basestations = t->getBasestations();
 

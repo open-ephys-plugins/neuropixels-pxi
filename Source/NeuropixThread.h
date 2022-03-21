@@ -53,6 +53,7 @@ public:
 typedef enum {
 	AP_BAND,
 	LFP_BAND,
+	BROAD_BAND,
 	ADC
 } stream_type;
 
@@ -172,7 +173,7 @@ public:
 
 	String getApiVersion();
 
-	void handleMessage(String msg) override;
+	void handleBroadcastMessage(String msg) override;
 
 	String handleConfigMessage(String msg) override;
 
