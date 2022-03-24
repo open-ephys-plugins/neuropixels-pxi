@@ -548,6 +548,7 @@ bool Neuropixels1_v3::runBist(BIST bistType)
 	}
 
 	close();
+	open();
 	initialize(false);
 
 	errorCode = Neuropixels::setSWTrigger(slot);

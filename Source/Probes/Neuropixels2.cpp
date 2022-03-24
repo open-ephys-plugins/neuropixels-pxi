@@ -540,7 +540,7 @@ bool Neuropixels2::runBist(BIST bistType)
 	}
 
 	close();
-
+	open();
 	initialize(false);
 
 	return returnValue;
