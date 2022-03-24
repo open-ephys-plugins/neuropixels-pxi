@@ -836,22 +836,26 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 				currentStream
 			};
 
-			int chIndex = info.probe->settings.selectedChannel.indexOf(ch);
+			if (type == ContinuousChannel::Type::ELECTRODE)
+			{
+				int chIndex = info.probe->settings.selectedChannel.indexOf(ch);
 
-			Array<Bank> availableBanks = info.probe->settings.availableBanks;
+				Array<Bank> availableBanks = info.probe->settings.availableBanks;
 
-			int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
+				int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
 
-			int selectedElectrode = ch + selectedBank * 384;
-			int shank = info.probe->settings.selectedShank[chIndex];
+				int selectedElectrode = ch + selectedBank * 384;
+				int shank = info.probe->settings.selectedShank[chIndex];
 
-			float depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
-				+ shank * 10000.0f
-				+ float(ch % 2)
-				+ 0.0001f * ch; // each channel must have a unique depth value
+				float depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
+					+ shank * 10000.0f
+					+ float(ch % 2)
+					+ 0.0001f * ch; // each channel must have a unique depth value
 
-			continuousChannels->add(new ContinuousChannel(settings));
-			continuousChannels->getLast()->position.y = depth;
+				continuousChannels->add(new ContinuousChannel(settings));
+				continuousChannels->getLast()->position.y = depth;
+			}
+			
 
 		}
 
@@ -903,7 +907,7 @@ void NeuropixThread::setAutoRestart(bool restart)
 }
 
 
-void NeuropixThread::handleMessage(String msg)
+void NeuropixThread::handleBroadcastMessage(String msg)
 {
 	// Available commands:
 	//
