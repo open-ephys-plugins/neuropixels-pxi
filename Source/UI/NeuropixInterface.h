@@ -108,6 +108,9 @@ private:
 	ScopedPointer<ComboBox> bscFirmwareComboBox;
 	ScopedPointer<ComboBox> bsFirmwareComboBox;
 
+	// Combo box - probe settings
+	ScopedPointer<ComboBox> loadImroComboBox;
+
 	// LABELS
 	ScopedPointer<Viewport> infoLabelView;
 	ScopedPointer<Label> mainLabel;
@@ -170,6 +173,7 @@ private:
 	Array<int> getSelectedElectrodes();
 
 	Array<BIST> availableBists;
+	Array<String> imroFiles;
 
 };
 

@@ -407,6 +407,21 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     loadJsonButton->setTooltip("Load channel map from probeinterface .json file");
    // addAndMakeVisible(loadJsonButton);
 
+    loadImroComboBox = new ComboBox("Quick-load IMRO");
+    loadImroComboBox->setBounds(175, 707, 130, 22);
+    loadImroComboBox->addListener(this);
+    loadImroComboBox->setTooltip("Load a favorite IMRO setting.");
+
+    File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
+    File imroDirectory = baseDirectory.getChildFile("IMRO");
+    for (const auto& filename : File(imroDirectory).findChildFiles(File::findFiles, false, "*.imro")) {
+        imroFiles.add(filename.getFileNameWithoutExtension());
+        loadImroComboBox->addItem(imroFiles.getLast(), imroFiles.size());
+    }
+    if (!imroFiles.size())
+        loadImroComboBox->addItem("No pre-set IMRO found (see docs)", 1);
+    addAndMakeVisible(loadImroComboBox);
+
     probeSettingsLabel = new Label("Settings", "Probe settings:");
     probeSettingsLabel->setFont(Font("Small Text", 13, Font::plain));
     probeSettingsLabel->setBounds(40, 610, 300, 20);
@@ -627,6 +642,27 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
         else if (comboBox == blueEmissionSiteComboBox)
         {
             setEmissionSite("blue", comboBox->getSelectedId() - 1);
+        }
+        else if (comboBox == loadImroComboBox)
+        {
+            if (!imroFiles.size())
+                return; //TODO: Automatically launch docs page
+     
+            ProbeSettings settings = getProbeSettings();
+
+            settings.clearElectrodeSelection();
+
+            String filename = comboBox->getItemText(comboBox->getSelectedItemIndex());
+
+            File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
+            File imroDirectory = baseDirectory.getChildFile("IMRO");
+            bool success = IMRO::readSettingsFromImro(imroDirectory.getChildFile(filename + ".imro"), settings);
+
+            if (success)
+            {
+                applyProbeSettings(settings);
+            }
+
         }
 
         repaint();
