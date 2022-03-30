@@ -240,14 +240,14 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 	*           ---------BANK 0--------|---------BANK 1--------
 	*         /| 0 | 4 | 8 | 12| 16| 20| 2 | 6 | 10| 14| 18| 22|         |
 	* PROBE  / | 2 | 6 | 10| 14| 18| 22| 0 | 4 | 8 | 12| 16| 20| ... x 8 | PROBE
-	*  TIP   \ | 1 | 5 | 9 | 13| 17| 21| 3 | 7 | 11| 15| 19| 23|         | BASE
-	*         \| 3 | 7 | 11| 15| 19| 23| 1 | 5 |  9| 13| 17| 21|         |
+	*  TIP   \ | 3 | 7 | 11| 15| 19| 23| 1 | 5 | 9 | 13| 17| 21|         | BASE
+	*         \| 1 | 5 | 9 | 13| 17| 21| 3 | 7 | 11| 15| 19| 23|         |
 	*           --------24 GROUPS------|-------24 GROUPS-------
 	*/
 
 	int banksPerProbe		= 16;
 	int groupsPerBank		= 24;
-	int groupsPerBankRow	= 6;
+	int groupsPerBankColumn	= 6;
 	int electrodesPerGroup	= 16;
 
     Neuropixels::NP_ErrorCode ec;
@@ -273,6 +273,14 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 				group,				// group number
 				index);				// bank index
 
+		// select columnar configuration
+		ec = Neuropixels::selectColumnPattern(
+			basestation->slot,
+			headstage->port,
+			dock,
+			Neuropixels::ALL
+		);
+
 		return;
     }
 
@@ -281,43 +289,41 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 	//   1 = Select groups from middle to base of probe (Banks 8-15)
 	int verticalConfiguration = index - banksPerProbe;
 
-	int offset = 0; //controls offset of selected groups in vertical arrangement
+	int offset; //controls offset of bank index
 
-    if (verticalConfiguration == 0)
-    {
-		// Vertical line in banks 0-7
-		for (int bank = 0; bank < banksPerProbe / 2; bank++) {
+	if (verticalConfiguration == 0)
+	{
+		offset = 0;
+	}
+	else {
+		offset = 8;
+	}
+	// Vertical line in banks 0-7
+	for (int bank = offset; bank < offset + 8; bank++) {
 
-			// Direct vs. Group Cross numbering based on bank index
-			int local_offset = (bank % 2 == 0) ? offset : (offset + 2);
+		// Direct vs. Group Cross numbering based on bank index
+		int start_group = bank % 4 < 2 ? 0 : 1;
+		start_group = bank % 2 == 0 ? start_group + 2 : start_group;
 
-			for (int group = local_offset; group < groupsPerBankRow; group += 4)
-				ec = Neuropixels::selectElectrodeGroup(
-					basestation->slot,	// slot
-					headstage->port,	// port
-					dock,				// dock
-					group,				// group number
-					bank);				// bank index
-		}
-    }
-    else
-    {
-        // Vertical line in banks 8-15
-		for (int bank = banksPerProbe / 2; bank < banksPerProbe; bank++) {
+		std::cout << "Bank " << bank << " start group: " << start_group << std::endl;
 
-			// Direct vs. Group Cross numbering based on bank index
-			int local_offset = (bank % 2 == 0) ? offset : (offset + 2);
+		for (int group = 0; group < groupsPerBankColumn; group++)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,			// slot
+				headstage->port,			// port
+				dock,						// dock
+				start_group + group * 2,	// group number
+				bank);						// bank index
+	}
 
-			for (int group = local_offset; group < groupsPerBankRow; group += 4)
-				ec = Neuropixels::selectElectrodeGroup(
-					basestation->slot,	// slot
-					headstage->port,	// port
-					dock,				// dock
-					group,				// group number
-					bank);				// bank index
-		}
-    }
-
+	// select columnar configuration
+	ec = Neuropixels::selectColumnPattern(
+		basestation->slot,
+		headstage->port,
+		dock,
+		Neuropixels::INNER
+		);
+   
 }
 
 void Neuropixels_UHD::setApFilterState()
