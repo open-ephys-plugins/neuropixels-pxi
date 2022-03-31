@@ -405,7 +405,20 @@ public:
 
 	float fifoFillPercentage;
 
+	/* Stores the generic probe model name e.g. Neuripixels 2.0 - Single Shank */
 	String name;
+
+	/* Stores the name assigned to the probe/stream (default is autoName) */
+	String streamName;
+
+	/* Assign a custom naming scheme to the probe */
+	String autoName;
+	String autoNumber;
+	String customPort;
+	String customProbe;
+
+	StringArray autoProbeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
+						   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
 
 	void sendSyncAsContinuousChannel(bool shouldSend) {
 		sendSync = shouldSend;
@@ -558,13 +571,21 @@ public:
 	File getSavingDirectory() {
 		return savingDirectory;
 	}
+
+	void setNamingScheme(int schemeIdx) {
+		namingSchemeIdx = schemeIdx;
+	}
+
+	int getNamingScheme() {
+		return namingSchemeIdx;
+	}
 	
 protected:
 
 	bool probesInitialized;
 	Array<int> syncFrequencies;
 	File savingDirectory;
-
+	int namingSchemeIdx = 0;
 	
 
 	String bscFirmwarePath;

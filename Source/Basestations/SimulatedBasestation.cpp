@@ -61,8 +61,8 @@ bool SimulatedBasestation::open()
 	basestationConnectBoard = new SimulatedBasestationConnectBoard(this);
 	basestationConnectBoard->getInfo();
 
-	headstages.add(new SimulatedHeadstage(this, 0, "PRB_1_4_0480_1", 99999));
-	headstages.add(new SimulatedHeadstage(this, 1, "NP2000", 99929));
+	headstages.add(new SimulatedHeadstage(this, 1, "PRB_1_4_0480_1", 99999));
+	headstages.add(new SimulatedHeadstage(this, 2, "NP2000", 99929));
 	//headstages.add(new SimulatedHeadstage(this, 2, "NP2010", 99949));
 	//headstages.add(new SimulatedHeadstage(this, 3, "NP1300", 99959));
 

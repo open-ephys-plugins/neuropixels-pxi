@@ -31,6 +31,8 @@
 
 #include "NeuropixComponents.h"
 
+//Helpful for debugging when PXI system is connected but don't want to connect to real probes
+#define FORCE_SIMULATION_MODE false
 
 class SourceNode;
 class NeuropixThread;
@@ -124,6 +126,15 @@ public:
 
 	/** Select directory for saving NPX files. */
 	File getDirectoryForSlot(int slotIndex);
+
+	/** Sets the probe naming scheme to use for this slot */
+	void setNamingSchemeForSlot(int slotIndex, int schemeIndex);
+
+	/** Gets the probe naming scheme for this slot */
+	int getNamingSchemeForSlot(int slotIndex);
+
+	/** Generates a unique name for each probe */
+	String generateProbeName(int probeIdx);
 
 	/** Toggles between auto-restart setting. */
 	void setAutoRestart(bool restart);

@@ -34,7 +34,6 @@
 
 #include <vector>
 
-
 DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 {
 	return new NeuropixThread(sn);
@@ -78,104 +77,118 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	LOGC("  Found ", count, " device", count == 1 ? "." : "s.");
 
-	for (int i = 0; i < count; i++)
+	if (!FORCE_SIMULATION_MODE)
 	{
 
-		int slotID;
-
-		bool foundSlot = Neuropixels::tryGetSlotID(&list[i], &slotID);
-
-		Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo(list[i].ID, &list[i]);
-
-		LOGC("  Opening device on slot ", slotID);
-
-		if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
+		for (int i = 0; i < count; i++)
 		{
 
-			Basestation* bs = new Basestation_v3(slotID); 
+			int slotID;
 
-			if (bs->open()) //returns true if Basestation firmware >= 2.0
-			{
-				basestations.add(bs);
+			bool foundSlot = Neuropixels::tryGetSlotID(&list[i], &slotID);
 
-				LOGC("  Adding basestation");
+			Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo(list[i].ID, &list[i]);
 
-				if (!bs->getProbeCount())
-					CoreServices::sendStatusMessage("Neuropixels PXI basestation found, no probes connected.");
-			}
-			else
-			{
-				LOGC("  Could not open basestation");
-				delete bs;
-			}
+			LOGC("  Opening device on slot ", slotID);
 
-		}
-		else {
-
-			Basestation* bs = new OneBox(list[i].ID);
-
-			if (bs->open())
+			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
 			{
 
-				basestations.add(bs);
+				Basestation* bs = new Basestation_v3(slotID);
 
-				if (!bs->getProbeCount())
-					CoreServices::sendStatusMessage("OneBox found, no probes connected.");
-			}
-			else
-			{
-				delete bs;
-			}
-		}
-	}
-
-
-	if (basestations.size() == 0) // no basestations with API version match
-	{
-		LOGD("Checking for V1 basestations...");
-
-		uint32_t availableslotmask;
-
-		std::vector<int> slotsToCheck;
-		np::scanPXI(&availableslotmask);
-
-		for (int slot = 0; slot < 32; slot++)
-		{
-			if ((availableslotmask >> slot) & 1)
-			{
-
-				LOGD("  Found V1 Basestation");
-
-				Basestation* bs = new Basestation_v1(slot);
-
-				if (bs->open()) // detects # of probes; returns true if API version matches
+				if (bs->open()) //returns true if Basestation firmware >= 2.0
 				{
-					api_v1.isActive = true ;
-					api_v3.isActive = false;
 					basestations.add(bs);
+
+					LOGC("  Adding basestation");
+
+					if (!bs->getProbeCount())
+						CoreServices::sendStatusMessage("Neuropixels PXI basestation found, no probes connected.");
 				}
-				else {
+				else
+				{
+					LOGC("  Could not open basestation");
 					delete bs;
 				}
 
 			}
+			else {
+
+				Basestation* bs = new OneBox(list[i].ID);
+
+				if (bs->open())
+				{
+
+					basestations.add(bs);
+
+					if (!bs->getProbeCount())
+						CoreServices::sendStatusMessage("OneBox found, no probes connected.");
+				}
+				else
+				{
+					delete bs;
+				}
+			}
 		}
-	}
-	else
-	{
-		LOGD("Found ", basestations.size(), " V3 basestation", basestations.size() > 1 ? "s" : "");
+
+		if (basestations.size() == 0) // no basestations with API version match
+		{
+			LOGD("Checking for V1 basestations...");
+
+			uint32_t availableslotmask;
+
+			std::vector<int> slotsToCheck;
+			np::scanPXI(&availableslotmask);
+
+			for (int slot = 0; slot < 32; slot++)
+			{
+				if ((availableslotmask >> slot) & 1)
+				{
+
+					LOGD("  Found V1 Basestation");
+
+					Basestation* bs = new Basestation_v1(slot);
+
+					if (bs->open()) // detects # of probes; returns true if API version matches
+					{
+						api_v1.isActive = true;
+						api_v3.isActive = false;
+						basestations.add(bs);
+					}
+					else {
+						delete bs;
+					}
+
+				}
+			}
+		}
+		else
+		{
+			LOGD("Found ", basestations.size(), " V3 basestation", basestations.size() > 1 ? "s" : "");
+		}
+
 	}
 
 	if (basestations.size() == 0) // no basestations at all
 	{
-		bool response = AlertWindow::showOkCancelBox(AlertWindow::NoIcon,
-			"No basestations detected", 
-			"No Neuropixels PXI basestations were detected. Do you want to run this plugin in simulation mode?",
-			"Yes", "No", 0, 0);
+
+		bool response;
+
+		if (FORCE_SIMULATION_MODE)
+		{
+			response = true;
+		}
+		else
+		{
+			bool response = AlertWindow::showOkCancelBox(AlertWindow::NoIcon,
+				"No basestations detected",
+				"No Neuropixels PXI basestations were detected. Do you want to run this plugin in simulation mode?",
+				"Yes", "No", 0, 0);
+		}
 
 		if (response)
 		{
-			basestations.add(new SimulatedBasestation(0));
+			basestations.add(new SimulatedBasestation(2));
 			basestations.getLast()->open(); // detects # of probes
 		}
 		
@@ -183,6 +196,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	bool foundSync = false;
 
+	int probeIdx = 0;
 	for (auto probe : getProbes())
 	{
 		baseStationAvailable = true;
@@ -192,9 +206,27 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 			probe->basestation->setSyncAsInput();
 			foundSync = true;
 		}
+
+		/* Generate names for probes based on order of appearance in chassis */
+		probe->autoName = generateProbeName(probeIdx);
+		probe->autoNumber = String(probeIdx);
+
+		/* Defualt to automatic 'lettered' names */
+		probe->streamName = probe->autoName;
+
+		probeIdx++;
+
 	}
 
 	updateSubprocessors();
+}
+
+String NeuropixThread::generateProbeName(int probeIdx)
+{
+	StringArray probeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
+						   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
+
+	return "Probe" + probeNames[probeIdx];
 }
 
 void NeuropixThread::updateSubprocessors()
@@ -400,7 +432,6 @@ Array<Probe*> NeuropixThread::getProbes()
 	return probes;
 }
 
-
 Array<DataSource*> NeuropixThread::getDataSources()
 {
 	Array<DataSource*> sources;
@@ -450,13 +481,11 @@ Array<int> NeuropixThread::getSyncFrequencies()
 		
 }
 
-
 void NeuropixThread::setSyncFrequency(int slotIndex, int freqIndex)
 {
 	if (foundInputSource() && slotIndex > -1)
 		basestations[slotIndex]->setSyncAsOutput(freqIndex);
 }
-
 
 void NeuropixThread::closeConnection()
 {
@@ -468,7 +497,6 @@ bool NeuropixThread::foundInputSource()
 {
     return baseStationAvailable;
 }
-
 
 XmlElement NeuropixThread::getInfoXml()
 {
@@ -517,7 +545,6 @@ XmlElement NeuropixThread::getInfoXml()
 	return neuropix_info;
 
 }
-
 
 String NeuropixThread::getInfoString()
 {
@@ -692,6 +719,20 @@ File NeuropixThread::getDirectoryForSlot(int slotIndex)
 	}
 }
 
+void NeuropixThread::setNamingSchemeForSlot(int slot, int schemeIndex)
+{
+	for (auto bs : getBasestations())
+		if (bs->slot == slot)
+			bs->setNamingScheme(schemeIndex);
+}
+
+int NeuropixThread::getNamingSchemeForSlot(int slot)
+{
+	for (auto bs : getBasestations())
+		if (bs->slot == slot)
+			return bs->getNamingScheme();
+}
+
 void NeuropixThread::stopRecording()
 {
 	for (int i = 0; i < basestations.size(); i++)
@@ -734,9 +775,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 	if (sourceStreams.size() == 0) // initialize data streams
 	{
-		int probeIndex = 0;
-		StringArray probeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
-								   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
+
 		String lastName;
 
 		for (auto info : streamInfo)
@@ -752,19 +791,17 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 				
 			else if (info.type == stream_type::AP_BAND)
 			{
-				lastName = "Probe" + probeNames[probeIndex];
+				lastName = info.probe->streamName;
 				probeName = lastName + "-AP";
 				description = "Neuropixels AP band data stream";
 				identifier = "neuropixels.data.ap";
-				probeIndex++;
 			}
 
 			else if (info.type == stream_type::BROAD_BAND)
 			{
-				probeName = "Probe" + probeNames[probeIndex];
+				probeName = info.probe->streamName;
 				description = "Neuropixels data stream";
 				identifier = "neuropixels.data";
-				probeIndex++;
 			}
 			
 			else if (info.type == stream_type::LFP_BAND)
@@ -1201,7 +1238,6 @@ bool NeuropixThread::updateBuffer()
 
     return true;
 }
-
 
 RecordingTimer::RecordingTimer(NeuropixThread* t_)
 {

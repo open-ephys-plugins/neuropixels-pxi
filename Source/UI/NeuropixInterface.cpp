@@ -1395,6 +1395,11 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
     XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
 
+    xmlNode->setAttribute("autoName", probe->autoName);
+    xmlNode->setAttribute("autoNumber", probe->autoNumber);
+    xmlNode->setAttribute("customPort", probe->customPort);
+    xmlNode->setAttribute("customProbe", probe->customProbe);
+
     xmlNode->setAttribute("slot", probe->basestation->slot);
     xmlNode->setAttribute("bs_firmware_version", probe->basestation->info.boot_version);
     xmlNode->setAttribute("bs_hardware_version", probe->basestation->info.version);
@@ -1486,6 +1491,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
 void NeuropixInterface::loadParameters(XmlElement* xml)
 {
+
     String mySerialNumber = String(probe->info.serial_number);
 
     // first, set defaults
@@ -1516,6 +1522,11 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
         {
             if (xmlNode->getStringAttribute("probe_serial_number").equalsIgnoreCase(mySerialNumber))
             {
+
+                probe->autoName = xmlNode->getStringAttribute("autoName");
+                probe->autoNumber = xmlNode->getStringAttribute("autoNumber");
+                probe->customPort = xmlNode->getStringAttribute("customPort");
+                probe->customProbe = xmlNode->getStringAttribute("customProbe");
 
                 matchingNode = xmlNode;
                 break;
@@ -1586,7 +1597,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
             settings.selectedChannel.clear();
             settings.selectedShank.clear();
 
-                XmlElement* status = matchingNode->getChildByName("CHANNELS");
+            XmlElement* status = matchingNode->getChildByName("CHANNELS");
 
             for (int i = 0; i < probe->channel_count; i++)
             {

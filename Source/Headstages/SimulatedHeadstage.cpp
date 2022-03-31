@@ -46,6 +46,6 @@ SimulatedHeadstage::SimulatedHeadstage(Basestation* bs, int port, String PN, int
 
 	flexCables.add(new SimulatedFlex(this));
 
-	probes.add(new SimulatedProbe(basestation, this, flexCables[0], 0, PN, SN));
+	probes.add(new SimulatedProbe(basestation, this, flexCables[0], 1, PN, SN));
 	probes[0]->setStatus(SourceStatus::CONNECTING);
 }

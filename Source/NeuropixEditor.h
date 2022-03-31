@@ -25,6 +25,7 @@
 #define __NEUROPIXEDITOR_H_2AD3C591__
 
 #include <VisualizerEditorHeaders.h>
+#include "UI\ProbeNameConfig.h"
 
 #include "NeuropixComponents.h"
 
@@ -36,10 +37,27 @@ class NeuropixEditor;
 class NeuropixCanvas;
 class NeuropixThread;
 
-class EditorBackground : public Component
+class SlotButton : public Button, public ComponentListener
 {
 public:
-	EditorBackground(Array<Basestation*> basestations, bool freqSelectEnabled);
+	SlotButton(NeuropixThread* t, int slot);
+	~SlotButton() {}
+
+private:
+
+	int slot;
+	NeuropixThread* t;
+
+	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown) {};
+	void mouseUp(const MouseEvent& event);
+	void componentBeingDeleted(Component& component);
+
+};
+
+class EditorBackground : public Component, public ComponentListener
+{
+public:
+	EditorBackground(NeuropixThread* t, bool freqSelectEnabled);
 	void setFreqSelectAvailable(bool available);
 
 private:
@@ -48,7 +66,12 @@ private:
 	int numBasestations;
 	bool freqSelectEnabled;
 
+	/* An array of Basestation objections, one for each basestation detected */
 	Array<Basestation*> basestations;
+
+	/* A map from slot number label to its bounds in the editor */
+	std::vector<std::unique_ptr<SlotButton>> slotButtons;
+	std::unique_ptr<ProbeNameConfig> probeNamingPopup;
 
 };
 
@@ -174,6 +197,7 @@ private:
 	ScopedPointer<ComboBox> freqSelectBox;
 
 	Array<File> savingDirectories;
+	Array<int> slotNamingSchemes;
 
 	ScopedPointer<EditorBackground> background;
 
