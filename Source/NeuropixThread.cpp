@@ -48,28 +48,12 @@ std::unique_ptr<GenericEditor> NeuropixThread::createEditor(SourceNode* sn)
 	return ed;
 }
 
-NeuropixThread::NeuropixThread(SourceNode* sn) :
-	DataThread(sn),
-	baseStationAvailable(false),
-	probesInitialized(false),
-	recordingNumber(0),
-	isRecording(false),
-	recordingTimer(this),
-	recordToNpx(false),
-	initializationComplete(false)
+void Initializer::run()
 {
+	const MessageManagerLock mmLock;
 
-	progressBar = new ProgressBar(initializationProgress);
-
-	defaultSyncFrequencies.add(1);
-	defaultSyncFrequencies.add(10);
-
-	api_v1.isActive = false;
-	api_v3.isActive = true;
-
-	LOGC("Scanning for devices...");
-
-	Neuropixels::np_dbg_setlevel(4);
+	setProgress(0);
+	setStatusMessage("Hi!");
 
 	Neuropixels::scanBS();
 	Neuropixels::basestationID list[16];
@@ -172,13 +156,9 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	if (basestations.size() == 0) // no basestations at all
 	{
 
-		bool response;
+		bool response = true;
 
-		if (FORCE_SIMULATION_MODE)
-		{
-			response = true;
-		}
-		else
+		if (!FORCE_SIMULATION_MODE)
 		{
 			bool response = AlertWindow::showOkCancelBox(AlertWindow::NoIcon,
 				"No basestations detected",
@@ -191,12 +171,41 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 			basestations.add(new SimulatedBasestation(2));
 			basestations.getLast()->open(); // detects # of probes
 		}
-		
+
 	}
+}
+
+NeuropixThread::NeuropixThread(SourceNode* sn) :
+	DataThread(sn),
+	baseStationAvailable(false),
+	probesInitialized(false),
+	recordingNumber(0),
+	isRecording(false),
+	recordingTimer(this),
+	recordToNpx(false),
+	initializationComplete(false)
+{
+
+	defaultSyncFrequencies.add(1);
+	defaultSyncFrequencies.add(10);
+
+	api_v1.isActive = false;
+	api_v3.isActive = true;
+
+	LOGC("Scanning for devices...");
+
+	Neuropixels::np_dbg_setlevel(4);
+
+	initializer = std::make_unique<Initializer>(basestations, api_v1, api_v3);
+
+	initializer->runThread();
+
+	std::cout << "NUM BASESTATIONS: " << basestations.size() << std::endl;
 
 	bool foundSync = false;
 
 	int probeIdx = 0;
+
 	for (auto probe : getProbes())
 	{
 		baseStationAvailable = true;
@@ -218,7 +227,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	}
 
-	updateSubprocessors();
+	updateStreamInfo();
+
 }
 
 String NeuropixThread::generateProbeName(int probeIdx)
@@ -229,7 +239,7 @@ String NeuropixThread::generateProbeName(int probeIdx)
 	return "Probe" + probeNames[probeIdx];
 }
 
-void NeuropixThread::updateSubprocessors()
+void NeuropixThread::updateStreamInfo()
 {
 
 	streamInfo.clear();
@@ -622,11 +632,7 @@ String NeuropixThread::getInfoString()
 bool NeuropixThread::startAcquisition()
 {
 
-	initializationProgress = 0;
-
-	progressBar->setVisible(true);
-
-	startTimer(500); // wait for signal chain to be built
+	startTimer(200); // wait for signal chain to be built
 	
     return true;
 }
@@ -645,8 +651,6 @@ void NeuropixThread::timerCallback()
 	startThread();
 
     stopTimer();
-
-	progressBar->setVisible(false);
 
 }
 
@@ -969,14 +973,12 @@ void NeuropixThread::sendSyncAsContinuousChannel(bool shouldSend)
 		probe->sendSyncAsContinuousChannel(shouldSend);
 	}
 
-	updateSubprocessors();
+	updateStreamInfo();
 
 }
 
 void NeuropixThread::setTriggerMode(bool trigger)
 {
-    //ConfigAccessErrorCode caec = neuropix.neuropix_triggerMode(trigger);
-    
     internalTrigger = trigger;
 }
 

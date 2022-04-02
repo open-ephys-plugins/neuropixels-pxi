@@ -105,15 +105,6 @@ public:
 	/** Returns the fraction of the basestation FIFO that is filled */
 	float getFillPercentage() override;
 
-	/** Updates the basestation firmware */
-	void updateBsFirmware(File file) override;
-
-	/** Updates the basestation connect board firmware */
-	void updateBscFirmware(File file) override;
-
-	/** Launches the firmware update thread*/
-	void run() override;
-
 	bool isBusy() override;
 
 	void waitForThreadToExit() override;

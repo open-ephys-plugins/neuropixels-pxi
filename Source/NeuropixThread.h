@@ -32,7 +32,7 @@
 #include "NeuropixComponents.h"
 
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
-#define FORCE_SIMULATION_MODE false
+#define FORCE_SIMULATION_MODE true
 
 class SourceNode;
 class NeuropixThread;
@@ -68,6 +68,33 @@ struct StreamInfo {
 	OneBoxADC* adc;
 };
 
+/** 
+	
+	Shows a progress window while searching for probes.
+
+*/
+class Initializer : public ThreadWithProgressWindow
+{
+public:
+
+	Initializer(OwnedArray<Basestation>& basestations_, NeuropixAPIv1& api_v1_, NeuropixAPIv3& api_v3_)
+		: ThreadWithProgressWindow("Neuropixels Initialization", true, false),
+		  basestations(basestations_),
+		  api_v1(api_v1_),
+		  api_v3(api_v3_) { }
+
+	~Initializer() { }
+
+	void run();
+
+private:
+
+	OwnedArray<Basestation>& basestations;
+	NeuropixAPIv1& api_v1;
+	NeuropixAPIv3& api_v3;
+
+};
+
 /**
 
 	Communicates with imec Neuropixels probes.
@@ -81,9 +108,19 @@ class NeuropixThread : public DataThread, public Timer
 
 public:
 
+	/** Constructor */
 	NeuropixThread(SourceNode* sn);
+
+	/** Destructor */
 	~NeuropixThread();
 
+	/** Static method for creating the DataThread object */
+	static DataThread* createDataThread(SourceNode* sn);
+
+	/** Creates the custom editor */
+	std::unique_ptr<GenericEditor> createEditor(SourceNode* sn);
+
+	/** Just checks whether recording is active -- data is acquired by the individual Probe objects*/
 	bool updateBuffer();
 
 	/** Returns true if the data source is connected, false otherwise.*/
@@ -148,52 +185,70 @@ public:
 	/** Stops recording.*/
 	void stopRecording();
 
+	/** Returns a mutex for live rendering of data */
 	CriticalSection* getMutex()
 	{
 		return &displayMutex;
 	}
 
-	static DataThread* createDataThread(SourceNode* sn);
-
-	std::unique_ptr<GenericEditor> createEditor(SourceNode* sn);
-
+	/** Returns pointers to the active Basestation objects */
 	Array<Basestation*> getBasestations();
+
+	/** Returns pointers to active OneBox objects */
 	Array<OneBox*> getOneBoxes();
+
+	/** Returns pointers to opto-compatible basestations */
 	Array<Basestation_v3*> getOptoBasestations();
 
+	/** Returns pointers to active probes */
 	Array<Probe*> getProbes();
+
+	/** Returns points to active DataSources (probes + ADCs)*/
 	Array<DataSource*> getDataSources();
 
+	/** Determines which PXI slot is the primary sync */
 	void setMainSync(int slotIndex);
+
+	/** Sets the sync for a PXI slot to output mode */
 	void setSyncOutput(int slotIndex);
 
+	/** Returns an array of available sync frequencies */
 	Array<int> getSyncFrequencies();
 
+	/** Sets the sync frequency for a particular slot*/
 	void setSyncFrequency(int slotIndex, int freqIndex);
 
 	/* Helper for loading probes in the background */
 	Array<ProbeSettings> probeSettingsUpdateQueue;
 
+	/** Returns true if initialization process if finished */
 	bool isInitialized() { return initializationComplete;  }
 
+	/** Adds a settings object to the background queue */
 	void updateProbeSettingsQueue(ProbeSettings settings);
+
+	/** Applies all the settings in the current queue */
 	void applyProbeSettingsQueue();
 
+	/** Sets whether the sync line is added as an extra (385th) continuous channel */
 	void sendSyncAsContinuousChannel(bool shouldSend);
-	void updateSubprocessors();
 
+	/** Adds info about all the available data streams */
+	void updateStreamInfo();
+
+	/** Returns the current API version as a string */
 	String getApiVersion();
 
+	/** Responds to broadcast messages sent during acquisition */
 	void handleBroadcastMessage(String msg) override;
 
+	/** Responds to config messages sent while acquisition is not active*/
 	String handleConfigMessage(String msg) override;
-
-	ScopedPointer<ProgressBar> progressBar;
-	double initializationProgress;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 
 private:
+
 	bool baseStationAvailable;
 	bool probesInitialized;
 	bool internalTrigger;
@@ -226,6 +281,8 @@ private:
 
 	OwnedArray<Basestation> basestations;
 	OwnedArray<DataStream> sourceStreams;
+
+	std::unique_ptr<Initializer> initializer;
 
 	NeuropixAPIv1 api_v1;
 	NeuropixAPIv3 api_v3;

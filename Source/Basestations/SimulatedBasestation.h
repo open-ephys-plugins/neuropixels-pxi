@@ -74,15 +74,6 @@ public:
 	/** Returns the fraction of the basestation FIFO that is filled */
 	float getFillPercentage() override;
 
-	/** Updates the basestation firmware (simulated) */
-	void updateBsFirmware(File file) override;
-
-	/** Updates the basestation connect board firmware (simulated) */
-	void updateBscFirmware(File file) override;
-
-	/** Launches the firmware update thread*/
-	void run() override;
-
 };
 
 class SimulatedBasestationConnectBoard : public BasestationConnectBoard

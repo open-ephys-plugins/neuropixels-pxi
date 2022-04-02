@@ -32,40 +32,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class OneBoxADC;
 class OneBoxDAC;
 
+/** 
+	Communicates with a OneBox USB acquisition system
+*/
 class OneBox : public Basestation
 
 {
 public:
+
+	/** Constructor */
 	OneBox(int ID);
+
+	/** Destructor */
 	~OneBox();
 
+	/** Opens connection to OneBox */
 	bool open() override;
+
+	/** Closes connection to OneBox */
 	void close() override;
+
+	/** Initializes in a separate thread*/
 	void initialize(bool signalChainIsLoading) override;
 
+	/** Returns the total number of connected probes */
 	int getProbeCount() override;
 
-	//float getTemperature() override;
-
+	/** Gets info about this device */
 	void getInfo() override;
 
+	/** Sets the SMA port to input mode */
 	void setSyncAsInput() override;
+
+	/** Sets the SMA port to output mode */
 	void setSyncAsOutput(int freqIndex) override;
 
+	/** Returns the available sync frequencies*/
 	Array<int> getSyncFrequencies() override;
 
+	/** Starts acquisition on all probes */
 	void startAcquisition() override;
+
+	/** Stops acquisition on all probes */
 	void stopAcquisition() override;
 
+	/** Gets fill percentage of OneBox FIFO buffer */
 	float getFillPercentage() override;
 
-	void updateBsFirmware(File file) override;
-	void updateBscFirmware(File file) override;
-
-	void run() override;
-
+	/** Returns any non-probe data sources (e.g. ADCs)*/
 	Array<DataSource*> getAdditionalDataSources() override;
 
+	/** Triggers the Waveplayer output */
 	void triggerWaveplayer(bool shouldStart);
 
 	Neuropixels::NP_ErrorCode errorCode;

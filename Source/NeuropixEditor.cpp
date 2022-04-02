@@ -97,6 +97,7 @@ EditorBackground::EditorBackground(NeuropixThread* t, bool freqSelectEnabled)
 
 	for (int i = 0; i < numBasestations; i++)
 	{
+		LOGD("Creating slot button.");
 		slotButtons.push_back(std::make_unique<SlotButton>(t, basestations[i]->slot));
 		slotButtons[slotButtons.size()-1]->setBounds(90 * i + 72, 28, 25, 26);
 		addAndMakeVisible(slotButtons[slotButtons.size()-1].get());

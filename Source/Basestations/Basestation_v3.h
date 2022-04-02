@@ -108,20 +108,13 @@ public:
 	/** Returns the fraction of the basestation FIFO that is filled */
 	float getFillPercentage() override;
 
-	/** Updates the basestation firmware */
-	void updateBsFirmware(File file) override;
-
-	/** Updates the basestation connect board firmware */
-	void updateBscFirmware(File file) override;
-
 	/** Activates a probe emission site (only works for Opto probes) */
 	void selectEmissionSite(int port, int dock, String wavelength, int site);
 
-	/** Launches the firmware update thread*/
-	void run() override;
-
+	/** Returns true if the arm basestation thread is running */
 	bool isBusy() override;
 
+	/** Waits for the arm basestation thread to exit */
 	void waitForThreadToExit() override;
 
 private:

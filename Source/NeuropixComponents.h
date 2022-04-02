@@ -129,6 +129,11 @@ enum class BIST {
 	BS = 9
 };
 
+enum class FirmwareType {
+	BS_FIRMWARE,
+	BSC_FIRMWARE
+};
+
 enum class AdcInputRange {
 	PLUSMINUS2PT5V = 0,
 	PLUSMINUS5V = 1,
@@ -447,13 +452,45 @@ protected:
 
 };
 
+class Basestation;
+
+class FirmwareUpdater : public ThreadWithProgressWindow
+{
+public:
+
+	/** Constructor */
+	FirmwareUpdater(Basestation* basestation, File firmwareFile, FirmwareType type);
+
+	/** Destructor */
+	~FirmwareUpdater() {}
+
+	/** Thread for firmware update */
+	void run() override;
+
+	/** Callback to update progress bar*/
+	static int firmwareUpdateCallback(size_t bytes)
+	{
+		currentThread->setProgress(float(bytes) / totalFirmwareBytes);
+
+		return 1;
+	}
+
+	static FirmwareUpdater* currentThread;
+	static float totalFirmwareBytes;
+
+	Basestation* basestation;
+	FirmwareType firmwareType;
+	String firmwareFilePath;
+
+};
+
 /** Represents a PXI basestation card */
-class Basestation : public NeuropixComponent, public ThreadWithProgressWindow
+class Basestation : public NeuropixComponent
 {
 public:
 
 	/** Sets the slot values. */
-	Basestation(int slot_) : NeuropixComponent(), ThreadWithProgressWindow("Firmware update", true, false) {
+	Basestation(int slot_) : NeuropixComponent() {
 		probesInitialized = false;
 		slot = slot_;
 		slot_c = (unsigned char) slot_;
@@ -495,28 +532,17 @@ public:
 	/** Returns the total number of probes connected to this basestation */
 	virtual int getProbeCount() = 0;
 
-	/** Updates the BSC firmware */
-	virtual void updateBscFirmware(File file) = 0;
+	/** Launches FirmwareUpdater to update the BSC firmware */
+	void updateBscFirmware(File file);
 
-	/** Updates the BS firmware */
-	virtual void updateBsFirmware(File file) = 0;
+	/** Launches FirmwareUpdater to update the BS firmware */
+	void updateBsFirmware(File file);
 
-	/** Thread for firmware update */
-	virtual void run() = 0;
-
+	/** Checks the status of any initialization threads */
 	virtual bool isBusy() { return false;  }
 
+	/** Waits for initialization threads to exit */
 	virtual void waitForThreadToExit() { }
-
-	static int firmwareUpdateCallback(size_t bytes)
-	{
-		currentBasestation->setProgress(float(bytes) / totalFirmwareBytes);
-
-		return 1;
-	}
-
-	static Basestation* currentBasestation;
-	static float totalFirmwareBytes;
 
 	BasestationType type;
 	
@@ -587,7 +613,6 @@ protected:
 	File savingDirectory;
 	int namingSchemeIdx = 0;
 	
-
 	String bscFirmwarePath;
 	String bsFirmwarePath;
 };
