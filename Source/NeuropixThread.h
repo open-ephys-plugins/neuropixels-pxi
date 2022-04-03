@@ -73,12 +73,13 @@ struct StreamInfo {
 	Shows a progress window while searching for probes.
 
 */
-class Initializer : public ThreadWithProgressWindow
+class Initializer : public Thread
 {
 public:
 
+	/** Constructor */
 	Initializer(OwnedArray<Basestation>& basestations_, NeuropixAPIv1& api_v1_, NeuropixAPIv3& api_v3_)
-		: ThreadWithProgressWindow("Neuropixels Initialization", true, false),
+		: Thread("Neuropixels Initialization"),
 		  basestations(basestations_),
 		  api_v1(api_v1_),
 		  api_v3(api_v3_) { }

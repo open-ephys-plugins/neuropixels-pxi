@@ -50,10 +50,21 @@ std::unique_ptr<GenericEditor> NeuropixThread::createEditor(SourceNode* sn)
 
 void Initializer::run()
 {
-	const MessageManagerLock mmLock;
 
-	setProgress(0);
-	setStatusMessage("Hi!");
+	//{
+	//	NOT WORKING -- GUI hangs
+	//	const MessageManagerLock mmLock;
+	//	getAlertWindow()->setAlwaysOnTop(true);
+	//}
+
+	// ALSO NOT WORKING:
+	/*DocumentWindow window = DocumentWindow("HI", Colours::magenta, 0, true);
+
+	window.centreWithSize(500, 500);
+	window.setUsingNativeTitleBar(true);
+	window.setResizable(false, false);
+	window.setAlwaysOnTop(true);
+	window.setVisible(true);*/
 
 	Neuropixels::scanBS();
 	Neuropixels::basestationID list[16];
@@ -115,6 +126,7 @@ void Initializer::run()
 			}
 		}
 
+
 		if (basestations.size() == 0) // no basestations with API version match
 		{
 			LOGD("Checking for V1 basestations...");
@@ -129,7 +141,7 @@ void Initializer::run()
 				if ((availableslotmask >> slot) & 1)
 				{
 
-					LOGD("  Found V1 Basestation");
+				    LOGD("  Found V1 Basestation");
 
 					Basestation* bs = new Basestation_v1(slot);
 
@@ -173,6 +185,7 @@ void Initializer::run()
 		}
 
 	}
+
 }
 
 NeuropixThread::NeuropixThread(SourceNode* sn) :
@@ -197,10 +210,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	Neuropixels::np_dbg_setlevel(4);
 
 	initializer = std::make_unique<Initializer>(basestations, api_v1, api_v3);
-
-	initializer->runThread();
-
-	std::cout << "NUM BASESTATIONS: " << basestations.size() << std::endl;
+	initializer->run();
 
 	bool foundSync = false;
 

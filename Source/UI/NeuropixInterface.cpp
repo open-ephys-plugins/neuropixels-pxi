@@ -1372,7 +1372,8 @@ ProbeSettings NeuropixInterface::getProbeSettings()
 
     for (auto electrode : electrodeMetadata)
     {
-        if (electrode.status == ElectrodeStatus::CONNECTED || electrode.status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
+        if (electrode.status == ElectrodeStatus::CONNECTED || 
+            electrode.status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
         {
             p.selectedChannel.add(electrode.channel);
             p.selectedBank.add(electrode.bank);
@@ -1406,10 +1407,10 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     xmlNode->setAttribute("bs_serial_number", String(probe->basestation->info.serial_number));
     xmlNode->setAttribute("bs_part_number", probe->basestation->info.part_number);
 
-   /* xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
+    xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
     xmlNode->setAttribute("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
     xmlNode->setAttribute("bsc_serial_number", String(probe->basestation->basestationConnectBoard->info.serial_number));
-    xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);*/
+    xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
 
     xmlNode->setAttribute("headstage_serial_number", String(probe->headstage->info.serial_number));
     xmlNode->setAttribute("headstage_part_number", probe->headstage->info.part_number);
@@ -1440,8 +1441,15 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     
     if (referenceComboBox != nullptr)
     {
-        xmlNode->setAttribute("referenceChannel", referenceComboBox->getText());
-        xmlNode->setAttribute("referenceChannelIndex", referenceComboBox->getSelectedId()-1);
+        if (referenceComboBox->getSelectedId() > 0)
+        {
+            xmlNode->setAttribute("referenceChannel", referenceComboBox->getText());
+            xmlNode->setAttribute("referenceChannelIndex", referenceComboBox->getSelectedId() - 1);
+        }
+        else {
+            xmlNode->setAttribute("referenceChannel", "Ext");
+            xmlNode->setAttribute("referenceChannelIndex", 0);
+        }
     }
     
     if (filterComboBox != nullptr)
@@ -1641,7 +1649,6 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
             }
         }
 
-        
     }
 
     probe->updateSettings(settings);
