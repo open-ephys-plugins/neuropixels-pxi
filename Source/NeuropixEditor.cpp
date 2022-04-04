@@ -83,7 +83,7 @@ void SlotButton::componentBeingDeleted(Component& component)
 		}
 	}
 
-	//FIXME: Refresh data stream names 
+	CoreServices::updateSignalChain((GenericEditor*)(getParentComponent()->getParentComponent()));
 
 	repaint();
 }

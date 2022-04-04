@@ -834,7 +834,10 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 	for (int i = 0; i < sourceStreams.size(); i++)
 	{
+
 		DataStream* currentStream = sourceStreams[i];
+
+		currentStream->setName(getProbes()[i]->streamName);
 
 		currentStream->clearChannels();
 
