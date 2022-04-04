@@ -417,6 +417,25 @@ public:
 	String customPort;
 	String customProbe;
 
+	void setNamingScheme(int schemeIdx)
+	{
+		switch (schemeIdx) {
+		case 0:
+			// code block
+			streamName = autoName;
+			break;
+		case 1:
+			streamName = autoNumber;
+			break;
+		case 2:
+			streamName = customPort;
+			break;
+		case 3:
+			streamName = customProbe;
+			break;
+		}
+	}
+
 	StringArray autoProbeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
 						   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
 
@@ -574,6 +593,8 @@ public:
 
 	void setNamingScheme(int schemeIdx) {
 		namingSchemeIdx = schemeIdx;
+		for (auto p : probes)
+			p->setNamingScheme(schemeIdx);
 	}
 
 	int getNamingScheme() {

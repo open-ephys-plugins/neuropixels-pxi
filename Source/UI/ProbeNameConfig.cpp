@@ -140,7 +140,7 @@ ProbeNameConfig::ProbeNameConfig(NeuropixThread* t_, int slot, int schemeIdx_)
     dock2Label->setColour(juce::Label::textColourId, juce::Colour(255, 255, 255));
     addAndMakeVisible(dock2Label);
 
-    int probeIdx = 0;
+    int probeIndex = 0;
     for (auto& probe : t->getProbes()) {
         for (auto&& label : probeNames)
         {
@@ -151,12 +151,13 @@ ProbeNameConfig::ProbeNameConfig(NeuropixThread* t_, int slot, int schemeIdx_)
             {
                 label->autoName = probe->autoName;
                 label->autoNumber = probe->autoNumber;
-                label->customPort = probe->customPort.isEmpty() ? "Port" + String(probe->basestation->slot) + "-" + String(probe->headstage->port) + "-" + String(probe->dock) : probe->customPort;
+                label->customPort = probe->customPort.isEmpty() ? "Port" + String(probe->basestation->slot) + \
+                    "-" + String(probe->headstage->port) + "-" + String(probe->dock) : probe->customPort;
                 label->customProbe = probe->customProbe.isEmpty() ? String(probe->info.serial_number) : probe->customProbe;
 
                 label->hasProbe = true;
 
-                probeIdx++;
+                probeIndex++;
             }
         }
     }

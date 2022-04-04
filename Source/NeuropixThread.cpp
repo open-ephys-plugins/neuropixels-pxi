@@ -196,7 +196,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	bool foundSync = false;
 
-	int probeIdx = 0;
+	int probeIndex = 0;
+
 	for (auto probe : getProbes())
 	{
 		baseStationAvailable = true;
@@ -208,25 +209,25 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 		}
 
 		/* Generate names for probes based on order of appearance in chassis */
-		probe->autoName = generateProbeName(probeIdx);
-		probe->autoNumber = String(probeIdx);
+		probe->autoName = generateProbeName(probeIndex);
+		probe->autoNumber = String(probeIndex);
 
 		/* Defualt to automatic 'lettered' names */
 		probe->streamName = probe->autoName;
 
-		probeIdx++;
+		probeIndex++;
 
 	}
 
 	updateSubprocessors();
 }
 
-String NeuropixThread::generateProbeName(int probeIdx)
+String NeuropixThread::generateProbeName(int probeIndex)
 {
 	StringArray probeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
 						   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
 
-	return "Probe" + probeNames[probeIdx];
+	return "Probe" + probeNames[probeIndex];
 }
 
 void NeuropixThread::updateSubprocessors()

@@ -30,6 +30,7 @@ SlotButton::SlotButton(NeuropixThread* t_, int slot_) : Button(String(slot))
 {
 	t = t_;
 	slot = slot_;
+
 }
 
 void SlotButton::mouseUp(const MouseEvent& event)
@@ -345,6 +346,14 @@ void BackgroundLoader::run()
 		//{
 		LOGC("Updating settings for ", thread->getProbes().size(), " probes.");
 
+		/* Sets the current naming scheme */
+		for (auto& bs : thread->getBasestations())
+		{
+			thread->setNamingSchemeForSlot(bs->slot, bs->getNamingScheme());
+		}
+		MessageManagerLock mml;
+		CoreServices::updateSignalChain(editor);
+
 		for (auto probe : thread->getProbes())
 		{
 			LOGC(" Updating queue for probe ", probe->name);
@@ -643,8 +652,11 @@ void NeuropixEditor::saveVisualizerEditorParameters(XmlElement* xml)
 
 	XmlElement* xmlNode = xml->createNewChildElement("NEUROPIXELS_EDITOR");
 
-	for (int slot = 0; slot < thread->getBasestations().size(); slot++)
+	for (int slotIdx = 0; slotIdx < thread->getBasestations().size(); slotIdx++)
 	{
+
+		int slot = thread->getBasestations()[slotIdx]->slot;
+
 		String directory_name = savingDirectories[slot].getFullPathName();
 		if (directory_name.length() == 2)
 			directory_name += "\\\\";
@@ -674,16 +686,20 @@ void NeuropixEditor::loadVisualizerEditorParameters(XmlElement* xml)
 		{
 			LOGDD("Found parameters for Neuropixels editor");
 
-			for (int slot = 0; slot < thread->getBasestations().size(); slot++)
+			for (int slotIdx = 0; slotIdx< thread->getBasestations().size(); slotIdx++)
 			{
+
+				int slot = thread->getBasestations()[slotIdx]->slot;
+
 				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
 				LOGDD("Setting thread directory for slot ", slot);
-				thread->setDirectoryForSlot(slot, directory);
-				directoryButtons[slot]->setLabel(directory.getFullPathName().substring(0, 2));
-				savingDirectories.set(slot, directory);
+				thread->setDirectoryForSlot(slotIdx, directory);
+				directoryButtons[slotIdx]->setLabel(directory.getFullPathName().substring(0, 2));
+				savingDirectories.set(slotIdx, directory);
 
 				int namingSchemeIdx = xmlNode->getIntAttribute("Slot" + String(slot) + "NamingScheme");
 				thread->setNamingSchemeForSlot(slot, namingSchemeIdx);
+
 			}
 
 			int slotIndex = xmlNode->getIntAttribute("MasterSlot", masterSelectBox->getSelectedItemIndex());
