@@ -167,6 +167,8 @@ void OneBoxADC::run()
 
 	int16_t data[SAMPLECOUNT * 12];
 
+	double ts_s;
+
 	Neuropixels::PacketInfo packetInfo[SAMPLECOUNT];
 
 	while (!threadShouldExit())
@@ -204,7 +206,9 @@ void OneBoxADC::run()
 
 				timestamp += 1;
 
-				apBuffer->addToBuffer(adcSamples, &timestamp, &eventCode, 1);
+				
+
+				apBuffer->addToBuffer(adcSamples, &timestamp, &ts_s, &eventCode, 1);
 
 				/*if (ap_timestamp % 30000 == 0)
 				{

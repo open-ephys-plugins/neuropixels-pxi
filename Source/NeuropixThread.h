@@ -81,9 +81,13 @@ class NeuropixThread : public DataThread, public Timer
 
 public:
 
+	/** Constructor */
 	NeuropixThread(SourceNode* sn);
+
+	/** Destructor */
 	~NeuropixThread();
 
+	/** DataThread class -- not used */
 	bool updateBuffer();
 
 	/** Returns true if the data source is connected, false otherwise.*/

@@ -37,6 +37,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # define MAX_HEADSTAGE_CLK_SAMPLE 3221225475
 # define MAX_ALLOWABLE_TIMESTAMP_JUMP 4
 
+#define MAXPACKETS 64
+
+
 class BasestationConnectBoard;
 class Flex;
 class Headstage;
@@ -309,6 +312,9 @@ public:
 		isCalibrated = false;
 		calibrationWarningShown = false;
 
+		for (int i = 0; i < 12 * MAXPACKETS; i++)
+			timestamp_s[i] = -1.0;
+
 		sourceType = DataSourceType::PROBE;
 
 		for (int i = 0; i < 384; i++)
@@ -339,6 +345,8 @@ public:
 
 	float ap_offsets[384][100];
 	float lfp_offsets[384][100];
+
+	double timestamp_s[12 * MAXPACKETS];
 
 	int64 ap_timestamp;
 	int64 lfp_timestamp;

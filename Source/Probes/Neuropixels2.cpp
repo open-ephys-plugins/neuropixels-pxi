@@ -430,7 +430,7 @@ void Neuropixels2::run()
 
 			}
 
-			apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, count);
+			apBuffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, count);
 
 		}
 		else if (errorCode != Neuropixels::SUCCESS)

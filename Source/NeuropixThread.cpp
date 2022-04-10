@@ -172,7 +172,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	if (basestations.size() == 0) // no basestations at all
 	{
 
-		bool response;
+		bool response = false;
 
 		if (FORCE_SIMULATION_MODE)
 		{
@@ -180,7 +180,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 		}
 		else
 		{
-			bool response = AlertWindow::showOkCancelBox(AlertWindow::NoIcon,
+			response = AlertWindow::showOkCancelBox(AlertWindow::NoIcon,
 				"No basestations detected",
 				"No Neuropixels PXI basestations were detected. Do you want to run this plugin in simulation mode?",
 				"Yes", "No", 0, 0);
@@ -627,7 +627,7 @@ bool NeuropixThread::startAcquisition()
 
 	progressBar->setVisible(true);
 
-	startTimer(500); // wait for signal chain to be built
+	startTimer(100);
 	
     return true;
 }
@@ -837,8 +837,6 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 	{
 
 		DataStream* currentStream = sourceStreams[i];
-
-		currentStream->setName(getProbes()[i]->streamName);
 
 		currentStream->clearChannels();
 
