@@ -298,8 +298,8 @@ void SimulatedProbe::run()
 				lfpSamples[384 + packetNum * SKIP] = (float)eventCode;
 		}
 
-		apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * MAXPACKETS);
-		lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, MAXPACKETS);
+		apBuffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, 12 * MAXPACKETS);
+		lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, MAXPACKETS);
 
 		if (ap_offsets[0][0] == 0)
 		{

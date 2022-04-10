@@ -60,6 +60,10 @@ public:
 	EditorBackground(NeuropixThread* t, bool freqSelectEnabled);
 	void setFreqSelectAvailable(bool available);
 
+	/* A map from slot number label to its bounds in the editor */
+	std::vector<std::unique_ptr<SlotButton>> slotButtons;
+	std::unique_ptr<ProbeNameConfig> probeNamingPopup;
+
 private:
 	void paint(Graphics& g);
 
@@ -68,10 +72,6 @@ private:
 
 	/* An array of Basestation objections, one for each basestation detected */
 	Array<Basestation*> basestations;
-
-	/* A map from slot number label to its bounds in the editor */
-	std::vector<std::unique_ptr<SlotButton>> slotButtons;
-	std::unique_ptr<ProbeNameConfig> probeNamingPopup;
 
 };
 

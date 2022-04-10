@@ -1654,6 +1654,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     probe->updateSettings(settings);
 
     applyProbeSettings(settings, false);
+
 }
 
 // --------------------------------------

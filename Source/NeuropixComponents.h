@@ -37,6 +37,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # define MAX_HEADSTAGE_CLK_SAMPLE 3221225475
 # define MAX_ALLOWABLE_TIMESTAMP_JUMP 4
 
+#define MAXPACKETS 64
+
+
 class BasestationConnectBoard;
 class Flex;
 class Headstage;
@@ -314,6 +317,9 @@ public:
 		isCalibrated = false;
 		calibrationWarningShown = false;
 
+		for (int i = 0; i < 12 * MAXPACKETS; i++)
+			timestamp_s[i] = -1.0;
+
 		sourceType = DataSourceType::PROBE;
 
 		for (int i = 0; i < 384; i++)
@@ -344,6 +350,8 @@ public:
 
 	float ap_offsets[384][100];
 	float lfp_offsets[384][100];
+
+	double timestamp_s[12 * MAXPACKETS];
 
 	int64 ap_timestamp;
 	int64 lfp_timestamp;
@@ -421,6 +429,25 @@ public:
 	String autoNumber;
 	String customPort;
 	String customProbe;
+
+	void setNamingScheme(int schemeIdx)
+	{
+		switch (schemeIdx) {
+		case 0:
+			// code block
+			streamName = autoName;
+			break;
+		case 1:
+			streamName = autoNumber;
+			break;
+		case 2:
+			streamName = customPort;
+			break;
+		case 3:
+			streamName = customProbe;
+			break;
+		}
+	}
 
 	StringArray autoProbeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
 						   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
@@ -600,6 +627,8 @@ public:
 
 	void setNamingScheme(int schemeIdx) {
 		namingSchemeIdx = schemeIdx;
+		for (auto p : probes)
+			p->setNamingScheme(schemeIdx);
 	}
 
 	int getNamingScheme() {

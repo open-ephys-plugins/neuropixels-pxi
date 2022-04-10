@@ -166,13 +166,13 @@ public:
 	File getDirectoryForSlot(int slotIndex);
 
 	/** Sets the probe naming scheme to use for this slot */
-	void setNamingSchemeForSlot(int slotIndex, int schemeIndex);
+	void setNamingSchemeForSlot(int slot, int schemeIndex);
 
 	/** Gets the probe naming scheme for this slot */
-	int getNamingSchemeForSlot(int slotIndex);
+	int getNamingSchemeForSlot(int slot);
 
 	/** Generates a unique name for each probe */
-	String generateProbeName(int probeIdx);
+	String generateProbeName(int probeIndex);
 
 	/** Toggles between auto-restart setting. */
 	void setAutoRestart(bool restart);

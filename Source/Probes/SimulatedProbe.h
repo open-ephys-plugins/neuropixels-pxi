@@ -34,8 +34,6 @@ class SimulatedFlex;
 class SimulatedHeadstage;
 class SimulatedProbe;
 
-#define MAXPACKETS 64
-
 struct SimulatedData {
 
 	std::vector<float> ap_band
