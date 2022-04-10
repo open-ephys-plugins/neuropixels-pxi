@@ -227,10 +227,14 @@ void SimulatedProbe::startAcquisition()
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
 	apBuffer->clear();
-	lfpBuffer->clear();
+
+	if (generatesLfpData())
+		lfpBuffer->clear();
 
 	apView->reset();
-	lfpView->reset();
+
+	if (generatesLfpData())
+		lfpView->reset();
 
 	SKIP = sendSync ? 385 : 384;
 
@@ -299,12 +303,16 @@ void SimulatedProbe::run()
 		}
 
 		apBuffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, 12 * MAXPACKETS);
-		lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, MAXPACKETS);
+
+		if (generatesLfpData())
+			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, MAXPACKETS);
 
 		if (ap_offsets[0][0] == 0)
 		{
 			updateOffsets(apSamples, ap_timestamp, true);
-			updateOffsets(lfpSamples, lfp_timestamp, false);
+
+			if (generatesLfpData())
+				updateOffsets(lfpSamples, lfp_timestamp, false);
 		}
 		
 
