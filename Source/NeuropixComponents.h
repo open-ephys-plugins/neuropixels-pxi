@@ -421,8 +421,8 @@ public:
 	/* Stores the generic probe model name e.g. Neuripixels 2.0 - Single Shank */
 	String name;
 
-	/* Stores the name assigned to the probe/stream (default is autoName) */
-	String streamName;
+	/* Stores the name assigned to the probe/streams (default is autoName) */
+	String probeName;
 
 	/* Assign a custom naming scheme to the probe */
 	String autoName;
@@ -435,16 +435,16 @@ public:
 		switch (schemeIdx) {
 		case 0:
 			// code block
-			streamName = autoName;
+			probeName = autoName;
 			break;
 		case 1:
-			streamName = autoNumber;
+			probeName = autoNumber;
 			break;
 		case 2:
-			streamName = customPort;
+			probeName = customPort;
 			break;
 		case 3:
-			streamName = customProbe;
+			probeName = customProbe;
 			break;
 		}
 	}

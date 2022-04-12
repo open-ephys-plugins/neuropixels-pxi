@@ -232,7 +232,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 		probe->autoNumber = String(probeIndex);
 
 		/* Defualt to automatic 'lettered' names */
-		probe->streamName = probe->autoName;
+		probe->probeName = probe->autoName;
 
 		probeIndex++;
 
@@ -795,40 +795,40 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		for (auto info : streamInfo)
 		{
-			String probeName, description, identifier;
+			String streamName, description, identifier;
 
 			if (info.type == stream_type::ADC)
 			{
-				probeName = "OneBox-ADC";
+				streamName = "OneBox-ADC";
 				description = "OneBox ADC data stream";
 				identifier = "onebox.adc";
 			}
 				
 			else if (info.type == stream_type::AP_BAND)
 			{
-				lastName = info.probe->streamName;
-				probeName = lastName + "-AP";
+				lastName = info.probe->probeName;
+				streamName = lastName + "-AP";
 				description = "Neuropixels AP band data stream";
 				identifier = "neuropixels.data.ap";
 			}
 
 			else if (info.type == stream_type::BROAD_BAND)
 			{
-				probeName = info.probe->streamName;
+				streamName = info.probe->probeName;
 				description = "Neuropixels data stream";
 				identifier = "neuropixels.data";
 			}
 			
 			else if (info.type == stream_type::LFP_BAND)
 			{
-				probeName = lastName + "-LFP";
+				streamName = lastName + "-LFP";
 				description = "Neuropixels LFP band data stream";
 				identifier = "neuropixels.data.lfp";
 			}
 
 			DataStream::Settings settings
 			{
-				probeName,
+				streamName,
 				"description",
 				"identifier",
 
@@ -847,14 +847,34 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 	devices->clear();
 	configurationObjects->clear();
 
+	int probeIdx = 0;
+
 	for (int i = 0; i < sourceStreams.size(); i++)
 	{
 
 		DataStream* currentStream = sourceStreams[i];
 
-		currentStream->clearChannels();
+		Probe* p = getProbes()[probeIdx];
 
 		StreamInfo info = streamInfo[i];
+
+		String streamName = p->probeName.isEmpty() ? "Loading..." : p->probeName;
+
+		if (info.type == stream_type::AP_BAND)
+		{
+			if (streamName != "Loading...")
+				streamName += "-AP";
+			probeIdx--; //stay on this probe for LFP band
+		}
+		else if (info.type == stream_type::LFP_BAND)
+		{
+			if (streamName != "Loading...")
+				streamName += "-LFP";
+		}
+
+		probeIdx++;
+
+		currentStream->setName(streamName);
 
 		ContinuousChannel::Type type;
 
@@ -872,6 +892,8 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 			description = "Neuropixels electrode";
 			identifier = "neuropixels.electrode";
 		}
+
+		currentStream->clearChannels();
 			
 		for (int ch = 0; ch < info.num_channels; ch++)
 		{

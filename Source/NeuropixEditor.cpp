@@ -64,18 +64,18 @@ void SlotButton::componentBeingDeleted(Component& component)
 			{
 
 				if (schemeIdx == 0)
-					probe->streamName = probe->autoName;
+					probe->probeName = probe->autoName;
 				else if (schemeIdx == 1)
-					probe->streamName = probe->autoNumber;
+					probe->probeName = probe->autoNumber;
 				else if (schemeIdx == 2)
 				{
 					probe->customPort = label->getText(); //TODO validate
-					probe->streamName = probe->customPort;
+					probe->probeName = probe->customPort;
 				}
 				else if (schemeIdx == 3)
 				{
 					probe->customProbe = label->getText(); //TODO validate
-					probe->streamName = probe->customProbe;
+					probe->probeName = probe->customProbe;
 				}
 
 				probe->basestation->setNamingScheme(schemeIdx);

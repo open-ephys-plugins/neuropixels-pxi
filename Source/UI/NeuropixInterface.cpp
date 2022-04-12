@@ -1531,11 +1531,6 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
             if (xmlNode->getStringAttribute("probe_serial_number").equalsIgnoreCase(mySerialNumber))
             {
 
-                probe->autoName = xmlNode->getStringAttribute("autoName");
-                probe->autoNumber = xmlNode->getStringAttribute("autoNumber");
-                probe->customPort = xmlNode->getStringAttribute("customPort");
-                probe->customProbe = xmlNode->getStringAttribute("customProbe");
-
                 matchingNode = xmlNode;
                 break;
 
@@ -1588,6 +1583,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
                     if (type == probe->type)
                     {
                         matchingNode = xmlNode;
+
                         break;
                     }
 
@@ -1598,6 +1594,11 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 
     if (matchingNode != nullptr)
     {
+
+        probe->autoName = matchingNode->getStringAttribute("autoName");
+        probe->autoNumber = matchingNode->getStringAttribute("autoNumber");
+        probe->customPort = matchingNode->getStringAttribute("customPort");
+        probe->customProbe = matchingNode->getStringAttribute("customProbe");
 
         if (matchingNode->getChildByName("CHANNELS"))
         {
