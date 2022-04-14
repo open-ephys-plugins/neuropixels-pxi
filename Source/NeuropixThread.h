@@ -31,9 +31,6 @@
 
 #include "NeuropixComponents.h"
 
-//Helpful for debugging when PXI system is connected but don't want to connect to real probes
-#define FORCE_SIMULATION_MODE true
-
 class SourceNode;
 class NeuropixThread;
 class NeuropixEditor;
