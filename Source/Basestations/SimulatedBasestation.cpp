@@ -48,18 +48,26 @@ SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow(SimulatedBase
 
 		slotComboBoxes.add(comboBox);
 		addAndMakeVisible(comboBox);
-		comboBox->setBounds(50, 50 + 35 * i, 200, 20);
+		comboBox->setBounds(65, 50 + 35 * i, 200, 20);
 	}
 
 	acceptButton = std::make_unique<UtilityButton>("LAUNCH", Font("Small Text", 13, Font::plain));
-	acceptButton->setBounds(150, 240, 80, 20);
+	acceptButton->setBounds(120, 200, 80, 20);
 	acceptButton->addListener(this);
 	addAndMakeVisible(acceptButton.get());
 }
 
 void SimulatedBasestationConfigWindow::paint(Graphics& g) 
 {
-	g.fillAll(Colours::maroon);
+	g.setColour(Colours::lightgrey);
+
+	g.drawText("SLOT", 22, 22, 50, 25, Justification::centred);
+	g.drawText("PROBE TYPE", 62, 22, 200, 20, Justification::centred);
+
+	for (int slot = 0; slot < 4; slot++)
+	{
+		g.drawText(String(slot + 1), 25, 50 + 35 * slot, 25, 20, Justification::right);
+	}
 }
 
 void SimulatedBasestationConfigWindow::buttonClicked(Button* button)
@@ -103,9 +111,9 @@ SimulatedBasestation::SimulatedBasestation(int slot) : Basestation(slot) {
 	configComponent = std::make_unique<SimulatedBasestationConfigWindow>(this);
 	options.content.setOwned(configComponent.get());
 
-	options.content->setSize(450, 300);
+	options.content->setSize(320, 250);
 
-	options.dialogTitle = "Configure the simulated basestation";
+	options.dialogTitle = "Configure basestation";
 	options.dialogBackgroundColour = Colours::darkgrey;
 	options.escapeKeyTriggersCloseButton = true;
 	options.useNativeTitleBar = false;

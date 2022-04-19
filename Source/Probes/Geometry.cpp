@@ -278,7 +278,7 @@ void Geometry::NP2(int shank_count,
 				metadata.status = ElectrodeStatus::DISCONNECTED;
 			}
 
-			metadata.type = ElectrodeType::REFERENCE; // disable internal reference channel
+			metadata.type = ElectrodeType::ELECTRODE; // disable internal reference channel
 
 		}
 		else if (shank_count == 4)
