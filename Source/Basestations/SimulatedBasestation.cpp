@@ -26,8 +26,51 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Probes/SimulatedProbe.h"
 #include "../Headstages/SimulatedHeadstage.h"
 
+SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow(SimulatedBasestation* bs_)
+	: bs(bs_)
+{
+	
+	for (int i = 0; i < 4; i++)
+	{
+		ComboBox* comboBox = new ComboBox("Slot " + String(i) + " Combo Box");
 
+		comboBox->addItem("Empty", (int) ProbeType::NONE);
+		comboBox->addItem("Neuropixels 1.0", (int) ProbeType::NP1);
+		comboBox->addItem("Neuropixels NHP", (int)ProbeType::NHP10);
+		comboBox->addItem("Neuropixels UHD", (int)ProbeType::UHD1);
+		comboBox->addItem("Neuropixels 2.0 1-shank", (int)ProbeType::NP2_1);
+		comboBox->addItem("Neuropixels 2.0 4-shank", (int)ProbeType::NP2_4);
 
+		if (i == 0)
+			comboBox->setSelectedId((int)ProbeType::NP1, dontSendNotification);
+		else
+			comboBox->setSelectedId((int)ProbeType::NONE, dontSendNotification);
+
+		slotComboBoxes.add(comboBox);
+		addAndMakeVisible(comboBox);
+		comboBox->setBounds(50, 50 + 35 * i, 200, 20);
+	}
+
+	acceptButton = std::make_unique<UtilityButton>("LAUNCH", Font("Small Text", 13, Font::plain));
+	acceptButton->setBounds(150, 240, 80, 20);
+	acceptButton->addListener(this);
+	addAndMakeVisible(acceptButton.get());
+}
+
+void SimulatedBasestationConfigWindow::paint(Graphics& g) 
+{
+	g.fillAll(Colours::maroon);
+}
+
+void SimulatedBasestationConfigWindow::buttonClicked(Button* button)
+{
+
+	for (int i = 0; i < 4; i++)
+		bs->simulatedProbeTypes[i] = (ProbeType)slotComboBoxes[i]->getSelectedId();
+
+	if (DialogWindow* dw = findParentComponentOfClass<DialogWindow>())
+		dw->exitModalState(0);
+}
 
 void SimulatedBasestationConnectBoard::getInfo()
 {
@@ -49,6 +92,26 @@ void SimulatedBasestation::getInfo()
 SimulatedBasestation::SimulatedBasestation(int slot) : Basestation(slot) {
 	
 	type = BasestationType::SIMULATED;
+
+	simulatedProbeTypes[0] = ProbeType::NP1;
+	simulatedProbeTypes[1] = ProbeType::NONE;
+	simulatedProbeTypes[2] = ProbeType::NONE;
+	simulatedProbeTypes[3] = ProbeType::NONE;
+
+	DialogWindow::LaunchOptions options;
+
+	configComponent = std::make_unique<SimulatedBasestationConfigWindow>(this);
+	options.content.setOwned(configComponent.get());
+
+	options.content->setSize(450, 300);
+
+	options.dialogTitle = "Configure the simulated basestation";
+	options.dialogBackgroundColour = Colours::darkgrey;
+	options.escapeKeyTriggersCloseButton = true;
+	options.useNativeTitleBar = false;
+	options.resizable = false;
+
+	int result = options.runModal();
 	
 	getInfo();
 }
@@ -61,15 +124,32 @@ bool SimulatedBasestation::open()
 	basestationConnectBoard = new SimulatedBasestationConnectBoard(this);
 	basestationConnectBoard->getInfo();
 
-	headstages.add(new SimulatedHeadstage(this, 1, "PRB_1_4_0480_1", 99999));
-	headstages.add(new SimulatedHeadstage(this, 2, "NP2000", 99929));
-	//headstages.add(new SimulatedHeadstage(this, 2, "NP2010", 99949));
-	//headstages.add(new SimulatedHeadstage(this, 3, "NP1300", 99959));
-
-
-	//headstages.add(new SimulatedHeadstage(this, 1, "NP2010", 45678));
-	//headstages.add(new SimulatedHeadstage(this, 2, "PRB_1_4_0480_1", 3222395));
-	//headstages.add(new SimulatedHeadstage(this, 3, "PRB_1_4_0480_1", 3225678));
+	for (int i = 0; i < 4; i++)
+	{
+		switch (simulatedProbeTypes[i])
+		{
+		case ProbeType::NONE:
+			headstages.add(nullptr);
+			break;
+		case ProbeType::NP1:
+			headstages.add(new SimulatedHeadstage(this, 1, "PRB_1_4_0480_1", 28948291 + i));
+			break;
+		case ProbeType::NHP10:
+			headstages.add(new SimulatedHeadstage(this, 1, "NP1010", 38948291 + i));
+			break;
+		case ProbeType::UHD1:
+			headstages.add(new SimulatedHeadstage(this, 1, "NP1100", 48948291 + i));
+			break;
+		case ProbeType::NP2_1:
+			headstages.add(new SimulatedHeadstage(this, 1, "NP2000", 58948291 + i));
+			break;
+		case ProbeType::NP2_4:
+			headstages.add(new SimulatedHeadstage(this, 1, "NP2010", 68948291 + i));
+			break;
+		default:
+			headstages.add(new SimulatedHeadstage(this, 1, "PRB_1_4_0480_1", 28948291 + i));
+		}
+	}
 
 	for (auto headstage : headstages)
 	{

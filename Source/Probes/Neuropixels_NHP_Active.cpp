@@ -88,7 +88,7 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
 
 	settings.availableReferences.add("REF_ELEC");
 	settings.availableReferences.add("TIP_REF");
-	settings.availableReferences.add("INT_REF");
+	//settings.availableReferences.add("INT_REF");
 
 	open();
 }

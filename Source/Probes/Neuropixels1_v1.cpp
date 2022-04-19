@@ -90,9 +90,9 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	settings.availableReferences.add("Ext");
 	settings.availableReferences.add("Tip");
-	settings.availableReferences.add("192");
-	settings.availableReferences.add("576");
-	settings.availableReferences.add("960");
+	//settings.availableReferences.add("192");
+	//settings.availableReferences.add("576");
+	//settings.availableReferences.add("960");
 
 	shankOutline.startNewSubPath(27, 31);
 	shankOutline.lineTo(27, 514);

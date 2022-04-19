@@ -54,21 +54,6 @@ std::unique_ptr<GenericEditor> NeuropixThread::createEditor(SourceNode* sn)
 void Initializer::run()
 {
 
-	//{
-	//	NOT WORKING -- GUI hangs
-	//	const MessageManagerLock mmLock;
-	//	getAlertWindow()->setAlwaysOnTop(true);
-	//}
-
-	// ALSO NOT WORKING:
-	/*DocumentWindow window = DocumentWindow("HI", Colours::magenta, 0, true);
-
-	window.centreWithSize(500, 500);
-	window.setUsingNativeTitleBar(true);
-	window.setResizable(false, false);
-	window.setAlwaysOnTop(true);
-	window.setVisible(true);*/
-
 	Neuropixels::scanBS();
 	Neuropixels::basestationID list[16];
 	int count = getDeviceList(&list[0], 16);

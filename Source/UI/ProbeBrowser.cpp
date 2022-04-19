@@ -335,9 +335,7 @@ String ProbeBrowser::getElectrodeInfoString(int index)
 
     a += "\n\nType: ";
 
-    if (parent->electrodeMetadata[index].status == ElectrodeStatus::REFERENCE ||
-        parent->electrodeMetadata[index].status == ElectrodeStatus::OPTIONAL_REFERENCE ||
-        parent->electrodeMetadata[index].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
+    if (parent->electrodeMetadata[index].type == ElectrodeType::REFERENCE)
     {
         a += "REFERENCE";
     }
@@ -347,8 +345,7 @@ String ProbeBrowser::getElectrodeInfoString(int index)
 
         a += "\nEnabled: ";
 
-        if (parent->electrodeMetadata[index].status == ElectrodeStatus::CONNECTED ||
-            parent->electrodeMetadata[index].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
+        if (parent->electrodeMetadata[index].status == ElectrodeStatus::CONNECTED)
             a += "YES";
         else
             a += "NO";
@@ -838,10 +835,8 @@ Colour ProbeBrowser::getElectrodeColour(int i)
     {
         return Colours::grey;
     }
-    else if (parent->electrodeMetadata[i].status == ElectrodeStatus::REFERENCE)
+    else if (parent->electrodeMetadata[i].type == ElectrodeType::REFERENCE)
         return Colours::black;
-    else if (parent->electrodeMetadata[i].status == ElectrodeStatus::OPTIONAL_REFERENCE)
-        return Colours::purple;
     else {
         if (parent->mode == VisualizationMode::ENABLE_VIEW) // ENABLED STATE
         {

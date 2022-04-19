@@ -91,7 +91,7 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 
 	settings.availableReferences.add("REF_ELEC");
 	settings.availableReferences.add("TIP_REF");
-	settings.availableReferences.add("INT_REF");
+	//settings.availableReferences.add("INT_REF");
 
 	open();
 

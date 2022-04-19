@@ -72,7 +72,7 @@ enum class BasestationType {
 };
 
 enum class ProbeType {
-	NONE,
+	NONE = 1,
 	NP1,
 	NHP10,
 	NHP25,
@@ -113,10 +113,12 @@ enum class Bank {
 
 enum class ElectrodeStatus {
 	CONNECTED,
-	DISCONNECTED,
-	REFERENCE,
-	OPTIONAL_REFERENCE,
-	CONNECTED_OPTIONAL_REFERENCE
+	DISCONNECTED
+};
+
+enum class ElectrodeType {
+	ELECTRODE,
+	REFERENCE
 };
 
 enum class BIST {
@@ -166,6 +168,7 @@ struct ElectrodeMetadata {
 	float site_width; // in microns
 	Bank bank;
 	ElectrodeStatus status;
+	ElectrodeType type;
 	bool isSelected;
 	Colour colour;
 };

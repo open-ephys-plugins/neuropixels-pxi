@@ -1003,24 +1003,12 @@ void NeuropixInterface::selectElectrodes(Array<int> electrodes)
             {
                 if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
                 {
-                    if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE ||
-                        electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
-                        electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
-                    else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
-                        ; // skip
-                    else
-                        electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
+                    electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
                 }
 
                 else
                 {
-                    if (electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE ||
-                        electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
-                        electrodeMetadata.getReference(j).status = ElectrodeStatus::OPTIONAL_REFERENCE;
-                    else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
-                        ; // skip
-                    else
-                        electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
+                    electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
                 }
 
             }
@@ -1294,10 +1282,6 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
     {
         if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
             electrodeMetadata.getReference(i).status = ElectrodeStatus::DISCONNECTED;
-
-        if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
-            electrodeMetadata.getReference(i).status = ElectrodeStatus::OPTIONAL_REFERENCE;
-    
     }
 
     // update selection state
@@ -1313,12 +1297,7 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
                 electrodeMetadata[j].bank == bank &&
                 electrodeMetadata[j].shank == shank)
             {
-                if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
-                    electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
-                else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
-                    ;
-                else
-                    electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
+                electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
             }
         }
     }
@@ -1372,8 +1351,7 @@ ProbeSettings NeuropixInterface::getProbeSettings()
 
     for (auto electrode : electrodeMetadata)
     {
-        if (electrode.status == ElectrodeStatus::CONNECTED || 
-            electrode.status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
+        if (electrode.status == ElectrodeStatus::CONNECTED)
         {
             p.selectedChannel.add(electrode.channel);
             p.selectedBank.add(electrode.bank);
