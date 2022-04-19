@@ -37,6 +37,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # define MAX_HEADSTAGE_CLK_SAMPLE 3221225475
 # define MAX_ALLOWABLE_TIMESTAMP_JUMP 4
 
+#define MAXPACKETS 64
+
+
 class BasestationConnectBoard;
 class Flex;
 class Headstage;
@@ -69,7 +72,7 @@ enum class BasestationType {
 };
 
 enum class ProbeType {
-	NONE,
+	NONE = 1,
 	NP1,
 	NHP10,
 	NHP25,
@@ -110,10 +113,12 @@ enum class Bank {
 
 enum class ElectrodeStatus {
 	CONNECTED,
-	DISCONNECTED,
-	REFERENCE,
-	OPTIONAL_REFERENCE,
-	CONNECTED_OPTIONAL_REFERENCE
+	DISCONNECTED
+};
+
+enum class ElectrodeType {
+	ELECTRODE,
+	REFERENCE
 };
 
 enum class BIST {
@@ -127,6 +132,11 @@ enum class BIST {
 	SERDES = 7,
 	HB = 8,
 	BS = 9
+};
+
+enum class FirmwareType {
+	BS_FIRMWARE,
+	BSC_FIRMWARE
 };
 
 enum class AdcInputRange {
@@ -159,6 +169,7 @@ struct ElectrodeMetadata {
 	float site_width; // in microns
 	Bank bank;
 	ElectrodeStatus status;
+	ElectrodeType type;
 	bool isSelected;
 	Colour colour;
 };
@@ -312,6 +323,9 @@ public:
 		isCalibrated = false;
 		calibrationWarningShown = false;
 
+		for (int i = 0; i < 12 * MAXPACKETS; i++)
+			timestamp_s[i] = -1.0;
+
 		sourceType = DataSourceType::PROBE;
 
 		for (int i = 0; i < 384; i++)
@@ -342,6 +356,8 @@ public:
 
 	float ap_offsets[384][100];
 	float lfp_offsets[384][100];
+
+	double timestamp_s[12 * MAXPACKETS];
 
 	int64 ap_timestamp;
 	int64 lfp_timestamp;
@@ -408,7 +424,39 @@ public:
 
 	float fifoFillPercentage;
 
+	/* Stores the generic probe model name e.g. Neuripixels 2.0 - Single Shank */
 	String name;
+
+	/* Stores the name assigned to the probe/streams (default is autoName) */
+	String probeName;
+
+	/* Assign a custom naming scheme to the probe */
+	String autoName;
+	String autoNumber;
+	String customPort;
+	String customProbe;
+
+	void setNamingScheme(int schemeIdx)
+	{
+		switch (schemeIdx) {
+		case 0:
+			// code block
+			probeName = autoName;
+			break;
+		case 1:
+			probeName = autoNumber;
+			break;
+		case 2:
+			probeName = customPort;
+			break;
+		case 3:
+			probeName = customProbe;
+			break;
+		}
+	}
+
+	StringArray autoProbeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
+						   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
 
 	void sendSyncAsContinuousChannel(bool shouldSend) {
 		sendSync = shouldSend;
@@ -437,13 +485,45 @@ protected:
 
 };
 
+class Basestation;
+
+class FirmwareUpdater : public ThreadWithProgressWindow
+{
+public:
+
+	/** Constructor */
+	FirmwareUpdater(Basestation* basestation, File firmwareFile, FirmwareType type);
+
+	/** Destructor */
+	~FirmwareUpdater() {}
+
+	/** Thread for firmware update */
+	void run() override;
+
+	/** Callback to update progress bar*/
+	static int firmwareUpdateCallback(size_t bytes)
+	{
+		currentThread->setProgress(float(bytes) / totalFirmwareBytes);
+
+		return 1;
+	}
+
+	static FirmwareUpdater* currentThread;
+	static float totalFirmwareBytes;
+
+	Basestation* basestation;
+	FirmwareType firmwareType;
+	String firmwareFilePath;
+
+};
+
 /** Represents a PXI basestation card */
-class Basestation : public NeuropixComponent, public ThreadWithProgressWindow
+class Basestation : public NeuropixComponent
 {
 public:
 
 	/** Sets the slot values. */
-	Basestation(int slot_) : NeuropixComponent(), ThreadWithProgressWindow("Firmware update", true, false) {
+	Basestation(int slot_) : NeuropixComponent() {
 		probesInitialized = false;
 		slot = slot_;
 		slot_c = (unsigned char) slot_;
@@ -485,28 +565,17 @@ public:
 	/** Returns the total number of probes connected to this basestation */
 	virtual int getProbeCount() = 0;
 
-	/** Updates the BSC firmware */
-	virtual void updateBscFirmware(File file) = 0;
+	/** Launches FirmwareUpdater to update the BSC firmware */
+	void updateBscFirmware(File file);
 
-	/** Updates the BS firmware */
-	virtual void updateBsFirmware(File file) = 0;
+	/** Launches FirmwareUpdater to update the BS firmware */
+	void updateBsFirmware(File file);
 
-	/** Thread for firmware update */
-	virtual void run() = 0;
-
+	/** Checks the status of any initialization threads */
 	virtual bool isBusy() { return false;  }
 
+	/** Waits for initialization threads to exit */
 	virtual void waitForThreadToExit() { }
-
-	static int firmwareUpdateCallback(size_t bytes)
-	{
-		currentBasestation->setProgress(float(bytes) / totalFirmwareBytes);
-
-		return 1;
-	}
-
-	static Basestation* currentBasestation;
-	static float totalFirmwareBytes;
 
 	BasestationType type;
 	
@@ -561,15 +630,24 @@ public:
 	File getSavingDirectory() {
 		return savingDirectory;
 	}
+
+	void setNamingScheme(int schemeIdx) {
+		namingSchemeIdx = schemeIdx;
+		for (auto p : probes)
+			p->setNamingScheme(schemeIdx);
+	}
+
+	int getNamingScheme() {
+		return namingSchemeIdx;
+	}
 	
 protected:
 
 	bool probesInitialized;
 	Array<int> syncFrequencies;
 	File savingDirectory;
-
+	int namingSchemeIdx = 0;
 	
-
 	String bscFirmwarePath;
 	String bsFirmwarePath;
 };

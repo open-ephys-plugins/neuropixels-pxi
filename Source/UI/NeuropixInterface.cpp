@@ -428,6 +428,21 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     loadJsonButton->setTooltip("Load channel map from probeinterface .json file");
    // addAndMakeVisible(loadJsonButton);
 
+    loadImroComboBox = new ComboBox("Quick-load IMRO");
+    loadImroComboBox->setBounds(175, 707, 130, 22);
+    loadImroComboBox->addListener(this);
+    loadImroComboBox->setTooltip("Load a favorite IMRO setting.");
+
+    File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
+    File imroDirectory = baseDirectory.getChildFile("IMRO");
+    for (const auto& filename : File(imroDirectory).findChildFiles(File::findFiles, false, "*.imro")) {
+        imroFiles.add(filename.getFileNameWithoutExtension());
+        loadImroComboBox->addItem(imroFiles.getLast(), imroFiles.size());
+    }
+    if (!imroFiles.size())
+        loadImroComboBox->addItem("No pre-set IMRO found (see docs)", 1);
+    addAndMakeVisible(loadImroComboBox);
+
     probeSettingsLabel = new Label("Settings", "Probe settings:");
     probeSettingsLabel->setFont(Font("Small Text", 13, Font::plain));
     probeSettingsLabel->setBounds(40, 610, 300, 20);
@@ -655,6 +670,27 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
         else if (comboBox == blueEmissionSiteComboBox)
         {
             setEmissionSite("blue", comboBox->getSelectedId() - 1);
+        }
+        else if (comboBox == loadImroComboBox)
+        {
+            if (!imroFiles.size())
+                return; //TODO: Automatically launch docs page
+     
+            ProbeSettings settings = getProbeSettings();
+
+            settings.clearElectrodeSelection();
+
+            String filename = comboBox->getItemText(comboBox->getSelectedItemIndex());
+
+            File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
+            File imroDirectory = baseDirectory.getChildFile("IMRO");
+            bool success = IMRO::readSettingsFromImro(imroDirectory.getChildFile(filename + ".imro"), settings);
+
+            if (success)
+            {
+                applyProbeSettings(settings);
+            }
+
         }
 
         repaint();
@@ -995,24 +1031,12 @@ void NeuropixInterface::selectElectrodes(Array<int> electrodes)
             {
                 if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
                 {
-                    if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE ||
-                        electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
-                        electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
-                    else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
-                        ; // skip
-                    else
-                        electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
+                    electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
                 }
 
                 else
                 {
-                    if (electrodeMetadata[j].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE ||
-                        electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
-                        electrodeMetadata.getReference(j).status = ElectrodeStatus::OPTIONAL_REFERENCE;
-                    else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
-                        ; // skip
-                    else
-                        electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
+                    electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
                 }
 
             }
@@ -1295,10 +1319,6 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
     {
         if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
             electrodeMetadata.getReference(i).status = ElectrodeStatus::DISCONNECTED;
-
-        if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
-            electrodeMetadata.getReference(i).status = ElectrodeStatus::OPTIONAL_REFERENCE;
-    
     }
 
     // update selection state
@@ -1314,12 +1334,7 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
                 electrodeMetadata[j].bank == bank &&
                 electrodeMetadata[j].shank == shank)
             {
-                if (electrodeMetadata[j].status == ElectrodeStatus::OPTIONAL_REFERENCE)
-                    electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE;
-                else if (electrodeMetadata[j].status == ElectrodeStatus::REFERENCE)
-                    ;
-                else
-                    electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
+                electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
             }
         }
     }
@@ -1378,7 +1393,7 @@ ProbeSettings NeuropixInterface::getProbeSettings()
 
     for (auto electrode : electrodeMetadata)
     {
-        if (electrode.status == ElectrodeStatus::CONNECTED || electrode.status == ElectrodeStatus::CONNECTED_OPTIONAL_REFERENCE)
+        if (electrode.status == ElectrodeStatus::CONNECTED)
         {
             p.selectedChannel.add(electrode.channel);
             p.selectedBank.add(electrode.bank);
@@ -1401,16 +1416,21 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
     XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
 
+    xmlNode->setAttribute("autoName", probe->autoName);
+    xmlNode->setAttribute("autoNumber", probe->autoNumber);
+    xmlNode->setAttribute("customPort", probe->customPort);
+    xmlNode->setAttribute("customProbe", probe->customProbe);
+
     xmlNode->setAttribute("slot", probe->basestation->slot);
     xmlNode->setAttribute("bs_firmware_version", probe->basestation->info.boot_version);
     xmlNode->setAttribute("bs_hardware_version", probe->basestation->info.version);
     xmlNode->setAttribute("bs_serial_number", String(probe->basestation->info.serial_number));
     xmlNode->setAttribute("bs_part_number", probe->basestation->info.part_number);
 
-   /* xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
+    xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
     xmlNode->setAttribute("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
     xmlNode->setAttribute("bsc_serial_number", String(probe->basestation->basestationConnectBoard->info.serial_number));
-    xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);*/
+    xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
 
     xmlNode->setAttribute("headstage_serial_number", String(probe->headstage->info.serial_number));
     xmlNode->setAttribute("headstage_part_number", probe->headstage->info.part_number);
@@ -1441,8 +1461,15 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     
     if (referenceComboBox != nullptr)
     {
-        xmlNode->setAttribute("referenceChannel", referenceComboBox->getText());
-        xmlNode->setAttribute("referenceChannelIndex", referenceComboBox->getSelectedId()-1);
+        if (referenceComboBox->getSelectedId() > 0)
+        {
+            xmlNode->setAttribute("referenceChannel", referenceComboBox->getText());
+            xmlNode->setAttribute("referenceChannelIndex", referenceComboBox->getSelectedId() - 1);
+        }
+        else {
+            xmlNode->setAttribute("referenceChannel", "Ext");
+            xmlNode->setAttribute("referenceChannelIndex", 0);
+        }
     }
     
     if (filterComboBox != nullptr)
@@ -1492,6 +1519,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
 void NeuropixInterface::loadParameters(XmlElement* xml)
 {
+
     String mySerialNumber = String(probe->info.serial_number);
 
     // first, set defaults
@@ -1575,6 +1603,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
                     if (type == probe->type)
                     {
                         matchingNode = xmlNode;
+
                         break;
                     }
 
@@ -1586,13 +1615,18 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     if (matchingNode != nullptr)
     {
 
+        probe->autoName = matchingNode->getStringAttribute("autoName");
+        probe->autoNumber = matchingNode->getStringAttribute("autoNumber");
+        probe->customPort = matchingNode->getStringAttribute("customPort");
+        probe->customProbe = matchingNode->getStringAttribute("customProbe");
+
         if (matchingNode->getChildByName("CHANNELS"))
         {
             settings.selectedBank.clear();
             settings.selectedChannel.clear();
             settings.selectedShank.clear();
 
-                XmlElement* status = matchingNode->getChildByName("CHANNELS");
+            XmlElement* status = matchingNode->getChildByName("CHANNELS");
 
             for (int i = 0; i < probe->channel_count; i++)
             {
@@ -1636,12 +1670,12 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
             }
         }
 
-        
     }
 
     probe->updateSettings(settings);
 
     applyProbeSettings(settings, false);
+
 }
 
 // --------------------------------------

@@ -111,11 +111,11 @@ void NeuropixCanvas::resized()
     for (int i = 0; i < settingsInterfaces.size(); i++)
         settingsInterfaces[i]->setBounds(0, 0, 1000, 820);
 
-    neuropixViewport->setBounds(10, 10, getWidth(), getHeight());
+    neuropixViewport->setBounds(10, 10, getWidth()-10, getHeight()-10);
 
     // why is this not working?
     neuropixViewport->setScrollBarsShown(true, true, true, true);
-    neuropixViewport->setScrollBarThickness(20);
+    neuropixViewport->setScrollBarThickness(10);
 }
 
 void NeuropixCanvas::setParameter(int x, float f)

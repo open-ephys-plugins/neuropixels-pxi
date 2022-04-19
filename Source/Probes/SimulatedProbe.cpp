@@ -99,9 +99,9 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 
 		settings.availableReferences.add("Ext");
 		settings.availableReferences.add("Tip");
-		settings.availableReferences.add("192");
-		settings.availableReferences.add("576");
-		settings.availableReferences.add("960");
+		//settings.availableReferences.add("192");
+		//settings.availableReferences.add("576");
+		//settings.availableReferences.add("960");
 
 	}
 	else {
@@ -115,33 +115,33 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 		{
 			settings.availableReferences.add("Ext");
 			settings.availableReferences.add("Tip");
-			settings.availableReferences.add("128");
-			settings.availableReferences.add("508");
-			settings.availableReferences.add("888");
-			settings.availableReferences.add("1252");
+			//settings.availableReferences.add("128");
+			//settings.availableReferences.add("508");
+			//settings.availableReferences.add("888");
+			//settings.availableReferences.add("1252");
 		}
 		else {
 			settings.availableReferences.add("Ext");
 			settings.availableReferences.add("1: Tip");
-			settings.availableReferences.add("1: 128");
-			settings.availableReferences.add("1: 512");
-			settings.availableReferences.add("1: 896");
-			settings.availableReferences.add("1: 1280");
+			//settings.availableReferences.add("1: 128");
+			//settings.availableReferences.add("1: 512");
+			//settings.availableReferences.add("1: 896");
+			//settings.availableReferences.add("1: 1280");
 			settings.availableReferences.add("2: Tip");
-			settings.availableReferences.add("2: 128");
-			settings.availableReferences.add("2: 512");
-			settings.availableReferences.add("2: 896");
-			settings.availableReferences.add("2: 1280");
+			//settings.availableReferences.add("2: 128");
+			//settings.availableReferences.add("2: 512");
+			//settings.availableReferences.add("2: 896");
+			//settings.availableReferences.add("2: 1280");
 			settings.availableReferences.add("3: Tip");
-			settings.availableReferences.add("3: 128");
-			settings.availableReferences.add("3: 512");
-			settings.availableReferences.add("3: 896");
-			settings.availableReferences.add("3: 1280");
+			//settings.availableReferences.add("3: 128");
+			//settings.availableReferences.add("3: 512");
+			//settings.availableReferences.add("3: 896");
+			//settings.availableReferences.add("3: 1280");
 			settings.availableReferences.add("4: Tip");
-			settings.availableReferences.add("4: 128");
-			settings.availableReferences.add("4: 512");
-			settings.availableReferences.add("4: 896");
-			settings.availableReferences.add("4: 1280");
+			//settings.availableReferences.add("4: 128");
+			//settings.availableReferences.add("4: 512");
+			//settings.availableReferences.add("4: 896");
+			//settings.availableReferences.add("4: 1280");
 		}
 	}
 
@@ -227,10 +227,14 @@ void SimulatedProbe::startAcquisition()
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
 	apBuffer->clear();
-	lfpBuffer->clear();
+
+	if (generatesLfpData())
+		lfpBuffer->clear();
 
 	apView->reset();
-	lfpView->reset();
+
+	if (generatesLfpData())
+		lfpView->reset();
 
 	SKIP = sendSync ? 385 : 384;
 
@@ -298,13 +302,17 @@ void SimulatedProbe::run()
 				lfpSamples[384 + packetNum * SKIP] = (float)eventCode;
 		}
 
-		apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * MAXPACKETS);
-		lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, MAXPACKETS);
+		apBuffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, 12 * MAXPACKETS);
+
+		if (generatesLfpData())
+			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, MAXPACKETS);
 
 		if (ap_offsets[0][0] == 0)
 		{
 			updateOffsets(apSamples, ap_timestamp, true);
-			updateOffsets(lfpSamples, lfp_timestamp, false);
+
+			if (generatesLfpData())
+				updateOffsets(lfpSamples, lfp_timestamp, false);
 		}
 		
 

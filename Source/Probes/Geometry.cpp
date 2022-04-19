@@ -139,7 +139,10 @@ void Geometry::NP1(Array<ElectrodeMetadata>& electrodeMetadata,
 
 		if (i == 191 || i == 575 || i == 959)
 		{
-			metadata.status = ElectrodeStatus::REFERENCE;
+			metadata.type = ElectrodeType::REFERENCE;
+		}
+		else {
+			metadata.type = ElectrodeType::ELECTRODE;
 		}
 
 		electrodeMetadata.add(metadata);
@@ -275,13 +278,7 @@ void Geometry::NP2(int shank_count,
 				metadata.status = ElectrodeStatus::DISCONNECTED;
 			}
 
-			if (metadata.shank_local_index == 127 ||
-				metadata.shank_local_index == 507 ||
-				metadata.shank_local_index == 887 ||
-				metadata.shank_local_index == 1251)
-			{
-				metadata.status = ElectrodeStatus::OPTIONAL_REFERENCE; // can also be used for recording
-			}
+			metadata.type = ElectrodeType::ELECTRODE; // disable internal reference channel
 
 		}
 		else if (shank_count == 4)
@@ -437,13 +434,7 @@ void Geometry::NP2(int shank_count,
 			}
 
 
-			if (metadata.shank_local_index == 127 ||
-				metadata.shank_local_index == 511 ||
-				metadata.shank_local_index == 895 ||
-				metadata.shank_local_index == 1279)
-			{
-				metadata.status = ElectrodeStatus::OPTIONAL_REFERENCE; // can also be used for recording
-			}
+			metadata.type = ElectrodeType::ELECTRODE; // disable internal reference
 		}
 
 		electrodeMetadata.add(metadata);
@@ -601,7 +592,10 @@ void Geometry::NHP2(int length,
 
 		if (metadata.channel == 191)
 		{
-			metadata.status = ElectrodeStatus::REFERENCE;
+			metadata.type = ElectrodeType::REFERENCE;
+		}
+		else {
+			metadata.type = ElectrodeType::ELECTRODE;
 		}
 
 		electrodeMetadata.add(metadata);

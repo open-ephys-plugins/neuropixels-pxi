@@ -23,8 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "NeuropixComponents.h"
 
-float Basestation::totalFirmwareBytes = 0;
-Basestation* Basestation::currentBasestation = nullptr;
+float FirmwareUpdater::totalFirmwareBytes = 0;
+FirmwareUpdater* FirmwareUpdater::currentThread = nullptr;
 
 void Probe::updateOffsets(float* samples, int64 timestamp, bool isApBand)
 {
@@ -90,4 +90,108 @@ void Probe::updateOffsets(float* samples, int64 timestamp, bool isApBand)
 
 	}
 
+}
+
+
+FirmwareUpdater::FirmwareUpdater(Basestation* basestation_, File firmwareFile_, FirmwareType type)
+	: ThreadWithProgressWindow("Firmware Update...", true, false),
+	  basestation(basestation_),
+	  firmwareType(type)
+{
+	FirmwareUpdater::currentThread = this;
+	
+	FirmwareUpdater::totalFirmwareBytes = (float) firmwareFile_.getSize();
+
+	auto window = getAlertWindow();
+	window->setColour(AlertWindow::textColourId, Colours::white);
+	window->setColour(AlertWindow::backgroundColourId, Colour::fromRGB(50, 50, 50));
+
+	firmwareFilePath = firmwareFile_.getFullPathName();
+
+	LOGD("Firmware path: ", firmwareFilePath);
+
+	if (firmwareType == FirmwareType::BSC_FIRMWARE)
+	{
+		this->setStatusMessage("Updating BSC firmware...");
+	}
+	else {
+		this->setStatusMessage("Updating BS firmware...");
+	}
+
+	runThread();
+
+	if (firmwareType == FirmwareType::BSC_FIRMWARE)
+		AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
+			String("Basestation connect board firmware updated successfully. Please update the basestation firmware now."));
+	else
+		AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
+			String("Please restart your computer and power cycle the PXI chassis for the changes to take effect."));
+
+}
+
+void FirmwareUpdater::run()
+{
+
+	if (firmwareType == FirmwareType::BSC_FIRMWARE)
+	{
+
+		if (basestation->type == BasestationType::V1)
+		{
+			np::qbsc_update(basestation->slot_c,
+				firmwareFilePath.getCharPointer(),
+				firmwareUpdateCallback);
+		}
+		else if (basestation->type == BasestationType::SIMULATED)
+		{
+			for (int i = 0; i < 20; i++)
+			{
+				setProgress(0.05 * i);
+				Sleep(100);
+			}
+		}
+		else {
+			Neuropixels::bsc_updateFirmware(basestation->slot,
+				firmwareFilePath.getCharPointer(),
+				firmwareUpdateCallback);
+		}
+		
+	}
+		
+	else { // BS_FIRMWARE
+
+		if (basestation->type == BasestationType::V1)
+		{
+			np::bs_update(basestation->slot_c,
+				firmwareFilePath.getCharPointer(),
+				firmwareUpdateCallback);
+		}
+		else if (basestation->type == BasestationType::SIMULATED)
+		{
+			for (int i = 0; i < 20; i++)
+			{
+				setProgress(0.05 * i);
+				Sleep(100);
+			}
+		}
+		else {
+			Neuropixels::bs_updateFirmware(basestation->slot,
+				firmwareFilePath.getCharPointer(),
+				firmwareUpdateCallback);
+		}
+		
+	}
+}
+
+void Basestation::updateBscFirmware(File file)
+{
+
+	std::unique_ptr<FirmwareUpdater> firmwareUpdater
+		= std::make_unique<FirmwareUpdater>((Basestation*)this, file, FirmwareType::BSC_FIRMWARE);
+
+}
+
+void Basestation::updateBsFirmware(File file)
+{
+	std::unique_ptr<FirmwareUpdater> firmwareUpdater
+		= std::make_unique<FirmwareUpdater>((Basestation*)this, file, FirmwareType::BS_FIRMWARE);
 }

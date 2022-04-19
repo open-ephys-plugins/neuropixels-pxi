@@ -91,7 +91,7 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 
 	settings.availableReferences.add("REF_ELEC");
 	settings.availableReferences.add("TIP_REF");
-	settings.availableReferences.add("INT_REF");
+	//settings.availableReferences.add("INT_REF");
 
 	open();
 
@@ -364,8 +364,8 @@ void Neuropixels_NHP_Passive::run()
 
 			}
 
-			apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * count);
-			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, count);
+			apBuffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, 12 * count);
+			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, count);
 
 			if (ap_offsets[0][0] == 0)
 			{

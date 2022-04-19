@@ -26,9 +26,85 @@
 #include "NeuropixThread.h"
 #include "NeuropixCanvas.h"
 
+SlotButton::SlotButton(NeuropixThread* t_, int slot_) : Button(String(slot))
+{
+	t = t_;
+	slot = slot_;
 
-EditorBackground::EditorBackground(Array<Basestation*> basestations_, bool freqSelectEnabled)
-	: basestations(basestations_), numBasestations(basestations_.size()), freqSelectEnabled(freqSelectEnabled) {}
+}
+
+void SlotButton::mouseUp(const MouseEvent& event)
+{
+
+	int schemeIdx = t->getNamingSchemeForSlot(this->slot);
+	ProbeNameConfig* probeNamingPopup = new ProbeNameConfig(t, this->slot, schemeIdx);
+
+	CallOutBox& myBox
+		= CallOutBox::launchAsynchronously(std::unique_ptr<Component>(probeNamingPopup),
+			getScreenBounds(),
+			nullptr);
+
+	myBox.addComponentListener(this);
+	myBox.setDismissalMouseClicksAreAlwaysConsumed(true);
+}
+
+void SlotButton::componentBeingDeleted(Component& component)
+{
+
+	auto* probeNamingPopup = (ProbeNameConfig*)component.getChildComponent(0);
+
+	int schemeIdx = probeNamingPopup->getSchemeIdx();
+
+	for (auto& probe : t->getProbes()) {
+		for (auto&& label : probeNamingPopup->probeNames)
+		{
+			if (label->slot == probe->basestation->slot
+				&& label->port == probe->headstage->port
+				&& label->dock == probe->dock)
+			{
+
+				if (schemeIdx == 0)
+					probe->probeName = probe->autoName;
+				else if (schemeIdx == 1)
+					probe->probeName = probe->autoNumber;
+				else if (schemeIdx == 2)
+				{
+					probe->customPort = label->getText(); //TODO validate
+					probe->probeName = probe->customPort;
+				}
+				else if (schemeIdx == 3)
+				{
+					probe->customProbe = label->getText(); //TODO validate
+					probe->probeName = probe->customProbe;
+				}
+
+				probe->basestation->setNamingScheme(schemeIdx);
+
+			}
+		}
+	}
+
+	CoreServices::updateSignalChain((GenericEditor*)(getParentComponent()->getParentComponent()));
+
+	repaint();
+}
+
+EditorBackground::EditorBackground(NeuropixThread* t, bool freqSelectEnabled)
+	: basestations(t->getBasestations()),
+	freqSelectEnabled(freqSelectEnabled)
+{
+
+	numBasestations = basestations.size();
+
+	for (int i = 0; i < numBasestations; i++)
+	{
+		LOGD("Creating slot button.");
+		slotButtons.push_back(std::make_unique<SlotButton>(t, basestations[i]->slot));
+		slotButtons[slotButtons.size()-1]->setBounds(90 * i + 72, 28, 25, 26);
+		addAndMakeVisible(slotButtons[slotButtons.size()-1].get());
+	}
+
+}
 
 void EditorBackground::setFreqSelectAvailable(bool isAvailable)
 {
@@ -50,6 +126,7 @@ void EditorBackground::paint(Graphics& g)
 			g.setColour(Colours::darkgrey);
 			g.setFont(10);
 			g.drawText("SLOT", 90 * i + 72, 15, 50, 12, Justification::centredLeft);
+
 			g.setFont(26);
 			g.drawText(String(basestations[i]->slot), 90 * i + 72, 28, 25, 26, Justification::centredLeft);
 			g.setFont(8);
@@ -78,6 +155,7 @@ void EditorBackground::paint(Graphics& g)
 	}
 
 }
+
 
 FifoMonitor::FifoMonitor(int id_, Basestation* basestation_) : id(id_), basestation(basestation_), fillPercentage(0.0)
 {
@@ -269,6 +347,14 @@ void BackgroundLoader::run()
 		//{
 		LOGC("Updating settings for ", thread->getProbes().size(), " probes.");
 
+		/* Sets the current naming scheme */
+		for (auto& bs : thread->getBasestations())
+		{
+			thread->setNamingSchemeForSlot(bs->slot, bs->getNamingScheme());
+		}
+		MessageManagerLock mml;
+		CoreServices::updateSignalChain(editor);
+
 		for (auto probe : thread->getProbes())
 		{
 			LOGC(" Updating queue for probe ", probe->name);
@@ -384,6 +470,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
 		directoryButtons.add(b);
 
 		savingDirectories.add(File());
+		slotNamingSchemes.add(0);
 
 		FifoMonitor* f = new FifoMonitor(i, basestations[i]);
 		f->setBounds(x_pos + 2, 75, 12, 50);
@@ -423,7 +510,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
 	addChildComponent(freqSelectBox);
 
 
-	background = new EditorBackground(basestations, false);
+	background = new EditorBackground(t, false);
 	background->setBounds(0, 15, 500, 150);
 	addAndMakeVisible(background);
 	background->toBack();
@@ -566,13 +653,18 @@ void NeuropixEditor::saveVisualizerEditorParameters(XmlElement* xml)
 
 	XmlElement* xmlNode = xml->createNewChildElement("NEUROPIXELS_EDITOR");
 
-	for (int slot = 0; slot < thread->getBasestations().size(); slot++)
+	for (int slotIdx = 0; slotIdx < thread->getBasestations().size(); slotIdx++)
 	{
+
+		int slot = thread->getBasestations()[slotIdx]->slot;
+
 		String directory_name = savingDirectories[slot].getFullPathName();
 		if (directory_name.length() == 2)
 			directory_name += "\\\\";
 
 		xmlNode->setAttribute("Slot" + String(slot) + "Directory", directory_name);
+		xmlNode->setAttribute("Slot" + String(slot) + "NamingScheme", thread->getNamingSchemeForSlot(slot));
+
 	}
 
 	xmlNode->setAttribute("MasterSlot", masterSelectBox->getSelectedItemIndex());
@@ -595,13 +687,20 @@ void NeuropixEditor::loadVisualizerEditorParameters(XmlElement* xml)
 		{
 			LOGDD("Found parameters for Neuropixels editor");
 
-			for (int slot = 0; slot < thread->getBasestations().size(); slot++)
+			for (int slotIdx = 0; slotIdx< thread->getBasestations().size(); slotIdx++)
 			{
+
+				int slot = thread->getBasestations()[slotIdx]->slot;
+
 				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
 				LOGDD("Setting thread directory for slot ", slot);
-				thread->setDirectoryForSlot(slot, directory);
-				directoryButtons[slot]->setLabel(directory.getFullPathName().substring(0, 2));
-				savingDirectories.set(slot, directory);
+				thread->setDirectoryForSlot(slotIdx, directory);
+				directoryButtons[slotIdx]->setLabel(directory.getFullPathName().substring(0, 2));
+				savingDirectories.set(slotIdx, directory);
+
+				int namingSchemeIdx = xmlNode->getIntAttribute("Slot" + String(slot) + "NamingScheme");
+				thread->setNamingSchemeForSlot(slot, namingSchemeIdx);
+
 			}
 
 			int slotIndex = xmlNode->getIntAttribute("MasterSlot", masterSelectBox->getSelectedItemIndex());

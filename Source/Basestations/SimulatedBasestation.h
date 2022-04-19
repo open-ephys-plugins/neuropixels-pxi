@@ -26,6 +26,42 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../NeuropixComponents.h"
 
+class SimulatedBasestation;
+
+/** 
+
+	Interface for configuring the types of probes in the
+	Simulated Basestation
+
+*/
+
+class SimulatedBasestationConfigWindow : 
+	public Component,
+	public Button::Listener
+{
+public:
+	/** Constructor */
+	SimulatedBasestationConfigWindow(SimulatedBasestation* bs);
+
+	/** Destructor */
+	~SimulatedBasestationConfigWindow() { }
+
+	/** Render the component */
+	void paint(Graphics& g) override;
+
+	/** Accepts the configuration and closes the window */
+	void buttonClicked(Button* button);
+
+private:
+
+	OwnedArray<ComboBox> slotComboBoxes;
+
+	std::unique_ptr<UtilityButton> acceptButton;
+
+	SimulatedBasestation* bs;
+
+};
+
 /** 
 
 	Simulates a PXI basestation when none is connected
@@ -74,14 +110,12 @@ public:
 	/** Returns the fraction of the basestation FIFO that is filled */
 	float getFillPercentage() override;
 
-	/** Updates the basestation firmware (simulated) */
-	void updateBsFirmware(File file) override;
+	/** Probes for each slot */
+	ProbeType simulatedProbeTypes[4];
 
-	/** Updates the basestation connect board firmware (simulated) */
-	void updateBscFirmware(File file) override;
+private:
 
-	/** Launches the firmware update thread*/
-	void run() override;
+	std::unique_ptr<SimulatedBasestationConfigWindow> configComponent;
 
 };
 

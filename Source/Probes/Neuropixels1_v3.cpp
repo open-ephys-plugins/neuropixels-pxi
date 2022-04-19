@@ -89,9 +89,9 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 		settings.availableReferences.add("Ext");
 		settings.availableReferences.add("Tip");
-		settings.availableReferences.add("192");
-		settings.availableReferences.add("576");
-		settings.availableReferences.add("960");
+		//settings.availableReferences.add("192");
+		//settings.availableReferences.add("576");
+		//settings.availableReferences.add("960");
 
 		open();
 
@@ -432,8 +432,8 @@ void Neuropixels1_v3::run()
 
 			}
 
-			apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * count);
-			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, count); 
+			apBuffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, 12 * count);
+			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, count); 
 			
 			if (ap_offsets[0][0] == 0)
 			{

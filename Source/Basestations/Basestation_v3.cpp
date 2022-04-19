@@ -371,19 +371,6 @@ void Basestation_v3::stopAcquisition()
 }
 
 
-void Basestation_v3::run()
-{
-	if (bscFirmwarePath.length() > 0)
-		errorCode = Neuropixels::bsc_updateFirmware(slot,
-									bscFirmwarePath.getCharPointer(),
-									firmwareUpdateCallback);
-
-	if (bsFirmwarePath.length() > 0)
-	   errorCode = Neuropixels::bs_updateFirmware(slot,
-						  bsFirmwarePath.getCharPointer(), 
-						  firmwareUpdateCallback);
-	
-}
 
 
 void Basestation_v3::selectEmissionSite(int port, int dock, String wavelength, int site)
@@ -425,44 +412,3 @@ void Basestation_v3::selectEmissionSite(int port, int dock, String wavelength, i
 }
 
 
-void Basestation_v3::updateBscFirmware(File file)
-{
-	bscFirmwarePath = file.getFullPathName();
-	Basestation::totalFirmwareBytes = (float)file.getSize();
-	Basestation::currentBasestation = this;
-
-	LOGD("BSC Firmware path: ", bscFirmwarePath);
-
-	auto window = getAlertWindow();
-	window->setColour(AlertWindow::textColourId, Colours::white);
-	window->setColour(AlertWindow::backgroundColourId, Colour::fromRGB(50, 50, 50));
-
-	this->setStatusMessage("Updating BSC firmware...");
-	this->runThread(); //Upload firmware
-
-	bscFirmwarePath = "";
-
-	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
-		String("Basestation connect board firmware updated successfully. Please update the basestation firmware now."));
-}
-
-void Basestation_v3::updateBsFirmware(File file)
-{
-	bsFirmwarePath = file.getFullPathName();
-	Basestation::totalFirmwareBytes = (float)file.getSize();
-	Basestation::currentBasestation = this;
-
-	LOGD("BS Firmware path: ", bsFirmwarePath);
-
-	auto window = getAlertWindow();
-	window->setColour(AlertWindow::textColourId, Colours::white);
-	window->setColour(AlertWindow::backgroundColourId, Colour::fromRGB(50, 50, 50));
-
-	this->setStatusMessage("Updating basestation firmware...");
-	this->runThread(); //Upload firmware
-
-	bsFirmwarePath = "";
-
-	AlertWindow::showMessageBoxAsync(AlertWindow::InfoIcon, "Successful firmware update",
-		String("Please restart your computer and power cycle the PXI chassis for the changes to take effect."));
-}
