@@ -521,12 +521,15 @@ void NeuropixInterface::updateInfoString()
     infoString += "\n";
     infoString += "\n";
 
-    infoString += "Basestation connect board";
-    infoString += "\n Hardware version: " + probe->basestation->basestationConnectBoard->info.version;
-    infoString += "\n Firmware version: " + probe->basestation->basestationConnectBoard->info.boot_version;
-    infoString += "\n";
-    infoString += "\n";
-
+    if (probe->basestation->type != BasestationType::ONEBOX)
+    {
+        infoString += "Basestation connect board";
+        infoString += "\n Hardware version: " + probe->basestation->basestationConnectBoard->info.version;
+        infoString += "\n Firmware version: " + probe->basestation->basestationConnectBoard->info.boot_version;
+        infoString += "\n";
+        infoString += "\n";
+    }
+    
     infoString += "Headstage: " + probe->headstage->info.part_number;
     infoString += "\n";
     infoString += "\n";

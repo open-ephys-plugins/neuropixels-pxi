@@ -610,6 +610,7 @@ bool Neuropixels_UHD::runBist(BIST bistType)
 	}
 
 	close();
+	open();
 	initialize(false);
 
 	errorCode = Neuropixels::setSWTrigger(slot);

@@ -478,6 +478,7 @@ bool Neuropixels_NHP_Passive::runBist(BIST bistType)
 	}
 
 	close();
+	open();
 	initialize(false);
 
 	errorCode = Neuropixels::setSWTrigger(slot);
