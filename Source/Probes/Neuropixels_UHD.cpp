@@ -42,6 +42,13 @@ Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	setStatus(SourceStatus::DISCONNECTED);
 
+	customName.portSpecific = "Slot" + String(basestation->slot) + "-Port" + String(port);
+
+	if (dock > 0)
+		customName.portSpecific += ("-" + String(dock));
+
+	customName.probeSpecific = String(info.serial_number);
+
 	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 
 	if (Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata))
@@ -497,8 +504,8 @@ void Neuropixels_UHD::run()
 
 			}
 
-			apBuffer->addToBuffer(apSamples, ap_timestamps, event_codes, 12 * count);
-			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, lfp_event_codes, count); 
+			apBuffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, 12 * count);
+			lfpBuffer->addToBuffer(lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, count);
 
 			if (ap_offsets[0][0] == 0)
 			{

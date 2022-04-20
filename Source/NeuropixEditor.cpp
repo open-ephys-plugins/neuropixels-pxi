@@ -36,8 +36,8 @@ SlotButton::SlotButton(NeuropixThread* t_, int slot_) : Button(String(slot))
 void SlotButton::mouseUp(const MouseEvent& event)
 {
 
-	int schemeIdx = t->getNamingSchemeForSlot(this->slot);
-	ProbeNameConfig* probeNamingPopup = new ProbeNameConfig(t, this->slot, schemeIdx);
+	ProbeNameConfig::NamingScheme namingScheme = t->getNamingSchemeForSlot(this->slot);
+	ProbeNameConfig* probeNamingPopup = new ProbeNameConfig(t, this->slot, namingScheme);
 
 	CallOutBox& myBox
 		= CallOutBox::launchAsynchronously(std::unique_ptr<Component>(probeNamingPopup),
@@ -53,7 +53,7 @@ void SlotButton::componentBeingDeleted(Component& component)
 
 	auto* probeNamingPopup = (ProbeNameConfig*)component.getChildComponent(0);
 
-	int schemeIdx = probeNamingPopup->getSchemeIdx();
+	/*int schemeIdx = probeNamingPopup->getSchemeIdx();
 
 	for (auto& probe : t->getProbes()) {
 		for (auto&& label : probeNamingPopup->probeNames)
@@ -86,7 +86,7 @@ void SlotButton::componentBeingDeleted(Component& component)
 
 	CoreServices::updateSignalChain((GenericEditor*)(getParentComponent()->getParentComponent()));
 
-	repaint();
+	repaint();*/
 }
 
 EditorBackground::EditorBackground(NeuropixThread* t, bool freqSelectEnabled)
@@ -698,8 +698,8 @@ void NeuropixEditor::loadVisualizerEditorParameters(XmlElement* xml)
 				directoryButtons[slotIdx]->setLabel(directory.getFullPathName().substring(0, 2));
 				savingDirectories.set(slotIdx, directory);
 
-				int namingSchemeIdx = xmlNode->getIntAttribute("Slot" + String(slot) + "NamingScheme");
-				thread->setNamingSchemeForSlot(slot, namingSchemeIdx);
+				//int namingSchemeIdx = xmlNode->getIntAttribute("Slot" + String(slot) + "NamingScheme");
+				//thread->setNamingSchemeForSlot(slot, namingSchemeIdx);
 
 			}
 

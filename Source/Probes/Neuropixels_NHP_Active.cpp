@@ -39,9 +39,16 @@ void Neuropixels_NHP_Active::getInfo()
 Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 0)
 {
 
-    getInfo();
+	getInfo();
 
 	setStatus(SourceStatus::DISCONNECTED);
+
+	customName.portSpecific = "Slot" + String(basestation->slot) + "-Port" + String(port);
+
+	if (dock > 0)
+		customName.portSpecific += ("-" + String(dock));
+
+	customName.probeSpecific = String(info.serial_number);
 
     Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 

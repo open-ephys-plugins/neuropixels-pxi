@@ -26,6 +26,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 float FirmwareUpdater::totalFirmwareBytes = 0;
 FirmwareUpdater* FirmwareUpdater::currentThread = nullptr;
 
+
+Probe::Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) : DataSource(bs_)
+{
+	dock = dock_;
+	headstage = hs_;
+	flex = fl_;
+	isValid = false;
+
+	isCalibrated = false;
+	calibrationWarningShown = false;
+
+	for (int i = 0; i < 12 * MAXPACKETS; i++)
+		timestamp_s[i] = -1.0;
+
+	sourceType = DataSourceType::PROBE;
+
+	for (int i = 0; i < 384; i++)
+	{
+		for (int j = 0; j < 100; j++)
+		{
+			ap_offsets[i][j] = 0;
+			lfp_offsets[i][j] = 0;
+		}
+	}
+
+}
+
 void Probe::updateOffsets(float* samples, int64 timestamp, bool isApBand)
 {
 

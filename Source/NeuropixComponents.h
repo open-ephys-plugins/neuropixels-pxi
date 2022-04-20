@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "API/v3/NeuropixAPI.h"
 
 #include "UI/ActivityView.h"
+#include "UI/ProbeNameConfig.h"
 
 # define SAMPLECOUNT 64
 # define MAX_HEADSTAGE_CLK_SAMPLE 3221225475
@@ -313,30 +314,9 @@ protected:
 class Probe : public DataSource
 {
 public:
-	Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) : DataSource(bs_)
-	{
-		dock = dock_;
-		headstage = hs_;
-		flex = fl_;
-		isValid = false;
 
-		isCalibrated = false;
-		calibrationWarningShown = false;
-
-		for (int i = 0; i < 12 * MAXPACKETS; i++)
-			timestamp_s[i] = -1.0;
-
-		sourceType = DataSourceType::PROBE;
-
-		for (int i = 0; i < 384; i++)
-		{
-			for (int j = 0; j < 100; j++)
-			{
-				ap_offsets[i][j] = 0;
-				lfp_offsets[i][j] = 0;
-			}
-		}
-	}
+	/** Constructor */
+	Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_);
 
 	Headstage* headstage; // owned by Basestation
 	Flex* flex; // owned by Headstage
@@ -428,32 +408,20 @@ public:
 	String name;
 
 	/* Stores the name assigned to the probe/streams (default is autoName) */
-	String probeName;
+	String displayName;
 
-	/* Assign a custom naming scheme to the probe */
-	String autoName;
-	String autoNumber;
-	String customPort;
-	String customProbe;
+	/** Stores the index of the first (AP) data stream */
+	int streamIndex;
 
-	void setNamingScheme(int schemeIdx)
-	{
-		switch (schemeIdx) {
-		case 0:
-			// code block
-			probeName = autoName;
-			break;
-		case 1:
-			probeName = autoNumber;
-			break;
-		case 2:
-			probeName = customPort;
-			break;
-		case 3:
-			probeName = customProbe;
-			break;
-		}
-	}
+	/* Stores port-specific and probe-specific names */
+	struct CustomNames {
+		String portSpecific;
+		String probeSpecific;
+	};
+	
+	CustomNames customName;
+
+	ProbeNameConfig::NamingScheme namingScheme;
 
 	StringArray autoProbeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
 						   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
@@ -631,14 +599,14 @@ public:
 		return savingDirectory;
 	}
 
-	void setNamingScheme(int schemeIdx) {
-		namingSchemeIdx = schemeIdx;
+	void setNamingScheme(ProbeNameConfig::NamingScheme namingScheme_) {
+		namingScheme = namingScheme_;
 		for (auto p : probes)
-			p->setNamingScheme(schemeIdx);
+			p->namingScheme = namingScheme_;
 	}
 
-	int getNamingScheme() {
-		return namingSchemeIdx;
+	ProbeNameConfig::NamingScheme getNamingScheme() {
+		return namingScheme;
 	}
 	
 protected:
@@ -646,7 +614,7 @@ protected:
 	bool probesInitialized;
 	Array<int> syncFrequencies;
 	File savingDirectory;
-	int namingSchemeIdx = 0;
+	ProbeNameConfig::NamingScheme namingScheme = ProbeNameConfig::NamingScheme::AUTO_NAMING;
 	
 	String bscFirmwarePath;
 	String bsFirmwarePath;

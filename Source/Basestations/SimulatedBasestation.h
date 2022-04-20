@@ -54,7 +54,7 @@ public:
 
 private:
 
-	OwnedArray<ComboBox> slotComboBoxes;
+	OwnedArray<ComboBox> portComboBoxes;
 
 	std::unique_ptr<UtilityButton> acceptButton;
 

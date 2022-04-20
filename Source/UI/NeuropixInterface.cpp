@@ -1416,10 +1416,10 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
     XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
 
-    xmlNode->setAttribute("autoName", probe->autoName);
-    xmlNode->setAttribute("autoNumber", probe->autoNumber);
-    xmlNode->setAttribute("customPort", probe->customPort);
-    xmlNode->setAttribute("customProbe", probe->customProbe);
+   // xmlNode->setAttribute("autoName", probe->autoName);
+   // xmlNode->setAttribute("autoNumber", probe->autoNumber);
+  //  xmlNode->setAttribute("customPort", probe->customPort);
+   // xmlNode->setAttribute("customProbe", probe->customProbe);
 
     xmlNode->setAttribute("slot", probe->basestation->slot);
     xmlNode->setAttribute("bs_firmware_version", probe->basestation->info.boot_version);
@@ -1615,10 +1615,10 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     if (matchingNode != nullptr)
     {
 
-        probe->autoName = matchingNode->getStringAttribute("autoName");
-        probe->autoNumber = matchingNode->getStringAttribute("autoNumber");
-        probe->customPort = matchingNode->getStringAttribute("customPort");
-        probe->customProbe = matchingNode->getStringAttribute("customProbe");
+       // probe->autoName = matchingNode->getStringAttribute("autoName");
+       // probe->autoNumber = matchingNode->getStringAttribute("autoNumber");
+       // probe->customPort = matchingNode->getStringAttribute("customPort");
+       // probe->customProbe = matchingNode->getStringAttribute("customProbe");
 
         if (matchingNode->getChildByName("CHANNELS"))
         {

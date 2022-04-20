@@ -25,15 +25,23 @@
 #define __PROBENAMECONFIG_H_F0BD2DD9__
 
 #include "../../JuceLibraryCode/JuceHeader.h" 
-#include "../NeuropixThread.h"
 
 class ProbeNameConfig;
 class NeuropixThread;
 
+/** 
+    
+    Custom text box for modifying the probe name
+
+*/
 class ProbeNameEditor : public TextEditor
 {
 public:
+
+    /** Constructor */
     ProbeNameEditor(ProbeNameConfig* p, int slot, int port, int dock);
+
+    /** Destructor */
     ~ProbeNameEditor() {};
 
     int slot;
@@ -47,16 +55,24 @@ public:
     String customPort;
     String customProbe;
 
-
 };
 
+/** 
+    
+    Button for selecting the naming scheme for a given slot
+
+*/
 class SelectionButton : public Button
 {
 public:
+
+    /** Constructor */
     SelectionButton(ProbeNameConfig* p_, bool isPrev_) : Button(String(int(isPrev_))) {
         isPrev = isPrev_;
         p = p_; 
     };
+
+    /** Destructor */
     ~SelectionButton() {};
 
 private:
@@ -67,18 +83,30 @@ private:
     void mouseUp(const MouseEvent& event);
 };
 
+/** 
+
+    Popup component for defining custom names for probes
+    
+*/
 class ProbeNameConfig : public Component
 {
 
 public:
 
+    enum NamingScheme {
+        AUTO_NAMING = 0,
+        STREAM_INDICES,
+        PORT_SPECIFIC_NAMING,
+        PROBE_SPECIFIC_NAMING
+    };
+
     /** Constructor */
-    ProbeNameConfig(NeuropixThread* t_, int slot, int schemeIdx);
+    ProbeNameConfig(NeuropixThread* t_, int slot, NamingScheme namingScheme);
 
     /** Destructor */
     ~ProbeNameConfig() {}
 
-    int getSchemeIdx() { return schemeIdx; };
+    NamingScheme getNamingScheme() { return namingScheme; };
     void update();
     void showNextScheme();
     void showPrevScheme();
@@ -94,7 +122,7 @@ public:
 private: 
 
     NeuropixThread* t;
-    int schemeIdx = 0;
+    NamingScheme namingScheme = AUTO_NAMING;
 
     std::string schemes[4] = {
         "Automatic naming",

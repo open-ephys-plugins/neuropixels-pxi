@@ -37,6 +37,13 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
 
 	setStatus(SourceStatus::DISCONNECTED);
 
+	customName.portSpecific = "Slot" + String(basestation->slot) + "-Port" + String(port);
+
+	if (dock > 0)
+		customName.portSpecific += ("-" + String(dock));
+
+	customName.probeSpecific = String(info.serial_number);
+
 	channel_map = { 6,10,14,18,22,26,30,34,38,42,50,2,60,62,64,
 		54,58,103,56,115,107,46,119,111,52,123,4,127,8,12,16,20,
 		24,28,32,36,40,44,48,121,105,93,125,101,89,99,97,85,95,109,

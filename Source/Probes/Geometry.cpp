@@ -654,6 +654,7 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.channel = i;
 		metadata.bank = Bank::A;
 		metadata.status = ElectrodeStatus::CONNECTED;
+		metadata.type = ElectrodeType::ELECTRODE;
 
 		metadata.isSelected = false;
 

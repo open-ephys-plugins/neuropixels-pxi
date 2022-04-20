@@ -38,9 +38,17 @@ void NeuropixelsOpto::getInfo()
 
 NeuropixelsOpto::NeuropixelsOpto(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
 {
+
 	getInfo();
 
 	setStatus(SourceStatus::DISCONNECTED);
+
+	customName.portSpecific = "Slot" + String(basestation->slot) + "-Port" + String(port);
+
+	if (dock > 0)
+		customName.portSpecific += ("-" + String(dock));
+
+	customName.probeSpecific = String(info.serial_number);
 
 	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 

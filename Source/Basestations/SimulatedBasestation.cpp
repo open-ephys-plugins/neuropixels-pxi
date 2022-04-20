@@ -32,7 +32,7 @@ SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow(SimulatedBase
 	
 	for (int i = 0; i < 4; i++)
 	{
-		ComboBox* comboBox = new ComboBox("Slot " + String(i) + " Combo Box");
+		ComboBox* comboBox = new ComboBox("Port " + String(i) + " Combo Box");
 
 		comboBox->addItem("Empty", (int) ProbeType::NONE);
 		comboBox->addItem("Neuropixels 1.0", (int) ProbeType::NP1);
@@ -46,7 +46,7 @@ SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow(SimulatedBase
 		else
 			comboBox->setSelectedId((int)ProbeType::NONE, dontSendNotification);
 
-		slotComboBoxes.add(comboBox);
+		portComboBoxes.add(comboBox);
 		addAndMakeVisible(comboBox);
 		comboBox->setBounds(65, 50 + 35 * i, 200, 20);
 	}
@@ -61,12 +61,12 @@ void SimulatedBasestationConfigWindow::paint(Graphics& g)
 {
 	g.setColour(Colours::lightgrey);
 
-	g.drawText("SLOT", 22, 22, 50, 25, Justification::centred);
+	g.drawText("PORT", 22, 22, 50, 25, Justification::centred);
 	g.drawText("PROBE TYPE", 62, 22, 200, 20, Justification::centred);
 
-	for (int slot = 0; slot < 4; slot++)
+	for (int port_index = 0; port_index < 4; port_index++)
 	{
-		g.drawText(String(slot + 1), 25, 50 + 35 * slot, 25, 20, Justification::right);
+		g.drawText(String(port_index + 1), 25, 50 + 35 * port_index, 25, 20, Justification::right);
 	}
 }
 
@@ -74,7 +74,7 @@ void SimulatedBasestationConfigWindow::buttonClicked(Button* button)
 {
 
 	for (int i = 0; i < 4; i++)
-		bs->simulatedProbeTypes[i] = (ProbeType)slotComboBoxes[i]->getSelectedId();
+		bs->simulatedProbeTypes[i] = (ProbeType)portComboBoxes[i]->getSelectedId();
 
 	if (DialogWindow* dw = findParentComponentOfClass<DialogWindow>())
 		dw->exitModalState(0);

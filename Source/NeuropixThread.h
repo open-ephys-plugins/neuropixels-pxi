@@ -163,10 +163,10 @@ public:
 	File getDirectoryForSlot(int slotIndex);
 
 	/** Sets the probe naming scheme to use for this slot */
-	void setNamingSchemeForSlot(int slot, int schemeIndex);
+	void setNamingSchemeForSlot(int slot, ProbeNameConfig::NamingScheme namingScheme);
 
 	/** Gets the probe naming scheme for this slot */
-	int getNamingSchemeForSlot(int slot);
+	ProbeNameConfig::NamingScheme getNamingSchemeForSlot(int slot);
 
 	/** Generates a unique name for each probe */
 	String generateProbeName(int probeIndex);

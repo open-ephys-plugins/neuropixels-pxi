@@ -60,6 +60,8 @@ void Initializer::run()
 
 	LOGC("  Found ", count, " device", count == 1 ? "." : "s.");
 
+	Array<int> slotIDs;
+
 	if (!FORCE_SIMULATION_MODE)
 	{
 
@@ -81,7 +83,22 @@ void Initializer::run()
 
 				if (bs->open()) //returns true if Basestation firmware >= 2.0
 				{
-					basestations.add(bs);
+					int insertionIndex = 0;
+
+					if (slotIDs.size() > 0)
+					{
+
+						int insertionIndex = slotIDs.size() - 1;
+
+						while (insertionIndex > 0 && slotIDs[insertionIndex - 1] > slotID) 
+						{
+							insertionIndex--;
+						}
+					}
+
+					basestations.insert(insertionIndex, bs);
+					slotIDs.insert(insertionIndex, slotID);
+						
 
 					LOGC("  Adding basestation");
 
@@ -204,6 +221,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	bool foundSync = false;
 
 	int probeIndex = 0;
+	int streamIndex = 0;
 
 	for (auto probe : getProbes())
 	{
@@ -216,11 +234,13 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 		}
 
 		/* Generate names for probes based on order of appearance in chassis */
-		probe->autoName = generateProbeName(probeIndex);
-		probe->autoNumber = String(probeIndex);
+		probe->displayName = generateProbeName(probeIndex);
+		probe->streamIndex = streamIndex;
 
-		/* Defualt to automatic 'lettered' names */
-		probe->probeName = probe->autoName;
+		if (probe->generatesLfpData())
+			streamIndex += 2;
+		else
+			streamIndex += 1;
 
 		probeIndex++;
 
@@ -722,14 +742,14 @@ File NeuropixThread::getDirectoryForSlot(int slotIndex)
 	}
 }
 
-void NeuropixThread::setNamingSchemeForSlot(int slot, int schemeIndex)
+void NeuropixThread::setNamingSchemeForSlot(int slot, ProbeNameConfig::NamingScheme namingScheme)
 {
 	for (auto bs : getBasestations())
 		if (bs->slot == slot)
-			bs->setNamingScheme(schemeIndex);
+			bs->setNamingScheme(namingScheme);
 }
 
-int NeuropixThread::getNamingSchemeForSlot(int slot)
+ProbeNameConfig::NamingScheme NeuropixThread::getNamingSchemeForSlot(int slot)
 {
 	for (auto bs : getBasestations())
 		if (bs->slot == slot)
@@ -794,7 +814,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 				
 			else if (info.type == stream_type::AP_BAND)
 			{
-				lastName = info.probe->probeName;
+				lastName = info.probe->displayName;
 				streamName = lastName + "-AP";
 				description = "Neuropixels AP band data stream";
 				identifier = "neuropixels.data.ap";
@@ -802,7 +822,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 			else if (info.type == stream_type::BROAD_BAND)
 			{
-				streamName = info.probe->probeName;
+				streamName = info.probe->displayName;
 				description = "Neuropixels data stream";
 				identifier = "neuropixels.data";
 			}
@@ -846,7 +866,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		StreamInfo info = streamInfo[i];
 
-		String streamName = p->probeName.isEmpty() ? "Loading..." : p->probeName;
+		String streamName = p->displayName.isEmpty() ? "Loading..." : p->displayName;
 
 		if (info.type == stream_type::AP_BAND)
 		{
@@ -967,7 +987,6 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 					+ float(ch % 2)
 					+ 0.0001f * ch; // each channel must have a unique depth value
 
-				continuousChannels->add(new ContinuousChannel(settings));
 				continuousChannels->getLast()->position.y = depth;
 			}
 			
