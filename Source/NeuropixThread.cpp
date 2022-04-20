@@ -83,33 +83,41 @@ void Initializer::run()
 
 				if (bs->open()) //returns true if Basestation firmware >= 2.0
 				{
-					int insertionIndex = 0;
-
-					if (slotIDs.size() > 0)
-					{
-
-						insertionIndex = slotIDs.size();
-
-						LOGC("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex-1]);
-
-						while (insertionIndex > 0 && slotIDs[insertionIndex-1] > slotID) 
-						{
-							LOGC("Moving backward...");
-							insertionIndex--;
-							LOGC("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex-1]);
-						}
-					}
-
-					LOGC("Insertion index:", insertionIndex);
-
-					basestations.insert(insertionIndex, bs);
-					slotIDs.insert(insertionIndex, slotID);
-						
-
-					LOGC("  Adding basestation");
 
 					if (!bs->getProbeCount())
-						CoreServices::sendStatusMessage("Neuropixels PXI basestation found, no probes connected.");
+					{
+						LOGC("Basestation found, no probes connected.");
+						delete bs;
+					}
+					else {
+						int insertionIndex = 0;
+
+						if (slotIDs.size() > 0)
+						{
+
+							insertionIndex = slotIDs.size();
+
+							LOGC("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex - 1]);
+
+							while (insertionIndex > 0 && slotIDs[insertionIndex - 1] > slotID)
+							{
+								LOGC("Moving backward...");
+								insertionIndex--;
+								LOGC("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex - 1]);
+							}
+						}
+
+						LOGC("Insertion index:", insertionIndex);
+
+						basestations.insert(insertionIndex, bs);
+						slotIDs.insert(insertionIndex, slotID);
+
+
+						LOGC("  Adding basestation");
+					}
+
+					
+
 				}
 				else
 				{
