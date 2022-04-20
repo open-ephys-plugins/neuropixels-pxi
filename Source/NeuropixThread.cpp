@@ -88,13 +88,19 @@ void Initializer::run()
 					if (slotIDs.size() > 0)
 					{
 
-						int insertionIndex = slotIDs.size() - 1;
+						insertionIndex = slotIDs.size();
 
-						while (insertionIndex > 0 && slotIDs[insertionIndex - 1] > slotID) 
+						LOGC("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex-1]);
+
+						while (insertionIndex > 0 && slotIDs[insertionIndex-1] > slotID) 
 						{
+							LOGC("Moving backward...");
 							insertionIndex--;
+							LOGC("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex-1]);
 						}
 					}
+
+					LOGC("Insertion index:", insertionIndex);
 
 					basestations.insert(insertionIndex, bs);
 					slotIDs.insert(insertionIndex, slotID);

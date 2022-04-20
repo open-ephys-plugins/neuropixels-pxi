@@ -37,10 +37,20 @@ class NeuropixEditor;
 class NeuropixCanvas;
 class NeuropixThread;
 
+/** 
+
+	Displays the slot number, and opens a pop-up name
+	configuration window when clicked.
+
+*/
 class SlotButton : public Button, public ComponentListener
 {
 public:
+
+	/** Constructor */
 	SlotButton(NeuropixThread* t, int slot);
+
+	/** Destructor */
 	~SlotButton() {}
 
 private:
@@ -48,23 +58,41 @@ private:
 	int slot;
 	NeuropixThread* t;
 
+	/** Draws the slot number */
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown) {};
+
+	/** Opens the configuration window */
 	void mouseUp(const MouseEvent& event);
+
+	/** Called when the configuration window is closed */
 	void componentBeingDeleted(Component& component);
 
 };
 
+/** 
+* 
+	Draws the background for the Neuropixels-PXI Editor
+
+	*/
 class EditorBackground : public Component, public ComponentListener
 {
 public:
+
+	/** Constructor */
 	EditorBackground(NeuropixThread* t, bool freqSelectEnabled);
+
+	/** Toggles the frequency select option */
 	void setFreqSelectAvailable(bool available);
 
 	/* A map from slot number label to its bounds in the editor */
 	std::vector<std::unique_ptr<SlotButton>> slotButtons;
+
+	/** Pointer to the probe naming popup */
 	std::unique_ptr<ProbeNameConfig> probeNamingPopup;
 
 private:
+
+	/** Draws the background */
 	void paint(Graphics& g);
 
 	int numBasestations;
@@ -75,16 +103,28 @@ private:
 
 };
 
+/** 
+
+	Button representing one data source (usually a probe)
+
+*/
 class SourceButton : public ToggleButton, public Timer
 {
 public:
+
+	/** Constructor */
 	SourceButton(int id, DataSource* probe);
 
+	/** Toggles the button selected state */
 	void setSelectedState(bool);
 
+	/** Sets the status (CONNECTED, CONNECTING, etc.) */
 	void setSourceStatus(SourceStatus status);
+
+	/** Returns the status of the associated source */
 	SourceStatus getSourceStatus();
 
+	/** Checks whether the status has changed */
 	void timerCallback();
 
 	DataSource* dataSource;
@@ -93,6 +133,8 @@ public:
 	int id;
 
 private:
+
+	/** Draws the button */
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
 	SourceStatus status;
@@ -100,19 +142,31 @@ private:
 	bool selected;
 };
 
+/** 
+
+	Displays the FIFO filling state for each basestation
+
+*/
 class FifoMonitor : public Component, public Timer
 {
 public:
+
+	/** Constructor */
 	FifoMonitor(int id, Basestation* basestation);
 
+	/** Sets the slot ID for this monitor */
 	void setSlot(unsigned char);
 
+	/** Sets the fill percentage to display */
 	void setFillPercentage(float percentage);
 
+	/** Calls repaint() */
 	void timerCallback();
 
 	unsigned char slot;
 private:
+
+	/** Renders the monitor */
 	void paint(Graphics& g);
 
 	float fillPercentage;
@@ -120,11 +174,23 @@ private:
 	int id;
 };
 
+/** 
+
+	A thread that loads probe settings in the background
+	(to prevent blocking the UI)
+
+*/
 class BackgroundLoader : public Thread
 {
 public:
+
+	/** Constructor */
 	BackgroundLoader(NeuropixThread* t, NeuropixEditor* e);
+
+	/** Destructor */
 	~BackgroundLoader();
+
+	/** Runs the thread */
 	void run();
 
 	bool signalChainIsLoading;
@@ -192,9 +258,9 @@ private:
 	OwnedArray<UtilityButton> directoryButtons;
 	OwnedArray<FifoMonitor> fifoMonitors;
 
-	ScopedPointer<ComboBox> masterSelectBox;
-	ScopedPointer<ComboBox> masterConfigBox;
-	ScopedPointer<ComboBox> freqSelectBox;
+	ScopedPointer<ComboBox> mainSyncSelector;
+	ScopedPointer<ComboBox> inputOutputSyncSelector;
+	ScopedPointer<ComboBox> syncFrequencySelector;
 
 	Array<File> savingDirectories;
 	Array<int> slotNamingSchemes;
