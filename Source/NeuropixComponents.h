@@ -500,6 +500,8 @@ public:
 		bscFirmwarePath = "";
 	}
 
+	virtual ~Basestation() {}
+
 	/** VIRTUAL METHODS */
 
 	/** Opens the connection and retrieves info about available components; should be fast */
