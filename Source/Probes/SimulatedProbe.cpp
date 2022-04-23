@@ -45,11 +45,6 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 
 	setStatus(SourceStatus::DISCONNECTED);
 
-	customName.portSpecific = "Slot" + String(basestation->slot) + "-Port" + String(port);
-
-	if (dock > 0)
-		customName.portSpecific += ("-" + String(dock));
-
 	customName.probeSpecific = String(info.serial_number);
 
 	CoreServices::sendStatusMessage("Probe part number: " + PN);

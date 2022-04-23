@@ -264,53 +264,76 @@ public:
 	bool isActive;
 };
 
+
+/** 
+	
+	Represents any type of data source connected to
+	a basestation, including probes and ADC channels.
+
+	DataSources typically communicate with external
+	hardware to fill data buffers inside a thread.
+
+*/
 class DataSource : public NeuropixComponent, public Thread
 {
 public:
+
+	/** Constructor */
 	DataSource(Basestation* bs_) : NeuropixComponent(), Thread("DataSourceThread")
 	{
 		basestation = bs_;
 	}
 
-	/** Opens the connection to the probe */
+	// --------- PURE VIRTUAL METHODS --------- //
+
+	/** Opens the connection to the data source */
 	virtual bool open() = 0;
 
-	/** Closes the connection to the probe */
+	/** Closes the connection to the data source */
 	virtual bool close() = 0;
 
-	/** Prepares the probe for data acquisition */
+	/** Prepares for data acquisition */
 	virtual void initialize(bool signalChainIsLoading) = 0;
 
-	/** Starts data streaming.*/
+	/** Starts data streaming */
 	virtual void startAcquisition() = 0;
 
-	/** Stops data streaming.*/
+	/** Stops data streaming */
 	virtual void stopAcquisition() = 0;
 
-	Basestation* basestation;
+	// --------- GET / SET METHODS  --------- //
 
-	int channel_count;
-
-	float sample_rate;
-
-	DataSourceType sourceType;
-
-	DataBuffer* apBuffer;
-
+	/** Sets the status (CONNECTING, CONNECTED, etc.) */
 	void setStatus(SourceStatus status_) {
 		status = status_;
 	}
 
+	/** Gets the status of this source */
 	SourceStatus getStatus() {
 		return status;
 	}
+
+	/** Basestation for this source */
+	Basestation* basestation;
+
+	/** Properties of this data source */
+	int channel_count;
+	float sample_rate;
+	DataSourceType sourceType;
+
+	/** The data buffer used by this source */
+	DataBuffer* apBuffer;
 
 protected:
 	SourceStatus status;
 };
 
 
-/** Represents a Neuropixels probe of any type */
+/** 
+
+	Represents a Neuropixels probe of any type.
+	
+*/
 class Probe : public DataSource
 {
 public:
@@ -318,42 +341,9 @@ public:
 	/** Constructor */
 	Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_);
 
-	Headstage* headstage; // owned by Basestation
-	Flex* flex; // owned by Headstage
+	// --------- PURE VIRTUAL METHODS --------- //
 
-	bool isValid; //True if the PN is supported by the API
-
-	bool isCalibrated = false;
-	bool calibrationWarningShown;
-
-	int port;
-	int dock;
-	
-	DataBuffer* lfpBuffer;
-
-	float ap_sample_rate;
-	float lfp_sample_rate;
-
-	float ap_offsets[384][100];
-	float lfp_offsets[384][100];
-
-	double timestamp_s[12 * MAXPACKETS];
-
-	int64 ap_timestamp;
-	int64 lfp_timestamp;
-
-	Array<ElectrodeMetadata> electrodeMetadata;
-	ProbeMetadata probeMetadata;
-
-	ProbeSettings settings;
-
-	Path shankOutline;
-	
-	NeuropixInterface* ui;
-
-	/** VIRTUAL METHODS */
-
-	/** Returns true if the probe generates LFP data */
+	/** Returns true if the probe generates a separate stream for LFP data */
 	virtual bool generatesLfpData() = 0;
 
 	/** Returns true if the probe has a selectable AP filter cut */
@@ -383,11 +373,50 @@ public:
 	/** Main loop -- copies data from the probe into a DataBuffer object */
 	virtual void run() = 0;
 
-	/** NON-VIRTUAL METHODS */
+	// ---------------------------------------- //
+
+	Headstage* headstage; // owned by Basestation
+	Flex* flex; // owned by Headstage
+
+	bool isValid; //True if the PN is supported by the API
+
+	bool isCalibrated = false;
+	bool calibrationWarningShown;
+
+	int port;
+	int dock;
+	
+	/** Separate buffer for LFP data */
+	DataBuffer* lfpBuffer;
+
+	float ap_sample_rate;
+	float lfp_sample_rate;
+
+	float ap_offsets[384][100];
+	float lfp_offsets[384][100];
+
+	double timestamp_s[12 * MAXPACKETS];
+
+	int64 ap_timestamp;
+	int64 lfp_timestamp;
+
+	Array<ElectrodeMetadata> electrodeMetadata;
+	ProbeMetadata probeMetadata;
+
+	ProbeSettings settings;
+
+	Path shankOutline;
+	
+	NeuropixInterface* ui;
+
+	/** Updates the settings object for this probe */
 	void updateSettings(ProbeSettings p)
 	{
 		settings = p;
 	}
+
+	/** Updates the naming scheme */
+	void updateNamingScheme(ProbeNameConfig::NamingScheme scheme);
 
 	void updateOffsets(float* samples, int64 timestamp, bool isApBand);
 
@@ -415,6 +444,8 @@ public:
 
 	/* Stores port-specific and probe-specific names */
 	struct CustomNames {
+		String automatic;
+		String streamSpecific;
 		String portSpecific;
 		String probeSpecific;
 	};
@@ -422,9 +453,6 @@ public:
 	CustomNames customName;
 
 	ProbeNameConfig::NamingScheme namingScheme;
-
-	StringArray autoProbeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
-						   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
 
 	void sendSyncAsContinuousChannel(bool shouldSend) {
 		sendSync = shouldSend;
@@ -490,7 +518,7 @@ class Basestation : public NeuropixComponent
 {
 public:
 
-	/** Sets the slot values. */
+	/** Constructor -- Sets the slot values. */
 	Basestation(int slot_) : NeuropixComponent() {
 		probesInitialized = false;
 		slot = slot_;
@@ -498,11 +526,20 @@ public:
 
 		bsFirmwarePath = "";
 		bscFirmwarePath = "";
+
+		for (int p = 0; p < 4; p++)
+		{
+			for (int d = 0; d < 2; d++)
+			{
+				customPortNames.add("slot" + String(slot) + "-port" + String(p+1) + "-" + String(d+1));
+			}
+		}
 	}
 
+	/** Destructor */
 	virtual ~Basestation() {}
 
-	/** VIRTUAL METHODS */
+	// --------- PURE VIRTUAL METHODS --------- //
 
 	/** Opens the connection and retrieves info about available components; should be fast */
 	/** Returns false if the API version does not match */
@@ -535,6 +572,8 @@ public:
 	/** Returns the total number of probes connected to this basestation */
 	virtual int getProbeCount() = 0;
 
+	// ----------- OTHER METHODS ----------- //
+
 	/** Launches FirmwareUpdater to update the BSC firmware */
 	void updateBscFirmware(File file);
 
@@ -547,11 +586,7 @@ public:
 	/** Waits for initialization threads to exit */
 	virtual void waitForThreadToExit() { }
 
-	BasestationType type;
-	
-	/** NON-VIRTUAL METHODS */
-
-	/** Returns an array of headstages connected to this basestation 
+	/** Returns an array of headstages connected to this basestation
 		(can include null values for disconnected headstages) */
 	Array<Headstage*> getHeadstages() {
 
@@ -565,12 +600,12 @@ public:
 		return headstage_array;
 	}
 
-	virtual Array<DataSource*> getAdditionalDataSources() { 
-		
+	virtual Array<DataSource*> getAdditionalDataSources() {
+
 		return Array<DataSource*>();
 
 	}
-	
+
 	/** Returns an array of probes connected to this basestation (cannot include null values) */
 	Array<Probe*> getProbes()
 	{
@@ -586,6 +621,30 @@ public:
 		}
 	}
 
+	/** Sets saving directory for NPX files (not used) */
+	void setSavingDirectory(File directory) {
+		savingDirectory = directory;
+	}
+
+	/** Gets the saving directory for NPX files (not used) */
+	File getSavingDirectory() {
+		return savingDirectory;
+	}
+
+	/** Sets the naming scheme for all probes in this basestation */
+	void setNamingScheme(ProbeNameConfig::NamingScheme namingScheme_) {
+		namingScheme = namingScheme_;
+		for (auto p : probes)
+			p->updateNamingScheme(namingScheme);
+	}
+
+	/** Returns the naming scheme for this basestation */
+	ProbeNameConfig::NamingScheme getNamingScheme() {
+		return namingScheme;
+	}
+
+	BasestationType type;
+
 	unsigned char slot_c;
 	int slot;
 
@@ -593,30 +652,22 @@ public:
 
 	OwnedArray<Headstage> headstages;
 	Array<Probe*> probes;
-
-	void setSavingDirectory(File directory) {
-		savingDirectory = directory;
-	}
-	File getSavingDirectory() {
-		return savingDirectory;
-	}
-
-	void setNamingScheme(ProbeNameConfig::NamingScheme namingScheme_) {
-		namingScheme = namingScheme_;
-		for (auto p : probes)
-			p->namingScheme = namingScheme_;
-	}
-
-	ProbeNameConfig::NamingScheme getNamingScheme() {
-		return namingScheme;
-	}
 	
+	String getCustomPortName(int port, int dock) {
+		return customPortNames[(port-1) * 2 + (dock-1)];
+	}
+	void setCustomPortName(String name, int port, int dock) {
+		customPortNames.set((port-1) * 2 + (dock-1), name);
+	}
+
 protected:
 
 	bool probesInitialized;
 	Array<int> syncFrequencies;
 	File savingDirectory;
 	ProbeNameConfig::NamingScheme namingScheme = ProbeNameConfig::NamingScheme::AUTO_NAMING;
+
+	StringArray customPortNames;
 	
 	String bscFirmwarePath;
 	String bsFirmwarePath;
@@ -638,6 +689,7 @@ class HeadstageTestModule : public NeuropixComponent
 {
 public:
 
+	/** Constructor */
 	HeadstageTestModule::HeadstageTestModule(Basestation* bs_, Headstage* hs_) : NeuropixComponent()
 	{
 		basestation = bs_;
@@ -662,12 +714,15 @@ private:
 class Headstage : public NeuropixComponent
 {
 public:
+
+	/** Constructor */
 	Headstage::Headstage(Basestation* bs_, int port_) : NeuropixComponent() {
 		basestation = bs_;
 		port_c = (signed char) port_;
 		port = port_;
 	}
 
+	/** Returns all probes connected to this headstage */
 	Array<Probe*> getProbes() {
 
 		Array<Probe*> probe_array;
@@ -679,6 +734,8 @@ public:
 
 		return probe_array;
 	}
+
+	/** Returns all flex cables connected to this headstage */
 	Array<Flex*> getFlexCables()
 	{
 		Array<Flex*> flex_array;
@@ -703,6 +760,7 @@ public:
 
 	// ** Returns true if headstage test module is available */
 	virtual bool hasTestModule() = 0;
+
 	// ** Runs the headstage test module and shows the results in a pop-window */
 	virtual void runTestModule() = 0;
 };
@@ -711,6 +769,8 @@ public:
 class Flex : public NeuropixComponent
 {
 public:
+
+	/** Constructor */
 	Flex::Flex(Headstage* hs_, int dock_)
 	{
 		headstage = hs_;

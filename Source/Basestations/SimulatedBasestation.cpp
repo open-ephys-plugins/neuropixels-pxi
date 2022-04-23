@@ -110,6 +110,7 @@ SimulatedBasestation::SimulatedBasestation(int slot) : Basestation(slot) {
 
 	configComponent = std::make_unique<SimulatedBasestationConfigWindow>(this);
 	options.content.setOwned(configComponent.get());
+	configComponent.release();
 
 	options.content->setSize(320, 250);
 
@@ -120,7 +121,7 @@ SimulatedBasestation::SimulatedBasestation(int slot) : Basestation(slot) {
 	options.resizable = false;
 
 	int result = options.runModal();
-	
+
 	getInfo();
 }
 
@@ -140,22 +141,22 @@ bool SimulatedBasestation::open()
 			headstages.add(nullptr);
 			break;
 		case ProbeType::NP1:
-			headstages.add(new SimulatedHeadstage(this, 1, "PRB_1_4_0480_1", 28948291 + i));
+			headstages.add(new SimulatedHeadstage(this, i + 1, "PRB_1_4_0480_1", 28948291 + i));
 			break;
 		case ProbeType::NHP10:
-			headstages.add(new SimulatedHeadstage(this, 1, "NP1010", 38948291 + i));
+			headstages.add(new SimulatedHeadstage(this, i + 1, "NP1010", 38948291 + i));
 			break;
 		case ProbeType::UHD1:
-			headstages.add(new SimulatedHeadstage(this, 1, "NP1100", 48948291 + i));
+			headstages.add(new SimulatedHeadstage(this, i + 1, "NP1100", 48948291 + i));
 			break;
 		case ProbeType::NP2_1:
-			headstages.add(new SimulatedHeadstage(this, 1, "NP2000", 58948291 + i));
+			headstages.add(new SimulatedHeadstage(this, i + 1, "NP2000", 58948291 + i));
 			break;
 		case ProbeType::NP2_4:
-			headstages.add(new SimulatedHeadstage(this, 1, "NP2010", 68948291 + i));
+			headstages.add(new SimulatedHeadstage(this, i + 1, "NP2010", 68948291 + i));
 			break;
 		default:
-			headstages.add(new SimulatedHeadstage(this, 1, "PRB_1_4_0480_1", 28948291 + i));
+			headstages.add(new SimulatedHeadstage(this, i + 1, "PRB_1_4_0480_1", 28948291 + i));
 		}
 	}
 

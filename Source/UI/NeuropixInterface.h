@@ -42,6 +42,11 @@ enum VisualizationMode {
 	ACTIVITY_VIEW
 };
 
+/** 
+
+	Extended graphical interface for updating probe settings
+
+*/
 class NeuropixInterface : public SettingsInterface, 
 	public Button::Listener, 
 	public ComboBox::Listener, 
@@ -57,25 +62,38 @@ public:
 	/** Destructor */
 	~NeuropixInterface();
 
+	/** Draws the legend */
 	void paint(Graphics& g);
 
+	/** Listener methods*/
 	void buttonClicked(Button*);
 	void comboBoxChanged(ComboBox*);
 	void labelTextChanged(Label* l);
 
+	/** Disables buttons and starts animation if necessary */
 	void startAcquisition();
+
+	/** Enables buttons and start animation if necessary */
 	void stopAcquisition();
 
+	/** Settings-related functions*/
 	void applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true);
 	ProbeSettings getProbeSettings();
 	void updateProbeSettingsInBackground();
 
+	/** Save parameters to XML */
 	void saveParameters(XmlElement* xml);
+
+	/** Load parameters from XML */
 	void loadParameters(XmlElement* xml);
 
+	/** Updates the annotation label */
 	void setAnnotationLabel(String, Colour);
+
+	/** Updates the info string on the right-hand side of the component */
 	void updateInfoString();
 
+	/** Set parameters */
 	void setApGain(int index);
 	void setLfpGain(int index);
 	void setReference(int index);

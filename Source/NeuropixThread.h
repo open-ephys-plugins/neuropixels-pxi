@@ -58,6 +58,7 @@ typedef enum {
 
 struct StreamInfo {
 	int num_channels;
+	int probe_index;
 	float sample_rate;
 	stream_type type;
 	bool sendSyncAsContinuousChannel;
@@ -169,7 +170,7 @@ public:
 	ProbeNameConfig::NamingScheme getNamingSchemeForSlot(int slot);
 
 	/** Generates a unique name for each probe */
-	String generateProbeName(int probeIndex);
+	String generateProbeName(int probeIndex, ProbeNameConfig::NamingScheme scheme);
 
 	/** Toggles between auto-restart setting. */
 	void setAutoRestart(bool restart);
@@ -243,6 +244,14 @@ public:
 	/** Responds to config messages sent while acquisition is not active*/
 	String handleConfigMessage(String msg) override;
 
+	/** Returns the custom name for a given probe serial number, if it exists*/
+	String getCustomProbeName(String serialNumber);
+
+	/** Sets the custom name for a given probe serial number*/
+	void setCustomProbeName(String serialNumber, String customName);
+
+	std::map<String, String> customProbeNames;
+
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 
 private:
@@ -276,6 +285,7 @@ private:
 	uint32_t last_npx_timestamp;
 
 	Array<float> fillPercentage;
+	
 
 	OwnedArray<Basestation> basestations;
 	OwnedArray<DataStream> sourceStreams;

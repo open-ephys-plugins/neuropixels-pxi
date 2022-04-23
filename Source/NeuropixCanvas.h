@@ -31,43 +31,68 @@ class NeuropixEditor;
 
 class Probe;
 
-class NeuropixCanvas : public Visualizer, public Button::Listener
+/** 
+
+	Holds the visualizer for additional probe settings
+
+*/
+class NeuropixCanvas : public Visualizer
 {
 public:
+
+	/** Constructor */
 	NeuropixCanvas(GenericProcessor*, NeuropixEditor*, NeuropixThread*);
+
+	/** Destructor */
 	~NeuropixCanvas();
 
+	/** Fills background */
 	void paint(Graphics& g);
 
-	// needed for Visualizer class
+	/** Renders the Visualizer on each animation callback cycle */
 	void refresh();
 
-	void beginAnimation();
-	void endAnimation();
+	/** Starts animation (not needed for this component) */
+	void beginAnimation() override { }
 
+	/** Stops animation (not needed for this component) */
+	void endAnimation() override { }
+
+	/** Called when the Visualizer's tab becomes visible after being hidden */
 	void refreshState();
+
+	/** Called when the Visualizer is first created, and optionally when
+		the parameters of the underlying processor are changed */
 	void update();
 
-	void setParameter(int, float);
-	void setParameter(int, int, int, float);
-	void buttonClicked(Button* button);
-	// end Visualizer class methods
-
+	/** Sets which interface is active */
 	void setSelectedInterface(DataSource* d);
 
+	/** Starts animation of sub-interfaces */
 	void startAcquisition();
+
+	/** Stops animation of sub-interfaces */
 	void stopAcquisition();
 
+	/** Stores probe settings (for copying) */
 	void storeProbeSettings(ProbeSettings p);
+
+	/** Gets the most recent probe settings (for copying) */
 	ProbeSettings getProbeSettings();
+
+	/** Applies settings to all probes */
 	void applyParametersToAllProbes(ProbeSettings p);
 
-	ProbeSettings savedSettings;
-
+	/** Saves custom UI settings */
 	void saveCustomParametersToXml(XmlElement* xml) override;
+
+	/** Loads custom UI settings*/
 	void loadCustomParametersFromXml(XmlElement* xml) override;
 
+	/** Sets bounds of sub-components*/
 	void resized();
+
+	ProbeSettings savedSettings;
 
 	ScopedPointer<Viewport> neuropixViewport;
 

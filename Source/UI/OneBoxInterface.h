@@ -138,6 +138,8 @@ public:
     void comboBoxChanged(ComboBox*);
     void buttonClicked(Button*);
 
+    void updateInfoString() { }
+
 private:
 
     void updateMappingSelector();

@@ -43,11 +43,6 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
 
 	setStatus(SourceStatus::DISCONNECTED);
 
-	customName.portSpecific = "Slot" + String(basestation->slot) + "-Port" + String(port);
-
-	if (dock > 0)
-		customName.portSpecific += ("-" + String(dock));
-
 	customName.probeSpecific = String(info.serial_number);
 
     Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);

@@ -119,6 +119,27 @@ void Probe::updateOffsets(float* samples, int64 timestamp, bool isApBand)
 
 }
 
+void Probe::updateNamingScheme(ProbeNameConfig::NamingScheme scheme)
+{
+	namingScheme = scheme;
+
+	switch (scheme)
+	{
+	case ProbeNameConfig::AUTO_NAMING:
+		displayName = customName.automatic;
+		break;
+	case ProbeNameConfig::STREAM_INDICES:
+		displayName = customName.streamSpecific;
+		break;
+	case ProbeNameConfig::PORT_SPECIFIC_NAMING:
+		displayName = basestation->getCustomPortName(headstage->port, dock);
+		break;
+	case ProbeNameConfig::PROBE_SPECIFIC_NAMING:
+		displayName = customName.probeSpecific;
+		break;
+	}
+}
+
 
 FirmwareUpdater::FirmwareUpdater(Basestation* basestation_, File firmwareFile_, FirmwareType type)
 	: ThreadWithProgressWindow("Firmware Update...", true, false),

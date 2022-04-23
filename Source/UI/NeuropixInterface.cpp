@@ -452,14 +452,14 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
     // PROBE INFO 
     mainLabel = new Label("MAIN", "MAIN");
-    mainLabel->setFont(Font("Small Text", 60, Font::plain));
-    mainLabel->setBounds(625, 20, 200, 65);
+    mainLabel->setFont(Font("Small Text", 40, Font::plain));
+    mainLabel->setBounds(625, 20, 200, 45);
     mainLabel->setColour(Label::textColourId, Colours::darkkhaki);
     addAndMakeVisible(mainLabel);
 
     nameLabel = new Label("MAIN", "NAME");
     nameLabel->setFont(Font("Small Text", 20, Font::plain));
-    nameLabel->setBounds(625, 90, 500, 25);
+    nameLabel->setBounds(625, 70, 500, 45);
     nameLabel->setColour(Label::textColourId, Colours::pink);
     addAndMakeVisible(nameLabel);
 
@@ -524,7 +524,7 @@ void NeuropixInterface::updateInfoString()
         mainString += String(probe->dock);
     }
     
-    nameString = probe->name;
+    nameString = probe->name + "\n(" + probe->displayName + ")";
 
     infoString += "API version: ";
     infoString += thread->getApiVersion();
@@ -1416,11 +1416,6 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
     XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
 
-   // xmlNode->setAttribute("autoName", probe->autoName);
-   // xmlNode->setAttribute("autoNumber", probe->autoNumber);
-  //  xmlNode->setAttribute("customPort", probe->customPort);
-   // xmlNode->setAttribute("customProbe", probe->customProbe);
-
     xmlNode->setAttribute("slot", probe->basestation->slot);
     xmlNode->setAttribute("bs_firmware_version", probe->basestation->info.boot_version);
     xmlNode->setAttribute("bs_hardware_version", probe->basestation->info.version);
@@ -1443,6 +1438,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     xmlNode->setAttribute("probe_serial_number", String(probe->info.serial_number));
     xmlNode->setAttribute("probe_part_number", probe->info.part_number);
     xmlNode->setAttribute("probe_name", probe->name);
+    xmlNode->setAttribute("custom_probe_name", probe->customName.probeSpecific);
 
     xmlNode->setAttribute("ZoomHeight", probeBrowser->zoomHeight);
     xmlNode->setAttribute("ZoomOffset", probeBrowser->zoomOffset);
@@ -1615,11 +1611,6 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     if (matchingNode != nullptr)
     {
 
-       // probe->autoName = matchingNode->getStringAttribute("autoName");
-       // probe->autoNumber = matchingNode->getStringAttribute("autoNumber");
-       // probe->customPort = matchingNode->getStringAttribute("customPort");
-       // probe->customProbe = matchingNode->getStringAttribute("customProbe");
-
         if (matchingNode->getChildByName("CHANNELS"))
         {
             settings.selectedBank.clear();
@@ -1650,6 +1641,13 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 
         probeBrowser->zoomHeight = matchingNode->getIntAttribute("ZoomHeight");
         probeBrowser->zoomOffset = matchingNode->getIntAttribute("ZoomOffset");
+
+        String customName = thread->getCustomProbeName(matchingNode->getStringAttribute("probe_serial_number"));
+
+        if (customName.length() > 0)
+        {
+            probe->customName.probeSpecific = customName;
+        }
 
         settings.apGainIndex = matchingNode->getIntAttribute("apGainIndex", 3);
         settings.lfpGainIndex = matchingNode->getIntAttribute("lfpGainIndex", 2);

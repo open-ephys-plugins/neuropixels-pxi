@@ -94,16 +94,10 @@ void NeuropixCanvas::refreshState()
 
 void NeuropixCanvas::update()
 {
-
+    for (int i = 0; i < settingsInterfaces.size(); i++)
+        settingsInterfaces[i]->updateInfoString();
 }
 
-void NeuropixCanvas::beginAnimation()
-{
-}
-
-void NeuropixCanvas::endAnimation()
-{
-}
 
 void NeuropixCanvas::resized()
 {
@@ -118,19 +112,6 @@ void NeuropixCanvas::resized()
     neuropixViewport->setScrollBarThickness(10);
 }
 
-void NeuropixCanvas::setParameter(int x, float f)
-{
-
-}
-
-void NeuropixCanvas::setParameter(int a, int b, int c, float d)
-{
-}
-
-void NeuropixCanvas::buttonClicked(Button* button)
-{
-
-}
 
 void NeuropixCanvas::startAcquisition()
 {

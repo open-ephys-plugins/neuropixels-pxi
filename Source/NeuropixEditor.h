@@ -48,18 +48,19 @@ class SlotButton : public Button, public ComponentListener
 public:
 
 	/** Constructor */
-	SlotButton(NeuropixThread* t, int slot);
+	SlotButton(Basestation* bs, NeuropixThread* thread);
 
 	/** Destructor */
 	~SlotButton() {}
 
 private:
 
+	Basestation* basestation;
+	NeuropixThread* thread;
 	int slot;
-	NeuropixThread* t;
 
 	/** Draws the slot number */
-	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown) {};
+	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
 	/** Opens the configuration window */
 	void mouseUp(const MouseEvent& event);
@@ -248,6 +249,9 @@ public:
 
 	/** Initializes the probes in a background thread */
 	void initialize(bool signalChainIsLoading);
+
+	/** Update settings */
+	void update();
 
 	OwnedArray<SourceButton> sourceButtons;
 

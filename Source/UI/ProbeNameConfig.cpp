@@ -27,19 +27,89 @@
 #include "../NeuropixThread.h"
 
 
-ProbeNameEditor::ProbeNameEditor(ProbeNameConfig* p, int slot_, int port_, int dock_)
+ProbeNameEditor::ProbeNameEditor(ProbeNameConfig* p, int port_, int dock_)
 {
-    slot = slot_;
     port = port_;
     dock = dock_;
+
+    config = p;
+
+    probe = nullptr;
 
     autoName    = "<>";
     autoNumber  = "<>";
     customPort  = "<>";
     customProbe = "<>";
 
-    hasProbe = false;
+    setJustificationType(Justification::centred);
+    addListener(this);
+    setEditable(false);
 
+}
+
+void ProbeNameEditor::labelTextChanged(Label* label)
+{
+
+    String desiredText = label->getText();
+
+    String charactersRemoved = desiredText.removeCharacters(" ./_");
+
+    String uniqueName = config->checkUnique(charactersRemoved, this);
+
+    setText(uniqueName, dontSendNotification);
+
+    switch (config->basestation->getNamingScheme())
+    {
+    case ProbeNameConfig::PROBE_SPECIFIC_NAMING:
+        probe->customName.probeSpecific = uniqueName;
+        config->thread->setCustomProbeName(String(probe->info.serial_number), uniqueName);
+        probe->displayName = uniqueName;
+        customProbe = uniqueName;
+        break;
+    case ProbeNameConfig::PORT_SPECIFIC_NAMING:
+        config->basestation->setCustomPortName(uniqueName, port, dock);
+        if (probe != nullptr)
+        {
+            probe->displayName = uniqueName;
+        }
+        customPort = uniqueName;
+        break;
+    }
+    
+}
+
+String ProbeNameConfig::checkUnique(String input, ProbeNameEditor* originalLabel)
+{
+
+    String output = String(input);
+
+    bool foundMatch = true;
+    int index = 1;
+
+    while (foundMatch)
+    {
+        for (auto&& label : probeNames)
+        {
+
+            if (label.get() != originalLabel)
+            {
+                if (label->getText().equalsIgnoreCase(output))
+                {
+                    foundMatch = true;
+                    output = String(input) + "-" + String(index++);
+                    break;
+                }
+                else {
+                    foundMatch = false;
+                }
+            }
+            else {
+                foundMatch = false;
+            }
+        }
+    }
+
+    return output;
 }
 
 void SelectionButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
@@ -69,14 +139,16 @@ void SelectionButton::mouseUp(const MouseEvent& event)
         p->showNextScheme();
 }
 
-ProbeNameConfig::ProbeNameConfig(NeuropixThread* t_, int slot, ProbeNameConfig::NamingScheme namingScheme_)
+ProbeNameConfig::ProbeNameConfig(Basestation* bs_, NeuropixThread* thread_)
 {
 
-    t = t_;
-    namingScheme = namingScheme_;
+    basestation = bs_;
+    thread = thread_;
 
-    int width   = 240;
-    int height  = 1.5 * width;
+    namingScheme = basestation->getNamingScheme();
+
+    int width   = 340;
+    int height  = 300;
 
     setSize(width, height);
 
@@ -114,6 +186,7 @@ ProbeNameConfig::ProbeNameConfig(NeuropixThread* t_, int slot, ProbeNameConfig::
     height = height / 8 - int(5.0f * padding / 4);
 
     int x, y;
+    
     for (int port = 4; port > 0; port--)
     {
         for (int dock = 1; dock <= 2; dock++)
@@ -121,10 +194,9 @@ ProbeNameConfig::ProbeNameConfig(NeuropixThread* t_, int slot, ProbeNameConfig::
             x = padding + (dock - 1) * (padding + width);
             y = getHeight() - (port) * (padding + height);
 
-            probeNames.push_back(std::move(std::make_unique<ProbeNameEditor>(this, slot, port, dock)));
+            probeNames.push_back(std::move(std::make_unique<ProbeNameEditor>(this, port, dock)));
             probeNames.back()->setBounds(x, y, width, height);
-            probeNames.back()->setJustification(Justification::centred);
-            probeNames.back()->setText("<EMPTY>");
+            probeNames.back()->setText("<EMPTY>", dontSendNotification);
             addAndMakeVisible(probeNames.back().get());
         }
     }
@@ -143,26 +215,21 @@ ProbeNameConfig::ProbeNameConfig(NeuropixThread* t_, int slot, ProbeNameConfig::
     dock2Label->setColour(juce::Label::textColourId, juce::Colour(255, 255, 255));
     addAndMakeVisible(dock2Label);
 
-    int probeIndex = 0;
-    
-    for (auto& probe : t->getProbes()) {
+    for (auto& probe : basestation->getProbes()) {
         
         for (auto&& label : probeNames)
         {
 
-            if (label->slot == probe->basestation->slot
-                && label->port == probe->headstage->port
+            if (label->port == probe->headstage->port
                 && label->dock == probe->dock)
             {
-               //// label->autoName = probe->autoName;
-               // label->autoNumber = probe->autoNumber;
-                //label->customPort = probe->customPort.isEmpty() ? "Port" + String(probe->basestation->slot) + \
-                    "-" + String(probe->headstage->port) + "-" + String(probe->dock) : probe->customPort;
-               // label->customProbe = probe->customProbe.isEmpty() ? String(probe->info.serial_number) : probe->customProbe;
 
-                label->hasProbe = true;
+                label->autoName = probe->customName.automatic;
+                label->autoNumber = probe->customName.streamSpecific;
+                label->customPort = probe->basestation->getCustomPortName(label->port, label->dock);
+                label->customProbe = probe->customName.probeSpecific;
 
-                probeIndex++;
+                label->probe = probe;
             }
         }
     }
@@ -174,39 +241,58 @@ ProbeNameConfig::ProbeNameConfig(NeuropixThread* t_, int slot, ProbeNameConfig::
 void ProbeNameConfig::update()
 {
 
+    std::cout << "Naming scheme: " << namingScheme << std::endl;
+
+    basestation->setNamingScheme(namingScheme);
+
     schemeLabel->setText(schemes[(int)namingScheme], juce::NotificationType::sendNotificationAsync);
     description->setText(descriptions[(int)namingScheme], juce::NotificationType::sendNotificationAsync);
     
     for (auto&& label : probeNames)
     {
-        label->setEnabled(false);
-        label->setColour(juce::TextEditor::ColourIds::backgroundColourId, juce::Colour(150, 150, 150));
 
-        if (label->hasProbe)
+        if (namingScheme == PORT_SPECIFIC_NAMING)
         {
-            if (namingScheme == AUTO_NAMING)
+            label->setEditable(true);
+            label->setColour(juce::Label::ColourIds::backgroundColourId, juce::Colour(255, 255, 255));
+            label->setText(basestation->getCustomPortName(label->port, label->dock), dontSendNotification);
+
+            if (label->probe != nullptr)
+                label->probe->displayName = basestation->getCustomPortName(label->port, label->dock);
+        }
+        else {
+
+            label->setEditable(false);
+            label->setColour(juce::Label::ColourIds::backgroundColourId, juce::Colour(150, 150, 150));
+            label->setText("<>", dontSendNotification);
+
+            if (label->probe != nullptr)
             {
-                label->setText(label->autoName);
-                label->setColour(juce::TextEditor::ColourIds::backgroundColourId, juce::Colour(210, 210, 210));
-            }
-            else if (namingScheme == STREAM_INDICES)
-            {
-                label->setText(label->autoNumber);
-                label->setColour(juce::TextEditor::ColourIds::backgroundColourId, juce::Colour(210, 210, 210));
-            }
-            else if (namingScheme == PORT_SPECIFIC_NAMING)
-            {
-                label->setText(label->customPort);
-                label->setEnabled(true);
-                label->setColour(juce::TextEditor::ColourIds::backgroundColourId, juce::Colour(255, 255, 255));
-            }
-            else if (namingScheme == PROBE_SPECIFIC_NAMING)
-            {
-                label->setText(label->customProbe);
-                label->setEnabled(true);
-                label->setColour(juce::TextEditor::ColourIds::backgroundColourId, juce::Colour(255, 255, 255));
+                if (namingScheme == AUTO_NAMING)
+                {
+                    label->setText(label->autoName, dontSendNotification);
+                    label->setEditable(false);
+                    label->setColour(juce::Label::ColourIds::backgroundColourId, juce::Colour(210, 210, 210));
+                    label->probe->displayName = label->autoName;
+                }
+                else if (namingScheme == STREAM_INDICES)
+                {
+                    label->setText(label->autoNumber, dontSendNotification);
+                    label->setEditable(false);
+                    label->setColour(juce::Label::ColourIds::backgroundColourId, juce::Colour(210, 210, 210));
+                    label->probe->displayName = label->autoNumber;
+                }
+                else if (namingScheme == PROBE_SPECIFIC_NAMING)
+                {
+                    label->setText(label->customProbe, dontSendNotification);
+                    label->setEditable(true);
+                    label->setColour(juce::Label::ColourIds::backgroundColourId, juce::Colour(255, 255, 255));
+                    label->probe->displayName = label->customProbe;
+                }
             }
         }
+
+       
     }
 
 }
@@ -230,35 +316,4 @@ void ProbeNameConfig::showNextScheme()
 
     namingScheme = (NamingScheme)currentIndex;
     update();
-}
-
-void ProbeNameConfig::saveStateToXml(XmlElement* xml)
-{
-
-    XmlElement* state = xml->createNewChildElement("PROBENAME");
-    /*
-    for (auto field : fields)
-    {
-        XmlElement* currentField = state->createNewChildElement(String(field->types[field->type]).toUpperCase());
-        currentField->setAttribute("state", field->state);
-        currentField->setAttribute("value", field->value);
-    }
-    */
-
-}
-
-/** Load settings. */
-void ProbeNameConfig::loadStateFromXml(XmlElement* xml)
-{
-
-    for (auto* xmlNode : xml->getChildIterator())
-    {
-        if (xmlNode->hasTagName("FILENAMECONFIG"))
-        {
-
-
-        }
-
-    }
-
 }

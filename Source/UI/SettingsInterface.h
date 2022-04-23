@@ -52,6 +52,8 @@ public:
 	virtual void saveParameters(XmlElement* xml) = 0;
 	virtual void loadParameters(XmlElement* xml) = 0;
 
+    virtual void updateInfoString() = 0;
+
 protected:
 
 	NeuropixThread* thread;

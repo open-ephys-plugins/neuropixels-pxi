@@ -28,32 +28,39 @@
 
 class ProbeNameConfig;
 class NeuropixThread;
+class Probe;
+class Basestation;
 
 /** 
     
     Custom text box for modifying the probe name
 
 */
-class ProbeNameEditor : public TextEditor
+class ProbeNameEditor : public Label,
+    public Label::Listener
 {
 public:
 
     /** Constructor */
-    ProbeNameEditor(ProbeNameConfig* p, int slot, int port, int dock);
+    ProbeNameEditor(ProbeNameConfig* p, int port, int dock);
 
     /** Destructor */
     ~ProbeNameEditor() {};
 
-    int slot;
+    /** Called when text is updated */
+    void labelTextChanged(Label* label);
+
     int port;
     int dock;
 
-    bool hasProbe;
+    Probe* probe;
     
     String autoName;
     String autoNumber;
     String customPort;
     String customProbe;
+
+    ProbeNameConfig* config;
 
 };
 
@@ -101,27 +108,30 @@ public:
     };
 
     /** Constructor */
-    ProbeNameConfig(NeuropixThread* t_, int slot, NamingScheme namingScheme);
+    ProbeNameConfig(Basestation* basestation, NeuropixThread* thread);
 
     /** Destructor */
     ~ProbeNameConfig() {}
 
+    /** Returns the active naming scheme */
     NamingScheme getNamingScheme() { return namingScheme; };
+
+    /** Called when the */
     void update();
     void showNextScheme();
     void showPrevScheme();
 
-    /** Save settings. */
-    void saveStateToXml(XmlElement*);
-
-    /** Load settings. */
-    void loadStateFromXml(XmlElement*);
-
     std::vector<std::unique_ptr<ProbeNameEditor>> probeNames;
+
+    /** Checks whether a requested name is unique, and if not appends a string */
+    String checkUnique(String input, ProbeNameEditor* originalLabel);
+
+    Basestation* basestation;
+    NeuropixThread* thread;
 
 private: 
 
-    NeuropixThread* t;
+    
     NamingScheme namingScheme = AUTO_NAMING;
 
     std::string schemes[4] = {

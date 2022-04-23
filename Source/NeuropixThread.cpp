@@ -35,7 +35,7 @@
 #include <vector>
 
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
-#define FORCE_SIMULATION_MODE false
+#define FORCE_SIMULATION_MODE true
 
 DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 {
@@ -248,8 +248,10 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 		}
 
 		/* Generate names for probes based on order of appearance in chassis */
-		probe->displayName = generateProbeName(probeIndex);
+		probe->customName.automatic = generateProbeName(probeIndex, ProbeNameConfig::AUTO_NAMING);
+		probe->displayName = probe->customName.automatic;
 		probe->streamIndex = streamIndex;
+		probe->customName.streamSpecific = generateProbeName(probeIndex, ProbeNameConfig::STREAM_INDICES);
 
 		if (probe->generatesLfpData())
 			streamIndex += 2;
@@ -264,12 +266,39 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 }
 
-String NeuropixThread::generateProbeName(int probeIndex)
+String NeuropixThread::generateProbeName(int probeIndex, ProbeNameConfig::NamingScheme namingScheme)
 {
 	StringArray probeNames = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
 						   "O" , "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
 
-	return "Probe" + probeNames[probeIndex];
+	Array<Probe*> probes = getProbes();
+
+	Probe* probe = probes[probeIndex];
+
+	String name;
+
+	switch (namingScheme)
+	{
+	case ProbeNameConfig::AUTO_NAMING:
+		name = "Probe" + probeNames[probeIndex];
+		break;
+	case ProbeNameConfig::PROBE_SPECIFIC_NAMING:
+		name = probe->customName.probeSpecific;
+		break;
+	case ProbeNameConfig::PORT_SPECIFIC_NAMING:
+		name = probe->basestation->getCustomPortName(probe->headstage->port, probe->dock);
+		break;
+	case ProbeNameConfig::STREAM_INDICES:
+		name = String(probe->streamIndex);
+		if (probe->generatesLfpData())
+			name += "," + String(probe->streamIndex + 1);
+		break;
+	default:
+		name = "Probe" + probeNames[probeIndex];
+	}
+
+	return name;
+	
 }
 
 void NeuropixThread::updateStreamInfo()
@@ -277,6 +306,8 @@ void NeuropixThread::updateStreamInfo()
 
 	streamInfo.clear();
 	sourceBuffers.clear();
+
+	int probe_index = 0;
 
 	for (auto source : getDataSources() )
 	{
@@ -290,6 +321,7 @@ void NeuropixThread::updateStreamInfo()
 			apInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
 			apInfo.sample_rate = probe->ap_sample_rate;
 			apInfo.probe = probe;
+			apInfo.probe_index = probe_index++;
 
 			if (probe->generatesLfpData())
 				apInfo.type = AP_BAND;
@@ -810,6 +842,8 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 	OwnedArray<ConfigurationObject>* configurationObjects)
 {
 
+	std::cout << "UPDATE SETTINGS!!!!!" << std::endl;
+
 	if (sourceStreams.size() == 0) // initialize data streams
 	{
 
@@ -828,22 +862,31 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 				
 			else if (info.type == stream_type::AP_BAND)
 			{
-				lastName = info.probe->displayName;
-				streamName = lastName + "-AP";
+				lastName = generateProbeName(info.probe_index, info.probe->namingScheme);
+				
+				if (info.probe->namingScheme != ProbeNameConfig::STREAM_INDICES)
+					streamName = lastName + "-AP";
+				else
+					streamName = String(info.probe->streamIndex);
+
 				description = "Neuropixels AP band data stream";
 				identifier = "neuropixels.data.ap";
 			}
 
 			else if (info.type == stream_type::BROAD_BAND)
 			{
-				streamName = info.probe->displayName;
+				streamName = generateProbeName(info.probe_index, info.probe->namingScheme);
 				description = "Neuropixels data stream";
 				identifier = "neuropixels.data";
 			}
 			
 			else if (info.type == stream_type::LFP_BAND)
 			{
-				streamName = lastName + "-LFP";
+				if (info.probe->namingScheme != ProbeNameConfig::STREAM_INDICES)
+					streamName = lastName + "-LFP";
+				else
+					streamName = String(info.probe->streamIndex + 1);
+
 				description = "Neuropixels LFP band data stream";
 				identifier = "neuropixels.data.lfp";
 			}
@@ -876,25 +919,49 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		DataStream* currentStream = sourceStreams[i];
 
-		Probe* p = getProbes()[probeIdx];
+		String streamName;
 
 		StreamInfo info = streamInfo[i];
 
-		String streamName = p->displayName.isEmpty() ? "Loading..." : p->displayName;
-
 		if (info.type == stream_type::AP_BAND)
 		{
-			if (streamName != "Loading...")
+			Probe* p = getProbes()[probeIdx];
+			p->updateNamingScheme(p->namingScheme); // update displayName
+
+			streamName = generateProbeName(probeIdx, p->namingScheme);
+
+			if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
 				streamName += "-AP";
-			probeIdx--; //stay on this probe for LFP band
+			else
+				streamName = String(p->streamIndex);
 		}
 		else if (info.type == stream_type::LFP_BAND)
 		{
-			if (streamName != "Loading...")
-				streamName += "-LFP";
-		}
+			Probe* p = getProbes()[probeIdx];
+			p->updateNamingScheme(p->namingScheme); // update displayName
 
-		probeIdx++;
+			streamName = generateProbeName(probeIdx, p->namingScheme);
+
+			if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
+				streamName += "-LFP";
+			else
+				streamName = String(p->streamIndex + 1);
+
+			probeIdx++;
+
+		}
+		else if (info.type == stream_type::BROAD_BAND)
+		{
+			Probe* p = getProbes()[probeIdx];
+			p->updateNamingScheme(p->namingScheme); // update displayName
+
+			streamName = generateProbeName(probeIdx, p->namingScheme);
+
+			probeIdx++;
+		}
+		else {
+			streamName = currentStream->getName();
+		}
 
 		currentStream->setName(streamName);
 
@@ -1035,6 +1102,8 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 		dataStreams->getLast()->device = device; // DataStream object just gets a pointer
 
 	} // end source stream loop
+
+	editor->update();
 
 }
 
@@ -1289,6 +1358,23 @@ String NeuropixThread::handleConfigMessage(String msg)
 
 }
 
+String NeuropixThread::getCustomProbeName(String serialNumber)
+{
+	if (customProbeNames.count(serialNumber) > 0)
+	{
+		return customProbeNames[serialNumber];
+	}
+	else {
+		return "";
+	}
+}
+
+
+void NeuropixThread::setCustomProbeName(String serialNumber, String customName)
+{
+	customProbeNames[serialNumber] = customName;
+}
+
 bool NeuropixThread::updateBuffer()
 {
 
@@ -1325,3 +1411,4 @@ void RecordingTimer::timerCallback()
 	thread->startRecording();
 	stopTimer();
 }
+
