@@ -35,7 +35,7 @@
 #include <vector>
 
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
-#define FORCE_SIMULATION_MODE true
+#define FORCE_SIMULATION_MODE false
 
 DataThread* NeuropixThread::createDataThread(SourceNode *sn)
 {
@@ -842,8 +842,6 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 	OwnedArray<ConfigurationObject>* configurationObjects)
 {
 
-	std::cout << "UPDATE SETTINGS!!!!!" << std::endl;
-
 	if (sourceStreams.size() == 0) // initialize data streams
 	{
 
@@ -1324,8 +1322,6 @@ String NeuropixThread::handleConfigMessage(String msg)
 							else if (command.equalsIgnoreCase("SELECT"))
 							{
 								Array<int> electrodes;
-
-								std::cout << "Selecting " << std::endl;
 
 								for (int i = 5; i < parts.size(); i++)
 								{

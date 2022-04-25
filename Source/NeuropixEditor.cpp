@@ -141,7 +141,6 @@ FifoMonitor::FifoMonitor(int id_, Basestation* basestation_) : id(id_), basestat
 
 void FifoMonitor::timerCallback()
 {
-	//std::cout << "Checking fill percentage for monitor " << id << ", slot " << int(slot) << std::endl;
 
 	if (slot != 255)
 	{
@@ -676,8 +675,6 @@ void NeuropixEditor::saveVisualizerEditorParameters(XmlElement* xml)
 		customNamesXml->setAttribute("SN" + iter->first, iter->second);
 		++iter;
 	}
-
-	std::cout << "DONE SAVING" << std::endl;
 }
 
 void NeuropixEditor::loadVisualizerEditorParameters(XmlElement* xml)
@@ -708,8 +705,6 @@ void NeuropixEditor::loadVisualizerEditorParameters(XmlElement* xml)
 						Basestation* bs = thread->getBasestations()[slotIdx];
 
 						bs->setNamingScheme((ProbeNameConfig::NamingScheme) basestationXml->getIntAttribute("NamingScheme", 0));
-
-						std::cout << "SET NAMING SCHEME: " << bs->getNamingScheme() << std::endl;
 
 						for (int port = 1; port < 5; port++)
 						{

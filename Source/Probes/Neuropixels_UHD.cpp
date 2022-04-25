@@ -120,7 +120,6 @@ bool Neuropixels_UHD::open()
 
 	LOGC("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
-
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
 	eventCode = 0;
