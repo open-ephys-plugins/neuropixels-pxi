@@ -253,15 +253,30 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 
     Neuropixels::NP_ErrorCode ec;
 
-	// Disconnect all groups
-	for (int group = 0; group < groupsPerBank; group++)
-		ec = Neuropixels::selectElectrodeGroup(
-			basestation->slot,	// slot
-			headstage->port,	// port
-			dock,				// dock
-			group,				// group number
-			0xFF);				// bank index (0xFF == the channelgroup is disconnected from all banks)
+	if (index < banksPerProbe)
+	{
+		LOGC("Selecting column pattern: ALL");
+		// select columnar configuration
+		ec = Neuropixels::selectColumnPattern(
+			basestation->slot,
+			headstage->port,
+			dock,
+			Neuropixels::ALL
 
+		);
+	}
+	else {
+		LOGC("Selecting column pattern: OUTER");
+		// select columnar configuration
+		ec = Neuropixels::selectColumnPattern(
+			basestation->slot,
+			headstage->port,
+			dock,
+			Neuropixels::OUTER
+
+		);
+	}
+	
 	// Select all groups in a particular bank
     if (index < banksPerProbe)
     {
@@ -275,15 +290,6 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 				dock,				// dock
 				group,				// group number
 				index);				// bank index
-
-		LOGC("Selecting column pattern: ALL");
-		// select columnar configuration
-		ec = Neuropixels::selectColumnPattern(
-			basestation->slot,
-			headstage->port,
-			dock,
-			Neuropixels::ALL
-		);
 
 		return;
     }
@@ -303,33 +309,33 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 		offset = 8;
 	}
 	// Vertical line in banks 0-7
-	for (int bank = offset; bank < offset + 8; bank++) {
+	for (int bank = offset; bank < offset + 4; bank++) {
 
 		// Direct vs. Group Cross numbering based on bank index
 		int start_group = bank % 4 < 2 ? 0 : 1;
 		start_group = bank % 2 == 0 ? start_group + 2 : start_group;
 
-		LOGC("Selecting bank: ", index, ", start group: ", start_group);
+		LOGC("Selecting bank: ", bank, ", start group: ", start_group);
+
+		Neuropixels::electrodebanks_t bank1 = (Neuropixels::electrodebanks_t) (1 << bank);
+		Neuropixels::electrodebanks_t bank2 = (Neuropixels::electrodebanks_t) (1 << (bank+4));
 
 		for (int group = 0; group < groupsPerBankColumn; group++)
-			ec = Neuropixels::selectElectrodeGroup(
+		{
+			int G = start_group + group * 4;
+
+			ec = Neuropixels::selectElectrodeGroupMask(
 				basestation->slot,			// slot
 				headstage->port,			// port
 				dock,						// dock
-				start_group + group * 2,	// group number
-				bank);						// bank index
+				G,							// group number
+				(Neuropixels::electrodebanks_t) (bank1 + bank2));				// bank mask
+		}
+
+			
 	}
 
-	LOGC("Selecting column pattern: INNER");
 
-	// select columnar configuration
-	ec = Neuropixels::selectColumnPattern(
-		basestation->slot,
-		headstage->port,
-		dock,
-		Neuropixels::INNER
-		);
-   
 }
 
 void Neuropixels_UHD::setApFilterState()
