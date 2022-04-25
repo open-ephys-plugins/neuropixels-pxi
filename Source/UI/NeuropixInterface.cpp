@@ -1454,6 +1454,11 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
         xmlNode->setAttribute("lfpGainValue", lfpGainComboBox->getText());
         xmlNode->setAttribute("lfpGainIndex", lfpGainComboBox->getSelectedId()-1);
     }
+
+    if (electrodeConfigurationComboBox != nullptr)
+    {
+        xmlNode->setAttribute("electrodeConfiguration", electrodeConfigurationComboBox->getSelectedId()-1);
+    }
     
     if (referenceComboBox != nullptr)
     {
@@ -1652,6 +1657,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
         settings.apGainIndex = matchingNode->getIntAttribute("apGainIndex", 3);
         settings.lfpGainIndex = matchingNode->getIntAttribute("lfpGainIndex", 2);
         settings.referenceIndex = matchingNode->getIntAttribute("referenceChannelIndex", 0);
+        settings.electrodeConfigurationIndex = matchingNode->getIntAttribute("electrodeConfiguration", 0);
         settings.apFilterState = matchingNode->getIntAttribute("filterCutIndex", 1) == 1;
 
         forEachXmlChildElement(*matchingNode, annotationNode)

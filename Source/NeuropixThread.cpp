@@ -227,7 +227,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	LOGC("Scanning for devices...");
 
-	Neuropixels::np_dbg_setlevel(4);
+	Neuropixels::np_dbg_setlevel(0);
 
 	initializer = std::make_unique<Initializer>(basestations, api_v1, api_v3);
 	initializer->run();

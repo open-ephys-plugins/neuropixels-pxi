@@ -99,9 +99,9 @@ Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 		settings.availableReferences.add("Ext");
 		settings.availableReferences.add("Tip");
-		settings.availableReferences.add("192");
-		settings.availableReferences.add("576");
-		settings.availableReferences.add("960");
+		//settings.availableReferences.add("192");
+		//settings.availableReferences.add("576");
+		//settings.availableReferences.add("960");
 
 		open();
 
@@ -265,6 +265,8 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 	// Select all groups in a particular bank
     if (index < banksPerProbe)
     {
+		LOGC("Selecting bank: ", index);
+
 		// Select all groups at this bank index
 		for (int group = 0; group < groupsPerBank; group++)
 			ec = Neuropixels::selectElectrodeGroup(
@@ -274,6 +276,7 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 				group,				// group number
 				index);				// bank index
 
+		LOGC("Selecting column pattern: ALL");
 		// select columnar configuration
 		ec = Neuropixels::selectColumnPattern(
 			basestation->slot,
@@ -306,7 +309,7 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 		int start_group = bank % 4 < 2 ? 0 : 1;
 		start_group = bank % 2 == 0 ? start_group + 2 : start_group;
 
-		std::cout << "Bank " << bank << " start group: " << start_group << std::endl;
+		LOGC("Selecting bank: ", index, ", start group: ", start_group);
 
 		for (int group = 0; group < groupsPerBankColumn; group++)
 			ec = Neuropixels::selectElectrodeGroup(
@@ -316,6 +319,8 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 				start_group + group * 2,	// group number
 				bank);						// bank index
 	}
+
+	LOGC("Selecting column pattern: INNER");
 
 	// select columnar configuration
 	ec = Neuropixels::selectColumnPattern(
