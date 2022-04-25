@@ -1530,6 +1530,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     settings.apFilterState = probe->settings.apFilterState;
     settings.lfpGainIndex = probe->settings.lfpGainIndex;
     settings.apGainIndex = probe->settings.apGainIndex;
+    settings.referenceIndex = probe->settings.referenceIndex;
     settings.availableApGains = probe->settings.availableApGains;
     settings.availableLfpGains = probe->settings.availableLfpGains;
     settings.availableBanks = probe->settings.availableBanks;
