@@ -139,7 +139,7 @@ bool Basestation_v3::open()
 
 				Headstage* headstage;
 
-				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
+				if (hsPartNumber == "NP2_HS_30" || hsPartNumber == "OPTO_HS_00") // 1.0 headstage, only one dock
 				{
 					LOGC("      Found 1.0 single-dock headstage on port: ", port);
 					headstage = new Headstage1_v3(this, port);
