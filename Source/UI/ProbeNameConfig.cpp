@@ -220,16 +220,19 @@ ProbeNameConfig::ProbeNameConfig(Basestation* bs_, NeuropixThread* thread_)
         for (auto&& label : probeNames)
         {
 
-            if (label->port == probe->headstage->port
-                && label->dock == probe->dock)
+            if (label->port == probe->headstage->port)
             {
+                if ((label->dock == probe->dock) ||
+                    (label->dock == 1 && probe->dock == 0))
+                {
+                    label->autoName = probe->customName.automatic;
+                    label->autoNumber = probe->customName.streamSpecific;
+                    label->customPort = probe->basestation->getCustomPortName(label->port, label->dock);
+                    label->customProbe = probe->customName.probeSpecific;
 
-                label->autoName = probe->customName.automatic;
-                label->autoNumber = probe->customName.streamSpecific;
-                label->customPort = probe->basestation->getCustomPortName(label->port, label->dock);
-                label->customProbe = probe->customName.probeSpecific;
-
-                label->probe = probe;
+                    label->probe = probe;
+                }
+                
             }
         }
     }

@@ -654,10 +654,26 @@ public:
 	Array<Probe*> probes;
 	
 	String getCustomPortName(int port, int dock) {
-		return customPortNames[(port-1) * 2 + (dock-1)];
+
+		if (dock == 0)
+		{
+			return customPortNames[(port - 1) * 2];
+		}
+		else {
+			return customPortNames[(port - 1) * 2 + (dock - 1)];
+		}
+		
 	}
 	void setCustomPortName(String name, int port, int dock) {
-		customPortNames.set((port-1) * 2 + (dock-1), name);
+
+		if (dock == 0)
+		{
+			customPortNames.set((port - 1) * 2, name);
+		}
+		else {
+			customPortNames.set((port - 1) * 2 + (dock - 1), name);
+		}
+		
 	}
 
 protected:

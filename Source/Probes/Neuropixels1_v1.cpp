@@ -47,6 +47,8 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	customName.probeSpecific = String(info.serial_number);
 
+	customName.portSpecific = "Slot" + String(basestation->slot) + "-Port" + String(port);
+
 	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
 
 	name = probeMetadata.name;
