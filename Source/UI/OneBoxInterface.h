@@ -125,7 +125,7 @@ public:
     void startAcquisition() override;
     void stopAcquisition() override;
 
-    void applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) override { }
+    bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) override { return false; }
 
     void saveParameters(XmlElement* xml) override;
     void loadParameters(XmlElement* xml) override;

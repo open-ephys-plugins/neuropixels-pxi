@@ -77,7 +77,7 @@ public:
 	void stopAcquisition();
 
 	/** Settings-related functions*/
-	void applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true);
+	bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true);
 	ProbeSettings getProbeSettings();
 	void updateProbeSettingsInBackground();
 
@@ -101,12 +101,12 @@ public:
 	void setEmissionSite(String wavelength, int site);
 	void selectElectrodes(Array<int> electrodes);
 
+	Probe* probe;
+
 private:
 
 	Array<ElectrodeMetadata> electrodeMetadata;
 	ProbeMetadata probeMetadata;
-
-	Probe* probe;
 
 	XmlElement neuropix_info;
 

@@ -1284,14 +1284,14 @@ void NeuropixInterface::drawLegend(Graphics& g)
 }
 
 
-void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdateProbe)
+bool NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdateProbe)
 {
     LOGC("Apply probe settings for ", p.probe->name, " shouldUpdate: ", shouldUpdateProbe);
 
     if (p.probeType != probe->type)
     {
         CoreServices::sendStatusMessage("Probe types do not match.");
-        return;
+        return false;
     }
 
     if (electrodeConfigurationComboBox != 0)
@@ -1351,6 +1351,8 @@ void NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
     }
 
     repaint();
+
+    return true;
 
 }
 

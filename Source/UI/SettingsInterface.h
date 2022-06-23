@@ -47,7 +47,7 @@ public:
 	virtual void startAcquisition() = 0;
 	virtual void stopAcquisition() = 0;
 
-	virtual void applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) = 0;
+	virtual bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) = 0;
 
 	virtual void saveParameters(XmlElement* xml) = 0;
 	virtual void loadParameters(XmlElement* xml) = 0;
