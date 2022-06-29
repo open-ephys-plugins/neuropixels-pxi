@@ -66,6 +66,7 @@ public:
         probe->setProperty(Identifier("contact_shape_params"), contact_shape_params);
         probe->setProperty(Identifier("device_channel_indices"), device_channel_indices);
         probe->setProperty(Identifier("shank_ids"), shank_ids);
+        probe->setProperty(Identifier("num_adcs"), settings.probe->probeMetadata.num_adcs);
 
         Array<var> probes;
         probes.add(probe.get());

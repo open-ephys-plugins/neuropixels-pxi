@@ -93,6 +93,7 @@ void Geometry::NP1(Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.rows_per_shank = 960 / 2;
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
+	probeMetadata.num_adcs = 12;
 
 	probeMetadata.availableBanks = 
 	{	Bank::A,
@@ -180,6 +181,7 @@ void Geometry::NP2(int shank_count,
 	probeMetadata.rows_per_shank = 1280 / 2;
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
+	probeMetadata.num_adcs = 16;
 
 	probeMetadata.availableBanks =
 		{   Bank::A,
@@ -462,6 +464,7 @@ void Geometry::NHP1(Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.rows_per_shank = 128 / 2;
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
+	probeMetadata.num_adcs = 12;
 
 	probeMetadata.availableBanks =
 		{ Bank::A
@@ -544,6 +547,7 @@ void Geometry::NHP2(int length,
 	probeMetadata.rows_per_shank = probeMetadata.electrodes_per_shank / 2;
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
+	probeMetadata.num_adcs = 12;
 
 	probeMetadata.availableBanks = { 
 		Bank::A,
@@ -632,6 +636,7 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.rows_per_shank = 384 / 8;
 	probeMetadata.columns_per_shank = 8;
 	probeMetadata.shankOutline = path;
+	probeMetadata.num_adcs = 12;
 
 	probeMetadata.availableBanks =
 		{ Bank::A

@@ -1095,6 +1095,15 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		DeviceInfo* device = new DeviceInfo(deviceSettings);
 
+		MetadataDescriptor descriptor(MetadataDescriptor::MetadataType::UINT16, 
+			1, "num_adcs", 
+			"Number of analog-to-digital converter for this probe", "neuropixels.adcs");
+
+		MetadataValue value(MetadataDescriptor::MetadataType::UINT16, 1);
+		value.setValue(info.probe->probeMetadata.num_adcs);
+
+		device->addMetadata(descriptor, value);
+
 		devices->add(device); // unique device object owned by SourceNode
 
 		dataStreams->getLast()->device = device; // DataStream object just gets a pointer

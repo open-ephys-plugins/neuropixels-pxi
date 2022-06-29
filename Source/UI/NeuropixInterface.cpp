@@ -1440,6 +1440,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     xmlNode->setAttribute("probe_serial_number", String(probe->info.serial_number));
     xmlNode->setAttribute("probe_part_number", probe->info.part_number);
     xmlNode->setAttribute("probe_name", probe->name);
+    xmlNode->setAttribute("num_adcs", probe->probeMetadata.num_adcs);
     xmlNode->setAttribute("custom_probe_name", probe->customName.probeSpecific);
 
     xmlNode->setAttribute("ZoomHeight", probeBrowser->zoomHeight);
