@@ -29,6 +29,7 @@
 
 SlotButton::SlotButton(Basestation* bs, NeuropixThread* thread_) : Button(String(bs->slot))
 {
+	isEnabled = true;
 	thread = thread_;
 	basestation = bs;
 	slot = basestation->slot;
@@ -38,7 +39,7 @@ void SlotButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 {
 	g.setFont(26);
 
-	if (isMouseOver)
+	if (isMouseOver && isEnabled)
 		g.setColour(Colours::yellow);
 	else
 		g.setColour(Colours::darkgrey);
@@ -48,6 +49,9 @@ void SlotButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 
 void SlotButton::mouseUp(const MouseEvent& event)
 {
+
+	if (!isEnabled)
+		return;
 
 	ProbeNameConfig* probeNamingPopup = new ProbeNameConfig(basestation, thread);
 
@@ -570,12 +574,19 @@ void NeuropixEditor::startAcquisition()
 
 	if (canvas)
 		canvas->startAcquisition();
+
+
+	addSyncChannelButton->setEnabled(false);
+	background->setEnabled(false);
 }
 
 void NeuropixEditor::stopAcquisition()
 {
 	if (canvas)
 		canvas->stopAcquisition();
+
+	addSyncChannelButton->setEnabled(true);
+	background->setEnabled(true);
 }
 
 void NeuropixEditor::buttonClicked(Button* button)

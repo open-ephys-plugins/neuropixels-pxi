@@ -53,6 +53,8 @@ public:
 	/** Destructor */
 	~SlotButton() {}
 
+	bool isEnabled;
+
 private:
 
 	Basestation* basestation;
@@ -90,6 +92,13 @@ public:
 
 	/** Pointer to the probe naming popup */
 	std::unique_ptr<ProbeNameConfig> probeNamingPopup;
+
+	/** Disables/enables slot buttons during/after acquisition*/
+	void setEnabled(bool isEnabled)
+	{
+		for (int i = 0; i < slotButtons.size(); i++)
+			slotButtons[i]->isEnabled = isEnabled;
+	}
 
 private:
 

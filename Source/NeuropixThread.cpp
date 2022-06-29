@@ -1100,7 +1100,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 			"Number of analog-to-digital converter for this probe", "neuropixels.adcs");
 
 		MetadataValue value(MetadataDescriptor::MetadataType::UINT16, 1);
-		value.setValue(info.probe->probeMetadata.num_adcs);
+		value.setValue((uint16) info.probe->probeMetadata.num_adcs);
 
 		device->addMetadata(descriptor, value);
 
