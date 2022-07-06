@@ -142,10 +142,10 @@ private:
     };
 
     std::string descriptions[4] = {
-    "Probes are given names in the order they appear (\"ProbeA\", \"ProbeB\", \"ProbeC\", etc.); \" - AP\" and \" - LFP\" are appended to the streams of 1.0 probes\n                       ",
-    "Data streams are named in order \"0\", \"1\", \"2\", etc.; 1.0 probes have two streams each, 2.0 probes have 1                                                                         ",
-    "Each port has a name associated with it (default, e.g. = \"Port2 - 1 - AP\" for AP band of a 1.0 probe in slot 2, port 1, \"Port2 - 2 - 1\" for a 2.0 probe in slot 2, port 2, dock 1).",
-    "Each probe has a name associated with it (default = probe serial number). There should be one text box for each probe that is currently connected                                      ",
+    "Probes are given names in the order they appear (\"ProbeA\", \"ProbeB\", \"ProbeC\", etc.); \" - AP\" and \" - LFP\" are appended to the streams of 1.0 probes.",
+    "Data streams are named in order \"0\", \"1\", \"2\", etc.; 1.0 probes have two streams each, 2.0 probes have one.",
+    "Each port has a name associated with it (default, e.g. = \"slot2-port1-1\" for AP band of a 1.0 probe in slot 2, port 1, \"slot2-port2-2\" for a 2.0 probe in slot 2, port 2, dock 2).",
+    "Each probe has a name associated with it (default = probe serial number). There should be one text box for each probe that is currently connected.",
     };
 
     ScopedPointer<Label> titleLabel;

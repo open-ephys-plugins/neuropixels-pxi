@@ -175,7 +175,7 @@ ProbeNameConfig::ProbeNameConfig(Basestation* bs_, NeuropixThread* thread_)
     addAndMakeVisible(schemeLabel);
 
     description = new Label("Scheme description", descriptions[(int)namingScheme]);
-    description->setJustificationType(Justification::topLeft);
+    description->setJustificationType(Justification::centredTop);
     description->setBounds(0, 82, width+2, 150);
     description->setFont(Font("Small Text", 12.0f, Font::plain));
     description->setColour(juce::Label::textColourId, juce::Colour(255, 255, 255));
