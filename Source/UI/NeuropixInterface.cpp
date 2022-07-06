@@ -1502,7 +1502,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
         channelNode->setAttribute("CH" + String(channel), chString);
         xposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].xpos + 250 * shank));
-        yposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].ypos + 250 * shank));
+        yposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].ypos));
     }
     
     xmlNode->setAttribute("visualizationMode", mode);
