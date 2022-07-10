@@ -459,7 +459,7 @@ public:
 		sendSync = shouldSend;
 	}
 
-	bool sendSync;
+	bool sendSync = false;
 
 	uint32_t last_npx_timestamp;
 	bool passedOneSecond;

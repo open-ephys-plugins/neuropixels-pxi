@@ -31,6 +31,8 @@
 
 #include "NeuropixComponents.h"
 
+#define PLUGIN_VERSION "0.4.0"
+
 class SourceNode;
 class NeuropixThread;
 class NeuropixEditor;
@@ -201,6 +203,9 @@ public:
 
 	/** Returns pointers to active probes */
 	Array<Probe*> getProbes();
+
+	/** Returns a JSON-formatted string with info about all connected probes*/
+	String getProbeInfoString();
 
 	/** Returns points to active DataSources (probes + ADCs)*/
 	Array<DataSource*> getDataSources();

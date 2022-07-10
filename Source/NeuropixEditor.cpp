@@ -462,7 +462,6 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
 	}
 	mainSyncSelector->setSelectedItemIndex(0, dontSendNotification);
 	mainSyncSelector->addListener(this);
-	mainSyncSelector->setVisible(true);
 	addChildComponent(mainSyncSelector);
 
 	inputOutputSyncSelector = new ComboBox("Toggles the main synchronizer as input or output");

@@ -507,6 +507,44 @@ Array<Probe*> NeuropixThread::getProbes()
 	return probes;
 }
 
+String NeuropixThread::getProbeInfoString()
+{
+	DynamicObject output;
+
+	output.setProperty(Identifier("plugin"),
+		var("Neuropix-PXI"));
+	output.setProperty(Identifier("version"),
+		var(PLUGIN_VERSION));
+
+	Array<var> probes;
+
+	for (auto probe : getProbes())
+	{
+		DynamicObject::Ptr p = new DynamicObject();
+
+		p->setProperty(Identifier("name"), probe->displayName);
+		p->setProperty(Identifier("type"), probe->probeMetadata.name);
+		p->setProperty(Identifier("slot"), probe->basestation->slot);
+		p->setProperty(Identifier("port"), probe->headstage->port);
+		p->setProperty(Identifier("dock"), probe->dock);
+		
+		p->setProperty(Identifier("part_number"), probe->info.part_number);
+		p->setProperty(Identifier("serial_number"), String(probe->info.serial_number));
+
+		p->setProperty(Identifier("is_calibrated"), probe->isCalibrated);
+
+		probes.add(p.get());
+	}
+
+	output.setProperty(Identifier("probes"), probes);
+
+	MemoryOutputStream f;
+	output.writeAsJSON(f, 0, true, 4);
+
+	return f.toString();
+
+}
+
 Array<DataSource*> NeuropixThread::getDataSources()
 {
 	Array<DataSource*> sources;
@@ -1239,6 +1277,7 @@ String NeuropixThread::handleConfigMessage(String msg)
 	// NP GAIN <bs> <port> <dock> <AP/LFP> <gainval>
 	// NP REFERENCE <bs> <port> <dock> <EXT/TIP>
 	// NP FILTER <bs> <port> <dock> <ON/OFF>
+	// NP INFO
 
 	LOGD("Neuropix-PXI received ", msg);
 
@@ -1346,20 +1385,25 @@ String NeuropixThread::handleConfigMessage(String msg)
 							}
 						}
 					}
+
+					return "SUCCESS";
 				}
 				else {
-					LOGD("Incorrect number of argument for ", command, ". Found ", parts.size(), ", requires 6.");
+					return "Incorrect number of argument for " + command + ". Found " + String(parts.size()) + ", requires 6.";
 				}
+			}
+			else if (command.equalsIgnoreCase("INFO"))
+			{
+				return getProbeInfoString();
 			}
 			else
 			{
-				LOGD("Command ", command , " not recognized.");
+				return "NP command " + command + " not recognized.";
 			}
 		}
-
 	}
 
-	return " ";
+	return "Command not recognized.";
 
 }
 
