@@ -20,7 +20,7 @@ jobs:
         package: "open-ephys-lib"
       run: |
         cd ../..
-        git clone https://github.com/open-ephys/plugin-GUI.git --branch development-juce6
+        git clone https://github.com/open-ephys/plugin-GUI.git --branch main
         cd plugin-GUI/Build
         cmake -G "Visual Studio 16 2019" -A x64 .. 
         mkdir Release && cd Release
