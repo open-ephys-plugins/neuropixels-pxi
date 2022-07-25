@@ -10,6 +10,10 @@ This plugin is not included by default, but must be added via the GUI's Plugin I
 
 If you're upgrading from a previous version, you will need to close and re-open the GUI before you can use the plugin in a signal chain.
 
+## Usage
+
+Instructions for using the Neuropixels PXI plugin are available [here](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Neuropixels-PXI.html).
+
 ## Hardware requirements
 
 - PXI chassis and remote control module
@@ -28,13 +32,11 @@ If you're upgrading from a previous version, you will need to close and re-open 
 
 - Neuropixels 2.0 (single shank and multishank)
 
-- Neuropixels Ultra
+- Neuropixels Ultra (fixed and switchable)
 
 - Neuropixels NHP (active and passive)
 
-## Documentation
-
-For more information, please read through the documentation page [here](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/Neuropixels-PXI.html).
+- Neuropixels Opto
 
 ## License
 
@@ -46,4 +48,4 @@ This plugin was created by Josh Siegle, Pavel Kulik, and Anjal Doshi at the Alle
 
 We thank Bill Karsh (Janelia) and Jan Putzeys (imec) for helpful advice throughout the development process.
 
-© 2020 Allen Institute and Open Ephys
+© 2022 Allen Institute and Open Ephys
