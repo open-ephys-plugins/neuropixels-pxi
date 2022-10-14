@@ -1504,7 +1504,26 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
         xposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].xpos + 250 * shank));
         yposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].ypos));
     }
-    
+
+    if (probe->emissionSiteMetadata.size() > 0)
+    {
+        XmlElement* emissionSiteNode = xmlNode->createNewChildElement("EMISSION_SITES");
+
+        for (int i = 0; i < probe->emissionSiteMetadata.size(); i++)
+        {
+
+            XmlElement* emissionSite = emissionSiteNode->createNewChildElement("SITE");
+
+            EmissionSiteMetadata& metadata = probe->emissionSiteMetadata[i];
+
+            emissionSite->setAttribute("WAVELENGTH", metadata.wavelength_nm);
+            emissionSite->setAttribute("SHANK_INDEX", metadata.shank_index);
+            emissionSite->setAttribute("XPOS", metadata.xpos);
+            emissionSite->setAttribute("YPOS", metadata.ypos);
+        }
+    }
+
+   
     xmlNode->setAttribute("visualizationMode", mode);
     xmlNode->setAttribute("activityToView", probeBrowser->activityToView);
 

@@ -82,7 +82,8 @@ enum class ProbeType {
 	UHD1,
 	UHD2,
 	NP2_1,
-	NP2_4
+	NP2_4,
+	OPTO
 };
 
 enum class SourceStatus {
@@ -176,6 +177,14 @@ struct ElectrodeMetadata {
 	Colour colour;
 };
 
+struct EmissionSiteMetadata {
+	int global_index;
+	int shank_index;
+	float xpos; // position on shank, in microns
+	float ypos; // position on shank, in microns
+	bool isSelected;
+	float wavelength_nm;
+};
 
 
 struct ProbeSettings {
@@ -402,6 +411,7 @@ public:
 	int64 lfp_timestamp;
 
 	Array<ElectrodeMetadata> electrodeMetadata;
+	Array<EmissionSiteMetadata> emissionSiteMetadata;
 	ProbeMetadata probeMetadata;
 
 	ProbeSettings settings;

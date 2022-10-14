@@ -32,8 +32,15 @@ class Geometry
 public:
 	Geometry() { }
 
+	/** For probes without emission sites*/
 	static bool forPartNumber(String pn,
 		Array<ElectrodeMetadata>& em,
+		ProbeMetadata& pm);
+
+	/** For probes with emission sites*/
+	static bool forPartNumber(String pn,
+		Array<ElectrodeMetadata>& em,
+		Array<EmissionSiteMetadata>& esm,
 		ProbeMetadata& pm);
 
 	/** Non-human primate Phase 1 (Passive) */
@@ -64,6 +71,12 @@ public:
 		Available switchable or unswitchable
 	*/
 	static void UHD(bool switchable, Array<ElectrodeMetadata>& em,
+		ProbeMetadata& pm);
+
+	/** Neuropixels Opto
+	*/
+	static void OPTO(Array<ElectrodeMetadata>& em, 
+		Array<EmissionSiteMetadata>& esm,
 		ProbeMetadata& pm);
 
 };

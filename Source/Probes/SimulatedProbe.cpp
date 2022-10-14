@@ -49,8 +49,14 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 
 	CoreServices::sendStatusMessage("Probe part number: " + PN);
 
-	Geometry::forPartNumber(PN, electrodeMetadata, probeMetadata);
-
+	if (PN == "NP1300")
+	{
+		Geometry::forPartNumber(PN, electrodeMetadata, emissionSiteMetadata, probeMetadata);
+	}
+	else {
+		Geometry::forPartNumber(PN, electrodeMetadata, probeMetadata);
+	}
+	
 	name = probeMetadata.name;
 	type = probeMetadata.type;
 

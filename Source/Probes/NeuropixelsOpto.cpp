@@ -45,9 +45,7 @@ NeuropixelsOpto::NeuropixelsOpto(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	customName.probeSpecific = String(info.serial_number);
 
-	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
-
-	if (Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata))
+	if (Geometry::forPartNumber(info.part_number, electrodeMetadata, emissionSiteMetadata, probeMetadata))
 	{
 
 		name = probeMetadata.name;
@@ -93,9 +91,6 @@ NeuropixelsOpto::NeuropixelsOpto(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 		settings.availableReferences.add("Ext");
 		settings.availableReferences.add("Tip");
-		//settings.availableReferences.add("192");
-		//settings.availableReferences.add("576");
-		//settings.availableReferences.add("960");
 
 		settings.availableBanks = { Bank::A,
 			Bank::B,

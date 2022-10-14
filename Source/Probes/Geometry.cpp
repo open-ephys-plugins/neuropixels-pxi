@@ -26,7 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 bool Geometry::forPartNumber(String PN,
 	Array<ElectrodeMetadata>& em,
 	ProbeMetadata& pm)
-
 {
 
 	bool found_valid_part_number = true;
@@ -51,8 +50,7 @@ bool Geometry::forPartNumber(String PN,
 
 	else if (PN.equalsIgnoreCase("PRB_1_4_0480_1")
 		|| PN.equalsIgnoreCase("PRB_1_4_0480_1_C")
-		|| PN.equalsIgnoreCase("PRB_1_2_0480_2")
-		|| PN.equalsIgnoreCase("NP1300"))
+		|| PN.equalsIgnoreCase("PRB_1_2_0480_2"))
 		NP1(em, pm);
 
 	else if (PN.equalsIgnoreCase("NP1100"))
@@ -61,6 +59,28 @@ bool Geometry::forPartNumber(String PN,
 	else if (PN.equalsIgnoreCase("NP1110"))
 		UHD(true, em, pm);
 
+	else
+		found_valid_part_number = false;
+
+	if (!found_valid_part_number)
+		CoreServices::sendStatusMessage("Unrecognized part number: " + PN);
+
+	LOGDD("Part #: ", PN, " Valid: ", found_valid_part_number);
+
+	return found_valid_part_number;
+
+}
+
+bool Geometry::forPartNumber(String PN,
+	Array<ElectrodeMetadata>& em,
+	Array<EmissionSiteMetadata>& esm,
+	ProbeMetadata& pm)
+{
+
+	bool found_valid_part_number = true;
+
+	if (PN.equalsIgnoreCase("NP1300"))
+		OPTO(em, esm, pm);
 	else
 		found_valid_part_number = false;
 
@@ -667,3 +687,103 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 	}
 }
 
+
+
+void Geometry::OPTO(Array<ElectrodeMetadata>& electrodeMetadata,
+	Array<EmissionSiteMetadata>& emissionSiteMetadata,
+	ProbeMetadata& probeMetadata)
+{
+
+	probeMetadata.type = ProbeType::OPTO;
+	probeMetadata.name = "Neuropixels Opto";
+
+	Path path;
+	path.startNewSubPath(27, 31);
+	path.lineTo(27, 514);
+	path.lineTo(27 + 5, 522);
+	path.lineTo(27 + 10, 514);
+	path.lineTo(27 + 10, 31);
+	path.closeSubPath();
+
+	probeMetadata.shank_count = 1;
+	probeMetadata.electrodes_per_shank = 960;
+	probeMetadata.rows_per_shank = 960 / 2;
+	probeMetadata.columns_per_shank = 2;
+	probeMetadata.shankOutline = path;
+	probeMetadata.num_adcs = 32;
+
+	probeMetadata.availableBanks =
+	{ Bank::A,
+		Bank::B,
+		Bank::C,
+		Bank::OFF //disconnected
+	};
+
+	Array<float> xpositions = { 11.0f, 59.0f, 11.0f, 59.0f };
+
+	for (int i = 0; i < probeMetadata.electrodes_per_shank * probeMetadata.shank_count; i++)
+	{
+		ElectrodeMetadata metadata;
+
+		metadata.shank = 0;
+		metadata.shank_local_index = i % probeMetadata.electrodes_per_shank;
+		metadata.global_index = i;
+		metadata.xpos = xpositions[i % 4];
+		metadata.ypos = (i - (i % 2)) * 10.0f;
+		metadata.site_width = 12;
+		metadata.column_index = i % 2;
+		metadata.row_index = i / 2;
+		metadata.isSelected = false;
+		metadata.colour = Colours::lightgrey;
+
+		if (i < 384)
+		{
+			metadata.bank = Bank::A;
+			metadata.channel = i;
+			metadata.status = ElectrodeStatus::CONNECTED;
+		}
+		else if (i >= 384 && i < 768)
+		{
+			metadata.bank = Bank::B;
+			metadata.channel = i - 384;
+			metadata.status = ElectrodeStatus::DISCONNECTED;
+		}
+		else
+		{
+			metadata.bank = Bank::C;
+			metadata.channel = i - 768;
+			metadata.status = ElectrodeStatus::DISCONNECTED;
+		}
+
+		if (i == 191 || i == 575 || i == 959)
+		{
+			metadata.type = ElectrodeType::REFERENCE;
+		}
+		else {
+			metadata.type = ElectrodeType::ELECTRODE;
+		}
+
+		electrodeMetadata.add(metadata);
+	}
+
+	for (int i = 0; i < 14; i++)
+	{
+
+		Array<float> wavelengths = { 450.0f, 638.0f };
+
+		for (auto wv : wavelengths)
+		{
+			EmissionSiteMetadata metadata;
+
+			metadata.global_index = i;
+			metadata.shank_index = 0;
+			metadata.xpos = 35.0f;
+			metadata.ypos = 60.0f + i * 100.0f;
+			metadata.isSelected = false;
+			metadata.wavelength_nm = wv;
+
+			emissionSiteMetadata.add(metadata);
+		}
+
+	}
+}

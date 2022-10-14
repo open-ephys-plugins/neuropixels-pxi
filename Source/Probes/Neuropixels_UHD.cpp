@@ -44,8 +44,6 @@ Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	customName.probeSpecific = String(info.serial_number);
 
-	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
-
 	if (Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata))
 	{
 
