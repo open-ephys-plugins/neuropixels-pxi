@@ -214,7 +214,7 @@ Array<DataSource*> OneBox::getAdditionalDataSources()
 void OneBox::initialize(bool signalChainIsLoading)
 {
 
-	//Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
+	Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
 
 	if (!probesInitialized)
 	{

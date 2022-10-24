@@ -742,7 +742,7 @@ String NeuropixThread::getInfoString()
 /** Initializes data transfer.*/
 bool NeuropixThread::startAcquisition()
 {
-
+	std::cout << "NeuropixThread::startAcquisition()" << std::endl;
 	startTimer(100);
 	
     return true;
@@ -750,6 +750,7 @@ bool NeuropixThread::startAcquisition()
 
 void NeuropixThread::timerCallback()
 {
+	LOGD("Timer callback.");
 
 	if (editor->uiLoader->isThreadRunning())
 		editor->uiLoader->waitForThreadToExit(10000);
@@ -1118,30 +1119,33 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		dataStreams->add(new DataStream(*currentStream)); // copy existing stream
 
-		DeviceInfo::Settings deviceSettings{
+		if (info.probe != nullptr)
+		{
+			DeviceInfo::Settings deviceSettings{
 			info.probe->name,
 			"Neuropixels probe",
 			info.probe->info.part_number,
 
 			String(info.probe->info.serial_number),
 			"imec"
-		};
+			};
 
-		DeviceInfo* device = new DeviceInfo(deviceSettings);
+			DeviceInfo* device = new DeviceInfo(deviceSettings);
 
-		MetadataDescriptor descriptor(MetadataDescriptor::MetadataType::UINT16, 
-			1, "num_adcs", 
-			"Number of analog-to-digital converter for this probe", "neuropixels.adcs");
+			MetadataDescriptor descriptor(MetadataDescriptor::MetadataType::UINT16,
+				1, "num_adcs",
+				"Number of analog-to-digital converter for this probe", "neuropixels.adcs");
 
-		MetadataValue value(MetadataDescriptor::MetadataType::UINT16, 1);
-		value.setValue((uint16) info.probe->probeMetadata.num_adcs);
+			MetadataValue value(MetadataDescriptor::MetadataType::UINT16, 1);
+			value.setValue((uint16)info.probe->probeMetadata.num_adcs);
 
-		device->addMetadata(descriptor, value);
+			device->addMetadata(descriptor, value);
 
-		devices->add(device); // unique device object owned by SourceNode
+			devices->add(device); // unique device object owned by SourceNode
 
-		dataStreams->getLast()->device = device; // DataStream object just gets a pointer
-
+			dataStreams->getLast()->device = device; // DataStream object just gets a pointer
+		}
+		
 	} // end source stream loop
 
 	editor->update();
