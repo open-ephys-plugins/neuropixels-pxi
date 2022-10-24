@@ -37,9 +37,9 @@
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
 #define FORCE_SIMULATION_MODE false
 
-DataThread* NeuropixThread::createDataThread(SourceNode *sn)
+DataThread* NeuropixThread::createDataThread(SourceNode *sn, DeviceType type)
 {
-	return new NeuropixThread(sn);
+	return new NeuropixThread(sn, type);
 }
 
 std::unique_ptr<GenericEditor> NeuropixThread::createEditor(SourceNode* sn)
@@ -76,7 +76,7 @@ void Initializer::run()
 
 			LOGC("  Opening device on slot ", slotID);
 
-			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
+			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
 			{
 
 				Basestation* bs = new Basestation_v3(slotID);
@@ -128,25 +128,28 @@ void Initializer::run()
 			}
 			else {
 
-				Basestation* bs = new OneBox(list[i].ID);
-
-				if (bs->open())
+				if (type == ONEBOX)
 				{
+					Basestation* bs = new OneBox(list[i].ID);
 
-					basestations.add(bs);
+					if (bs->open())
+					{
 
-					if (!bs->getProbeCount())
-						CoreServices::sendStatusMessage("OneBox found, no probes connected.");
-				}
-				else
-				{
-					delete bs;
+						basestations.add(bs);
+
+						if (!bs->getProbeCount())
+							CoreServices::sendStatusMessage("OneBox found, no probes connected.");
+					}
+					else
+					{
+						delete bs;
+					}
 				}
 			}
 		}
 
 
-		if (basestations.size() == 0) // no basestations with API version match
+		if (basestations.size() == 0 && type == PXI) // no basestations with API version match
 		{
 			LOGD("Checking for V1 basestations...");
 
@@ -208,8 +211,9 @@ void Initializer::run()
 
 }
 
-NeuropixThread::NeuropixThread(SourceNode* sn) :
+NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 	DataThread(sn),
+	type(type_),
 	baseStationAvailable(false),
 	probesInitialized(false),
 	recordingNumber(0),
@@ -229,7 +233,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	Neuropixels::np_dbg_setlevel(0);
 
-	initializer = std::make_unique<Initializer>(basestations, api_v1, api_v3);
+	initializer = std::make_unique<Initializer>(basestations, type, api_v1, api_v3);
 	initializer->run();
 
 	bool foundSync = false;
@@ -355,19 +359,23 @@ void NeuropixThread::updateStreamInfo()
 		}
 		else {
 
-			StreamInfo adcInfo;
+			if (true)
+			{
+				StreamInfo adcInfo;
 
-			adcInfo.num_channels = source->channel_count;
-			adcInfo.sample_rate = source->sample_rate;
-			adcInfo.type = ADC;
-			adcInfo.sendSyncAsContinuousChannel = false;
-			adcInfo.probe = nullptr;
-			adcInfo.adc = (OneBoxADC*)source;
+				adcInfo.num_channels = source->channel_count;
+				adcInfo.sample_rate = source->sample_rate;
+				adcInfo.type = ADC;
+				adcInfo.sendSyncAsContinuousChannel = false;
+				adcInfo.probe = nullptr;
+				adcInfo.adc = (OneBoxADC*)source;
 
-			sourceBuffers.add(new DataBuffer(adcInfo.num_channels, 10000));  // data buffer
-			source->apBuffer = sourceBuffers.getLast();
+				sourceBuffers.add(new DataBuffer(adcInfo.num_channels, 10000));  // data buffer
+				source->apBuffer = sourceBuffers.getLast();
 
-			streamInfo.add(adcInfo);
+				streamInfo.add(adcInfo);
+			}
+			
 
 		}
 		
@@ -1048,20 +1056,8 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 				name = "CH";
 			}
 
-			int chIndex = info.probe->settings.selectedChannel.indexOf(ch);
-
-			Array<Bank> availableBanks = info.probe->settings.availableBanks;
-
-			int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
-
-			int selectedElectrode = ch + selectedBank * 384;
-			int shank = info.probe->settings.selectedShank[chIndex];
-
-			float depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
-				+ shank * 10000.0f
-				+ float(ch % 2)
-				+ 0.0001f * ch; // each channel must have a unique depth value
-
+			float depth;
+		
 			if (info.sendSyncAsContinuousChannel && (ch == info.num_channels - 1))
 			{
 				type = ContinuousChannel::Type::ADC;
