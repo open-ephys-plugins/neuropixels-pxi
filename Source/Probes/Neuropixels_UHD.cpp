@@ -97,9 +97,6 @@ Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 		settings.availableReferences.add("Ext");
 		settings.availableReferences.add("Tip");
-		//settings.availableReferences.add("192");
-		//settings.availableReferences.add("576");
-		//settings.availableReferences.add("960");
 
 		open();
 
@@ -330,9 +327,7 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 				(Neuropixels::electrodebanks_t) (bank1 + bank2));				// bank mask
 		}
 
-			
 	}
-
 
 }
 
