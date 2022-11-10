@@ -191,9 +191,6 @@ bool OneBox::open()
 
 		adcSource->dac = dacSource;
 		dacSource->adc = adcSource;
-		
-		headstages.add(nullptr);
-		headstages.add(nullptr);
 	}
 
 	syncFrequencies.add(1);
