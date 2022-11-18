@@ -75,8 +75,9 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 	for (int i = 0; i < channel_count; i++)
     {
         settings.selectedBank.add(Bank::A);
-        settings.selectedChannel.add(i);
+        settings.selectedChannel.add(electrodeMetadata[i].channel);
         settings.selectedShank.add(0);
+		settings.selectedElectrode.add(electrodeMetadata[i].global_index);
     }
 
 	if (type == ProbeType::NP1 ||

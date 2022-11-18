@@ -68,6 +68,7 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
         settings.selectedBank.add(Bank::A);
         settings.selectedChannel.add(i);
         settings.selectedShank.add(0);
+		settings.selectedElectrode.add(i);
     }
 
 	settings.availableApGains.add(50.0f);

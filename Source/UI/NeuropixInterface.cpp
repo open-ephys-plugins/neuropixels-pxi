@@ -1563,8 +1563,9 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
     for (int i = 0; i < probe->channel_count; i++)
     {
         settings.selectedBank.add(Bank::A);
-        settings.selectedChannel.add(i);
+        settings.selectedChannel.add(probe->electrodeMetadata[i].channel);
         settings.selectedShank.add(0);
+        settings.selectedElectrode.add(probe->electrodeMetadata[i].global_index);
     }
 
     XmlElement* matchingNode = nullptr;

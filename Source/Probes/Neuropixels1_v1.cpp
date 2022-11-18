@@ -72,6 +72,7 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
         settings.selectedBank.add(Bank::A);
         settings.selectedChannel.add(i);
         settings.selectedShank.add(0);
+		settings.selectedElectrode.add(i);
     }
 
 	settings.availableApGains.add(50.0f);

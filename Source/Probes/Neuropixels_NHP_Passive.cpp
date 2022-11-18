@@ -71,6 +71,7 @@ Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs,
         settings.selectedBank.add(Bank::A);
         settings.selectedChannel.add(i);
         settings.selectedShank.add(0);
+		settings.selectedElectrode.add(i);
     }
 
 	settings.availableApGains.add(50.0f);

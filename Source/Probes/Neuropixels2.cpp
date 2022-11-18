@@ -64,9 +64,11 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 
 	for (int i = 0; i < channel_count; i++)
     {
-        settings.selectedBank.add(Bank::A);
-        settings.selectedChannel.add(i);
-        settings.selectedShank.add(0);
+		settings.selectedBank.add(Bank::A);
+		settings.selectedChannel.add(electrodeMetadata[i].channel);
+		settings.selectedShank.add(0);
+		settings.selectedElectrode.add(electrodeMetadata[i].global_index);
+		
     }
 
 	if (probeMetadata.shank_count == 1)
