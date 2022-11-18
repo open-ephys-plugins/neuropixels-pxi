@@ -1019,9 +1019,10 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 		}
 
 		currentStream->clearChannels();
-			
+
 		for (int ch = 0; ch < info.num_channels; ch++)
 		{
+
 			float bitVolts;
 
 			if (info.type == stream_type::ADC) {
@@ -1048,26 +1049,13 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 				name = "CH";
 			}
 
-			int chIndex = info.probe->settings.selectedChannel.indexOf(ch);
-
-			Array<Bank> availableBanks = info.probe->settings.availableBanks;
-
-			int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
-
-			int selectedElectrode = ch + selectedBank * 384;
-			int shank = info.probe->settings.selectedShank[chIndex];
-
-			float depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
-				+ shank * 10000.0f
-				+ float(ch % 2)
-				+ 0.0001f * ch; // each channel must have a unique depth value
+			float depth = -1.0f;
 
 			if (info.sendSyncAsContinuousChannel && (ch == info.num_channels - 1))
 			{
 				type = ContinuousChannel::Type::ADC;
 				name += "_SYNC";
 				bitVolts = 1.0;
-				depth = -1.0f;
 				description = "Neuropixels sync line (continuously sampled)";
 				identifier = "neuropixels.sync";
 			}
@@ -1096,7 +1084,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 				int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
 
-				int selectedElectrode = ch + selectedBank * 384;
+				int selectedElectrode = info.probe->settings.selectedElectrode[chIndex];
 				int shank = info.probe->settings.selectedShank[chIndex];
 
 				float depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
@@ -1105,6 +1093,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 					+ 0.0001f * ch; // each channel must have a unique depth value
 
 				continuousChannels->getLast()->position.y = depth;
+
 			}
 			
 		} // end channel loop

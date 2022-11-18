@@ -852,7 +852,8 @@ void NeuropixInterface::buttonClicked(Button* button)
 
             if (success)
             {
-                applyProbeSettings(settings);
+                applyProbeSettings(settings, true);
+                CoreServices::updateSignalChain(editor);
             }
                 
         }
@@ -1400,7 +1401,9 @@ ProbeSettings NeuropixInterface::getProbeSettings()
             p.selectedChannel.add(electrode.channel);
             p.selectedBank.add(electrode.bank);
             p.selectedShank.add(electrode.shank);
-            p.selectedElectrode.add(electrode.shank_local_index);
+            p.selectedElectrode.add(electrode.global_index);
+
+           // std::cout << electrode.channel << " : " << electrode.global_index << std::endl;
         }
     }
     

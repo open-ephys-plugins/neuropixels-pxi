@@ -333,7 +333,10 @@ String ProbeBrowser::getElectrodeInfoString(int index)
     a += ", Channel ";
     a += String(parent->electrodeMetadata[index].channel + 1);
 
-    a += "\n\nType: ";
+    a += "\nY Position: ";
+    a += String(parent->electrodeMetadata[index].ypos);
+
+    a += "\nType: ";
 
     if (parent->electrodeMetadata[index].type == ElectrodeType::REFERENCE)
     {
