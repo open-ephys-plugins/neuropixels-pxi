@@ -913,7 +913,8 @@ void NeuropixInterface::buttonClicked(Button* button)
     else if (button == pasteButton)
     {
         applyProbeSettings(canvas->getProbeSettings());
-       // CoreServices::sendStatusMessage("Applied saved settings to this probe.");
+        CoreServices::updateSignalChain(editor);
+       
     }
     else if (button == applyToAllButton)
     {
@@ -1340,8 +1341,6 @@ bool NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
         }
     }
 
-    
- 
     // apply settings in background thread
     if (shouldUpdateProbe) 
     {
@@ -1647,6 +1646,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
             settings.selectedBank.clear();
             settings.selectedChannel.clear();
             settings.selectedShank.clear();
+            settings.selectedElectrode.clear();
 
             XmlElement* status = matchingNode->getChildByName("CHANNELS");
 
@@ -1665,6 +1665,17 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
 
                 settings.selectedBank.add(bank);
                 settings.selectedShank.add(shank);
+
+                for (int j = 0; j < electrodeMetadata.size(); j++)
+                {
+                    if (electrodeMetadata[j].channel == i)
+                    {
+                        if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
+                        {
+                            settings.selectedElectrode.add(j);
+                        }
+                    }
+                }
 
             }
    

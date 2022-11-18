@@ -156,12 +156,15 @@ void NeuropixCanvas::applyParametersToAllProbes(ProbeSettings p)
         {
             NeuropixInterface* ni = (NeuropixInterface*)settingsInterface;
             p.probe = ni->probe;
+            p.probe->updateSettings(p);
             thread->updateProbeSettingsQueue(p);
         }
 
     }
 
     editor->uiLoader->startThread();
+
+    CoreServices::updateSignalChain(editor);
 }
 
 void NeuropixCanvas::saveCustomParametersToXml(XmlElement* xml)
