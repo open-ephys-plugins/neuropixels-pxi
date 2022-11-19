@@ -40,6 +40,8 @@ public:
 	void mouseDown(const MouseEvent& event);
 	void mouseDrag(const MouseEvent& event);
 	void mouseUp(const MouseEvent& event);
+	void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel);
+
 	MouseCursor getMouseCursor();
 
 	void timerCallback();

@@ -55,10 +55,7 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
 
     if (parent->probeMetadata.shank_count == 4)
     {
-        maxZoomHeight = 250;
-        minZoomHeight = 40;
-        defaultZoomHeight = 100;
-        pixelHeight = 1;
+        defaultZoomHeight = 80;
     }
 
     // ALSO CONFIGURE CHANNEL JUMP
@@ -581,6 +578,26 @@ void ProbeBrowser::mouseDrag(const MouseEvent& event)
 }
 
 
+void ProbeBrowser::mouseWheelMove(const MouseEvent &event, const MouseWheelDetails& wheel)
+{
+    if (event.x > 100 && event.x < 450)
+    {
+        
+        if (wheel.deltaY > 0)
+            zoomOffset += 2;
+        else
+            zoomOffset -= 2;
+
+        if (zoomOffset > lowerBound - zoomHeight - 15)
+            zoomOffset = lowerBound - zoomHeight - 15;
+        else if (zoomOffset < 0)
+            zoomOffset = 0;
+        
+        repaint();
+    }
+}
+
+
 MouseCursor ProbeBrowser::getMouseCursor()
 {
     MouseCursor c = MouseCursor(cursorType);
@@ -672,8 +689,7 @@ void ProbeBrowser::paint(Graphics& g)
 
     zoomAreaMinRow = int(lowestRow);
 
-    float totalHeight = float(lowerBound + 100);
-    electrodeHeight = totalHeight / (highestRow - lowestRow);
+    electrodeHeight = lowerBound / (highestRow - lowestRow);
 
     //std::cout << "Lowest row: " << lowestRow << ", highest row: " << highestRow << std::endl;
     //std::cout << "Zoom offset: " << zoomOffset << ", Zoom height: " << zoomHeight << std::endl;
