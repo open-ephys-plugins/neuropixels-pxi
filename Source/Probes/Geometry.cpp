@@ -30,23 +30,41 @@ bool Geometry::forPartNumber(String PN,
 
 	bool found_valid_part_number = true;
 
-	if (PN.equalsIgnoreCase("NP1010"))
-		NHP2(10, em, pm);
+	if (PN.equalsIgnoreCase("NP1010") 
+		|| PN.equalsIgnoreCase("NP1011")
+		|| PN.equalsIgnoreCase("NP1012")
+		|| PN.equalsIgnoreCase("NP1013"))
+		NHP2(10, true, em, pm); // staggered layout
+
+	else if (PN.equalsIgnoreCase("NP1015")
+		|| PN.equalsIgnoreCase("NP1016"))
+		NHP2(10, false, em, pm); // linear layout
 
 	else if (PN.equalsIgnoreCase("NP1020") || PN.equalsIgnoreCase("NP1021"))
-		NHP2(25, em, pm);
+		NHP2(25, true, em, pm); // staggered layout
+
+	else if (PN.equalsIgnoreCase("NP1022"))
+		NHP2(25, false, em, pm); // linear layout
 
 	else if (PN.equalsIgnoreCase("NP1030") || PN.equalsIgnoreCase("NP1031"))
-		NHP2(45, em, pm);
+		NHP2(45, true, em, pm); // staggered layout
+
+	else if (PN.equalsIgnoreCase("NP1032"))
+		NHP2(45, false, em, pm); // linear layout
 
 	else if (PN.equalsIgnoreCase("NP1200") || PN.equalsIgnoreCase("NP1210"))
 		NHP1(em, pm);
 
-	else if (PN.equalsIgnoreCase("PRB2_1_2_0640_0") || PN.equalsIgnoreCase("PRB2_1_4_0480_1") || PN.equalsIgnoreCase("NP2000"))
-		NP2(1, em, pm);
+	else if (PN.equalsIgnoreCase("PRB2_1_2_0640_0") 
+		|| PN.equalsIgnoreCase("PRB2_1_4_0480_1") 
+		|| PN.equalsIgnoreCase("NP2000")
+		|| PN.equalsIgnoreCase("NP2003"))
+		NP2(1, em, pm); // single shank
 
-	else if (PN.equalsIgnoreCase("PRB2_4_2_0640_0") || PN.equalsIgnoreCase("NP2010"))
-		NP2(4, em, pm);
+	else if (PN.equalsIgnoreCase("PRB2_4_2_0640_0") 
+		|| PN.equalsIgnoreCase("NP2010")
+		|| PN.equalsIgnoreCase("NP2013"))
+		NP2(4, em, pm); // multi-shank
 
 	else if (PN.equalsIgnoreCase("PRB_1_4_0480_1")
 		|| PN.equalsIgnoreCase("PRB_1_4_0480_1_C")
@@ -54,10 +72,22 @@ bool Geometry::forPartNumber(String PN,
 		NP1(em, pm);
 
 	else if (PN.equalsIgnoreCase("NP1100"))
-		UHD(false, em, pm);
+		UHD(false, 8, 6, em, pm); // UHD1 - fixed, 8 cols, 6 um spacing
+
+	else if (PN.equalsIgnoreCase("NP1120"))
+		UHD(false, 2, 4.5, em, pm); // UHD3, Type 1 - fixed, 2 cols, 4.5 um spacing
+
+	else if (PN.equalsIgnoreCase("NP1121"))
+		UHD(false, 1, 3, em, pm); // UHD3, Type 2 - fixed, 1 col, 3.0 um spacing
+
+	else if (PN.equalsIgnoreCase("NP1122"))
+		UHD(false, 16, 3, em, pm); // UHD3, Type 3 - fixed, 16 cols, 3.0 um spacing
+
+	else if (PN.equalsIgnoreCase("NP1123"))
+		UHD(false, 12, 4.5, em, pm); // UHD3, Type 4 - fixed,  12 cols, 4.5 um spacing
 
 	else if (PN.equalsIgnoreCase("NP1110"))
-		UHD(true, em, pm);
+		UHD(true, 8, 6, em, pm); // UHD2 - switchable, 8 cols, 6 um spacing
 
 	else
 		found_valid_part_number = false;
@@ -529,6 +559,7 @@ void Geometry::NHP1(Array<ElectrodeMetadata>& electrodeMetadata,
 
 
 void Geometry::NHP2(int length, 
+	bool siteLayout,
 	Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
@@ -584,7 +615,12 @@ void Geometry::NHP2(int length,
 		Bank::L
 	};
 
-	Array<float> xpositions = { 27.0f, 59.0f, 11.0f, 43.0f };
+	Array<float> xpositions;
+	
+	if (siteLayout)
+		xpositions = { 27.0f, 59.0f, 11.0f, 43.0f };
+	else
+		xpositions = { 11.0f, 59.0f, 11.0f, 59.0f }; 
 
 	for (int i = 0; i < probeMetadata.electrodes_per_shank; i++)
 	{
@@ -627,7 +663,9 @@ void Geometry::NHP2(int length,
 }
 
 
-void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
+void Geometry::UHD(bool switchable, 
+	int numColumns,
+	float siteSpacing, Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
 	// need to implement switchable case
@@ -638,7 +676,17 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 		probeMetadata.name = "Neuropixels Ultra (Switchable)";
 	}
 	else {
-		probeMetadata.name = "Neuropixels Ultra";
+
+		if (numColumns == 8 && siteSpacing == 6.0f)
+			probeMetadata.name = "Neuropixels Ultra (Phase 1)";
+		if (numColumns == 2 && siteSpacing == 4.5f)
+			probeMetadata.name = "Neuropixels Ultra (Phase 3, Type 1)";
+		if (numColumns == 1 && siteSpacing == 3.0f)
+			probeMetadata.name = "Neuropixels Ultra (Phase 3, Type 2)";
+		if (numColumns == 16 && siteSpacing == 3.0f)
+			probeMetadata.name = "Neuropixels Ultra (Phase 3, Type 3)";
+		if (numColumns == 12 && siteSpacing == 4.5f)
+			probeMetadata.name = "Neuropixels Ultra (Phase 3, Type 4)";
 	}
 	
 	probeMetadata.switchable = switchable;
@@ -653,8 +701,8 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 
 	probeMetadata.shank_count = 1;
 	probeMetadata.electrodes_per_shank = 384;
-	probeMetadata.rows_per_shank = 384 / 8;
-	probeMetadata.columns_per_shank = 8;
+	probeMetadata.rows_per_shank = 384 / numColumns;
+	probeMetadata.columns_per_shank = numColumns;
 	probeMetadata.shankOutline = path;
 	probeMetadata.num_adcs = 32;
 
@@ -670,11 +718,11 @@ void Geometry::UHD(bool switchable, Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.shank = 0;
 		metadata.shank_local_index = i;
 		metadata.global_index = i;
-		metadata.xpos = i % 8 * 6.0f + 12.0f; 
-		metadata.ypos = (i - (i % 8)) * 6.0f; 
-		metadata.column_index = i % 8;
-		metadata.row_index = i / 8;
-		metadata.site_width = 5;
+		metadata.xpos = i % numColumns * siteSpacing + 2*siteSpacing;
+		metadata.ypos = (i - (i % numColumns)) * siteSpacing;
+		metadata.column_index = i % numColumns;
+		metadata.row_index = i / numColumns;
+		metadata.site_width = siteSpacing - 1;
 
 		metadata.channel = i;
 		metadata.bank = Bank::A;

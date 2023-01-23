@@ -122,6 +122,8 @@ private:
 
 	Neuropixels::NP_ErrorCode errorCode;
 
+	bool invertOutput;
+
 };
 
 class BasestationConnectBoard_v3 : public BasestationConnectBoard
