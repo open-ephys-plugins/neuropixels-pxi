@@ -38,6 +38,28 @@ Instructions for using the Neuropixels PXI plugin are available [here](https://o
 
 - Neuropixels Opto
 
+## Compatible firmware
+
+### Plugin version: 0.4.1
+
+v1 API version: 1.20
+- QBSC firmware: B151
+- BS firmware: ?
+
+v3 API version: 3.42
+- QBSC firmware: B176 (3.2176)
+- BS firmware: B137 (2.0137)
+
+### Plugin version: 0.5.0
+
+v1 API version: 1.20
+- QBSC firmware: B151
+- BS firmware: ?
+
+v3 API version: 3.57
+- QBSC firmware: B176 (3.2176)
+- BS firmware: B137 or B169 (2.0169) <--- updated
+
 ## License
 
 This source code is made available under a [GPL 3.0 License](LICENSE).
