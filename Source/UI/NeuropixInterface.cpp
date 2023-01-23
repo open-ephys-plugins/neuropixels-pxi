@@ -1445,8 +1445,8 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
     xmlNode->setAttribute("num_adcs", probe->probeMetadata.num_adcs);
     xmlNode->setAttribute("custom_probe_name", probe->customName.probeSpecific);
 
-    xmlNode->setAttribute("ZoomHeight", probeBrowser->zoomHeight);
-    xmlNode->setAttribute("ZoomOffset", probeBrowser->zoomOffset);
+    xmlNode->setAttribute("ZoomHeight", probeBrowser->getZoomHeight());
+    xmlNode->setAttribute("ZoomOffset", probeBrowser->getZoomOffset());
 
     if (apGainComboBox != nullptr)
     {
@@ -1598,7 +1598,7 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
                 {
 
                     String PN = xmlNode->getStringAttribute("probe_part_number");
-                    ProbeType type;
+                    ProbeType type = ProbeType::NP1;
 
                     if (PN.equalsIgnoreCase("NP1010"))
                         type = ProbeType::NHP10;
@@ -1682,8 +1682,8 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
    
         }
 
-        probeBrowser->zoomHeight = matchingNode->getIntAttribute("ZoomHeight");
-        probeBrowser->zoomOffset = matchingNode->getIntAttribute("ZoomOffset");
+        probeBrowser->setZoomHeightAndOffset(matchingNode->getIntAttribute("ZoomHeight"),
+            matchingNode->getIntAttribute("ZoomOffset"));
 
         String customName = thread->getCustomProbeName(matchingNode->getStringAttribute("probe_serial_number"));
 

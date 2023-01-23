@@ -50,14 +50,19 @@ public:
 
 	void drawAnnotations(Graphics& g);
 
-	// display variables
-	int zoomHeight;
-	int zoomOffset;
+	int getZoomHeight();
+	int getZoomOffset();
+
+	void setZoomHeightAndOffset(int, int);
 
 	ActivityToView activityToView;
 	float maxPeakToPeakAmplitude;
 
 private:
+
+	// display variables
+	int zoomHeight;
+	int zoomOffset;
 
 	bool isOverZoomRegion;
 	bool isOverUpperBorder;

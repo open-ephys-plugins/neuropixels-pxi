@@ -41,6 +41,7 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
     minZoomHeight = 40;
     maxZoomHeight = 120;
     pixelHeight = 1;
+    zoomOffset = 50;
     int defaultZoomHeight = 100;
 
     shankPath = Path(parent->probe->shankOutline);
@@ -51,6 +52,29 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
         minZoomHeight = 300;
         defaultZoomHeight = 400;
         pixelHeight = 10;
+        zoomOffset = 0;
+    }
+    else if (parent->probeMetadata.columns_per_shank > 8)
+    {
+        maxZoomHeight = 520;
+        minZoomHeight = 520;
+        defaultZoomHeight = 520;
+        pixelHeight = 20;
+        zoomOffset = 0;
+    }
+
+    if (parent->probeMetadata.rows_per_shank > 650)
+    {
+        maxZoomHeight = 60;
+        minZoomHeight = 10;
+        defaultZoomHeight = 30;
+    }
+
+    if (parent->probeMetadata.rows_per_shank > 1400)
+    {
+        maxZoomHeight = 30;
+        minZoomHeight = 5;
+        defaultZoomHeight = 20;
     }
 
     if (parent->probeMetadata.shank_count == 4)
@@ -76,7 +100,7 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
     zoomHeight = defaultZoomHeight; // number of rows
     lowerBound = 530; // bottom of interface
 
-    zoomOffset = 50;
+    
     dragZoneWidth = 10;
 }
 
@@ -513,6 +537,11 @@ void ProbeBrowser::mouseDrag(const MouseEvent& event)
         }
         else {
             zoomOffset = initialOffset - event.getDistanceFromDragStartY();
+
+            if (zoomOffset < 0)
+            {
+                zoomOffset = 0;
+            }
         }
         //std::cout << zoomOffset << std::endl;
     }
@@ -614,6 +643,14 @@ void ProbeBrowser::paint(Graphics& g)
 
     // draw zoomed-out channels channels
 
+    int channelSpan = SHANK_HEIGHT;
+    int pixelGap = 2;
+
+    if (parent->probeMetadata.columns_per_shank > 8)
+    {
+         pixelGap = 1;
+    }
+        
     for (int i = 0; i < parent->electrodeMetadata.size(); i++)
     {
         g.setColour(getElectrodeColour(i).withAlpha(0.5f));
@@ -622,14 +659,14 @@ void ProbeBrowser::paint(Graphics& g)
             g.fillRect(
                 LEFT_BORDER 
                 + parent->electrodeMetadata[i].column_index 
-                * 2 
+                * pixelGap
                 + parent->electrodeMetadata[i].shank 
                 * INTERSHANK_DISTANCE
                 ,
                 TOP_BORDER 
-                + SHANK_HEIGHT 
+                + channelSpan
                 - int(float(parent->electrodeMetadata[i].row_index) 
-                * float(SHANK_HEIGHT) 
+                * float(channelSpan)
                 / float(parent->probeMetadata.rows_per_shank)) 
                 - px
                 , 1
@@ -654,7 +691,7 @@ void ProbeBrowser::paint(Graphics& g)
     //int WWW = 10;
 
     shankOffset = INTERSHANK_DISTANCE * (parent->probeMetadata.shank_count - 1); // +WWW;
-    for (int i = TOP_BORDER + SHANK_HEIGHT; i > TOP_BORDER; i -= ch_interval)
+    for (int i = TOP_BORDER + channelSpan; i > TOP_BORDER; i -= ch_interval)
     {
         g.drawLine(6, i, 18, i);
         g.drawLine(44 + shankOffset, i, 54 + shankOffset, i);
@@ -682,14 +719,21 @@ void ProbeBrowser::paint(Graphics& g)
     }
 
     // draw zoomed channels
-    float miniRowHeight = float(SHANK_HEIGHT) / float(parent->probeMetadata.rows_per_shank); // pixels per row
+    float miniRowHeight = float(channelSpan) / float(parent->probeMetadata.rows_per_shank); // pixels per row
 
     float lowestRow = (zoomOffset - 17) / miniRowHeight;
     float highestRow = lowestRow + (zoomHeight / miniRowHeight);
 
     zoomAreaMinRow = int(lowestRow);
 
-    electrodeHeight = lowerBound / (highestRow - lowestRow);
+    if (parent->probeMetadata.columns_per_shank > 8)
+    {
+        electrodeHeight = jmin(lowerBound / (highestRow - lowestRow), 12.0f);
+    }
+    else {
+        electrodeHeight = lowerBound / (highestRow - lowestRow);
+    }
+    
 
     //std::cout << "Lowest row: " << lowestRow << ", highest row: " << highestRow << std::endl;
     //std::cout << "Zoom offset: " << zoomOffset << ", Zoom height: " << zoomHeight << std::endl;
@@ -927,3 +971,24 @@ void ProbeBrowser::timerCallback()
 
     repaint();
 }
+
+
+int ProbeBrowser::getZoomHeight()
+{
+    return zoomHeight;
+}
+
+int ProbeBrowser::getZoomOffset()
+{
+    return zoomOffset;
+}
+
+void ProbeBrowser::setZoomHeightAndOffset(int newHeight, int newOffset)
+{
+    if (newHeight >= minZoomHeight && newHeight <= maxZoomHeight)
+    {
+        zoomHeight = newHeight;
+        zoomOffset = 0;
+    }
+}
+
