@@ -70,7 +70,6 @@ void BasestationConnectBoard_v3::getInfo()
 	Neuropixels::firmware_Info firmwareInfo;
 	Neuropixels::bsc_getFirmwareInfo(basestation->slot, &firmwareInfo);
 	info.boot_version = String(firmwareInfo.major) + "." + String(firmwareInfo.minor) + String(firmwareInfo.build);
-
 }
 
 BasestationConnectBoard_v3::BasestationConnectBoard_v3(Basestation* bs) : BasestationConnectBoard(bs)
@@ -110,6 +109,14 @@ bool Basestation_v3::open()
 		if (std::stod((info.boot_version.toStdString())) < 2.0)
 			return false;
 
+
+		if (info.boot_version.equalsIgnoreCase("2.0137"))
+		{
+			LOGC("Found basestation firmware version ", info.boot_version, "; setting invertOutput to true.");
+			invertOutput = true;
+		}
+			
+
 		savingDirectory = File();
 
 		LOGC("    Searching for probes...");
@@ -148,12 +155,12 @@ bool Basestation_v3::open()
 						headstage = nullptr;
 					}
 				}
-				else if (hsPartNumber == "NPNH_HS_30") // 128-ch analog headstage
+				else if (hsPartNumber == "NPNH_HS_30" || hsPartNumber == "NPNH_HS_31") // 128-ch analog headstage
 				{
 					LOGC("      Found 128-ch analog headstage on port: ", port);
 					headstage = new Headstage_Analog128(this, port);
 				}
-				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
+				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 				{
 					LOGC("      Found 2.0 dual-dock headstage on port: ", port);
 					headstage = new Headstage2(this, port);
@@ -277,6 +284,16 @@ void Basestation_v3::setSyncAsInput()
 		LOGD("Failed to set sync on SMA output on slot: ", slot);
 	}
 
+
+	if (invertOutput)
+	{
+		for (auto probe : probes)
+		{
+			probe->invertSyncLine = false;
+		}
+	}
+
+
 }
 
 
@@ -318,6 +335,14 @@ void Basestation_v3::setSyncAsOutput(int freqIndex)
 	if (errorCode != Neuropixels::SUCCESS)
 	{
 		LOGD("Failed to set sync on SMA output on slot: ", slot);
+	}
+
+	if (invertOutput)
+	{
+		for (auto probe : probes)
+		{
+			probe->invertSyncLine = true;
+		}
 	}
 
 }

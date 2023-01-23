@@ -389,6 +389,7 @@ public:
 	Flex* flex; // owned by Headstage
 
 	bool isValid; //True if the PN is supported by the API
+	bool invertSyncLine = false;
 
 	bool isCalibrated = false;
 	bool calibrationWarningShown;
