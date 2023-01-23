@@ -44,7 +44,7 @@ public:
 		, slot(slot_) { }
 
 	~ArmBasestation() { 
-		stopThread(200);
+		stopThread(2000);
 	}
 	
 	void run()

@@ -115,6 +115,9 @@ bool Basestation_v3::open()
 			LOGC("Found basestation firmware version ", info.boot_version, "; setting invertOutput to true.");
 			invertOutput = true;
 		}
+		else {
+			invertOutput = false;
+		}
 			
 
 		savingDirectory = File();
@@ -259,7 +262,7 @@ bool Basestation_v3::isBusy()
 
 void Basestation_v3::waitForThreadToExit()
 {
-	armBasestation->waitForThreadToExit(10000);
+	armBasestation->waitForThreadToExit(25000);
 }
 
 void Basestation_v3::setSyncAsInput()
@@ -287,6 +290,9 @@ void Basestation_v3::setSyncAsInput()
 
 	if (invertOutput)
 	{
+
+		LOGD("Sync as input: don't invert sync line.");
+
 		for (auto probe : probes)
 		{
 			probe->invertSyncLine = false;
@@ -339,6 +345,8 @@ void Basestation_v3::setSyncAsOutput(int freqIndex)
 
 	if (invertOutput)
 	{
+		LOGD("Sync as output: do invert sync line.");
+
 		for (auto probe : probes)
 		{
 			probe->invertSyncLine = true;
@@ -371,7 +379,7 @@ void Basestation_v3::startAcquisition()
 {
 
 	if (armBasestation->isThreadRunning())
-		armBasestation->waitForThreadToExit(5000);
+		armBasestation->waitForThreadToExit(25000);
 
 	for (auto probe : probes)
 	{
