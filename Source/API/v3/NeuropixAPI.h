@@ -1,10 +1,9 @@
-/*
-	Neuropixel c/c++ API
-
-	(c) Imec 2021
-
-*/
-
+/*****************************************************************
+ * @file   NeuropixAPI.h
+ * @brief  Neuropixel c/c++ API header
+ * 
+ * (c) Imec 2021
+ *****************************************************************/
 #pragma once
 
 #include <stdint.h>
@@ -14,19 +13,35 @@
 #define NP_EXPORT __declspec(dllexport)
 #define NP_CALLBACK __stdcall
 
+/**
+ * @brief Main neuropixels API namespace. All external functions are included in this namespace.
+ * 
+ */
 namespace Neuropixels {
 
+	/** Flag set of hardware basestation selection. */
 	typedef enum
 	{
-		NPPlatform_None = 0,
+		/** Do not select any, or none are selected */
+		NPPlatform_None = 0, 
+		/** PXI (PCIe) neuropixels basestation */ 
 		NPPlatform_PXI = 0x1,
+		/** USB (Onebox) neuropixels basestation */
 		NPPlatform_USB = 0x2,
+		/** Any known neuropixel basestation */
 		NPPlatform_ALL = NPPlatform_PXI | NPPlatform_USB,
 	}NPPlatformID_t;
 
+	/** Unique basestation identification. 
+	 * 
+	 * This struct is a return value only 
+	 * The combination of \c platformid and \c ID form a unique tuple to identify a base station
+	*/
 	struct basestationID
 	{
+		/** Type of basestation platform. Can be USB/PXI */
 		NPPlatformID_t platformid;
+		/** Unique ID for the specific platform. Each platform has its own  */
 		int   ID;
 	};
 
@@ -40,10 +55,10 @@ namespace Neuropixels {
 
 #pragma pack(push, 1)
 	typedef struct {
-		uint32_t MAGIC; // includes 'Type' field as lower 4 bits
+		uint32_t MAGIC; ///> includes 'Type' field as lower 4 bits
 
 		uint16_t samplecount;
-		uint8_t sessionID_seqnr; // bXXXXYYYY (XXXX = sessionID, YYYY = sequence number per sourceID)
+		uint8_t sessionID_seqnr; ///> bXXXXYYYY (XXXX = sessionID, YYYY = sequence number per sourceID)
 		uint8_t format;
 
 		uint32_t timestamp;
@@ -160,6 +175,11 @@ namespace Neuropixels {
 		WRONG_DACCHANNEL = 53,  /**< the specified DAC channel is out of bound */
 		WRONG_ADCCHANNEL = 54,  /**< the specified ADC channel is out of bound */
 		NODATA = 55, /**<  No data available to perform action (fe.: Waveplayer) */
+		PROGRAMMING_FAILED = 56, /**<  Firmware programming failed (e.g. incorrect readback) */
+
+		// TODO: IMU integration - subject to change
+		NO_IMU = 57,
+
 		NOTSUPPORTED = 0xFE,/**<  the function is not supported */
 		NOTIMPLEMENTED = 0xFF/**<  the function is not implemented */
 	}NP_ErrorCode;
@@ -233,7 +253,7 @@ namespace Neuropixels {
 		SM_Input_SWTrigger2 = SM_Input_(2),
 
 		SM_Input_SMA  = SM_Input_(5), /* PXI system SMA input */
-		SM_Input_SMA1 = SM_Input_(6), /* Onebox SMA input */
+		SM_Input_SMA1 = SM_Input_(6), /* OneBox backpanel SMA (SMA1) */
 
 		SM_Input_PXI0 = SM_Input_(0x10),
 		SM_Input_PXI1 = SM_Input_(0x11),
@@ -282,7 +302,7 @@ namespace Neuropixels {
 		SM_Output_PXI6 = SM_Output_(10),
 		SM_Output_PXISYNC = SM_Output_(11),
 
-		SM_Output_SMA1 = SM_Output_(16), /* Onebox SMA output */
+		SM_Output_SMA1 = SM_Output_(16), /* OneBox backpanel SMA (SMA1) */
 		SM_Output_DAC0 = SM_Output_(32),
 		SM_Output_DAC1 = SM_Output_(33),
 		SM_Output_DAC2 = SM_Output_(34),
@@ -332,6 +352,14 @@ namespace Neuropixels {
 	 * @returns amount of characters written to the destination buffer
 	 */
 	NP_EXPORT size_t getLastErrorMessage(char* bufStart, size_t bufsize);
+
+    /**
+     * Get an error message for a given error code.
+     *
+     * @param code Error code
+     * @returns const pointer to string containing error message
+     */
+	NP_EXPORT const char* getErrorMessage(NP_ErrorCode code);
 
 	/*
 	 * \brief Get a cached list of available devices. Use 'scanBS' to update this list
@@ -484,12 +512,16 @@ namespace Neuropixels {
 	 * \brief Get the basestation firmware version info
 	 */
 	NP_EXPORT NP_ErrorCode bs_getFirmwareInfo(int slotID, struct firmware_Info* info);
-	/*
-	 * \brief Update the basestation firmware.
-	 *        Note that this process may take several minutes.
-	 * @param slotID: target slot to update
-	 * @param filename: firmware binary file
-	 * @param callback: (optional, may be null). Progress callback function. if callback returns 0, the update aborts
+
+	/**
+	 * Update the basestation firmware.
+	 *
+	 * If programming is aborted by the callback returning 0, a PROGRAMMINGABORTED error is returned.
+	 * If the firmware image readback was incorrect after the programming, a PROGRAMMING_FAILED error is returned.
+	 *
+	 * @param slotID target slot to update
+	 * @param filename firmware binary file
+	 * @param callback (optional, may be null). Progress callback function. if callback returns 0, the update aborts
 	 */
 	NP_EXPORT NP_ErrorCode bs_updateFirmware(int slotID, const char* filename, int(*callback)(size_t byteswritten));
 
@@ -501,12 +533,16 @@ namespace Neuropixels {
 	 * \brief (Only on PXI platform) Get the basestation connect board firmware version info
 	 */
 	NP_EXPORT NP_ErrorCode bsc_getFirmwareInfo(int slotID, struct firmware_Info* info);
-	/*
-	 * \brief Update the basestation connect board firmware.
-	 *        Note that this process may take several minutes.
-	 * @param slotID: target slot to update
-	 * @param filename: firmware binary file
-	 * @param callback: (optional, may be null). Progress callback function. if callback returns 0, the update aborts
+
+	/**
+	 * Update the basestation connect board firmware.
+	 *
+	 * If programming is aborted by the callback returning 0, a PROGRAMMINGABORTED error is returned.
+	 * If the firmware image readback was incorrect after the programming, a PROGRAMMING_FAILED error is returned.
+	 *
+	 * @param slotID target slot to update
+	 * @param filename firmware binary file
+	 * @param callback (optional, may be null). Progress callback function. if callback returns 0, the update aborts
 	 */
 	NP_EXPORT NP_ErrorCode bsc_updateFirmware(int slotID, const char* filename, int(*callback)(size_t byteswritten));
 	
@@ -783,11 +819,12 @@ namespace Neuropixels {
 	/**
 	* @brief Directly reads the voltage of a particular ADC Channel.
 	* @param slotID: the slot number of the device
-	* @param ADCChannel: The ADC channel to read the data from
+	* @param ADCChannel: The ADC channel to read the data from (valid range 0 to 11)
 	* @param voltage: return voltage of the ADC Channel
 	* @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
 	*/
 	NP_EXPORT NP_ErrorCode ADC_read(int slotID, int ADCChannel, double* voltage);
+
 	/**
 	* @brief Directly reads the ADC comparator output state.
 	*        The low/high comparator threshold values can be set using (ADC_setComparatorThreshold)
@@ -797,6 +834,7 @@ namespace Neuropixels {
 	* @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
 	*/
 	NP_EXPORT NP_ErrorCode ADC_readComparator(int slotID, int ADCChannel, bool* state);
+
 	/**
 	* @brief Directly reads the ADC comparator state of all ADC channels in a single output word.
 	*        The low/high comparator threshold values can be set using (ADC_setComparatorThreshold)
@@ -805,6 +843,7 @@ namespace Neuropixels {
 	* @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
 	*/
 	NP_EXPORT NP_ErrorCode ADC_readComparators(int slotID, uint32_t* flags);
+
 	/**
 	* @brief Enable/Disables the auxiliary ADC probe
 	*        If disabled, no ADC channel or comparator values are updated.
@@ -813,6 +852,7 @@ namespace Neuropixels {
 	* @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
 	*/
 	NP_EXPORT NP_ErrorCode ADC_enableProbe(int slotID, bool enable);
+
 	/**
 	* @brief Get the LSB to voltage conversion factor and bitdepth for the ADC probe channel
 	*        This conversion changes with programmed ADC range (ADC_setVoltageRange)
@@ -822,40 +862,63 @@ namespace Neuropixels {
 	* @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
 	*/
 	NP_EXPORT NP_ErrorCode ADC_getStreamConversionFactor(int slotID, double* lsb_to_voltage, int* bitdepth);
+
 	/**
-	* @brief Set the ADC comparator low/high threshold voltages. These threshold values are shared for all ADC channels
-	* @param slotID: the slot number of the device
-	* @param vlow: low comparator threshold voltage. Comparator state will toggle to 0 if the input is below this value.
-	* @param vhigh: high comparator threshold voltage. Comparator state will toggle to 1 if the input is above this value.
+	* Set the ADC comparator low/high threshold voltages per channel.
+	*
+	* @param slotID The slot number of the device
+	* @param ADCChannel ADC channel (valid range 0 to 11)
+	* @param vlow Low comparator threshold voltage. Comparator state will toggle to 0 if the input is below this value.
+	* @param vhigh High comparator threshold voltage. Comparator state will toggle to 1 if the input is above this value.
 	* @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
 	*/
-	NP_EXPORT NP_ErrorCode ADC_setComparatorThreshold(int slotID, double vlow, double vhigh);
+	NP_EXPORT NP_ErrorCode ADC_setComparatorThreshold(int slotID, int ADCChannel, double vlow, double vhigh);
+
 	/**
-	* @brief Get the programmed ADC comparator low/high threshold voltages.
-	* @param slotID: the slot number of the device
-	* @param vlow: get the low comparator threshold voltage. Comparator state will toggle to 0 if the input is below this value.
-	* @param vhigh: get the high comparator threshold voltage. Comparator state will toggle to 1 if the input is above this value.
+	* Get the programmed ADC comparator low/high threshold voltages.
+	*
+	* @param slotID The slot number of the device
+	* @param ADCChannel ADC channel (valid range 0 to 11)
+	* @param vlow Get the low comparator threshold voltage. Comparator state will toggle to 0 if the input is below this value.
+	* @param vhigh Get the high comparator threshold voltage. Comparator state will toggle to 1 if the input is above this value.
 	* @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
 	*/
-	NP_EXPORT NP_ErrorCode ADC_getComparatorThreshold(int slotID, double* vlow, double* vhigh);
+	NP_EXPORT NP_ErrorCode ADC_getComparatorThreshold(int slotID, int ADCChannel, double* vlow, double* vhigh);
+
 	/**
-	* @brief Set the ADC Voltage range. This voltage range is used for all ADC channels.
-	*        The actual programmed range will be set to the closest available programmable range.
-	*        For Onebox, the available ranges are 2.5, 5 and 10.
-	*        Use ADC_getVoltageRange to read back the actual programmed range.
-	* @param slotID: the slot number of the device
-	* @param vrange: programmed range will be -vrange .. +vrange.
-	* @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
+	 * Enum to configure ADC voltage range.
+	 * Actual range is from -range .. +range, e.g. -5V to 5V.
 	*/
-	NP_EXPORT NP_ErrorCode ADC_setVoltageRange(int slotID, double vrange);
+	typedef enum {
+		ADC_RANGE_2_5V, /**< 2.5V */
+		ADC_RANGE_5V,   /**< 5V */
+		ADC_RANGE_10V   /**< 10V */
+	} ADCrange_t;
+
 	/**
-	* @brief Get the programmed ADC Voltage range.
-	* @param slotID: the slot number of the device
-	* @param vrange: programmed range will be -vrange .. +vrange.
-	* @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
+	* Set the ADC Voltage range.
+	*
+	* This voltage range is used for all ADC channels.
+	* 
+	* @param slotID The slot number of the device
+	* @param range Programmed range will be -range .. +range.
+	* @return SUCCESS if successful.
+	*         NOTSUPPORTED if this functionality is not supported by the device.
+	*		  PARAMETER_INVALID if the range is not supported by the device
 	*/
-	NP_EXPORT NP_ErrorCode ADC_getVoltageRange(int slotID, double* vrange);
+	NP_EXPORT NP_ErrorCode ADC_setVoltageRange(int slotID, ADCrange_t range);
+
 	/**
+	* Get the programmed ADC Voltage range.
+	*
+	* @param slotID The slot number of the device
+	* @param range Programmed range will be -range .. +range.
+	* @return SUCCESS if successful.
+	*         NOTSUPPORTED if this functionality is not supported by the device
+	*/
+	NP_EXPORT NP_ErrorCode ADC_getVoltageRange(int slotID, ADCrange_t* range);
+
+    /**
 	* @brief Set a DAC channel to a fixed voltage.
 	* @param slotID: the slot number of the device
 	* @param DACChannel: The DAC channel to configure
@@ -863,6 +926,7 @@ namespace Neuropixels {
 	* @returns SUCCESS if successful. WRONG_DACCHANNEL if channel out of bound, NOTSUPPORTED if this functionality is not supported by the device
 	*/
 	NP_EXPORT NP_ErrorCode DAC_setVoltage(int slotID, int DACChannel, double voltage);
+
 	/**
 	* @brief Set a DAC channel in digital tracking mode, and program its low and high voltage.
 	*        In this mode, the DAC channel acts as an output of the switch matrix (See switchmatrix_set).
@@ -911,12 +975,13 @@ namespace Neuropixels {
 	NP_EXPORT NP_ErrorCode ADC_readPackets(int slotID, struct PacketInfo* pckinfo, int16_t* data, int channelcount, int packetcount, int* packetsread);
 
 	/**
-	 * @brief Get status (available packets and remaining capacity) of auxilary ADC probe stream FIFO.
-	 * @param slotID: slot ID
-	 * @param packets_available: number of packets available for read
-	 * @param headroom: remaining capacity of the FIFO
+	 * Get status (available packets and remaining capacity) of auxilary ADC probe stream FIFO.
+	 *
+	 * @param slotID slot ID
+	 * @param packetsavailable number of packets available for read
+	 * @param headroom remaining capacity of the FIFO
 	 */
-	NP_EXPORT NP_ErrorCode ADC_getPacketFifoStatus(int slotID, int* packets_available, int* headroom);
+	NP_EXPORT NP_ErrorCode ADC_getPacketFifoStatus(int slotID, int* packetsavailable, int* headroom);
 
 	/********************* Built In Self Test ****************************/
 	/**
@@ -928,6 +993,7 @@ namespace Neuropixels {
 
 	/**
 	* @brief Head Stage heartbeat test
+	* 
 	* The heartbeat signal generated by the PSB_SYNC signal of the probe. The PSB_SYNC signal starts when the probe is powered on, the OP_MODE register in the probes' memory map set to 1, and the REC_NRESET signal set high.
 	* The heartbeat signal is visible on the headstage (can be disabled by API functions) and on the BSC. This is in the first place a visual check.
 	* In order to facilitate a software check of the BSC heartbeat signal, the PSB_SYNC signal is also routed to the BS FPGA. A function is provided to check whether the PSB_SYNC signal contains a 0.5Hz clock.
@@ -1338,6 +1404,61 @@ namespace Neuropixels {
 	 */
 	NP_EXPORT NP_ErrorCode disableEmissionPath(int slotID, int portID, int dockID, wavelength_t wavelength);
 
+	/* Neuropixels IMU ********************************************************************************************************************************/
+
+	// TODO: IMU integration - subject to change
+
+	typedef enum accelerometer_scale_t {
+		ACC_SCALE_2G,
+		ACC_SCALE_4G,
+		ACC_SCALE_8G,
+		ACC_SCALE_16G
+	} accelerometer_scale_t;
+
+	typedef enum gyroscope_scale_t {
+		GYRO_SCALE_250,
+		GYRO_SCALE_500,
+		GYRO_SCALE_1000,
+		GYRO_SCALE_2000
+	} gyroscope_scale_t;
+
+#pragma pack(push, 1)
+	typedef struct IMUPacket {
+		uint32_t timestamp;
+		uint8_t status;
+
+		uint8_t packet_counter;
+		uint8_t delay;
+
+		int16_t accel_x;
+		int16_t accel_y;
+		int16_t accel_z;
+
+		int16_t gyro_x;
+		int16_t gyro_y;
+		int16_t gyro_z;
+
+		int16_t temperature;
+
+		int16_t magn_x;
+		int16_t magn_y;
+		int16_t magn_z;
+
+	} IMUPacket;
+#pragma pack(pop)
+
+	NP_EXPORT NP_ErrorCode IMU_detect(int slot, int port, bool* detected);
+	NP_EXPORT NP_ErrorCode IMU_enable(int slot, int port, bool enable);
+	NP_EXPORT NP_ErrorCode IMU_setAccelerometerSampleRateDivider(int slot, int port, uint16_t divider);
+	NP_EXPORT NP_ErrorCode IMU_setAccelerometerScale(int slot, int port, accelerometer_scale_t scale);
+	NP_EXPORT NP_ErrorCode IMU_setGyroscopeSampleRateDivider(int slot, int port, uint8_t divider);
+	NP_EXPORT NP_ErrorCode IMU_setGyroscopeScale(int slot, int port, gyroscope_scale_t scale);
+	NP_EXPORT NP_ErrorCode IMU_readPackets(int slot, int port, int packets_requested, IMUPacket* packets, int* packets_read);
+	NP_EXPORT NP_ErrorCode IMU_getFIFOStatus(int slot, int port, int* packets_available, int* headroom);
+	NP_EXPORT NP_ErrorCode IMU_getPllTimeBaseCorrection(int slot, int port, int* ppl_timebasecorrection);
+	NP_EXPORT NP_ErrorCode IMU_DfuRead(int slot, int port, uint8_t* data, size_t len, size_t* bytes_read);
+	NP_EXPORT NP_ErrorCode IMU_DfuWrite(int slot, int port, const uint8_t* data, size_t len, size_t* bytes_written);
+
 	/* Debug support functions ************************************************************************************************************************/
 	NP_EXPORT void         dbg_setlevel(int level);
 	NP_EXPORT int          dbg_getlevel(void);
@@ -1376,6 +1497,7 @@ namespace Neuropixels {
 		NP_EXPORT void         NP_APIC np_getAPIVersion(int* version_major, int* version_minor);
 		NP_EXPORT size_t       NP_APIC np_getAPIVersionFull(char* buffer, size_t size);
 		NP_EXPORT size_t       NP_APIC np_getLastErrorMessage(char* bufStart, size_t bufsize);
+		NP_EXPORT const char*  NP_APIC np_getErrorMessage(NP_ErrorCode code);
 		NP_EXPORT int          NP_APIC np_getDeviceList(struct basestationID* list, int count);
 		NP_EXPORT NP_ErrorCode NP_APIC np_getDeviceInfo(int slotID, struct basestationID* info);
 		NP_EXPORT bool         NP_APIC np_tryGetSlotID(const basestationID* bsid, int* slotID);
@@ -1471,16 +1593,16 @@ namespace Neuropixels {
 		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_readComparators(int slotID, uint32_t* flags);
 		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_enableProbe(int slotID, bool enable);
 		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getStreamConversionFactor(int slotID, double* lsb_to_voltage, int* bitdepth);
-		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_setComparatorThreshold(int slotID, double vlow, double vhigh);
-		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getComparatorThreshold(int slotID, double* vlow, double* vhigh);
-		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_setVoltageRange(int slotID, double vrange);
-		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getVoltageRange(int slotID, double* vrange);
+		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_setComparatorThreshold(int slotID, int ADCChannel, double vlow, double vhigh);
+		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getComparatorThreshold(int slotID, int ADCChannel, double* vlow, double* vhigh);
+		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_setVoltageRange(int slotID, ADCrange_t range);
+		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getVoltageRange(int slotID, ADCrange_t* range);
 		NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setVoltage(int slotID, int DACChannel, double voltage);
 		NP_EXPORT NP_ErrorCode NP_APIC np_DAC_enableOutput(int slotID, int DACChannel, bool state);
 		NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setDigitalLevels(int slotID, int DACChannel, double vhigh, double vlow);
 		NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setProbeSniffer(int slotID, int DACChannel, int portID, int dockID, int channelnr, streamsource_t sourcetype);
 		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_readPackets(int slotID, struct PacketInfo* pckinfo, int16_t* data, int channelcount, int packetcount, int* packetsread);
-		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getPacketFifoStatus(int slotID, int* packets_available, int* headroom);
+		NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getPacketFifoStatus(int slotID, int* packetsavailable, int* headroom);
 		NP_EXPORT NP_ErrorCode NP_APIC np_bistBS(int slotID);
 		NP_EXPORT NP_ErrorCode NP_APIC np_bistHB(int slotID, int portID, int dockID);
 		NP_EXPORT NP_ErrorCode NP_APIC np_bistStartPRBS(int slotID, int portID);
@@ -1562,5 +1684,19 @@ namespace Neuropixels {
 		NP_EXPORT NP_ErrorCode NP_APIC np_getEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int* site);
 		NP_EXPORT NP_ErrorCode NP_APIC np_getEmissionSiteAttenuation(int slotID, int portID, int dockID, wavelength_t wavelength, int site, double* attenuation);
 		NP_EXPORT NP_ErrorCode NP_APIC np_disableEmissionPath(int slotID, int portID, int dockID, wavelength_t wavelength);
+
+		// Neuropixels IMU
+		// TODO: IMU integration - subject to change
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_detect(int slot, int port, bool* detected);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_enable(int slot, int port, bool enable);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setAccelerometerSampleRateDivider(int slot, int port, uint16_t divider);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setAccelerometerScale(int slot, int port, accelerometer_scale_t scale);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setGyroscopeSampleRateDivider(int slot, int port, uint8_t divider);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setGyroscopeScale(int slot, int port, gyroscope_scale_t scale);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_readPackets(int slot, int port, int packets_requested, IMUPacket* packets, int* packets_read);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_getFIFOStatus(int slot, int port, int* packets_available, int* headroom);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_getPllTimeBaseCorrection(int slot, int port, int* ppl_timebasecorrection);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_DfuRead(int slot, int port, uint8_t* data, size_t len, size_t* bytes_read);
+		NP_EXPORT NP_ErrorCode NP_APIC np_IMU_DfuWrite(int slot, int port, const uint8_t* data, size_t len, size_t* bytes_written);
 	}
 } // namespace Neuropixels

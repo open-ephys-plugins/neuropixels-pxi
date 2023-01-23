@@ -87,7 +87,7 @@ void OneBoxADC::initialize(bool signalChainIsLoading)
 		{
 			std::cout << "Initializing ADC" << i << " on slot " << basestation->slot << std::endl;
 			Neuropixels::DAC_enableOutput(basestation->slot, i, false);
-			Neuropixels::ADC_setVoltageRange(basestation->slot, 5.0);
+			Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_5V);
 		}
 			
 	}
@@ -129,22 +129,22 @@ void OneBoxADC::setAdcInputRange(AdcInputRange range)
 	switch (range)
 	{
 	case AdcInputRange::PLUSMINUS2PT5V:
-		Neuropixels::ADC_setVoltageRange(basestation->slot, 2.5f);
+		Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_2_5V);
 		bitVolts = 2.5f / float(pow(2, 15));
 		break;
 
 	case AdcInputRange::PLUSMINUS5V:
-		Neuropixels::ADC_setVoltageRange(basestation->slot, 5.0f);
+		Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_5V);
 		bitVolts = 5.0f / float(pow(2, 15));
 		break;
 
 	case AdcInputRange::PLUSMINUS10V:
-		Neuropixels::ADC_setVoltageRange(basestation->slot, 10.0f);
+		Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_10V);
 		bitVolts = 10.0f / float(pow(2, 15));
 		break;
 
 	default:
-		Neuropixels::ADC_setVoltageRange(basestation->slot, 5.0f);
+		Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_5V);
 		bitVolts = 5.0f / float(pow(2, 15));
 		break;
 
