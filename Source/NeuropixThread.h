@@ -40,17 +40,6 @@ class OneBoxADC;
 class OneBox;
 class Basestation_v3;
 
-class RecordingTimer : public Timer
-{
-
-public:
-
-	RecordingTimer(NeuropixThread* t_);
-	void timerCallback();
-
-	NeuropixThread* thread;
-};
-
 typedef enum {
 	AP_BAND,
 	LFP_BAND,
@@ -156,9 +145,6 @@ public:
 	/** Toggles between internal and external triggering. */
 	void setTriggerMode(bool trigger);
 
-	/** Toggles between saving to NPX file. */
-	void setRecordMode(bool record);
-
 	/** Select directory for saving NPX files. */
 	void setDirectoryForSlot(int slotIndex, File directory);
 
@@ -179,12 +165,6 @@ public:
 
 	/** Starts data acquisition after a certain time.*/
 	void timerCallback();
-
-	/** Starts recording.*/
-	void startRecording();
-
-	/** Stops recording.*/
-	void stopRecording();
 
 	/** Returns a mutex for live rendering of data */
 	CriticalSection* getMutex()
@@ -264,15 +244,11 @@ private:
 	bool baseStationAvailable;
 	bool probesInitialized;
 	bool internalTrigger;
-	bool recordToNpx;
 	bool autoRestart;
-
-	bool isRecording;
 
 	bool initializationComplete;
 
 	long int counter;
-	int recordingNumber;
 
 	CriticalSection displayMutex;
 
@@ -301,8 +277,6 @@ private:
 	NeuropixAPIv3 api_v3;
 
 	NeuropixEditor* editor;
-
-	RecordingTimer recordingTimer;
 
 };
 
