@@ -109,10 +109,17 @@ bool Basestation_v3::open()
 		if (std::stod((info.boot_version.toStdString())) < 2.0)
 			return false;
 
-
 		if (info.boot_version.equalsIgnoreCase("2.0137"))
 		{
 			LOGC("Found basestation firmware version ", info.boot_version, "; setting invertOutput to true.");
+			
+			// show popup notification window
+			String message = "The basestation on slot " + String(slot) + " has firmware version 2.0137, but version 2.0169 is required for this plugin. ";
+			message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update. ";
+			message += "You will be able to proceed with data acquisition using the current firmware, but there may be issues using the SMA port for synchronization.";
+
+			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Outdated basestation firmware on slot " + String(slot), message, "OK");
+
 			invertOutput = true;
 		}
 		else {
