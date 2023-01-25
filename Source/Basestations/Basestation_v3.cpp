@@ -132,6 +132,10 @@ bool Basestation_v3::open()
 
 			bool detected = false;
 
+			errorCode = Neuropixels::openPort(slot, port);
+
+			LOGC("openPort errorCode: ", errorCode);
+
 			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
 
 			LOGC("Port ", port, " errorCode: ", errorCode);
@@ -202,6 +206,9 @@ bool Basestation_v3::open()
 				{
 					LOGC("  No headstage detected on port: ", port);
 				}
+
+				errorCode = Neuropixels::closePort(slot, port); // close port
+
 				headstages.add(nullptr);
 			}
 
@@ -233,7 +240,9 @@ void Basestation_v3::initialize(bool signalChainIsLoading)
 		probesInitialized = true;
 	}
 
+	LOGC("Arming basestation");
 	Neuropixels::arm(slot); //armBasestation->startThread();
+	LOGC("Arming complete");
 }
 
 Basestation_v3::~Basestation_v3()
@@ -281,11 +290,11 @@ void Basestation_v3::setSyncAsInput()
 	if (errorCode != Neuropixels::SUCCESS)
 		LOGD("Failed to set slot ", slot, "SMA as sync source!");
 
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, false);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGD("Failed to set sync on SMA output on slot: ", slot);
-	}
+	///errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, false);
+	//if (errorCode != Neuropixels::SUCCESS)
+	//{
+	//	LOGD("Failed to set sync on SMA output on slot: ", slot);
+	//}
 
 
 	if (invertOutput)
@@ -337,11 +346,11 @@ void Basestation_v3::setSyncAsOutput(int freqIndex)
 		return;
 	}
 
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, true);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGD("Failed to set sync on SMA output on slot: ", slot);
-	}
+	//errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, true);
+	//if (errorCode != Neuropixels::SUCCESS)
+	//{
+	//	LOGD("Failed to set sync on SMA output on slot: ", slot);
+	//}
 
 	if (invertOutput)
 	{
