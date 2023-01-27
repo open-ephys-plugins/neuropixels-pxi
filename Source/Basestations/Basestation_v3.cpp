@@ -86,6 +86,67 @@ Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
 	getInfo();
 }
 
+ThreadPoolJob::JobStatus PortChecker::runJob()
+{
+
+	bool detected = false;
+
+	Neuropixels::NP_ErrorCode errorCode = Neuropixels::openPort(slot, port);
+
+	errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
+
+	if (detected && errorCode == Neuropixels::SUCCESS)
+	{
+		char pn[MAXLEN];
+		Neuropixels::readHSPN(slot, port, pn, MAXLEN);
+
+		String hsPartNumber = String(pn);
+
+		LOGC("Got HS part #: ", hsPartNumber);
+
+		if (hsPartNumber == "NP2_HS_30" || hsPartNumber == "OPTO_HS_00") // 1.0 headstage, only one dock
+		{
+			LOGC("      Found 1.0 single-dock headstage on port: ", port);
+			headstage = new Headstage1_v3(basestation, port);
+			if (headstage->testModule != nullptr)
+			{
+				headstage = nullptr;
+			}
+		}
+		else if (hsPartNumber == "NPNH_HS_30" || hsPartNumber == "NPNH_HS_31") // 128-ch analog headstage
+		{
+			LOGC("      Found 128-ch analog headstage on port: ", port);
+			headstage = new Headstage_Analog128(basestation, port);
+		}
+		else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
+		{
+			LOGC("      Found 2.0 dual-dock headstage on port: ", port);
+			headstage = new Headstage2(basestation, port);
+		}
+		else
+		{
+			headstage = nullptr;
+		}
+	}
+	else
+	{
+		if (errorCode != Neuropixels::SUCCESS)
+		{
+			LOGC("***detectHeadstage failed w/ error code: ", errorCode);
+		}
+		else
+		{
+			LOGC("  No headstage detected on port: ", port);
+		}
+
+		errorCode = Neuropixels::closePort(slot, port); // close port
+
+		headstage = nullptr;
+	}
+
+	return jobHasFinished;
+}
+
 bool Basestation_v3::open()
 {
 
@@ -131,6 +192,9 @@ bool Basestation_v3::open()
 
 		LOGC("    Searching for probes...");
 
+		ThreadPool threadPool;
+		OwnedArray<PortChecker> portCheckers;
+
 		for (int port = 1; port <= 4; port++)
 		{
 
@@ -139,89 +203,38 @@ bool Basestation_v3::open()
 
 			bool detected = false;
 
-			errorCode = Neuropixels::openPort(slot, port);
-
-			LOGC("openPort errorCode: ", errorCode);
-
-			errorCode = Neuropixels::detectHeadStage(slot, port, &detected); // check for headstage on port
-
-			LOGC("Port ", port, " errorCode: ", errorCode);
-			LOGC("Detected: ", detected);
-
-			if (detected && errorCode == Neuropixels::SUCCESS)
-			{
-				LOGC("HS Detected");
-				char pn[MAXLEN];
-				Neuropixels::readHSPN(slot, port, pn, MAXLEN);
-
-				String hsPartNumber = String(pn);
-
-				LOGC("Got HS part #: ", hsPartNumber);
-
-				Headstage* headstage;
-
-				if (hsPartNumber == "NP2_HS_30" || hsPartNumber == "OPTO_HS_00") // 1.0 headstage, only one dock
-				{
-					LOGC("      Found 1.0 single-dock headstage on port: ", port);
-					headstage = new Headstage1_v3(this, port);
-					if (headstage->testModule != nullptr)
-					{
-						headstage = nullptr;
-					}
-				}
-				else if (hsPartNumber == "NPNH_HS_30" || hsPartNumber == "NPNH_HS_31") // 128-ch analog headstage
-				{
-					LOGC("      Found 128-ch analog headstage on port: ", port);
-					headstage = new Headstage_Analog128(this, port);
-				}
-				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
-				{
-					LOGC("      Found 2.0 dual-dock headstage on port: ", port);
-					headstage = new Headstage2(this, port);
-				}
-				else
-				{
-					headstage = nullptr;
-				}
-				
-				headstages.add(headstage);
-
-				if (headstage != nullptr)
-				{
-					for (auto probe : headstage->probes)
-					{
-						if (probe != nullptr)
-						{
-							probes.add(probe);
-
-							if (probe->info.part_number.equalsIgnoreCase("NP1300"))
-								type = BasestationType::OPTO;
-						}
-							
-					}
-				}
-			
-				continue;
-			}
-			else  
-			{
-				if (errorCode != Neuropixels::SUCCESS)
-				{
-					LOGC("***detectHeadstage failed w/ error code: ", errorCode);
-				}
-				else
-				{
-					LOGC("  No headstage detected on port: ", port);
-				}
-
-				errorCode = Neuropixels::closePort(slot, port); // close port
-
-				headstages.add(nullptr);
-			}
-
-
+			portCheckers.add(new PortChecker(slot, port, this));
+			threadPool.addJob(portCheckers.getLast(), false);
 		}
 
+		//LOGC("    Waiting for jobs to finish...");
+		while (threadPool.getNumJobs() > 0)
+			Sleep(100);
+		//LOGC("    Jobs finished.");
+
+		int portIndex = 0;
+
+		for (auto portChecker : portCheckers)
+		{
+
+			headstages.add(portChecker->headstage);
+
+			if (portChecker->headstage != nullptr)
+			{
+
+				for (auto probe : portChecker->headstage->probes)
+				{
+					if (probe != nullptr)
+					{
+						probes.add(probe);
+
+						if (probe->info.part_number.equalsIgnoreCase("NP1300"))
+							type = BasestationType::OPTO;
+					}
+				}
+			}
+		}
+		
 		LOGC("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 
 	}

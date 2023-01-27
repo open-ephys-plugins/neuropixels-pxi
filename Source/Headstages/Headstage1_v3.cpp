@@ -106,6 +106,8 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 		}
 		
 		probes[0]->setStatus(SourceStatus::CONNECTING);
+
+		LOGC("Headstage has ", probes.size(), " probes connected.");
 	}
 
 }
