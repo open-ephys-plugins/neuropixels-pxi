@@ -44,67 +44,73 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 
 	customName.probeSpecific = String(info.serial_number);
 
-	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
-
-	name = probeMetadata.name;
-	type = probeMetadata.type;
-
-	settings.probe = this;
-
-	settings.availableBanks = probeMetadata.availableBanks;
-
-	settings.apGainIndex = -1;
-	settings.lfpGainIndex = -1;
-	settings.referenceIndex = 0;
-	settings.apFilterState = false;
-
-	channel_count = 384;
-	lfp_sample_rate = 2500.0f; // not used
-	ap_sample_rate = 30000.0f;
-
-	for (int i = 0; i < channel_count; i++)
-    {
-		settings.selectedBank.add(Bank::A);
-		settings.selectedChannel.add(electrodeMetadata[i].channel);
-		settings.selectedShank.add(0);
-		settings.selectedElectrode.add(electrodeMetadata[i].global_index);
-		
-    }
-
-	if (probeMetadata.shank_count == 1)
+	if (Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata))
 	{
-		settings.availableReferences.add("Ext");
-		settings.availableReferences.add("Tip");
-		//settings.availableReferences.add("128");
-		//settings.availableReferences.add("508");
-		//settings.availableReferences.add("888");
-		//settings.availableReferences.add("1252");
+		name = probeMetadata.name;
+		type = probeMetadata.type;
+
+		settings.probe = this;
+
+		settings.availableBanks = probeMetadata.availableBanks;
+
+		settings.apGainIndex = -1;
+		settings.lfpGainIndex = -1;
+		settings.referenceIndex = 0;
+		settings.apFilterState = false;
+
+		channel_count = 384;
+		lfp_sample_rate = 2500.0f; // not used
+		ap_sample_rate = 30000.0f;
+
+		for (int i = 0; i < channel_count; i++)
+		{
+			settings.selectedBank.add(Bank::A);
+			settings.selectedChannel.add(electrodeMetadata[i].channel);
+			settings.selectedShank.add(0);
+			settings.selectedElectrode.add(electrodeMetadata[i].global_index);
+
+		}
+
+		if (probeMetadata.shank_count == 1)
+		{
+			settings.availableReferences.add("Ext");
+			settings.availableReferences.add("Tip");
+			//settings.availableReferences.add("128");
+			//settings.availableReferences.add("508");
+			//settings.availableReferences.add("888");
+			//settings.availableReferences.add("1252");
+		}
+		else {
+			settings.availableReferences.add("Ext");
+			settings.availableReferences.add("1: Tip");
+			//settings.availableReferences.add("1: 128");
+			//settings.availableReferences.add("1: 512");
+			//settings.availableReferences.add("1: 896");
+			//settings.availableReferences.add("1: 1280");
+			settings.availableReferences.add("2: Tip");
+			//settings.availableReferences.add("2: 128");
+			//settings.availableReferences.add("2: 512");
+			//settings.availableReferences.add("2: 896");
+			//settings.availableReferences.add("2: 1280");
+			settings.availableReferences.add("3: Tip");
+			//settings.availableReferences.add("3: 128");
+			//settings.availableReferences.add("3: 512");
+			//settings.availableReferences.add("3: 896");
+			//settings.availableReferences.add("3: 1280");
+			settings.availableReferences.add("4: Tip");
+			//settings.availableReferences.add("4: 128");
+			//settings.availableReferences.add("4: 512");
+			//settings.availableReferences.add("4: 896");
+			//settings.availableReferences.add("4: 1280");
+		}
+
+		open();
 	}
 	else {
-		settings.availableReferences.add("Ext");
-		settings.availableReferences.add("1: Tip");
-		//settings.availableReferences.add("1: 128");
-		//settings.availableReferences.add("1: 512");
-		//settings.availableReferences.add("1: 896");
-		//settings.availableReferences.add("1: 1280");
-		settings.availableReferences.add("2: Tip");
-		//settings.availableReferences.add("2: 128");
-		//settings.availableReferences.add("2: 512");
-		//settings.availableReferences.add("2: 896");
-		//settings.availableReferences.add("2: 1280");
-		settings.availableReferences.add("3: Tip");
-		//settings.availableReferences.add("3: 128");
-		//settings.availableReferences.add("3: 512");
-		//settings.availableReferences.add("3: 896");
-		//settings.availableReferences.add("3: 1280");
-		settings.availableReferences.add("4: Tip");
-		//settings.availableReferences.add("4: 128");
-		//settings.availableReferences.add("4: 512");
-		//settings.availableReferences.add("4: 896");
-		//settings.availableReferences.add("4: 1280");
+		isValid = false;
 	}
+
 	
-	open();
 
 }
 

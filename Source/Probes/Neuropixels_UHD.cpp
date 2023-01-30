@@ -104,7 +104,7 @@ Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	}
 	else
 	{
-		/* code */
+		isValid = false;
 	}
 
 }

@@ -55,19 +55,19 @@ void Flex1_v3::getInfo()
 	int version_minor;
 
 	errorCode = Neuropixels::getFlexVersion(headstage->basestation->slot,
-								   headstage->port, 
-								   dock,
-								   &version_major, 
-								   &version_minor);
+		headstage->port,
+		dock,
+		&version_major,
+		&version_minor);
 
 	info.version = String(version_major) + "." + String(version_minor);
 
 	char pn[MAXLEN];
 	errorCode = Neuropixels::readFlexPN(headstage->basestation->slot,
-								headstage->port, 
-								dock,
-								pn, 
-								MAXLEN);
+		headstage->port,
+		dock,
+		pn,
+		MAXLEN);
 
 	info.part_number = String(pn);
 
@@ -95,6 +95,13 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 		char partNumber[MAXLEN];
 		errorCode = Neuropixels::readProbePN(basestation->slot, port, 1, partNumber, MAXLEN);
 
+		if (!CharPointer_ASCII::isValidString(partNumber, MAXLEN))
+		{
+			// invalid probe part number
+			LOGC("Headstage has no valid probes connected.");
+			return;
+		}
+
 		if (String(partNumber).equalsIgnoreCase("NP1300"))
 			probes.add(new NeuropixelsOpto(basestation, this, flexCables[0]));
 		else if (String(partNumber).equalsIgnoreCase("NP1110"))
@@ -105,9 +112,12 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 			probes.add(new Neuropixels1_v3(basestation, this, flexCables[0]));
 		}
 		
-		probes[0]->setStatus(SourceStatus::CONNECTING);
+		if (probes[0]->isValid)
+			probes[0]->setStatus(SourceStatus::CONNECTING);
+		else
+			probes.remove(0, true);
 
-		LOGC("Headstage has ", probes.size(), " probes connected.");
+		LOGC("Headstage has ", probes.size(), " valid probes connected.");
 	}
 
 }

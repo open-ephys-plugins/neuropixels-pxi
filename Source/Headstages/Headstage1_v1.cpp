@@ -89,6 +89,13 @@ Headstage1_v1::Headstage1_v1(Basestation* bs_, int port) : Headstage(bs_, port)
 
 		char partNumber[MAXLEN];
 		errorCode = np::readProbePN(basestation->slot, port, partNumber, MAXLEN);
+
+		if (!CharPointer_ASCII::isValidString(partNumber, MAXLEN))
+		{
+			// invalid probe part number
+			LOGC("Headstage has no valid probes connected.");
+			return;
+		}
 		
 		if (String(partNumber).equalsIgnoreCase("NP1110"))
 		{
@@ -98,7 +105,12 @@ Headstage1_v1::Headstage1_v1(Basestation* bs_, int port) : Headstage(bs_, port)
 			probes.add(new Neuropixels1_v1(basestation, this, flexCables[0]));
 		}
 		
-		probes[0]->setStatus(SourceStatus::CONNECTING);
+		if (probes[0]->isValid)
+			probes[0]->setStatus(SourceStatus::CONNECTING);
+		else
+			probes.remove(0, true);
+
+		LOGC("Headstage has ", probes.size(), " valid probes connected.");
 	}
 
 }

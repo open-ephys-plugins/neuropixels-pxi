@@ -89,8 +89,19 @@ Headstage2::Headstage2(Basestation* bs_, int port) : Headstage(bs_, port)
 		if (flexDetected)
 		{
 			flexCables.add(new Flex2(this, dock));
-			probes.add(new Neuropixels2(basestation, this, flexCables.getLast(), dock));
-			probes.getLast()->setStatus(SourceStatus::CONNECTING);
+			Neuropixels2* probe = new Neuropixels2(basestation, this, flexCables.getLast(), dock);
+
+			if (probe->isValid)
+			{
+				probe->setStatus(SourceStatus::CONNECTING);
+				probes.add(probe);
+			}
+			else
+			{
+				delete probe;
+				probes.add(nullptr);
+			}
+				
 		}
 		else {
 			probes.add(nullptr);

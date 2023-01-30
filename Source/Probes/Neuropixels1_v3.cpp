@@ -104,7 +104,7 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	}
 	else
 	{
-		/* code */
+		isValid = false;
 	}
 
 }

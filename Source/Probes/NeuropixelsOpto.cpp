@@ -111,7 +111,7 @@ NeuropixelsOpto::NeuropixelsOpto(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	}
 	else
 	{
-		/* code */
+		isValid = false;
 	}
 
 }

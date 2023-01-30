@@ -388,7 +388,7 @@ public:
 	Headstage* headstage; // owned by Basestation
 	Flex* flex; // owned by Headstage
 
-	bool isValid; //True if the PN is supported by the API
+	bool isValid = true; //True if the PN is supported by the API
 	bool invertSyncLine = false;
 
 	bool isCalibrated = false;
