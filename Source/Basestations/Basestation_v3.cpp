@@ -310,11 +310,17 @@ void Basestation_v3::setSyncAsInput()
 	if (errorCode != Neuropixels::SUCCESS)
 		LOGD("Failed to set slot ", slot, "SMA as sync source!");
 
-	///errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, false);
-	//if (errorCode != Neuropixels::SUCCESS)
-	//{
-	//	LOGD("Failed to set sync on SMA output on slot: ", slot);
-	//}
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, false);
+	if (errorCode != Neuropixels::SUCCESS)
+	{
+		LOGD("Failed to set sync on SMA input on slot: ", slot);
+	}
+
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, true);
+	if (errorCode != Neuropixels::SUCCESS)
+	{
+		LOGD("Failed to set sync on SMA input on slot: ", slot);
+	}
 
 
 	if (invertOutput)
@@ -366,11 +372,13 @@ void Basestation_v3::setSyncAsOutput(int freqIndex)
 		return;
 	}
 
-	//errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, true);
-	//if (errorCode != Neuropixels::SUCCESS)
-	//{
-	//	LOGD("Failed to set sync on SMA output on slot: ", slot);
-	//}
+
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true);
+	if (errorCode != Neuropixels::SUCCESS)
+	{
+		LOGD("Failed to set sync on SMA output on slot: ", slot);
+	}
+
 
 	if (invertOutput)
 	{
