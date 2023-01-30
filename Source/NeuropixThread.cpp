@@ -1213,6 +1213,11 @@ String NeuropixThread::handleConfigMessage(String msg)
 
 	LOGD("Neuropix-PXI received ", msg);
 
+	if (CoreServices::getAcquisitionStatus())
+	{
+		return "Neuropixels plugin cannot update settings while acquisition is active.";
+	}
+
 	StringArray parts = StringArray::fromTokens(msg, " ", "");
 
 	if (parts[0].equalsIgnoreCase("NP"))
