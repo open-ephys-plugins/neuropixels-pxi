@@ -108,7 +108,7 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 		{
 			LOGC("      Found 1.0 single-dock headstage on port: ", port);
 			headstage = new Headstage1_v3(basestation, port);
-			if (headstage->testModule != nullptr)
+			if (headstage->testModule != nullptr || !headstage->probes.size())
 			{
 				headstage = nullptr;
 			}
@@ -127,6 +127,7 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 		{
 			headstage = nullptr;
 		}
+
 	}
 	else
 	{
