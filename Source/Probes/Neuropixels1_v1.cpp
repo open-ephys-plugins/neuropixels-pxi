@@ -49,64 +49,70 @@ Neuropixels1_v1::Neuropixels1_v1(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 	customName.portSpecific = "Slot" + String(basestation->slot) + "-Port" + String(port);
 
-	Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata);
+	if (Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata))
+	{
+		name = probeMetadata.name;
+		type = probeMetadata.type;
 
-	name = probeMetadata.name;
-	type = probeMetadata.type;
+		settings.probe = this;
 
-	settings.probe = this;
+		settings.availableBanks = probeMetadata.availableBanks;
 
-	settings.availableBanks = probeMetadata.availableBanks; 
+		settings.apGainIndex = 3;
+		settings.lfpGainIndex = 2;
+		settings.referenceIndex = 0;
+		settings.apFilterState = true;
+
+		channel_count = 384;
+		lfp_sample_rate = 2500.0f;
+		ap_sample_rate = 30000.0f;
+
+		for (int i = 0; i < channel_count; i++)
+		{
+			settings.selectedBank.add(Bank::A);
+			settings.selectedChannel.add(i);
+			settings.selectedShank.add(0);
+			settings.selectedElectrode.add(i);
+		}
+
+		settings.availableApGains.add(50.0f);
+		settings.availableApGains.add(125.0f);
+		settings.availableApGains.add(250.0f);
+		settings.availableApGains.add(500.0f);
+		settings.availableApGains.add(1000.0f);
+		settings.availableApGains.add(1500.0f);
+		settings.availableApGains.add(2000.0f);
+		settings.availableApGains.add(3000.0f);
+
+		settings.availableLfpGains.add(50.0f);
+		settings.availableLfpGains.add(125.0f);
+		settings.availableLfpGains.add(250.0f);
+		settings.availableLfpGains.add(500.0f);
+		settings.availableLfpGains.add(1000.0f);
+		settings.availableLfpGains.add(1500.0f);
+		settings.availableLfpGains.add(2000.0f);
+		settings.availableLfpGains.add(3000.0f);
+
+		settings.availableReferences.add("Ext");
+		settings.availableReferences.add("Tip");
+		//settings.availableReferences.add("192");
+		//settings.availableReferences.add("576");
+		//settings.availableReferences.add("960");
+
+		shankOutline.startNewSubPath(27, 31);
+		shankOutline.lineTo(27, 514);
+		shankOutline.lineTo(27 + 5, 522);
+		shankOutline.lineTo(27 + 10, 514);
+		shankOutline.lineTo(27 + 10, 31);
+		shankOutline.closeSubPath();
+
+		open();
+	}
+	else {
+		isValid = false;
+	}
+
 	
-	settings.apGainIndex = 3;
-	settings.lfpGainIndex = 2;
-	settings.referenceIndex = 0;
-	settings.apFilterState = true;
-
-	channel_count = 384;
-	lfp_sample_rate = 2500.0f;
-	ap_sample_rate = 30000.0f;
-	
-	for (int i = 0; i < channel_count; i++)
-    {
-        settings.selectedBank.add(Bank::A);
-        settings.selectedChannel.add(i);
-        settings.selectedShank.add(0);
-		settings.selectedElectrode.add(i);
-    }
-
-	settings.availableApGains.add(50.0f);
-	settings.availableApGains.add(125.0f);
-	settings.availableApGains.add(250.0f);
-	settings.availableApGains.add(500.0f);
-	settings.availableApGains.add(1000.0f);
-	settings.availableApGains.add(1500.0f);
-	settings.availableApGains.add(2000.0f);
-	settings.availableApGains.add(3000.0f);
-
-	settings.availableLfpGains.add(50.0f);
-	settings.availableLfpGains.add(125.0f);
-	settings.availableLfpGains.add(250.0f);
-	settings.availableLfpGains.add(500.0f);
-	settings.availableLfpGains.add(1000.0f);
-	settings.availableLfpGains.add(1500.0f);
-	settings.availableLfpGains.add(2000.0f);
-	settings.availableLfpGains.add(3000.0f);
-
-	settings.availableReferences.add("Ext");
-	settings.availableReferences.add("Tip");
-	//settings.availableReferences.add("192");
-	//settings.availableReferences.add("576");
-	//settings.availableReferences.add("960");
-
-	shankOutline.startNewSubPath(27, 31);
-	shankOutline.lineTo(27, 514);
-	shankOutline.lineTo(27 + 5, 522);
-	shankOutline.lineTo(27 + 10, 514);
-	shankOutline.lineTo(27 + 10, 31);
-	shankOutline.closeSubPath();
-
-	open();
 
 }
 

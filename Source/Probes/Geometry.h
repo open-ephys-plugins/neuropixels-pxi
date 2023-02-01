@@ -50,8 +50,10 @@ public:
 	/** Non-human primate Phase 2 (Active)
 	*
 		Available in 3 lengths: 10 mm, 25 mm, 45 mm
+
+		Available in 2 site layouts: staggered (true) or straight (false)
 	*/
-	static void NHP2(int length, Array<ElectrodeMetadata>& em,
+	static void NHP2(int length, bool siteLayout, Array<ElectrodeMetadata>& em,
 		ProbeMetadata& pm);
 
 	/** Neuropixels 1.0
@@ -69,8 +71,13 @@ public:
 	/** Neuropixels UHD
 	*
 		Available switchable or unswitchable
+
+		Site spacing: 6 um, 
 	*/
-	static void UHD(bool switchable, Array<ElectrodeMetadata>& em,
+	static void UHD(bool switchable, 
+		int numColumns, 
+		float siteSpacing, 
+		Array<ElectrodeMetadata>& em,
 		ProbeMetadata& pm);
 
 	/** Neuropixels Opto

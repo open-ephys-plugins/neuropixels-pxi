@@ -104,7 +104,7 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 	}
 	else
 	{
-		/* code */
+		isValid = false;
 	}
 
 }
@@ -383,6 +383,9 @@ void Neuropixels1_v3::run()
 				for (int i = 0; i < 12; i++)
 				{
 					eventCode = packet[packetNum].Status[i] >> 6; // AUX_IO<0:13>
+
+					if (invertSyncLine)
+						eventCode = ~eventCode;
 
 					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
 

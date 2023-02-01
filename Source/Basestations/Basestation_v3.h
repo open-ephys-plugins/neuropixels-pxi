@@ -36,6 +36,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	so acquisition stops promptly.
 
 */
+
+class Basestation_v3;
+
+class PortChecker : public ThreadPoolJob
+{
+public:
+	PortChecker(int slot_, int port_, Basestation_v3* basestation_) :
+		ThreadPoolJob("Port checker for " + String(slot_) + ":" + String(port_))
+		, slot(slot_), port(port_), basestation(basestation_), headstage(nullptr) { }
+
+	~PortChecker() {
+		signalJobShouldExit();
+	}
+
+	JobStatus runJob();
+
+	Headstage* headstage;
+
+private:
+
+	int slot;
+	int port;
+	Basestation_v3* basestation;
+};
+
 class ArmBasestation : public Thread
 {
 public:
@@ -44,7 +69,7 @@ public:
 		, slot(slot_) { }
 
 	~ArmBasestation() { 
-		stopThread(200);
+		stopThread(2000);
 	}
 	
 	void run()
@@ -121,6 +146,8 @@ private:
 	std::unique_ptr<ArmBasestation> armBasestation;
 
 	Neuropixels::NP_ErrorCode errorCode;
+
+	bool invertOutput;
 
 };
 

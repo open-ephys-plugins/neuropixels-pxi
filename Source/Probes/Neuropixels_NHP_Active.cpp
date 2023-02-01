@@ -329,6 +329,9 @@ void Neuropixels_NHP_Active::run()
 				{
 					eventCode = packet[packetNum].Status[i] >> 6; // AUX_IO<0:13>
 
+					if (invertSyncLine)
+						eventCode = ~eventCode;
+
 					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
 
 					uint32_t timestamp_jump = npx_timestamp - last_npx_timestamp;

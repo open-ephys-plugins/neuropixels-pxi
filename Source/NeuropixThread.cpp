@@ -212,10 +212,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	DataThread(sn),
 	baseStationAvailable(false),
 	probesInitialized(false),
-	recordingNumber(0),
-	isRecording(false),
-	recordingTimer(this),
-	recordToNpx(false),
 	initializationComplete(false)
 {
 
@@ -757,55 +753,9 @@ void NeuropixThread::timerCallback()
 
 }
 
-void NeuropixThread::startRecording()
-{
-	recordingNumber++;
-
-	File rootFolder = CoreServices::getRecordingParentDirectory();
-	String pathName = rootFolder.getFileName();
-	
-	for (int i = 0; i < basestations.size(); i++)
-	{
-		if (basestations[i]->getProbeCount() > 0)
-		{
-			File savingDirectory = basestations[i]->getSavingDirectory();
-
-			if (!savingDirectory.getFullPathName().isEmpty())
-			{
-				File fullPath = savingDirectory.getChildFile(pathName);
-
-				if (!fullPath.exists())
-				{
-					fullPath.createDirectory();
-				}
-
-				File npxFileName = fullPath.getChildFile("recording_slot" + String(basestations[i]->slot) + "_" + String(recordingNumber) + ".npx2");
-
-				if (api_v1.isActive)
-				{
-					np::setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
-					np::enableFileStream(basestations[i]->slot, true);
-				}
-				else {
-					Neuropixels::setFileStream(basestations[i]->slot, npxFileName.getFullPathName().getCharPointer());
-					Neuropixels::enableFileStream(basestations[i]->slot, true);
-				}
-				
-
-				LOGD("Basestation ", i, " started recording.");
-			}
-			
-		}
-	}
-
-	
-
-}
 
 void NeuropixThread::setDirectoryForSlot(int slotIndex, File directory)
 {
-
-	setRecordMode(true);
 
 	LOGD("Thread setting directory for slot ", slotIndex, " to ", directory.getFileName());
 
@@ -840,18 +790,6 @@ ProbeNameConfig::NamingScheme NeuropixThread::getNamingSchemeForSlot(int slot)
 			return bs->getNamingScheme();
 }
 
-void NeuropixThread::stopRecording()
-{
-	for (int i = 0; i < basestations.size(); i++)
-	{
-		if (api_v1.isActive)
-			np::enableFileStream(basestations[i]->slot_c, false);
-		else
-			Neuropixels::enableFileStream(basestations[i]->slot, false);
-	}
-
-	LOGD("NeuropixThread stopped recording.");
-}
 
 /** Stops data transfer.*/
 bool NeuropixThread::stopAcquisition()
@@ -1094,6 +1032,15 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 				continuousChannels->getLast()->position.y = depth;
 
+				MetadataDescriptor descriptor(MetadataDescriptor::MetadataType::UINT16,
+					1, "electrode_index",
+					"Electrode index for this channel", "neuropixels.electrode_index");
+
+				MetadataValue value(MetadataDescriptor::MetadataType::UINT16, 1);
+				value.setValue((uint16) info.probe->settings.selectedElectrode[chIndex]);
+
+				continuousChannels->getLast()->addMetadata(descriptor, value);
+
 			}
 			
 		} // end channel loop
@@ -1159,10 +1106,6 @@ void NeuropixThread::setTriggerMode(bool trigger)
     internalTrigger = trigger;
 }
 
-void NeuropixThread::setRecordMode(bool record)
-{
-    recordToNpx = record;
-}
 
 void NeuropixThread::setAutoRestart(bool restart)
 {
@@ -1269,6 +1212,11 @@ String NeuropixThread::handleConfigMessage(String msg)
 	// NP INFO
 
 	LOGD("Neuropix-PXI received ", msg);
+
+	if (CoreServices::getAcquisitionStatus())
+	{
+		return "Neuropixels plugin cannot update settings while acquisition is active.";
+	}
 
 	StringArray parts = StringArray::fromTokens(msg, " ", "");
 
@@ -1416,37 +1364,7 @@ void NeuropixThread::setCustomProbeName(String serialNumber, String customName)
 bool NeuropixThread::updateBuffer()
 {
 
-	if (recordToNpx)
-	{
-
-		bool shouldRecord = CoreServices::getRecordingStatus();
-
-		if (!isRecording && shouldRecord)
-		{
-			isRecording = true;
-			recordingTimer.startTimer(1000);
-		}
-		else if (isRecording && !shouldRecord)
-		{
-			isRecording = false;
-			stopRecording();
-		}
-
-		Sleep(1000);
-
-	}
+	Sleep(500);
 
     return true;
 }
-
-RecordingTimer::RecordingTimer(NeuropixThread* t_)
-{
-	thread = t_;
-}
-
-void RecordingTimer::timerCallback()
-{
-	thread->startRecording();
-	stopTimer();
-}
-

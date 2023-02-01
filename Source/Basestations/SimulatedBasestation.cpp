@@ -36,7 +36,7 @@ SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow(SimulatedBase
 
 		comboBox->addItem("Empty", (int) ProbeType::NONE);
 		comboBox->addItem("Neuropixels 1.0", (int) ProbeType::NP1);
-		comboBox->addItem("Neuropixels NHP", (int)ProbeType::NHP45);
+		comboBox->addItem("Neuropixels NHP (45 mm)", (int)ProbeType::NHP45);
 		comboBox->addItem("Neuropixels UHD", (int)ProbeType::UHD1);
 		comboBox->addItem("Neuropixels 2.0 1-shank", (int)ProbeType::NP2_1);
 		comboBox->addItem("Neuropixels 2.0 4-shank", (int)ProbeType::NP2_4);
@@ -144,8 +144,8 @@ bool SimulatedBasestation::open()
 		case ProbeType::NP1:
 			headstages.add(new SimulatedHeadstage(this, i + 1, "PRB_1_4_0480_1", 28948291 + i));
 			break;
-		case ProbeType::NHP10:
-			headstages.add(new SimulatedHeadstage(this, i + 1, "NP1010", 38948291 + i));
+		case ProbeType::NHP45:
+			headstages.add(new SimulatedHeadstage(this, i + 1, "NP1031", 38948291 + i));
 			break;
 		case ProbeType::UHD1:
 			headstages.add(new SimulatedHeadstage(this, i + 1, "NP1100", 48948291 + i));

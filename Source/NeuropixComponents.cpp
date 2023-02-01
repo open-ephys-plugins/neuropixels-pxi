@@ -32,7 +32,7 @@ Probe::Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) : DataSourc
 	dock = dock_;
 	headstage = hs_;
 	flex = fl_;
-	isValid = false;
+	isValid = true;
 
 	isCalibrated = false;
 	calibrationWarningShown = false;
