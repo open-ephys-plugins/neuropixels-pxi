@@ -31,7 +31,7 @@
 
 #include "NeuropixComponents.h"
 
-#define PLUGIN_VERSION "0.4.1"
+#define PLUGIN_VERSION "0.5.0"
 
 class SourceNode;
 class NeuropixThread;
