@@ -47,8 +47,8 @@ v1 API version: 1.20
 - BS firmware: ?
 
 v3 API version: 3.42
-- QBSC firmware: B176 (3.2176)
-- BS firmware: B137 (2.0137)
+- QBSC firmware: B176 (appears as 3.2176 in GUI)
+- BS firmware: B137 (appears as 2.0137 in GUI)
 
 ### Plugin version: 0.5.0
 
@@ -57,8 +57,8 @@ v1 API version: 1.20
 - BS firmware: ?
 
 v3 API version: 3.57
-- QBSC firmware: B176 (3.2176)
-- BS firmware: B137 or B169 (2.0169) <--- updated
+- QBSC firmware: B176 (appears as 3.2176)
+- BS firmware: B169 (appears as 2.0169 in GUI) <--- updated
 
 ## License
 
