@@ -1,6 +1,6 @@
 # Neuropixels PXI Plugin
 
-![Hardware diagram](Resources/hardware_diagram.png)
+![Hardware diagram](https://open-ephys.github.io/gui-docs/_images/neuropix-pxi-01.png)
 
 This plugin makes it possible to stream Neuropixels data from a PXI-based  acquisition system into the [Open Ephys GUI](https://github.com/open-ephys/plugin-gui).
 
