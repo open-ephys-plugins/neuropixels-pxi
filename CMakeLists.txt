@@ -54,7 +54,7 @@ if (NOT CMAKE_LIBRARY_ARCHITECTURE)
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(CMAKE_LIBRARY_ARCHITECTURE "x64")
 		set(NEUROPIX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/API/v1/lib64/NeuropixAPI_x64_1_20.lib)
-		set(NEUROPIX2_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/API/v3/lib64/NeuropixAPI_x64_3_57.lib)
+		set(NEUROPIX2_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/API/v3/lib64/NeuropixAPI_x64_3_59.lib)
 	else()
 		set(CMAKE_LIBRARY_ARCHITECTURE "x86")
 		set(NEUROPIX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/neuropix-api/lib32/NeuropixAPI_x86_1_20.lib)
@@ -82,7 +82,7 @@ elseif(APPLE)
 	set_property(TARGET ${PLUGIN_NAME} APPEND_STRING PROPERTY LINK_FLAGS
 	"-undefined dynamic_lookup -rpath @loader_path/../../../../shared")
 
-	install(TARGETS ${PLUGIN_NAME} DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/PlugIns)
+	install(TARGETS ${PLUGIN_NAME} DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/plugins-api8)
 	set(CMAKE_PREFIX_PATH /opt/local)
 endif()
 
