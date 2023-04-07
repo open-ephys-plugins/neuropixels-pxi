@@ -177,7 +177,8 @@ void FifoMonitor::paint(Graphics& g)
 	g.fillRoundedRectangle(2, this->getHeight()-2-barHeight, this->getWidth() - 4, barHeight, 2);
 }
 
-SourceButton::SourceButton(int id_, DataSource* source_) : id(id_), dataSource(source_), selected(false)
+SourceButton::SourceButton(int id_, DataSource* source_, Basestation* basestation_) 
+	: id(id_), dataSource(source_), selected(false), basestation(basestation_)
 {
 	status = SourceStatus::DISCONNECTED;
 
@@ -403,7 +404,7 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
 				int x_pos = slotIndex * 90 + 40;
 				int y_pos = 125 - (portIndex + 1) * 22;
 
-				SourceButton* p = new SourceButton(id++, nullptr);
+				SourceButton* p = new SourceButton(id++, nullptr, basestations[i]);
 				p->setBounds(x_pos, y_pos, 15, 15);
 				p->addListener(this);
 				addAndMakeVisible(p);
@@ -603,8 +604,14 @@ void NeuropixEditor::buttonClicked(Button* button)
 		sourceButton->setSelectedState(true);
 
 		if (canvas != nullptr && sourceButton->dataSource != nullptr)
+		{
 			canvas->setSelectedInterface(sourceButton->dataSource);
-
+		} 
+		else if (canvas != nullptr && sourceButton->dataSource == nullptr)
+		{
+			canvas->setSelectedBasestation(sourceButton->basestation);
+		}
+			
 		repaint();
 	}
 

@@ -68,6 +68,9 @@ public:
 	/** Sets which interface is active */
 	void setSelectedInterface(DataSource* d);
 
+	/** Set which basestation interface is active */
+	void setSelectedBasestation(Basestation* b);
+
 	/** Starts animation of sub-interfaces */
 	void startAcquisition();
 
@@ -98,6 +101,7 @@ public:
 
 	OwnedArray<SettingsInterface> settingsInterfaces;
 	Array<DataSource*> dataSources;
+	Array<Basestation*> basestations;
 
 	NeuropixEditor* editor;
 	NeuropixThread* thread;

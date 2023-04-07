@@ -123,7 +123,7 @@ class SourceButton : public ToggleButton, public Timer
 public:
 
 	/** Constructor */
-	SourceButton(int id, DataSource* probe);
+	SourceButton(int id, DataSource* probe, Basestation* basestation = nullptr);
 
 	/** Toggles the button selected state */
 	void setSelectedState(bool);
@@ -138,6 +138,7 @@ public:
 	void timerCallback();
 
 	DataSource* dataSource;
+	Basestation* basestation;
 	bool connected;
 
 	int id;

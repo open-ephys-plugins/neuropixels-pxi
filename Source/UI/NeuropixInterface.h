@@ -42,6 +42,7 @@ enum VisualizationMode {
 	ACTIVITY_VIEW
 };
 
+
 /** 
 
 	Extended graphical interface for updating probe settings
@@ -57,7 +58,7 @@ public:
 	friend class ProbeBrowser;
 
 	/** Constructor */
-	NeuropixInterface(DataSource* probe, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas);
+	NeuropixInterface(DataSource* probe, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas, Basestation* basestation = nullptr);
 
 	/** Destructor */
 	~NeuropixInterface();
@@ -102,6 +103,8 @@ public:
 	void selectElectrodes(Array<int> electrodes);
 
 	Probe* probe;
+
+	Basestation* basestation;
 
 private:
 
@@ -195,6 +198,24 @@ private:
 	Array<String> imroFiles;
 
 };
+
+
+/**
+
+	Extended graphical interface for updating basestation settings
+
+*/
+class BasestationInterface : public NeuropixInterface
+{
+public:
+
+	/** Constructor */
+	BasestationInterface(Basestation* basestation_, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas)
+		: NeuropixInterface(nullptr, thread, editor, canvas, basestation_)
+	{
+	}
+};
+
 
 class Annotation
 {

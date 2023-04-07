@@ -187,7 +187,7 @@ public:
 	/** Returns a JSON-formatted string with info about all connected probes*/
 	String getProbeInfoString();
 
-	/** Returns points to active DataSources (probes + ADCs)*/
+	/** Returns pointer to active DataSources (probes + ADCs)*/
 	Array<DataSource*> getDataSources();
 
 	/** Determines which PXI slot is the primary sync */

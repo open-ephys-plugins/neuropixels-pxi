@@ -36,295 +36,372 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 NeuropixInterface::NeuropixInterface(DataSource* p,
                                      NeuropixThread* t, 
                                      NeuropixEditor* e,
-                                     NeuropixCanvas* c) : SettingsInterface(p, t, e, c),
-                                     probe((Probe*) p), neuropix_info("INFO")
+                                     NeuropixCanvas* c,
+                                     Basestation* b) : SettingsInterface(p, t, e, c),
+                                     probe((Probe*) p), basestation(b), neuropix_info("INFO")
 {
 
     ColourScheme::setColourScheme(ColourSchemeId::PLASMA);
 
-    probe->ui = this;
-
-    // make a local copy
-    electrodeMetadata = Array<ElectrodeMetadata>(probe->electrodeMetadata);
-
-    // make a local copy
-    probeMetadata = probe->probeMetadata;
-
-    mode = VisualizationMode::ENABLE_VIEW;
-
-    probeBrowser = new ProbeBrowser(this);
-    probeBrowser->setBounds(0, 0, 800, 600);
-    addAndMakeVisible(probeBrowser);
-
-    int currentHeight = 55;
-
-    if (probe->info.part_number.equalsIgnoreCase("NP1110"))
+    if (probe != nullptr)
     {
+        basestation = probe->basestation;
 
-        electrodeConfigurationComboBox = new ComboBox("electrodeConfigurationComboBox");
-        electrodeConfigurationComboBox->setBounds(450, currentHeight, 65, 22);
-        electrodeConfigurationComboBox->addListener(this);
-        electrodeConfigurationComboBox->setTooltip("Enable a pre-configured set of channels");
+        probe->ui = this;
 
-        for (int i = 0; i < probe->settings.availableElectrodeConfigurations.size(); i++)
+        // make a local copy
+        electrodeMetadata = Array<ElectrodeMetadata>(probe->electrodeMetadata);
+
+        // make a local copy
+        probeMetadata = probe->probeMetadata;
+
+        mode = VisualizationMode::ENABLE_VIEW;
+
+        probeBrowser = new ProbeBrowser(this);
+        probeBrowser->setBounds(0, 0, 800, 600);
+        addAndMakeVisible(probeBrowser);
+
+        int currentHeight = 55;
+
+        if (probe->info.part_number.equalsIgnoreCase("NP1110"))
         {
-            electrodeConfigurationComboBox->addItem(probe->settings.availableElectrodeConfigurations[i], i + 1);
+
+            electrodeConfigurationComboBox = new ComboBox("electrodeConfigurationComboBox");
+            electrodeConfigurationComboBox->setBounds(450, currentHeight, 65, 22);
+            electrodeConfigurationComboBox->addListener(this);
+            electrodeConfigurationComboBox->setTooltip("Enable a pre-configured set of channels");
+
+            for (int i = 0; i < probe->settings.availableElectrodeConfigurations.size(); i++)
+            {
+                electrodeConfigurationComboBox->addItem(probe->settings.availableElectrodeConfigurations[i], i + 1);
+            }
+
+            if (electrodeConfigurationComboBox->getNumItems() > 0)
+                electrodeConfigurationComboBox->setSelectedId(1);
+
+            addAndMakeVisible(electrodeConfigurationComboBox);
+        }
+        else
+        {
+            enableButton = new UtilityButton("ENABLE", Font("Small Text", 13, Font::plain));
+            enableButton->setRadius(3.0f);
+            enableButton->setBounds(450, currentHeight, 65, 22);
+            enableButton->addListener(this);
+            enableButton->setTooltip("Enable selected channel(s)");
+            addAndMakeVisible(enableButton);
         }
 
-        if (electrodeConfigurationComboBox->getNumItems() > 0)
-            electrodeConfigurationComboBox->setSelectedId(1);
-
-        addAndMakeVisible(electrodeConfigurationComboBox);
-    }
-    else
-    {
-        enableButton = new UtilityButton("ENABLE", Font("Small Text", 13, Font::plain));
-        enableButton->setRadius(3.0f);
-        enableButton->setBounds(450, currentHeight, 65, 22);
-        enableButton->addListener(this);
-        enableButton->setTooltip("Enable selected channel(s)");
-        addAndMakeVisible(enableButton);
-    }
-
-    enableViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
-    enableViewButton->setRadius(3.0f);
-    enableViewButton->setBounds(530, currentHeight + 2, 45, 18);
-    enableViewButton->addListener(this);
-    enableViewButton->setTooltip("View channel enabled state");
-    addAndMakeVisible(enableViewButton);
-
-    currentHeight += 55;
-
-    if (probe->settings.availableApGains.size() > 0)
-    {
-
-        apGainComboBox = new ComboBox("apGainComboBox");
-        apGainComboBox->setBounds(450, currentHeight, 65, 22);
-        apGainComboBox->addListener(this);
-
-        for (int i = 0; i < probe->settings.availableApGains.size(); i++)
-            apGainComboBox->addItem(String(probe->settings.availableApGains[i]) + "x", i + 1);
-
-        apGainComboBox->setSelectedId(probe->settings.apGainIndex + 1, dontSendNotification);
-        addAndMakeVisible(apGainComboBox);
-
-        apGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
-        apGainViewButton->setRadius(3.0f);
-        apGainViewButton->setBounds(530, currentHeight + 2, 45, 18);
-        apGainViewButton->addListener(this);
-        apGainViewButton->setTooltip("View AP gain of each channel");
-        addAndMakeVisible(apGainViewButton);
-
-        apGainLabel = new Label("AP GAIN", "AP GAIN");
-        apGainLabel->setFont(Font("Small Text", 13, Font::plain));
-        apGainLabel->setBounds(446, currentHeight - 20, 100, 20);
-        apGainLabel->setColour(Label::textColourId, Colours::grey);
-        addAndMakeVisible(apGainLabel);
+        enableViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+        enableViewButton->setRadius(3.0f);
+        enableViewButton->setBounds(530, currentHeight + 2, 45, 18);
+        enableViewButton->addListener(this);
+        enableViewButton->setTooltip("View channel enabled state");
+        addAndMakeVisible(enableViewButton);
 
         currentHeight += 55;
 
-    }
-
-    if (probe->settings.availableLfpGains.size() > 0)
-    {
-        
-
-        lfpGainComboBox = new ComboBox("lfpGainComboBox");
-        lfpGainComboBox->setBounds(450, currentHeight, 65, 22);
-        lfpGainComboBox->addListener(this);
-
-        for (int i = 0; i < probe->settings.availableLfpGains.size(); i++)
-           lfpGainComboBox->addItem(String(probe->settings.availableLfpGains[i]) + "x", i + 1);
-
-        lfpGainComboBox->setSelectedId(probe->settings.lfpGainIndex + 1, dontSendNotification);
-        addAndMakeVisible(lfpGainComboBox);
-
-        lfpGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
-        lfpGainViewButton->setRadius(3.0f);
-        lfpGainViewButton->setBounds(530, currentHeight + 2, 45, 18);
-        lfpGainViewButton->addListener(this);
-        lfpGainViewButton->setTooltip("View LFP gain of each channel");
-        addAndMakeVisible(lfpGainViewButton);
-
-        lfpGainLabel = new Label("LFP GAIN", "LFP GAIN");
-        lfpGainLabel->setFont(Font("Small Text", 13, Font::plain));
-        lfpGainLabel->setBounds(446, currentHeight - 20, 100, 20);
-        lfpGainLabel->setColour(Label::textColourId, Colours::grey);
-        addAndMakeVisible(lfpGainLabel);
-
-        currentHeight += 55;
-    }
-
-    if (probe->settings.availableReferences.size() > 0)
-    {
-        
-
-        referenceComboBox = new ComboBox("ReferenceComboBox");
-        referenceComboBox->setBounds(450, currentHeight, 65, 22);
-        referenceComboBox->addListener(this);
-
-        for (int i = 0; i < probe->settings.availableReferences.size(); i++)
+        if (probe->settings.availableApGains.size() > 0)
         {
-            referenceComboBox->addItem(probe->settings.availableReferences[i], i+1);
+
+            apGainComboBox = new ComboBox("apGainComboBox");
+            apGainComboBox->setBounds(450, currentHeight, 65, 22);
+            apGainComboBox->addListener(this);
+
+            for (int i = 0; i < probe->settings.availableApGains.size(); i++)
+                apGainComboBox->addItem(String(probe->settings.availableApGains[i]) + "x", i + 1);
+
+            apGainComboBox->setSelectedId(probe->settings.apGainIndex + 1, dontSendNotification);
+            addAndMakeVisible(apGainComboBox);
+
+            apGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+            apGainViewButton->setRadius(3.0f);
+            apGainViewButton->setBounds(530, currentHeight + 2, 45, 18);
+            apGainViewButton->addListener(this);
+            apGainViewButton->setTooltip("View AP gain of each channel");
+            addAndMakeVisible(apGainViewButton);
+
+            apGainLabel = new Label("AP GAIN", "AP GAIN");
+            apGainLabel->setFont(Font("Small Text", 13, Font::plain));
+            apGainLabel->setBounds(446, currentHeight - 20, 100, 20);
+            apGainLabel->setColour(Label::textColourId, Colours::grey);
+            addAndMakeVisible(apGainLabel);
+
+            currentHeight += 55;
+
         }
 
-        referenceComboBox->setSelectedId(probe->settings.referenceIndex + 1, dontSendNotification);
-        addAndMakeVisible(referenceComboBox);
+        if (probe->settings.availableLfpGains.size() > 0)
+        {
 
-        referenceViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
-        referenceViewButton->setRadius(3.0f);
-        referenceViewButton->setBounds(530, currentHeight + 2, 45, 18);
-        referenceViewButton->addListener(this);
-        referenceViewButton->setTooltip("View reference of each channel");
-        addAndMakeVisible(referenceViewButton);
 
-        referenceLabel = new Label("REFERENCE", "REFERENCE");
-        referenceLabel->setFont(Font("Small Text", 13, Font::plain));
-        referenceLabel->setBounds(446, currentHeight - 20, 100, 20);
-        referenceLabel->setColour(Label::textColourId, Colours::grey);
-        addAndMakeVisible(referenceLabel);
+            lfpGainComboBox = new ComboBox("lfpGainComboBox");
+            lfpGainComboBox->setBounds(450, currentHeight, 65, 22);
+            lfpGainComboBox->addListener(this);
 
-        currentHeight += 55;
-    }
+            for (int i = 0; i < probe->settings.availableLfpGains.size(); i++)
+                lfpGainComboBox->addItem(String(probe->settings.availableLfpGains[i]) + "x", i + 1);
 
-    if (probe->hasApFilterSwitch())
-    {
-        
+            lfpGainComboBox->setSelectedId(probe->settings.lfpGainIndex + 1, dontSendNotification);
+            addAndMakeVisible(lfpGainComboBox);
 
-        filterComboBox = new ComboBox("FilterComboBox");
-        filterComboBox->setBounds(450, currentHeight, 75, 22);
-        filterComboBox->addListener(this);
-        filterComboBox->addItem("ON", 1);
-        filterComboBox->addItem("OFF", 2);
-        filterComboBox->setSelectedId(1, dontSendNotification);
-        addAndMakeVisible(filterComboBox);
+            lfpGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+            lfpGainViewButton->setRadius(3.0f);
+            lfpGainViewButton->setBounds(530, currentHeight + 2, 45, 18);
+            lfpGainViewButton->addListener(this);
+            lfpGainViewButton->setTooltip("View LFP gain of each channel");
+            addAndMakeVisible(lfpGainViewButton);
 
-        filterLabel = new Label("FILTER", "AP FILTER CUT");
-        filterLabel->setFont(Font("Small Text", 13, Font::plain));
-        filterLabel->setBounds(446, currentHeight - 20, 200, 20);
-        filterLabel->setColour(Label::textColourId, Colours::grey);
-        addAndMakeVisible(filterLabel);
+            lfpGainLabel = new Label("LFP GAIN", "LFP GAIN");
+            lfpGainLabel->setFont(Font("Small Text", 13, Font::plain));
+            lfpGainLabel->setBounds(446, currentHeight - 20, 100, 20);
+            lfpGainLabel->setColour(Label::textColourId, Colours::grey);
+            addAndMakeVisible(lfpGainLabel);
 
-    }
+            currentHeight += 55;
+        }
 
-    currentHeight += 55;
+        if (probe->settings.availableReferences.size() > 0)
+        {
 
-    activityViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
-    activityViewButton->setRadius(3.0f);
-    
-    activityViewButton->addListener(this);
-    activityViewButton->setTooltip("View peak-to-peak amplitudes for each channel");
-    addAndMakeVisible(activityViewButton);
 
-    activityViewComboBox = new ComboBox("ActivityView Combo Box");
+            referenceComboBox = new ComboBox("ReferenceComboBox");
+            referenceComboBox->setBounds(450, currentHeight, 65, 22);
+            referenceComboBox->addListener(this);
 
-    if (probe->settings.availableLfpGains.size() > 0)
-    {
-        activityViewComboBox->setBounds(450, currentHeight, 65, 22);
-        activityViewComboBox->addListener(this);
-        activityViewComboBox->addItem("AP", 1);
-        activityViewComboBox->addItem("LFP", 2);
-        activityViewComboBox->setSelectedId(1, dontSendNotification);
-        addAndMakeVisible(activityViewComboBox);
-        activityViewButton->setBounds(530, currentHeight + 2, 45, 18);
-    }
-    else {
-        activityViewButton->setBounds(450, currentHeight + 2, 45, 18);
-    }
+            for (int i = 0; i < probe->settings.availableReferences.size(); i++)
+            {
+                referenceComboBox->addItem(probe->settings.availableReferences[i], i + 1);
+            }
 
-    activityViewLabel = new Label("PROBE SIGNAL", "PROBE SIGNAL");
-    activityViewLabel->setFont(Font("Small Text", 13, Font::plain));
-    activityViewLabel->setBounds(446, currentHeight - 20, 180, 20);
-    activityViewLabel->setColour(Label::textColourId, Colours::grey);
-    addAndMakeVisible(activityViewLabel);
+            referenceComboBox->setSelectedId(probe->settings.referenceIndex + 1, dontSendNotification);
+            addAndMakeVisible(referenceComboBox);
 
-    currentHeight += 55;
+            referenceViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+            referenceViewButton->setRadius(3.0f);
+            referenceViewButton->setBounds(530, currentHeight + 2, 45, 18);
+            referenceViewButton->addListener(this);
+            referenceViewButton->setTooltip("View reference of each channel");
+            addAndMakeVisible(referenceViewButton);
 
-    if (probe->info.part_number == "NP1300") // Neuropixels Opto
-    {
-        redEmissionSiteLabel = new Label("RED EMISSION SITE", "RED EMISSION SITE");
-        redEmissionSiteLabel->setFont(Font("Small Text", 13, Font::plain));
-        redEmissionSiteLabel->setBounds(446, currentHeight - 20, 180, 20);
-        redEmissionSiteLabel->setColour(Label::textColourId, Colours::red);
-        addAndMakeVisible(redEmissionSiteLabel);
+            referenceLabel = new Label("REFERENCE", "REFERENCE");
+            referenceLabel->setFont(Font("Small Text", 13, Font::plain));
+            referenceLabel->setBounds(446, currentHeight - 20, 100, 20);
+            referenceLabel->setColour(Label::textColourId, Colours::grey);
+            addAndMakeVisible(referenceLabel);
 
-        redEmissionSiteComboBox = new ComboBox("Red Emission Site Combo Box");
-        redEmissionSiteComboBox->addListener(this);
-        redEmissionSiteComboBox->setBounds(450, currentHeight, 65, 22);
-        redEmissionSiteComboBox->addItem("OFF", 1);
-        
-        for (int i = 0; i < 14; i++)
-            redEmissionSiteComboBox->addItem(String(i+1), i+2);
+            currentHeight += 55;
+        }
 
-        redEmissionSiteComboBox->setSelectedId(1, dontSendNotification);
-        addAndMakeVisible(redEmissionSiteComboBox);
+        if (probe->hasApFilterSwitch())
+        {
+
+
+            filterComboBox = new ComboBox("FilterComboBox");
+            filterComboBox->setBounds(450, currentHeight, 75, 22);
+            filterComboBox->addListener(this);
+            filterComboBox->addItem("ON", 1);
+            filterComboBox->addItem("OFF", 2);
+            filterComboBox->setSelectedId(1, dontSendNotification);
+            addAndMakeVisible(filterComboBox);
+
+            filterLabel = new Label("FILTER", "AP FILTER CUT");
+            filterLabel->setFont(Font("Small Text", 13, Font::plain));
+            filterLabel->setBounds(446, currentHeight - 20, 200, 20);
+            filterLabel->setColour(Label::textColourId, Colours::grey);
+            addAndMakeVisible(filterLabel);
+
+        }
 
         currentHeight += 55;
 
-        blueEmissionSiteLabel = new Label("BLUE EMISSION SITE", "BLUE EMISSION SITE");
-        blueEmissionSiteLabel->setFont(Font("Small Text", 13, Font::plain));
-        blueEmissionSiteLabel->setBounds(446, currentHeight - 20, 180, 20);
-        blueEmissionSiteLabel->setColour(Label::textColourId, Colours::blue);
-        addAndMakeVisible(blueEmissionSiteLabel);
+        activityViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+        activityViewButton->setRadius(3.0f);
 
-        blueEmissionSiteComboBox = new ComboBox("Blue Emission Site Combo Box");
-        blueEmissionSiteComboBox->addListener(this);
-        blueEmissionSiteComboBox->setBounds(450, currentHeight, 65, 22);
-        blueEmissionSiteComboBox->addItem("OFF", 1);
+        activityViewButton->addListener(this);
+        activityViewButton->setTooltip("View peak-to-peak amplitudes for each channel");
+        addAndMakeVisible(activityViewButton);
 
-        for (int i = 0; i < 14; i++)
-            blueEmissionSiteComboBox->addItem(String(i+1), i + 2);
+        activityViewComboBox = new ComboBox("ActivityView Combo Box");
 
-        blueEmissionSiteComboBox->setSelectedId(1, dontSendNotification);
-        addAndMakeVisible(blueEmissionSiteComboBox);
+        if (probe->settings.availableLfpGains.size() > 0)
+        {
+            activityViewComboBox->setBounds(450, currentHeight, 65, 22);
+            activityViewComboBox->addListener(this);
+            activityViewComboBox->addItem("AP", 1);
+            activityViewComboBox->addItem("LFP", 2);
+            activityViewComboBox->setSelectedId(1, dontSendNotification);
+            addAndMakeVisible(activityViewComboBox);
+            activityViewButton->setBounds(530, currentHeight + 2, 45, 18);
+        }
+        else {
+            activityViewButton->setBounds(450, currentHeight + 2, 45, 18);
+        }
+
+        activityViewLabel = new Label("PROBE SIGNAL", "PROBE SIGNAL");
+        activityViewLabel->setFont(Font("Small Text", 13, Font::plain));
+        activityViewLabel->setBounds(446, currentHeight - 20, 180, 20);
+        activityViewLabel->setColour(Label::textColourId, Colours::grey);
+        addAndMakeVisible(activityViewLabel);
+
+        currentHeight += 55;
+
+        if (probe->info.part_number == "NP1300") // Neuropixels Opto
+        {
+            redEmissionSiteLabel = new Label("RED EMISSION SITE", "RED EMISSION SITE");
+            redEmissionSiteLabel->setFont(Font("Small Text", 13, Font::plain));
+            redEmissionSiteLabel->setBounds(446, currentHeight - 20, 180, 20);
+            redEmissionSiteLabel->setColour(Label::textColourId, Colours::red);
+            addAndMakeVisible(redEmissionSiteLabel);
+
+            redEmissionSiteComboBox = new ComboBox("Red Emission Site Combo Box");
+            redEmissionSiteComboBox->addListener(this);
+            redEmissionSiteComboBox->setBounds(450, currentHeight, 65, 22);
+            redEmissionSiteComboBox->addItem("OFF", 1);
+
+            for (int i = 0; i < 14; i++)
+                redEmissionSiteComboBox->addItem(String(i + 1), i + 2);
+
+            redEmissionSiteComboBox->setSelectedId(1, dontSendNotification);
+            addAndMakeVisible(redEmissionSiteComboBox);
+
+            currentHeight += 55;
+
+            blueEmissionSiteLabel = new Label("BLUE EMISSION SITE", "BLUE EMISSION SITE");
+            blueEmissionSiteLabel->setFont(Font("Small Text", 13, Font::plain));
+            blueEmissionSiteLabel->setBounds(446, currentHeight - 20, 180, 20);
+            blueEmissionSiteLabel->setColour(Label::textColourId, Colours::blue);
+            addAndMakeVisible(blueEmissionSiteLabel);
+
+            blueEmissionSiteComboBox = new ComboBox("Blue Emission Site Combo Box");
+            blueEmissionSiteComboBox->addListener(this);
+            blueEmissionSiteComboBox->setBounds(450, currentHeight, 65, 22);
+            blueEmissionSiteComboBox->addItem("OFF", 1);
+
+            for (int i = 0; i < 14; i++)
+                blueEmissionSiteComboBox->addItem(String(i + 1), i + 2);
+
+            blueEmissionSiteComboBox->setSelectedId(1, dontSendNotification);
+            addAndMakeVisible(blueEmissionSiteComboBox);
+        }
+
+        // BIST
+        bistComboBox = new ComboBox("BistComboBox");
+        bistComboBox->setBounds(650, 500, 225, 22);
+        bistComboBox->addListener(this);
+
+        availableBists.add(BIST::EMPTY);
+        availableBists.add(BIST::SIGNAL);
+        bistComboBox->addItem("Test probe signal", 1);
+
+        availableBists.add(BIST::NOISE);
+        bistComboBox->addItem("Test probe noise", 2);
+
+        availableBists.add(BIST::PSB);
+        bistComboBox->addItem("Test PSB bus", 3);
+
+        availableBists.add(BIST::SR);
+        bistComboBox->addItem("Test shift registers", 4);
+
+        availableBists.add(BIST::EEPROM);
+        bistComboBox->addItem("Test EEPROM", 5);
+
+        availableBists.add(BIST::I2C);
+        bistComboBox->addItem("Test I2C", 6);
+
+        availableBists.add(BIST::SERDES);
+        bistComboBox->addItem("Test Serdes", 7);
+
+        availableBists.add(BIST::HB);
+        bistComboBox->addItem("Test Heartbeat", 8);
+
+        availableBists.add(BIST::BS);
+        bistComboBox->addItem("Test Basestation", 9);
+        addAndMakeVisible(bistComboBox);
+
+        bistButton = new UtilityButton("RUN", Font("Small Text", 12, Font::plain));
+        bistButton->setRadius(3.0f);
+        bistButton->setBounds(880, 500, 50, 22);
+        bistButton->addListener(this);
+        bistButton->setTooltip("Run selected test");
+        addAndMakeVisible(bistButton);
+
+        bistLabel = new Label("BIST", "Built-in self tests:");
+        bistLabel->setFont(Font("Small Text", 13, Font::plain));
+        bistLabel->setBounds(650, 473, 200, 20);
+        bistLabel->setColour(Label::textColourId, Colours::grey);
+        addAndMakeVisible(bistLabel);
+
+        // COPY / PASTE / UPLOAD
+        copyButton = new UtilityButton("COPY", Font("Small Text", 12, Font::plain));
+        copyButton->setRadius(3.0f);
+        copyButton->setBounds(45, 637, 60, 22);
+        copyButton->addListener(this);
+        copyButton->setTooltip("Copy probe settings");
+        addAndMakeVisible(copyButton);
+
+        pasteButton = new UtilityButton("PASTE", Font("Small Text", 12, Font::plain));
+        pasteButton->setRadius(3.0f);
+        pasteButton->setBounds(115, 637, 60, 22);
+        pasteButton->addListener(this);
+        pasteButton->setTooltip("Paste probe settings");
+        addAndMakeVisible(pasteButton);
+
+        applyToAllButton = new UtilityButton("APPLY TO ALL", Font("Small Text", 12, Font::plain));
+        applyToAllButton->setRadius(3.0f);
+        applyToAllButton->setBounds(185, 637, 120, 22);
+        applyToAllButton->addListener(this);
+        applyToAllButton->setTooltip("Apply this probe's settings to all others");
+        addAndMakeVisible(applyToAllButton);
+
+        saveImroButton = new UtilityButton("SAVE TO IMRO", Font("Small Text", 12, Font::plain));
+        saveImroButton->setRadius(3.0f);
+        saveImroButton->setBounds(45, 672, 120, 22);
+        saveImroButton->addListener(this);
+        saveImroButton->setTooltip("Save settings map to .imro file");
+        addAndMakeVisible(saveImroButton);
+
+        loadImroButton = new UtilityButton("LOAD FROM IMRO", Font("Small Text", 12, Font::plain));
+        loadImroButton->setRadius(3.0f);
+        loadImroButton->setBounds(175, 672, 130, 22);
+        loadImroButton->addListener(this);
+        loadImroButton->setTooltip("Load settings map from .imro file");
+        addAndMakeVisible(loadImroButton);
+
+        saveJsonButton = new UtilityButton("SAVE TO JSON", Font("Small Text", 12, Font::plain));
+        saveJsonButton->setRadius(3.0f);
+        saveJsonButton->setBounds(45, 707, 120, 22);
+        saveJsonButton->addListener(this);
+        saveJsonButton->setTooltip("Save channel map to probeinterface .json file");
+        addAndMakeVisible(saveJsonButton);
+
+        loadJsonButton = new UtilityButton("LOAD FROM JSON", Font("Small Text", 12, Font::plain));
+        loadJsonButton->setRadius(3.0f);
+        loadJsonButton->setBounds(175, 707, 130, 22);
+        loadJsonButton->addListener(this);
+        loadJsonButton->setTooltip("Load channel map from probeinterface .json file");
+        // addAndMakeVisible(loadJsonButton);
+
+        loadImroComboBox = new ComboBox("Quick-load IMRO");
+        loadImroComboBox->setBounds(175, 707, 130, 22);
+        loadImroComboBox->addListener(this);
+        loadImroComboBox->setTooltip("Load a favorite IMRO setting.");
+
+        File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
+        File imroDirectory = baseDirectory.getChildFile("IMRO");
+        for (const auto& filename : File(imroDirectory).findChildFiles(File::findFiles, false, "*.imro")) {
+            imroFiles.add(filename.getFileNameWithoutExtension());
+            loadImroComboBox->addItem(imroFiles.getLast(), imroFiles.size());
+        }
+        if (!imroFiles.size())
+            loadImroComboBox->addItem("No pre-set IMRO found (see docs)", 1);
+        addAndMakeVisible(loadImroComboBox);
+   
+        probeSettingsLabel = new Label("Settings", "Probe settings:");
+        probeSettingsLabel->setFont(Font("Small Text", 13, Font::plain));
+        probeSettingsLabel->setBounds(40, 610, 300, 20);
+        probeSettingsLabel->setColour(Label::textColourId, Colours::grey);
+        addAndMakeVisible(probeSettingsLabel);
     }
-
-    // BIST
-    bistComboBox = new ComboBox("BistComboBox");
-    bistComboBox->setBounds(650, 500, 225, 22);
-    bistComboBox->addListener(this);
-
-    availableBists.add(BIST::EMPTY);
-    availableBists.add(BIST::SIGNAL);
-    bistComboBox->addItem("Test probe signal", 1);
-
-    availableBists.add(BIST::NOISE);
-    bistComboBox->addItem("Test probe noise", 2);
-
-    availableBists.add(BIST::PSB);
-    bistComboBox->addItem("Test PSB bus", 3);
-
-    availableBists.add(BIST::SR);
-    bistComboBox->addItem("Test shift registers", 4);
-
-    availableBists.add(BIST::EEPROM);
-    bistComboBox->addItem("Test EEPROM", 5);
-
-    availableBists.add(BIST::I2C);
-    bistComboBox->addItem("Test I2C", 6);
-
-    availableBists.add(BIST::SERDES);
-    bistComboBox->addItem("Test Serdes", 7);
-
-    availableBists.add(BIST::HB);
-    bistComboBox->addItem("Test Heartbeat", 8);
-
-    availableBists.add(BIST::BS);
-    bistComboBox->addItem("Test Basestation", 9);
-    addAndMakeVisible(bistComboBox);
-
-    bistButton = new UtilityButton("RUN", Font("Small Text", 12, Font::plain));
-    bistButton->setRadius(3.0f);
-    bistButton->setBounds(880, 500, 50, 22);
-    bistButton->addListener(this);
-    bistButton->setTooltip("Run selected test");
-    addAndMakeVisible(bistButton);
-
-    bistLabel = new Label("BIST", "Built-in self tests:");
-    bistLabel->setFont(Font("Small Text", 13, Font::plain));
-    bistLabel->setBounds(650, 473, 200, 20);
-    bistLabel->setColour(Label::textColourId, Colours::grey);
-    addAndMakeVisible(bistLabel);
 
     // FIRMWARE
     firmwareToggleButton = new UtilityButton("UPDATE FIRMWARE...", Font("Small Text", 12, Font::plain));
@@ -378,82 +455,10 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     firmwareInstructionsLabel->setColour(Label::textColourId, Colours::orange);
     addChildComponent(firmwareInstructionsLabel);
 
-    // COPY / PASTE / UPLOAD
-    copyButton = new UtilityButton("COPY", Font("Small Text", 12, Font::plain));
-    copyButton->setRadius(3.0f);
-    copyButton->setBounds(45, 637, 60, 22);
-    copyButton->addListener(this);
-    copyButton->setTooltip("Copy probe settings");
-    addAndMakeVisible(copyButton);
-
-    pasteButton = new UtilityButton("PASTE", Font("Small Text", 12, Font::plain));
-    pasteButton->setRadius(3.0f);
-    pasteButton->setBounds(115, 637, 60, 22);
-    pasteButton->addListener(this);
-    pasteButton->setTooltip("Paste probe settings");
-    addAndMakeVisible(pasteButton);
-
-    applyToAllButton = new UtilityButton("APPLY TO ALL", Font("Small Text", 12, Font::plain));
-    applyToAllButton->setRadius(3.0f);
-    applyToAllButton->setBounds(185, 637, 120, 22);
-    applyToAllButton->addListener(this);
-    applyToAllButton->setTooltip("Apply this probe's settings to all others");
-    addAndMakeVisible(applyToAllButton);
-
-    saveImroButton = new UtilityButton("SAVE TO IMRO", Font("Small Text", 12, Font::plain));
-    saveImroButton->setRadius(3.0f);
-    saveImroButton->setBounds(45, 672, 120, 22);
-    saveImroButton->addListener(this);
-    saveImroButton->setTooltip("Save settings map to .imro file");
-    addAndMakeVisible(saveImroButton);
-
-    loadImroButton = new UtilityButton("LOAD FROM IMRO", Font("Small Text", 12, Font::plain));
-    loadImroButton->setRadius(3.0f);
-    loadImroButton->setBounds(175, 672, 130, 22);
-    loadImroButton->addListener(this);
-    loadImroButton->setTooltip("Load settings map from .imro file");
-    addAndMakeVisible(loadImroButton);
-
-    saveJsonButton = new UtilityButton("SAVE TO JSON", Font("Small Text", 12, Font::plain));
-    saveJsonButton->setRadius(3.0f);
-    saveJsonButton->setBounds(45, 707, 120, 22);
-    saveJsonButton->addListener(this);
-    saveJsonButton->setTooltip("Save channel map to probeinterface .json file");
-    addAndMakeVisible(saveJsonButton);
-
-    loadJsonButton = new UtilityButton("LOAD FROM JSON", Font("Small Text", 12, Font::plain));
-    loadJsonButton->setRadius(3.0f);
-    loadJsonButton->setBounds(175, 707, 130, 22);
-    loadJsonButton->addListener(this);
-    loadJsonButton->setTooltip("Load channel map from probeinterface .json file");
-   // addAndMakeVisible(loadJsonButton);
-
-    loadImroComboBox = new ComboBox("Quick-load IMRO");
-    loadImroComboBox->setBounds(175, 707, 130, 22);
-    loadImroComboBox->addListener(this);
-    loadImroComboBox->setTooltip("Load a favorite IMRO setting.");
-
-    File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
-    File imroDirectory = baseDirectory.getChildFile("IMRO");
-    for (const auto& filename : File(imroDirectory).findChildFiles(File::findFiles, false, "*.imro")) {
-        imroFiles.add(filename.getFileNameWithoutExtension());
-        loadImroComboBox->addItem(imroFiles.getLast(), imroFiles.size());
-    }
-    if (!imroFiles.size())
-        loadImroComboBox->addItem("No pre-set IMRO found (see docs)", 1);
-    addAndMakeVisible(loadImroComboBox);
-
-    probeSettingsLabel = new Label("Settings", "Probe settings:");
-    probeSettingsLabel->setFont(Font("Small Text", 13, Font::plain));
-    probeSettingsLabel->setBounds(40, 610, 300, 20);
-    probeSettingsLabel->setColour(Label::textColourId, Colours::grey);
-    addAndMakeVisible(probeSettingsLabel);
-
-
     // PROBE INFO 
     mainLabel = new Label("MAIN", "MAIN");
     mainLabel->setFont(Font("Small Text", 40, Font::plain));
-    mainLabel->setBounds(625, 20, 200, 45);
+    mainLabel->setBounds(625, 20, 300, 45);
     mainLabel->setColour(Label::textColourId, Colours::darkkhaki);
     addAndMakeVisible(mainLabel);
 
@@ -514,17 +519,25 @@ void NeuropixInterface::updateInfoString()
 
     String mainString, nameString, infoString;
 
-    mainString += String(probe->basestation->slot);
-    mainString += ":";
-    mainString += String(probe->headstage->port);
+    if (probe == nullptr)
+        mainString += "Slot ";
 
-    if (probe->type == ProbeType::NP2_1 || probe->type == ProbeType::NP2_4)
+    mainString += String(basestation->slot);
+
+    if (probe != nullptr)
     {
+        
         mainString += ":";
-        mainString += String(probe->dock);
+        mainString += String(probe->headstage->port);
+
+        if (probe->type == ProbeType::NP2_1 || probe->type == ProbeType::NP2_4)
+        {
+            mainString += ":";
+            mainString += String(probe->dock);
+        }
+
+        nameString = probe->name + "\n(" + probe->displayName + ")";
     }
-    
-    nameString = probe->name + "\n(" + probe->displayName + ")";
 
     infoString += "API version: ";
     infoString += thread->getApiVersion();
@@ -532,33 +545,36 @@ void NeuropixInterface::updateInfoString()
     infoString += "\n";
 
     infoString += "Basestation";
-    infoString += "\n Firmware version: " + probe->basestation->info.boot_version;
+    infoString += "\n Firmware version: " + basestation->info.boot_version;
     infoString += "\n";
     infoString += "\n";
 
-    if (probe->basestation->type != BasestationType::ONEBOX)
+    if (basestation->type != BasestationType::ONEBOX)
     {
         infoString += "Basestation connect board";
-        infoString += "\n Hardware version: " + probe->basestation->basestationConnectBoard->info.version;
-        infoString += "\n Firmware version: " + probe->basestation->basestationConnectBoard->info.boot_version;
+        infoString += "\n Hardware version: " + basestation->basestationConnectBoard->info.version;
+        infoString += "\n Firmware version: " + basestation->basestationConnectBoard->info.boot_version;
         infoString += "\n";
         infoString += "\n";
     }
     
-    infoString += "Headstage: " + probe->headstage->info.part_number;
-    infoString += "\n";
-    infoString += "\n";
+    if (probe != nullptr)
+    {
+        infoString += "Headstage: " + probe->headstage->info.part_number;
+        infoString += "\n";
+        infoString += "\n";
 
-    infoString += "Flex: " + probe->flex->info.part_number;
-    infoString += "\n";
-    infoString += "\n";
+        infoString += "Flex: " + probe->flex->info.part_number;
+        infoString += "\n";
+        infoString += "\n";
 
-    infoString += "Probe: ";
-    infoString += "\n S/N: " + String(probe->info.serial_number);
-    infoString += "\n Part number: " + probe->info.part_number;
-    infoString += "\n";
+        infoString += "Probe: ";
+        infoString += "\n S/N: " + String(probe->info.serial_number);
+        infoString += "\n Part number: " + probe->info.part_number;
+        infoString += "\n";
 
-
+    }
+    
     infoLabel->setText(infoString, dontSendNotification);
     nameLabel->setText(nameString, dontSendNotification);
     mainLabel->setText(mainString, dontSendNotification);
@@ -941,7 +957,7 @@ void NeuropixInterface::buttonClicked(Button* button)
     {
         if (bsFirmwareComboBox->getSelectedId() > 1)
         {
-            probe->basestation->updateBsFirmware(File(bsFirmwareComboBox->getText()));
+            basestation->updateBsFirmware(File(bsFirmwareComboBox->getText()));
         }
         else {
             CoreServices::sendStatusMessage("No file selected.");
@@ -952,7 +968,7 @@ void NeuropixInterface::buttonClicked(Button* button)
     {
         if (bscFirmwareComboBox->getSelectedId() > 1)
         {
-            probe->basestation->updateBscFirmware(File(bscFirmwareComboBox->getText()));
+            basestation->updateBscFirmware(File(bscFirmwareComboBox->getText()));
         }
         else {
             CoreServices::sendStatusMessage("No file selected.");
@@ -1154,10 +1170,13 @@ void NeuropixInterface::stopAcquisition()
 void NeuropixInterface::paint(Graphics& g)
 {
 
-    drawLegend(g);
+    if (probe != nullptr)
+    {
+        drawLegend(g);
 
-    g.setColour(Colour(60, 60, 60));
-    g.fillRoundedRectangle(30, 600, 290, 145, 8.0f);
+        g.setColour(Colour(60, 60, 60));
+        g.fillRoundedRectangle(30, 600, 290, 145, 8.0f);
+    }
 
 }
 
@@ -1416,307 +1435,314 @@ ProbeSettings NeuropixInterface::getProbeSettings()
 void NeuropixInterface::saveParameters(XmlElement* xml)
 {
 
-    LOGD("Saving Neuropix display.");
-
-    XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
-
-    xmlNode->setAttribute("slot", probe->basestation->slot);
-    xmlNode->setAttribute("bs_firmware_version", probe->basestation->info.boot_version);
-    xmlNode->setAttribute("bs_hardware_version", probe->basestation->info.version);
-    xmlNode->setAttribute("bs_serial_number", String(probe->basestation->info.serial_number));
-    xmlNode->setAttribute("bs_part_number", probe->basestation->info.part_number);
-
-    xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
-    xmlNode->setAttribute("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
-    xmlNode->setAttribute("bsc_serial_number", String(probe->basestation->basestationConnectBoard->info.serial_number));
-    xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
-
-    xmlNode->setAttribute("headstage_serial_number", String(probe->headstage->info.serial_number));
-    xmlNode->setAttribute("headstage_part_number", probe->headstage->info.part_number);
-
-    xmlNode->setAttribute("flex_version", probe->flex->info.version);
-    xmlNode->setAttribute("flex_part_number", probe->headstage->info.part_number);
-
-    xmlNode->setAttribute("port", probe->headstage->port);
-    xmlNode->setAttribute("dock", probe->dock);
-    xmlNode->setAttribute("probe_serial_number", String(probe->info.serial_number));
-    xmlNode->setAttribute("probe_part_number", probe->info.part_number);
-    xmlNode->setAttribute("probe_name", probe->name);
-    xmlNode->setAttribute("num_adcs", probe->probeMetadata.num_adcs);
-    xmlNode->setAttribute("custom_probe_name", probe->customName.probeSpecific);
-
-    xmlNode->setAttribute("ZoomHeight", probeBrowser->getZoomHeight());
-    xmlNode->setAttribute("ZoomOffset", probeBrowser->getZoomOffset());
-
-    if (apGainComboBox != nullptr)
+    if (probe != nullptr)
     {
-        xmlNode->setAttribute("apGainValue", apGainComboBox->getText());
-        xmlNode->setAttribute("apGainIndex", apGainComboBox->getSelectedId()-1);
-    }
-    
-    if (lfpGainComboBox != nullptr)
-    {
-        xmlNode->setAttribute("lfpGainValue", lfpGainComboBox->getText());
-        xmlNode->setAttribute("lfpGainIndex", lfpGainComboBox->getSelectedId()-1);
-    }
+        LOGD("Saving Neuropix display.");
 
-    if (electrodeConfigurationComboBox != nullptr)
-    {
-        xmlNode->setAttribute("electrodeConfiguration", electrodeConfigurationComboBox->getSelectedId()-1);
-    }
-    
-    if (referenceComboBox != nullptr)
-    {
-        if (referenceComboBox->getSelectedId() > 0)
+        XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
+
+        xmlNode->setAttribute("slot", probe->basestation->slot);
+        xmlNode->setAttribute("bs_firmware_version", probe->basestation->info.boot_version);
+        xmlNode->setAttribute("bs_hardware_version", probe->basestation->info.version);
+        xmlNode->setAttribute("bs_serial_number", String(probe->basestation->info.serial_number));
+        xmlNode->setAttribute("bs_part_number", probe->basestation->info.part_number);
+
+        xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
+        xmlNode->setAttribute("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
+        xmlNode->setAttribute("bsc_serial_number", String(probe->basestation->basestationConnectBoard->info.serial_number));
+        xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
+
+        xmlNode->setAttribute("headstage_serial_number", String(probe->headstage->info.serial_number));
+        xmlNode->setAttribute("headstage_part_number", probe->headstage->info.part_number);
+
+        xmlNode->setAttribute("flex_version", probe->flex->info.version);
+        xmlNode->setAttribute("flex_part_number", probe->headstage->info.part_number);
+
+        xmlNode->setAttribute("port", probe->headstage->port);
+        xmlNode->setAttribute("dock", probe->dock);
+        xmlNode->setAttribute("probe_serial_number", String(probe->info.serial_number));
+        xmlNode->setAttribute("probe_part_number", probe->info.part_number);
+        xmlNode->setAttribute("probe_name", probe->name);
+        xmlNode->setAttribute("num_adcs", probe->probeMetadata.num_adcs);
+        xmlNode->setAttribute("custom_probe_name", probe->customName.probeSpecific);
+
+        xmlNode->setAttribute("ZoomHeight", probeBrowser->getZoomHeight());
+        xmlNode->setAttribute("ZoomOffset", probeBrowser->getZoomOffset());
+
+        if (apGainComboBox != nullptr)
         {
-            xmlNode->setAttribute("referenceChannel", referenceComboBox->getText());
-            xmlNode->setAttribute("referenceChannelIndex", referenceComboBox->getSelectedId() - 1);
+            xmlNode->setAttribute("apGainValue", apGainComboBox->getText());
+            xmlNode->setAttribute("apGainIndex", apGainComboBox->getSelectedId() - 1);
         }
-        else {
-            xmlNode->setAttribute("referenceChannel", "Ext");
-            xmlNode->setAttribute("referenceChannelIndex", 0);
+
+        if (lfpGainComboBox != nullptr)
+        {
+            xmlNode->setAttribute("lfpGainValue", lfpGainComboBox->getText());
+            xmlNode->setAttribute("lfpGainIndex", lfpGainComboBox->getSelectedId() - 1);
+        }
+
+        if (electrodeConfigurationComboBox != nullptr)
+        {
+            xmlNode->setAttribute("electrodeConfiguration", electrodeConfigurationComboBox->getSelectedId() - 1);
+        }
+
+        if (referenceComboBox != nullptr)
+        {
+            if (referenceComboBox->getSelectedId() > 0)
+            {
+                xmlNode->setAttribute("referenceChannel", referenceComboBox->getText());
+                xmlNode->setAttribute("referenceChannelIndex", referenceComboBox->getSelectedId() - 1);
+            }
+            else {
+                xmlNode->setAttribute("referenceChannel", "Ext");
+                xmlNode->setAttribute("referenceChannelIndex", 0);
+            }
+        }
+
+        if (filterComboBox != nullptr)
+        {
+            xmlNode->setAttribute("filterCut", filterComboBox->getText());
+            xmlNode->setAttribute("filterCutIndex", filterComboBox->getSelectedId());
+        }
+
+        XmlElement* channelNode = xmlNode->createNewChildElement("CHANNELS");
+        XmlElement* xposNode = xmlNode->createNewChildElement("ELECTRODE_XPOS");
+        XmlElement* yposNode = xmlNode->createNewChildElement("ELECTRODE_YPOS");
+
+        ProbeSettings p = getProbeSettings();
+
+        for (int i = 0; i < p.selectedChannel.size(); i++)
+        {
+            int bank = int(p.selectedBank[i]);
+            int shank = p.selectedShank[i];
+            int channel = p.selectedChannel[i];
+            int elec = p.selectedElectrode[i];
+
+            String chString = String(bank);
+
+            if (probe->type == ProbeType::NP2_4)
+                chString += ":" + String(shank);
+
+            channelNode->setAttribute("CH" + String(channel), chString);
+            xposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].xpos + 250 * shank));
+            yposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].ypos));
+        }
+
+        if (probe->emissionSiteMetadata.size() > 0)
+        {
+            XmlElement* emissionSiteNode = xmlNode->createNewChildElement("EMISSION_SITES");
+
+            for (int i = 0; i < probe->emissionSiteMetadata.size(); i++)
+            {
+
+                XmlElement* emissionSite = emissionSiteNode->createNewChildElement("SITE");
+
+                EmissionSiteMetadata& metadata = probe->emissionSiteMetadata[i];
+
+                emissionSite->setAttribute("WAVELENGTH", metadata.wavelength_nm);
+                emissionSite->setAttribute("SHANK_INDEX", metadata.shank_index);
+                emissionSite->setAttribute("XPOS", metadata.xpos);
+                emissionSite->setAttribute("YPOS", metadata.ypos);
+            }
+        }
+
+
+        xmlNode->setAttribute("visualizationMode", mode);
+        xmlNode->setAttribute("activityToView", probeBrowser->activityToView);
+
+        // annotations
+        for (int i = 0; i < annotations.size(); i++)
+        {
+            Annotation& a = annotations.getReference(i);
+            XmlElement* annotationNode = xmlNode->createNewChildElement("ANNOTATIONS");
+            annotationNode->setAttribute("text", a.text);
+            annotationNode->setAttribute("channel", a.electrodes[0]);
+            annotationNode->setAttribute("R", a.colour.getRed());
+            annotationNode->setAttribute("G", a.colour.getGreen());
+            annotationNode->setAttribute("B", a.colour.getBlue());
         }
     }
     
-    if (filterComboBox != nullptr)
-    {
-        xmlNode->setAttribute("filterCut", filterComboBox->getText());
-        xmlNode->setAttribute("filterCutIndex", filterComboBox->getSelectedId());
-    }
-
-    XmlElement* channelNode = xmlNode->createNewChildElement("CHANNELS");
-    XmlElement* xposNode = xmlNode->createNewChildElement("ELECTRODE_XPOS");
-    XmlElement* yposNode = xmlNode->createNewChildElement("ELECTRODE_YPOS");
-
-    ProbeSettings p = getProbeSettings();
-
-    for (int i = 0; i < p.selectedChannel.size(); i++)
-    {
-        int bank = int(p.selectedBank[i]);
-        int shank = p.selectedShank[i];
-        int channel = p.selectedChannel[i];
-        int elec = p.selectedElectrode[i];
-
-        String chString = String(bank);
-
-        if (probe->type == ProbeType::NP2_4)
-            chString += ":" + String(shank);
-
-        channelNode->setAttribute("CH" + String(channel), chString);
-        xposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].xpos + 250 * shank));
-        yposNode->setAttribute("CH" + String(channel), String(probe->electrodeMetadata[elec].ypos));
-    }
-
-    if (probe->emissionSiteMetadata.size() > 0)
-    {
-        XmlElement* emissionSiteNode = xmlNode->createNewChildElement("EMISSION_SITES");
-
-        for (int i = 0; i < probe->emissionSiteMetadata.size(); i++)
-        {
-
-            XmlElement* emissionSite = emissionSiteNode->createNewChildElement("SITE");
-
-            EmissionSiteMetadata& metadata = probe->emissionSiteMetadata[i];
-
-            emissionSite->setAttribute("WAVELENGTH", metadata.wavelength_nm);
-            emissionSite->setAttribute("SHANK_INDEX", metadata.shank_index);
-            emissionSite->setAttribute("XPOS", metadata.xpos);
-            emissionSite->setAttribute("YPOS", metadata.ypos);
-        }
-    }
-
-   
-    xmlNode->setAttribute("visualizationMode", mode);
-    xmlNode->setAttribute("activityToView", probeBrowser->activityToView);
-
-    // annotations
-    for (int i = 0; i < annotations.size(); i++)
-    {
-        Annotation& a = annotations.getReference(i);
-        XmlElement* annotationNode = xmlNode->createNewChildElement("ANNOTATIONS");
-        annotationNode->setAttribute("text", a.text);
-        annotationNode->setAttribute("channel", a.electrodes[0]);
-        annotationNode->setAttribute("R", a.colour.getRed());
-        annotationNode->setAttribute("G", a.colour.getGreen());
-        annotationNode->setAttribute("B", a.colour.getBlue());
-    }
 }
 
 void NeuropixInterface::loadParameters(XmlElement* xml)
 {
 
-    String mySerialNumber = String(probe->info.serial_number);
-
-    // first, set defaults
-    ProbeSettings settings; // = ProbeSettings(probe->settings);
-    settings.probe = probe;
-    settings.probeType = probe->type;
-    settings.apFilterState = probe->settings.apFilterState;
-    settings.lfpGainIndex = probe->settings.lfpGainIndex;
-    settings.apGainIndex = probe->settings.apGainIndex;
-    settings.referenceIndex = probe->settings.referenceIndex;
-    settings.availableApGains = probe->settings.availableApGains;
-    settings.availableLfpGains = probe->settings.availableLfpGains;
-    settings.availableBanks = probe->settings.availableBanks;
-    settings.availableReferences = probe->settings.availableReferences;
-
-    for (int i = 0; i < probe->channel_count; i++)
+    if (probe != nullptr)
     {
-        settings.selectedBank.add(Bank::A);
-        settings.selectedChannel.add(probe->electrodeMetadata[i].channel);
-        settings.selectedShank.add(0);
-        settings.selectedElectrode.add(probe->electrodeMetadata[i].global_index);
-    }
+        String mySerialNumber = String(probe->info.serial_number);
 
-    XmlElement* matchingNode = nullptr;
+        // first, set defaults
+        ProbeSettings settings; // = ProbeSettings(probe->settings);
+        settings.probe = probe;
+        settings.probeType = probe->type;
+        settings.apFilterState = probe->settings.apFilterState;
+        settings.lfpGainIndex = probe->settings.lfpGainIndex;
+        settings.apGainIndex = probe->settings.apGainIndex;
+        settings.referenceIndex = probe->settings.referenceIndex;
+        settings.availableApGains = probe->settings.availableApGains;
+        settings.availableLfpGains = probe->settings.availableLfpGains;
+        settings.availableBanks = probe->settings.availableBanks;
+        settings.availableReferences = probe->settings.availableReferences;
 
-    // find by serial number
-    forEachXmlChildElement(*xml, xmlNode)
-    {
-        if (xmlNode->hasTagName("NP_PROBE"))
+        for (int i = 0; i < probe->channel_count; i++)
         {
-            if (xmlNode->getStringAttribute("probe_serial_number").equalsIgnoreCase(mySerialNumber))
-            {
-
-                matchingNode = xmlNode;
-                break;
-
-            }
+            settings.selectedBank.add(Bank::A);
+            settings.selectedChannel.add(probe->electrodeMetadata[i].channel);
+            settings.selectedShank.add(0);
+            settings.selectedElectrode.add(probe->electrodeMetadata[i].global_index);
         }
-    }
 
-    // if not, search for matching port
-    if (matchingNode == nullptr)
-    {
+        XmlElement* matchingNode = nullptr;
+
+        // find by serial number
         forEachXmlChildElement(*xml, xmlNode)
         {
             if (xmlNode->hasTagName("NP_PROBE"))
             {
-                if (xmlNode->getIntAttribute("slot") == probe->basestation->slot &&
-                    xmlNode->getIntAttribute("port") == probe->headstage->port &&
-                    xmlNode->getIntAttribute("dock") == probe->dock)
+                if (xmlNode->getStringAttribute("probe_serial_number").equalsIgnoreCase(mySerialNumber))
                 {
 
-                    String PN = xmlNode->getStringAttribute("probe_part_number");
-                    ProbeType type = ProbeType::NP1;
-
-                    if (PN.equalsIgnoreCase("NP1010"))
-                        type = ProbeType::NHP10;
-
-                    else if (PN.equalsIgnoreCase("NP1020") || PN.equalsIgnoreCase("NP1021"))
-                        type = ProbeType::NHP25;
-
-                    else if (PN.equalsIgnoreCase("NP1030") || PN.equalsIgnoreCase("NP1031"))
-                        type = ProbeType::NHP45;
-
-                    else if (PN.equalsIgnoreCase("NP1200") || PN.equalsIgnoreCase("NP1210"))
-                        type = ProbeType::NHP1;
-
-                    else if (PN.equalsIgnoreCase("PRB2_1_2_0640_0") || PN.equalsIgnoreCase("NP2000"))
-                        type = ProbeType::NP2_1;
-
-                    else if (PN.equalsIgnoreCase("PRB2_4_2_0640_0") || PN.equalsIgnoreCase("NP2010"))
-                        type = ProbeType::NP2_4;
-
-                    else if (PN.equalsIgnoreCase("PRB_1_4_0480_1") || PN.equalsIgnoreCase("PRB_1_4_0480_1_C"))
-                        type = ProbeType::NP1;
-
-                    else if (PN.equalsIgnoreCase("NP1100"))
-                        type = ProbeType::UHD1;
-
-                    else if (PN.equalsIgnoreCase("NP1110"))
-                        type = ProbeType::UHD2;
-
-                    if (type == probe->type)
-                    {
-                        matchingNode = xmlNode;
-
-                        break;
-                    }
+                    matchingNode = xmlNode;
+                    break;
 
                 }
             }
         }
-    }
 
-    if (matchingNode != nullptr)
-    {
-
-        if (matchingNode->getChildByName("CHANNELS"))
+        // if not, search for matching port
+        if (matchingNode == nullptr)
         {
-            settings.selectedBank.clear();
-            settings.selectedChannel.clear();
-            settings.selectedShank.clear();
-            settings.selectedElectrode.clear();
-
-            XmlElement* status = matchingNode->getChildByName("CHANNELS");
-
-            for (int i = 0; i < probe->channel_count; i++)
+            forEachXmlChildElement(*xml, xmlNode)
             {
-                settings.selectedChannel.add(i);
-
-                String bankInfo = status->getStringAttribute("CH" + String(i));
-                Bank bank = static_cast<Bank> (bankInfo.substring(0, 1).getIntValue());
-                int shank = 0;
-
-                if (probe->type == ProbeType::NP2_4)
+                if (xmlNode->hasTagName("NP_PROBE"))
                 {
-                    shank = bankInfo.substring(2, 3).getIntValue();
-                }
-
-                settings.selectedBank.add(bank);
-                settings.selectedShank.add(shank);
-
-                for (int j = 0; j < electrodeMetadata.size(); j++)
-                {
-                    if (electrodeMetadata[j].channel == i)
+                    if (xmlNode->getIntAttribute("slot") == probe->basestation->slot &&
+                        xmlNode->getIntAttribute("port") == probe->headstage->port &&
+                        xmlNode->getIntAttribute("dock") == probe->dock)
                     {
-                        if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
+
+                        String PN = xmlNode->getStringAttribute("probe_part_number");
+                        ProbeType type = ProbeType::NP1;
+
+                        if (PN.equalsIgnoreCase("NP1010"))
+                            type = ProbeType::NHP10;
+
+                        else if (PN.equalsIgnoreCase("NP1020") || PN.equalsIgnoreCase("NP1021"))
+                            type = ProbeType::NHP25;
+
+                        else if (PN.equalsIgnoreCase("NP1030") || PN.equalsIgnoreCase("NP1031"))
+                            type = ProbeType::NHP45;
+
+                        else if (PN.equalsIgnoreCase("NP1200") || PN.equalsIgnoreCase("NP1210"))
+                            type = ProbeType::NHP1;
+
+                        else if (PN.equalsIgnoreCase("PRB2_1_2_0640_0") || PN.equalsIgnoreCase("NP2000"))
+                            type = ProbeType::NP2_1;
+
+                        else if (PN.equalsIgnoreCase("PRB2_4_2_0640_0") || PN.equalsIgnoreCase("NP2010"))
+                            type = ProbeType::NP2_4;
+
+                        else if (PN.equalsIgnoreCase("PRB_1_4_0480_1") || PN.equalsIgnoreCase("PRB_1_4_0480_1_C"))
+                            type = ProbeType::NP1;
+
+                        else if (PN.equalsIgnoreCase("NP1100"))
+                            type = ProbeType::UHD1;
+
+                        else if (PN.equalsIgnoreCase("NP1110"))
+                            type = ProbeType::UHD2;
+
+                        if (type == probe->type)
                         {
-                            settings.selectedElectrode.add(j);
+                            matchingNode = xmlNode;
+
+                            break;
+                        }
+
+                    }
+                }
+            }
+        }
+
+        if (matchingNode != nullptr)
+        {
+
+            if (matchingNode->getChildByName("CHANNELS"))
+            {
+                settings.selectedBank.clear();
+                settings.selectedChannel.clear();
+                settings.selectedShank.clear();
+                settings.selectedElectrode.clear();
+
+                XmlElement* status = matchingNode->getChildByName("CHANNELS");
+
+                for (int i = 0; i < probe->channel_count; i++)
+                {
+                    settings.selectedChannel.add(i);
+
+                    String bankInfo = status->getStringAttribute("CH" + String(i));
+                    Bank bank = static_cast<Bank> (bankInfo.substring(0, 1).getIntValue());
+                    int shank = 0;
+
+                    if (probe->type == ProbeType::NP2_4)
+                    {
+                        shank = bankInfo.substring(2, 3).getIntValue();
+                    }
+
+                    settings.selectedBank.add(bank);
+                    settings.selectedShank.add(shank);
+
+                    for (int j = 0; j < electrodeMetadata.size(); j++)
+                    {
+                        if (electrodeMetadata[j].channel == i)
+                        {
+                            if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
+                            {
+                                settings.selectedElectrode.add(j);
+                            }
                         }
                     }
+
                 }
 
             }
-   
-        }
 
-        probeBrowser->setZoomHeightAndOffset(matchingNode->getIntAttribute("ZoomHeight"),
-            matchingNode->getIntAttribute("ZoomOffset"));
+            probeBrowser->setZoomHeightAndOffset(matchingNode->getIntAttribute("ZoomHeight"),
+                matchingNode->getIntAttribute("ZoomOffset"));
 
-        String customName = thread->getCustomProbeName(matchingNode->getStringAttribute("probe_serial_number"));
+            String customName = thread->getCustomProbeName(matchingNode->getStringAttribute("probe_serial_number"));
 
-        if (customName.length() > 0)
-        {
-            probe->customName.probeSpecific = customName;
-        }
-
-        settings.apGainIndex = matchingNode->getIntAttribute("apGainIndex", 3);
-        settings.lfpGainIndex = matchingNode->getIntAttribute("lfpGainIndex", 2);
-        settings.referenceIndex = matchingNode->getIntAttribute("referenceChannelIndex", 0);
-        settings.electrodeConfigurationIndex = matchingNode->getIntAttribute("electrodeConfiguration", 0);
-        settings.apFilterState = matchingNode->getIntAttribute("filterCutIndex", 1) == 1;
-
-        forEachXmlChildElement(*matchingNode, annotationNode)
-        {
-            if (annotationNode->hasTagName("ANNOTATIONS"))
+            if (customName.length() > 0)
             {
-                Array<int> annotationChannels;
-                annotationChannels.add(annotationNode->getIntAttribute("electrode"));
-                annotations.add(Annotation(annotationNode->getStringAttribute("text"),
-                    annotationChannels,
-                    Colour(annotationNode->getIntAttribute("R"),
-                        annotationNode->getIntAttribute("G"),
-                        annotationNode->getIntAttribute("B"))));
+                probe->customName.probeSpecific = customName;
             }
+
+            settings.apGainIndex = matchingNode->getIntAttribute("apGainIndex", 3);
+            settings.lfpGainIndex = matchingNode->getIntAttribute("lfpGainIndex", 2);
+            settings.referenceIndex = matchingNode->getIntAttribute("referenceChannelIndex", 0);
+            settings.electrodeConfigurationIndex = matchingNode->getIntAttribute("electrodeConfiguration", 0);
+            settings.apFilterState = matchingNode->getIntAttribute("filterCutIndex", 1) == 1;
+
+            forEachXmlChildElement(*matchingNode, annotationNode)
+            {
+                if (annotationNode->hasTagName("ANNOTATIONS"))
+                {
+                    Array<int> annotationChannels;
+                    annotationChannels.add(annotationNode->getIntAttribute("electrode"));
+                    annotations.add(Annotation(annotationNode->getStringAttribute("text"),
+                        annotationChannels,
+                        Colour(annotationNode->getIntAttribute("R"),
+                            annotationNode->getIntAttribute("G"),
+                            annotationNode->getIntAttribute("B"))));
+                }
+            }
+
         }
 
+        probe->updateSettings(settings);
+
+        applyProbeSettings(settings, false);
     }
-
-    probe->updateSettings(settings);
-
-    applyProbeSettings(settings, false);
 
 }
 

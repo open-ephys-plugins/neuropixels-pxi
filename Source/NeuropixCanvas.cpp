@@ -64,6 +64,15 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
         
     }
 
+    Array<Basestation*> availableBasestations = thread->getBasestations();
+
+    for (auto basestation : availableBasestations)
+    {
+        BasestationInterface* basestationInterface = new BasestationInterface(basestation, thread, editor, this);
+        settingsInterfaces.add(basestationInterface);
+        basestations.add(basestation);
+    }
+
     neuropixViewport->setViewedComponent(settingsInterfaces.getFirst(), false);
     addAndMakeVisible(neuropixViewport);
 
@@ -131,6 +140,20 @@ void NeuropixCanvas::setSelectedInterface(DataSource* dataSource)
     {
 
         int index = dataSources.indexOf(dataSource);
+
+        if (index > -1)
+            neuropixViewport->setViewedComponent(settingsInterfaces[index], false);
+    }
+
+}
+
+void NeuropixCanvas::setSelectedBasestation(Basestation* basestation)
+{
+
+    if (basestation != nullptr)
+    {
+
+        int index = basestations.indexOf(basestation) + dataSources.size();
 
         if (index > -1)
             neuropixViewport->setViewedComponent(settingsInterfaces[index], false);
