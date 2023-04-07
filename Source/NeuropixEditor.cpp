@@ -371,6 +371,8 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
 	{
 		Array<Headstage*> headstages = basestations[i]->getHeadstages(); // can return null
 
+		int probeCount = basestations[i]->getProbeCount();
+
 		for (int j = 0; j < headstages.size(); j++)
 		{
 
@@ -404,7 +406,13 @@ NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
 				int x_pos = slotIndex * 90 + 40;
 				int y_pos = 125 - (portIndex + 1) * 22;
 
-				SourceButton* p = new SourceButton(id++, nullptr, basestations[i]);
+				SourceButton* p;
+				
+				if (probeCount == 0)
+					p = new SourceButton(id++, nullptr, basestations[i]);
+				else
+					p = new SourceButton(id++, nullptr, nullptr);
+
 				p->setBounds(x_pos, y_pos, 15, 15);
 				p->addListener(this);
 				addAndMakeVisible(p);

@@ -403,55 +403,60 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         addAndMakeVisible(probeSettingsLabel);
     }
 
+    int verticalOffset = 550;
+
+    if (probe == nullptr)
+        verticalOffset = 250;
+
     // FIRMWARE
     firmwareToggleButton = new UtilityButton("UPDATE FIRMWARE...", Font("Small Text", 12, Font::plain));
     firmwareToggleButton->setRadius(3.0f);
     firmwareToggleButton->addListener(this);
-    firmwareToggleButton->setBounds(650, 550, 150, 22);
+    firmwareToggleButton->setBounds(650, verticalOffset, 150, 22);
     firmwareToggleButton->setClickingTogglesState(true);
     addAndMakeVisible(firmwareToggleButton);
 
     bscFirmwareComboBox = new ComboBox("bscFirmwareComboBox");
-    bscFirmwareComboBox->setBounds(550, 620, 375, 22);
+    bscFirmwareComboBox->setBounds(550, verticalOffset + 70, 375, 22);
     bscFirmwareComboBox->addListener(this);
     bscFirmwareComboBox->addItem("Select file...", 1);
     addChildComponent(bscFirmwareComboBox);
 
     bscFirmwareButton = new UtilityButton("UPLOAD", Font("Small Text", 12, Font::plain));
     bscFirmwareButton->setRadius(3.0f);
-    bscFirmwareButton->setBounds(930, 620, 60, 22);
+    bscFirmwareButton->setBounds(930, verticalOffset + 70, 60, 22);
     bscFirmwareButton->addListener(this);
     bscFirmwareButton->setTooltip("Upload firmware to selected basestation connect board");
     addChildComponent(bscFirmwareButton);
 
     bscFirmwareLabel = new Label("BSC FIRMWARE", "1. Update basestation connect board firmware:");
     bscFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
-    bscFirmwareLabel->setBounds(550, 593, 500, 20);
+    bscFirmwareLabel->setBounds(550, verticalOffset + 43, 500, 20);
     bscFirmwareLabel->setColour(Label::textColourId, Colours::orange);
     addChildComponent(bscFirmwareLabel);
 
     bsFirmwareComboBox = new ComboBox("bscFirmwareComboBox");
-    bsFirmwareComboBox->setBounds(550, 690, 375, 22);
+    bsFirmwareComboBox->setBounds(550, verticalOffset + 140, 375, 22);
     bsFirmwareComboBox->addListener(this);
     bsFirmwareComboBox->addItem("Select file...", 1);
     addChildComponent(bsFirmwareComboBox);
 
     bsFirmwareButton = new UtilityButton("UPLOAD", Font("Small Text", 12, Font::plain));
     bsFirmwareButton->setRadius(3.0f);
-    bsFirmwareButton->setBounds(930, 690, 60, 22);
+    bsFirmwareButton->setBounds(930, verticalOffset + 140, 60, 22);
     bsFirmwareButton->addListener(this);
     bsFirmwareButton->setTooltip("Upload firmware to selected basestation");
     addChildComponent(bsFirmwareButton);
 
     bsFirmwareLabel = new Label("BS FIRMWARE", "2. Update basestation firmware:");
     bsFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
-    bsFirmwareLabel->setBounds(550, 663, 500, 20);
+    bsFirmwareLabel->setBounds(550, verticalOffset + 113, 500, 20);
     bsFirmwareLabel->setColour(Label::textColourId, Colours::orange);
     addChildComponent(bsFirmwareLabel);
 
     firmwareInstructionsLabel = new Label("FIRMWARE INSTRUCTIONS", "3. Power cycle computer and PXI chassis");
     firmwareInstructionsLabel->setFont(Font("Small Text", 13, Font::plain));
-    firmwareInstructionsLabel->setBounds(550, 733, 500, 20);
+    firmwareInstructionsLabel->setBounds(550, verticalOffset + 183, 500, 20);
     firmwareInstructionsLabel->setColour(Label::textColourId, Colours::orange);
     addChildComponent(firmwareInstructionsLabel);
 
@@ -469,7 +474,14 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     addAndMakeVisible(nameLabel);
 
     infoLabelView = new Viewport("INFO");
-    infoLabelView->setBounds(625, 128, 750, 400);
+    if (probe != nullptr)
+    {
+        infoLabelView->setBounds(625, 128, 750, 400);
+    }
+    else {
+        infoLabelView->setBounds(625, 80, 750, 150);
+    }
+    
     addAndMakeVisible(infoLabelView);
 
     infoLabel = new Label("INFO", "INFO");
