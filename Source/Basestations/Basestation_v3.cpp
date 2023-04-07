@@ -171,6 +171,8 @@ bool Basestation_v3::open()
 		if (std::stod((info.boot_version.toStdString())) < 2.0)
 			return false;
 
+		invertOutput = false;
+
 		if (info.boot_version.equalsIgnoreCase("2.0137"))
 		{
 			LOGC("Found basestation firmware version ", info.boot_version, "; setting invertOutput to true.");
@@ -183,12 +185,19 @@ bool Basestation_v3::open()
 			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Outdated basestation firmware on slot " + String(slot), message, "OK");
 
 			invertOutput = true;
-		}
-		else {
-			invertOutput = false;
+		} 
+		
+		if (basestationConnectBoard->info.boot_version.equalsIgnoreCase("3.2176"))
+		{
+			LOGC("Found basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
+
+			// show popup notification window
+			String message = "The basestation on slot " + String(slot) + " has basestation firmware version 3.2176, but version 3.2186 is required for this plugin. ";
+			message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
+
+			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String(slot), message, "OK");
 		}
 			
-
 		savingDirectory = File();
 
 		LOGC("    Searching for probes...");
@@ -380,6 +389,11 @@ void Basestation_v3::setSyncAsOutput(int freqIndex)
 		LOGD("Failed to set sync on SMA output on slot: ", slot);
 	}
 
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, true);
+	if (errorCode != Neuropixels::SUCCESS)
+	{
+		LOGD("Failed to set sync on SMA input on slot: ", slot);
+	}
 
 	if (invertOutput)
 	{
