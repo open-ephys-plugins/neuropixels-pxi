@@ -617,10 +617,15 @@ void Geometry::NHP2(int length,
 
 	Array<float> xpositions;
 	
-	if (siteLayout)
+	if (siteLayout) // staggered
 		xpositions = { 27.0f, 59.0f, 11.0f, 43.0f };
-	else
-		xpositions = { 11.0f, 59.0f, 11.0f, 59.0f }; 
+	else // straight
+	{
+		if (length == 10)
+			xpositions = { 27.0f, 59.0f, 27.0f, 59.0f };
+		else
+			xpositions = { 11.0f, 114.0f, 11.0f, 114.0f };
+	}
 
 	for (int i = 0; i < probeMetadata.electrodes_per_shank; i++)
 	{
