@@ -60,7 +60,7 @@ public:
 
 private:
 
-	Array<Colour> disconnectedColours;
+	std::map<Bank, Colour> disconnectedColours;
 
 	// display variables
 	int zoomHeight;

@@ -100,12 +100,21 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
     zoomHeight = defaultZoomHeight; // number of rows
     lowerBound = 530; // bottom of interface
 
-    // create bank-specific colours
-    for (int i = 0; i < 13; i++)
-    {
-        disconnectedColours.add(Colour(0, 0, float(i) / 13.f * 255.f));
-    }
-
+    disconnectedColours[Bank::NONE] = Colour(0, 0, 0);
+    disconnectedColours[Bank::OFF] = Colour(0, 0, 0);
+    disconnectedColours[Bank::A] = Colour(180, 180, 180);
+    disconnectedColours[Bank::B] = Colour(160, 160, 160);
+    disconnectedColours[Bank::C] = Colour(140, 140, 140);
+    disconnectedColours[Bank::D] = Colour(120, 120, 120);
+    disconnectedColours[Bank::E] = Colour(180, 180, 180);
+    disconnectedColours[Bank::F] = Colour(160, 160, 160);
+    disconnectedColours[Bank::G] = Colour(140, 140, 140);
+    disconnectedColours[Bank::H] = Colour(120, 120, 120);
+    disconnectedColours[Bank::I] = Colour(180, 180, 180);
+    disconnectedColours[Bank::J] = Colour(160, 160, 160);
+    disconnectedColours[Bank::K] = Colour(140, 140, 140);
+    disconnectedColours[Bank::L] = Colour(120, 120, 120);
+    disconnectedColours[Bank::M] = Colour(180, 180, 180);
     
     dragZoneWidth = 10;
 }
@@ -903,7 +912,9 @@ Colour ProbeBrowser::getElectrodeColour(int i)
     if (parent->electrodeMetadata[i].status == ElectrodeStatus::DISCONNECTED) // not available
     {
 
-        return disconnectedColours[(int) parent->electrodeMetadata[i].bank];
+        //std::cout << "Electrode " << i << " : " << (int) parent->electrodeMetadata[i].bank << " is disconnected" << std::endl;
+
+        return disconnectedColours[parent->electrodeMetadata[i].bank];
         //return Colours::grey;
     }
     else if (parent->electrodeMetadata[i].type == ElectrodeType::REFERENCE)
