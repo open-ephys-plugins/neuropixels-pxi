@@ -1144,7 +1144,7 @@ void NeuropixInterface::stopAcquisition()
     if (bistButton != nullptr)
         bistButton->setEnabled(enabledState);
 
-    probeBrowser->stopTimer();
+    //probeBrowser->stopTimer();
 }
 
 

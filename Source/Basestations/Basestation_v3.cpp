@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage1_v3.h"
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
+#include "../Headstages/Headstage_Custom384.h"
 
 #define MAXLEN 50
 
@@ -117,6 +118,11 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 		{
 			LOGC("      Found 128-ch analog headstage on port: ", port);
 			headstage = new Headstage_Analog128(basestation, port);
+		}
+		else if (hsPartNumber == "NPNH_HS_00") // custom 384-ch headstage
+		{
+			LOGC("      Found 384-ch custom headstage on port: ", port);
+			headstage = new Headstage_Custom384(basestation, port);
 		}
 		else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 		{

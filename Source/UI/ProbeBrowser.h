@@ -60,6 +60,8 @@ public:
 
 private:
 
+	Array<Colour> disconnectedColours;
+
 	// display variables
 	int zoomHeight;
 	int zoomOffset;

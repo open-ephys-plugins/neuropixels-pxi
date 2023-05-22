@@ -100,6 +100,12 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
     zoomHeight = defaultZoomHeight; // number of rows
     lowerBound = 530; // bottom of interface
 
+    // create bank-specific colours
+    for (int i = 0; i < 13; i++)
+    {
+        disconnectedColours.add(Colour(0, 0, float(i) / 13.f * 255.f));
+    }
+
     
     dragZoneWidth = 10;
 }
@@ -445,7 +451,7 @@ void ProbeBrowser::mouseDown(const MouseEvent& event)
 
         if (event.x > 225 + 10 && event.x < 225 + 150)
         {
-            int currentAnnotationNum;
+            int currentAnnotationNum = 0;
 
             for (int i = 0; i < parent->annotations.size(); i++)
             {
@@ -896,7 +902,9 @@ Colour ProbeBrowser::getElectrodeColour(int i)
 {
     if (parent->electrodeMetadata[i].status == ElectrodeStatus::DISCONNECTED) // not available
     {
-        return Colours::grey;
+
+        return disconnectedColours[(int) parent->electrodeMetadata[i].bank];
+        //return Colours::grey;
     }
     else if (parent->electrodeMetadata[i].type == ElectrodeType::REFERENCE)
         return Colours::black;
