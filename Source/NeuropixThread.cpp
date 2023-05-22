@@ -213,8 +213,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	LOGC("Scanning for devices...");
 
-	LOGD("Setting debug level to 5");
-	Neuropixels::np_dbg_setlevel(5);
+	LOGD("Setting debug level to 0");
+	Neuropixels::np_dbg_setlevel(0);
 
 	initializer = std::make_unique<Initializer>(basestations, api_v1, api_v3);
 	initializer->run();
