@@ -9,7 +9,18 @@ public:
 
 	static bool writeSettingsToImro(File& file, ProbeSettings& settings)
 	{
-        file.create();
+
+        if (file.existsAsFile())
+        {
+			file.deleteFile();
+		}
+
+        const Result result = file.create();
+
+        if (!result.wasOk())
+        {
+            LOGC("Could not create file: ", file.getFullPathName());
+        }
 
         if (settings.probeType == ProbeType::NP1 || 
             settings.probeType == ProbeType::NHP10 ||

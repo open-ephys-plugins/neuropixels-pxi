@@ -196,6 +196,7 @@ private:
 
 	Array<BIST> availableBists;
 	Array<String> imroFiles;
+	Array<bool> imroLoadedFromFolder;
 
 };
 

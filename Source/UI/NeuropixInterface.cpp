@@ -390,10 +390,11 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         File imroDirectory = baseDirectory.getChildFile("IMRO");
         for (const auto& filename : File(imroDirectory).findChildFiles(File::findFiles, false, "*.imro")) {
             imroFiles.add(filename.getFileNameWithoutExtension());
+            imroLoadedFromFolder.add(true);
             loadImroComboBox->addItem(imroFiles.getLast(), imroFiles.size());
         }
         if (!imroFiles.size())
-            loadImroComboBox->addItem("No pre-set IMRO found (see docs)", 1);
+            loadImroComboBox->addItem("No pre-set IMRO found", 1);
         addAndMakeVisible(loadImroComboBox);
    
         probeSettingsLabel = new Label("Settings", "Probe settings:");
@@ -702,21 +703,27 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
         else if (comboBox == loadImroComboBox)
         {
             if (!imroFiles.size())
-                return; //TODO: Automatically launch docs page
-     
-            ProbeSettings settings = getProbeSettings();
-
-            settings.clearElectrodeSelection();
-
-            String filename = comboBox->getItemText(comboBox->getSelectedItemIndex());
-
-            File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
-            File imroDirectory = baseDirectory.getChildFile("IMRO");
-            bool success = IMRO::readSettingsFromImro(imroDirectory.getChildFile(filename + ".imro"), settings);
-
-            if (success)
             {
-                applyProbeSettings(settings);
+                return;
+            }
+
+            int i = comboBox->getSelectedId() - 1;
+
+            LOGC("Attempting to load IMRO file: ", imroFiles[i]);
+
+            if (imroFiles[i].length())
+            {
+                ProbeSettings settings = getProbeSettings();
+
+                settings.clearElectrodeSelection();
+
+                bool success = IMRO::readSettingsFromImro(File(imroFiles[i]), settings);
+
+                if (success)
+                {
+                    applyProbeSettings(settings);
+                    loadImroComboBox->setSelectedId(0, false);
+                }
             }
 
         }
@@ -876,10 +883,21 @@ void NeuropixInterface::buttonClicked(Button* button)
 
             settings.clearElectrodeSelection();
 
-            bool success = IMRO::readSettingsFromImro(fileChooser.getResult(), settings);
+            File selectedFile = fileChooser.getResult();
+
+            bool success = IMRO::readSettingsFromImro(selectedFile, settings);
 
             if (success)
             {
+                if (imroFiles.size() == 0)
+                {
+                    loadImroComboBox->clear();
+                }
+
+                imroFiles.add(selectedFile.getFullPathName());
+                imroLoadedFromFolder.add(false);
+                loadImroComboBox->addItem(selectedFile.getFullPathName(), imroFiles.size());
+
                 applyProbeSettings(settings, true);
                 CoreServices::updateSignalChain(editor);
             }
@@ -1558,6 +1576,20 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
             }
         }
 
+        if (imroFiles.size() > 0)
+        {
+            XmlElement* imroFilesNode = xmlNode->createNewChildElement("IMRO_FILES");
+
+            for (int i = 0; i < imroFiles.size(); i++)
+            {
+                if (!imroLoadedFromFolder[i])
+                {
+                    XmlElement* imroFileNode = imroFilesNode->createNewChildElement("FILE");
+                    imroFileNode->setAttribute("PATH", imroFiles[i]);
+                }
+                
+            }
+        }
 
         xmlNode->setAttribute("visualizationMode", mode);
         xmlNode->setAttribute("activityToView", probeBrowser->activityToView);
@@ -1734,6 +1766,24 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
             settings.referenceIndex = matchingNode->getIntAttribute("referenceChannelIndex", 0);
             settings.electrodeConfigurationIndex = matchingNode->getIntAttribute("electrodeConfiguration", 0);
             settings.apFilterState = matchingNode->getIntAttribute("filterCutIndex", 1) == 1;
+
+            forEachXmlChildElement(*matchingNode, imroNode)
+            {
+                if (imroNode->hasTagName("IMRO_FILES"))
+                {
+
+                    forEachXmlChildElement(*imroNode, fileNode)
+                    {
+
+                        if (imroFiles.size() == 0)
+                            loadImroComboBox->clear();
+
+                        imroFiles.add(fileNode->getStringAttribute("PATH"));
+                        imroLoadedFromFolder.add(false);
+                        loadImroComboBox->addItem(imroFiles.getLast(), imroFiles.size());
+                    }
+                }
+            }
 
             forEachXmlChildElement(*matchingNode, annotationNode)
             {

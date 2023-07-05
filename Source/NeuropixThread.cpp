@@ -213,8 +213,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 
 	LOGC("Scanning for devices...");
 
-	LOGD("Setting debug level to 5");
-	Neuropixels::np_dbg_setlevel(5);
+	LOGD("Setting debug level to 0");
+	Neuropixels::np_dbg_setlevel(0);
 
 	initializer = std::make_unique<Initializer>(basestations, api_v1, api_v3);
 	initializer->run();
@@ -1030,8 +1030,9 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 				MetadataValue value(MetadataDescriptor::MetadataType::UINT16, 1);
 				value.setValue((uint16) info.probe->settings.selectedElectrode[chIndex]);
 
-				continuousChannels->getLast()->addMetadata(descriptor, value);
+				//LOGD("Setting channel ", ch, " electrode_index metadata value to ", (uint16)info.probe->settings.selectedElectrode[chIndex]);
 
+				continuousChannels->getLast()->addMetadata(descriptor, value);
 			}
 			
 		} // end channel loop
