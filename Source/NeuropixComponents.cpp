@@ -27,15 +27,15 @@ float FirmwareUpdater::totalFirmwareBytes = 0;
 FirmwareUpdater* FirmwareUpdater::currentThread = nullptr;
 
 
-Probe::Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) : DataSource(bs_)
+Probe::Probe(NeuropixThread* thread_, Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) 
+	: DataSource(thread_, bs_),
+	  headstage(hs_),
+	  flex(fl_),
+	  dock(dock_),
+	  isValid(true),
+	  isCalibrated(false),
+      calibrationWarningShown(false)
 {
-	dock = dock_;
-	headstage = hs_;
-	flex = fl_;
-	isValid = true;
-
-	isCalibrated = false;
-	calibrationWarningShown = false;
 
 	for (int i = 0; i < 12 * MAXPACKETS; i++)
 		timestamp_s[i] = -1.0;

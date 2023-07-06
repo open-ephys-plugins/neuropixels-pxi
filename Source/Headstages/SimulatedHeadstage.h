@@ -37,7 +37,7 @@ class SimulatedProbe;
 class SimulatedHeadstage : public Headstage
 {
 public:
-	SimulatedHeadstage(Basestation* bs, int port, String PN, int SN);
+	SimulatedHeadstage(NeuropixThread* neuropixThread, Basestation* bs, int port, String PN, int SN);
 	void getInfo() override;
 	bool hasTestModule() override { return false; }
 	void runTestModule() override {}

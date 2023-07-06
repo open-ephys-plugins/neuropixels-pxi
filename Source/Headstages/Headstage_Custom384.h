@@ -39,7 +39,7 @@ class Headstage_Custom384 : public Headstage
 public:
 
 	/** Constructor */
-	Headstage_Custom384::Headstage_Custom384(Basestation*, int port);
+	Headstage_Custom384::Headstage_Custom384(NeuropixThread* neuropixThread, Basestation*, int port);
 
 	/** Get part numbers*/
 	void getInfo() override;

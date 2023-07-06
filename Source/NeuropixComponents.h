@@ -289,8 +289,9 @@ class DataSource : public NeuropixComponent, public Thread
 public:
 
 	/** Constructor */
-	DataSource(Basestation* bs_) : NeuropixComponent(), Thread("DataSourceThread")
+	DataSource(NeuropixThread* thread_, Basestation* bs_) : NeuropixComponent(), Thread("DataSourceThread")
 	{
+		neuropixThread = thread_;
 		basestation = bs_;
 	}
 
@@ -336,6 +337,9 @@ public:
 
 protected:
 	SourceStatus status;
+
+	NeuropixThread* neuropixThread;
+
 };
 
 
@@ -349,7 +353,11 @@ class Probe : public DataSource
 public:
 
 	/** Constructor */
-	Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_);
+	Probe(NeuropixThread*,
+		Basestation*, 
+		Headstage*,
+		Flex*, 
+		int dock);
 
 	// --------- PURE VIRTUAL METHODS --------- //
 
@@ -491,6 +499,7 @@ protected:
 	uint64 eventCode;
 	Array<int> gains; // available gain values
 
+
 };
 
 class Basestation;
@@ -531,8 +540,9 @@ class Basestation : public NeuropixComponent
 public:
 
 	/** Constructor -- Sets the slot values. */
-	Basestation(int slot_) : NeuropixComponent() {
+	Basestation(NeuropixThread* neuropixThread_, int slot_) : NeuropixComponent() {
 		probesInitialized = false;
+		neuropixThread = neuropixThread_;
 		slot = slot_;
 		slot_c = (unsigned char) slot_;
 
@@ -687,6 +697,8 @@ public:
 		}
 		
 	}
+
+	NeuropixThread* neuropixThread;
 
 protected:
 

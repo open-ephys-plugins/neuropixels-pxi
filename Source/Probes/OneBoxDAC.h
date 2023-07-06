@@ -33,7 +33,8 @@ class OneBoxADC;
 class OneBoxDAC : public DataSource
 {
 public:
-	OneBoxDAC(Basestation* bs);
+	OneBoxDAC(NeuropixThread*, 
+		Basestation*);
 
 	void getInfo() override;
 

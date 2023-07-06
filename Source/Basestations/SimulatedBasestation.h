@@ -72,7 +72,7 @@ class SimulatedBasestation : public Basestation
 public:
 
 	/** Constructor */
-	SimulatedBasestation(int slot);
+	SimulatedBasestation(NeuropixThread*, int slot);
 
 	/** Destructor */
 	~SimulatedBasestation() { }

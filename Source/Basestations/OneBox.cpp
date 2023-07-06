@@ -51,12 +51,12 @@ void OneBox::getInfo()
 
 }
 
-OneBox::OneBox(int ID) : Basestation(16)
+OneBox::OneBox(NeuropixThread* neuropixThread, int slot_number) : Basestation(neuropixThread, slot_number)
 {
 
 	type = BasestationType::ONEBOX;
 
-	errorCode = Neuropixels::mapBS(ID, first_available_slot + box_count); // assign to slot ID
+	errorCode = Neuropixels::mapBS(slot_number, first_available_slot + box_count); // assign to slot ID
 
 	if (errorCode == Neuropixels::NO_SLOT || errorCode == Neuropixels::IO_ERROR)
 	{
@@ -64,7 +64,7 @@ OneBox::OneBox(int ID) : Basestation(16)
 		return;
 	}
 		
-	LOGD("Mapped basestation ", ID, " to slot ", first_available_slot + box_count, ", error code: ", errorCode);
+	LOGD("Mapped basestation ", slot_number, " to slot ", first_available_slot + box_count, ", error code: ", errorCode);
 
 	LOGD("Stored slot number: ", slot);
 	slot = 16;
@@ -134,7 +134,7 @@ bool OneBox::open()
 				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
 				{
 					LOGD("      Found 1.0 single-dock headstage on port: ", port);
-					headstage = new Headstage1_v3(this, port);
+					headstage = new Headstage1_v3(neuropixThread, this, port);
 					if (headstage->testModule != nullptr)
 					{
 						headstage = nullptr;
@@ -143,12 +143,12 @@ bool OneBox::open()
 				else if (hsPartNumber == "NPNH_HS_30") // 128-ch analog headstage
 				{
 					LOGD("      Found 128-ch analog headstage on port: ", port);
-					headstage = new Headstage_Analog128(this, port);
+					headstage = new Headstage_Analog128(neuropixThread, this, port);
 				}
 				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 				{
 					LOGD("      Found 2.0 dual-dock headstage on port: ", port);
-					headstage = new Headstage2(this, port);
+					headstage = new Headstage2(neuropixThread, this, port);
 				}
 				else
 				{
@@ -186,8 +186,8 @@ bool OneBox::open()
 
 		LOGD("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 
-		adcSource = new OneBoxADC(this);
-		dacSource = new OneBoxDAC(this);
+		adcSource = new OneBoxADC(neuropixThread, this);
+		dacSource = new OneBoxDAC(neuropixThread, this);
 
 		adcSource->dac = dacSource;
 		dacSource->adc = adcSource;

@@ -42,6 +42,7 @@ class Basestation_v3;
 class PortChecker : public ThreadPoolJob
 {
 public:
+
 	PortChecker(int slot_, int port_, Basestation_v3* basestation_) :
 		ThreadPoolJob("Port checker for " + String(slot_) + ":" + String(port_))
 		, slot(slot_), port(port_), basestation(basestation_), headstage(nullptr) { }
@@ -95,7 +96,7 @@ class Basestation_v3 : public Basestation
 {
 public:
 	/** Constructor */
-	Basestation_v3(int slot);
+	Basestation_v3(NeuropixThread*, int slot);
 
 	/** Destructor */
 	~Basestation_v3();

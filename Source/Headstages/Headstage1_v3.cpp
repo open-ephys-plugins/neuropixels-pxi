@@ -74,7 +74,7 @@ void Flex1_v3::getInfo()
 }
 
 
-Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
+Headstage1_v3::Headstage1_v3(NeuropixThread* thread, Basestation* bs_, int port) : Headstage(bs_, port)
 {
 
 	getInfo();
@@ -103,13 +103,13 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 		}
 
 		if (String(partNumber).equalsIgnoreCase("NP1300"))
-			probes.add(new NeuropixelsOpto(basestation, this, flexCables[0]));
+			probes.add(new NeuropixelsOpto(thread, basestation, this, flexCables[0]));
 		else if (String(partNumber).equalsIgnoreCase("NP1110"))
 		{
-			probes.add(new Neuropixels_UHD(basestation, this, flexCables[0]));
+			probes.add(new Neuropixels_UHD(thread, basestation, this, flexCables[0]));
 		}
 		else {
-			probes.add(new Neuropixels1_v3(basestation, this, flexCables[0]));
+			probes.add(new Neuropixels1_v3(thread, basestation, this, flexCables[0]));
 		}
 		
 		if (probes[0]->isValid)

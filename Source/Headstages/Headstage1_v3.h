@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class Headstage1_v3 : public Headstage
 {
 public:
-	Headstage1_v3::Headstage1_v3(Basestation*, int port);
+	Headstage1_v3::Headstage1_v3(NeuropixThread* neuropixThread, Basestation*, int port);
 	void getInfo() override;
 	bool hasTestModule() override;
 	void runTestModule() override;

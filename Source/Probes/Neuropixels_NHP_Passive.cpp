@@ -24,6 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Neuropixels_NHP_Passive.h"
 #include "Geometry.h"
 
+#include "../NeuropixThread.h"
+
 void Neuropixels_NHP_Passive::getInfo()
 {
 	info.serial_number = 0;
@@ -31,7 +33,7 @@ void Neuropixels_NHP_Passive::getInfo()
 	info.part_number = "NP1200";
 }
 
-Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 0)
+Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(NeuropixThread* thread, Basestation* bs, Headstage* hs, Flex* fl) : Probe(thread, bs, hs, fl, 0)
 {
 	getInfo();
 
@@ -324,10 +326,14 @@ void Neuropixels_NHP_Passive::run()
 					{
 						if (passedOneSecond && timestamp_jump < MAX_HEADSTAGE_CLK_SAMPLE)
 						{
-							LOGD("NPX TIMESTAMP JUMP: ", npx_timestamp - last_npx_timestamp,
-								", expected 3 or 4...Possible data loss on slot ",
-								int(basestation->slot_c), ", probe ", int(headstage->port_c),
-								" at sample number ", ap_timestamp);
+							String msg = "NPX TIMESTAMP JUMP: " + String(timestamp_jump) +
+								", expected 3 or 4...Possible data loss on slot " +
+								String(basestation->slot_c) + ", probe " + String(headstage->port_c) +
+								" at sample number " + String(ap_timestamp);
+
+							LOGC(msg);
+
+							neuropixThread->sendBroadcastMessage(msg);
 						}
 					}
 
@@ -389,6 +395,12 @@ void Neuropixels_NHP_Passive::run()
 
 		int packetsAvailable;
 		int headroom;
+
+		if (!passedOneSecond)
+		{
+			if (ap_timestamp > 30000)
+				passedOneSecond = true;
+		}
 
 		Neuropixels::getElectrodeDataFifoState(
 			basestation->slot,

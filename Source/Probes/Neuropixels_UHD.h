@@ -42,7 +42,10 @@ class Neuropixels_UHD : public Probe
 public:
 
 	/** Constructor */
-	Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl);
+	Neuropixels_UHD(NeuropixThread*,
+		Basestation*, 
+		Headstage*, 
+		Flex*);
 
 	/** Reads probe part number and serial number */
 	void getInfo() override;

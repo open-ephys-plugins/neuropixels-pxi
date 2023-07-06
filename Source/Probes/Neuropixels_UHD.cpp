@@ -24,6 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Neuropixels_UHD.h"
 #include "Geometry.h"
 
+#include "../NeuropixThread.h"
+
 #define MAXLEN 50
 
 void Neuropixels_UHD::getInfo()
@@ -36,7 +38,7 @@ void Neuropixels_UHD::getInfo()
 	info.part_number = String(pn);
 }
 
-Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
+Neuropixels_UHD::Neuropixels_UHD(NeuropixThread* thread, Basestation* bs, Headstage* hs, Flex* fl) : Probe(thread, bs, hs, fl, 1)
 {
 	getInfo();
 
@@ -469,6 +471,25 @@ void Neuropixels_UHD::run()
 
 					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
 
+					uint32_t timestamp_jump = npx_timestamp - last_npx_timestamp;
+
+					if (timestamp_jump > MAX_ALLOWABLE_TIMESTAMP_JUMP)
+					{
+						if (passedOneSecond && timestamp_jump < MAX_HEADSTAGE_CLK_SAMPLE)
+						{
+							String msg = "NPX TIMESTAMP JUMP: " + String(timestamp_jump) +
+								", expected 3 or 4...Possible data loss on slot " +
+								String(basestation->slot_c) + ", probe " + String(headstage->port_c) +
+								" at sample number " + String(ap_timestamp);
+
+							LOGC(msg);
+
+							neuropixThread->sendBroadcastMessage(msg);
+						}
+					}
+
+					last_npx_timestamp = npx_timestamp;
+
 					for (int j = 0; j < 384; j++)
 					{
 
@@ -519,6 +540,12 @@ void Neuropixels_UHD::run()
 		else if (errorCode != Neuropixels::SUCCESS)
 		{
 			LOGD("readPackets error code: ", errorCode, " for Basestation ", int(basestation->slot), ", probe ", int(headstage->port));
+		}
+
+		if (!passedOneSecond)
+		{
+			if (ap_timestamp > 30000)
+				passedOneSecond = true;
 		}
 
 		int packetsAvailable;

@@ -78,7 +78,7 @@ BasestationConnectBoard_v3::BasestationConnectBoard_v3(Basestation* bs) : Basest
 	getInfo();
 }
 
-Basestation_v3::Basestation_v3(int slot_number) : Basestation(slot_number)
+Basestation_v3::Basestation_v3(NeuropixThread* neuropixThread, int slot_number) : Basestation(neuropixThread, slot_number)
 {
 	type = BasestationType::V3;
 
@@ -108,7 +108,7 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 		if (hsPartNumber == "NP2_HS_30" || hsPartNumber == "OPTO_HS_00") // 1.0 headstage, only one dock
 		{
 			LOGC("      Found 1.0 single-dock headstage on port: ", port);
-			headstage = new Headstage1_v3(basestation, port);
+			headstage = new Headstage1_v3(basestation->neuropixThread, basestation, port);
 			if (headstage->testModule != nullptr || !headstage->probes.size())
 			{
 				headstage = nullptr;
@@ -117,17 +117,17 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 		else if (hsPartNumber == "NPNH_HS_30" || hsPartNumber == "NPNH_HS_31") // 128-ch analog headstage
 		{
 			LOGC("      Found 128-ch analog headstage on port: ", port);
-			headstage = new Headstage_Analog128(basestation, port);
+			headstage = new Headstage_Analog128(basestation->neuropixThread, basestation, port);
 		}
 		else if (hsPartNumber == "NPNH_HS_00") // custom 384-ch headstage
 		{
 			LOGC("      Found 384-ch custom headstage on port: ", port);
-			headstage = new Headstage_Custom384(basestation, port);
+			headstage = new Headstage_Custom384(basestation->neuropixThread, basestation, port);
 		}
 		else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 		{
 			LOGC("      Found 2.0 dual-dock headstage on port: ", port);
-			headstage = new Headstage2(basestation, port);
+			headstage = new Headstage2(basestation->neuropixThread, basestation, port);
 		}
 		else
 		{

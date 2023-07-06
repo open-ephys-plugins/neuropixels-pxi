@@ -67,8 +67,9 @@ class Initializer : public Thread
 public:
 
 	/** Constructor */
-	Initializer(OwnedArray<Basestation>& basestations_, NeuropixAPIv1& api_v1_, NeuropixAPIv3& api_v3_)
+	Initializer(NeuropixThread* neuropixThread_, OwnedArray<Basestation>& basestations_, NeuropixAPIv1& api_v1_, NeuropixAPIv3& api_v3_)
 		: Thread("Neuropixels Initialization"),
+	      neuropixThread(neuropixThread_),
 		  basestations(basestations_),
 		  api_v1(api_v1_),
 		  api_v3(api_v3_) { }
@@ -79,6 +80,7 @@ public:
 
 private:
 
+	NeuropixThread* neuropixThread;
 	OwnedArray<Basestation>& basestations;
 	NeuropixAPIv1& api_v1;
 	NeuropixAPIv3& api_v3;
@@ -234,6 +236,9 @@ public:
 
 	/** Sets the custom name for a given probe serial number*/
 	void setCustomProbeName(String serialNumber, String customName);
+
+	/** Allows probes to send broadcast messages to downstream processors */
+	void sendBroadcastMessage(String msg) { broadcastMessage(msg); }
 
 	std::map<String, String> customProbeNames;
 

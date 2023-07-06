@@ -24,6 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "CustomPassiveProbe.h"
 #include "Geometry.h"
 
+#include "../NeuropixThread.h"
+
 #define MAXLEN 50
 
 void CustomPassiveProbe::getInfo()
@@ -36,7 +38,7 @@ void CustomPassiveProbe::getInfo()
 	info.part_number = String(pn);
 }
 
-CustomPassiveProbe::CustomPassiveProbe(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
+CustomPassiveProbe::CustomPassiveProbe(NeuropixThread* np, Basestation* bs, Headstage* hs, Flex* fl) : Probe(np, bs, hs, fl, 1)
 {
 	getInfo();
 
@@ -374,10 +376,14 @@ void CustomPassiveProbe::run()
 					{
 						if (passedOneSecond && timestamp_jump < MAX_HEADSTAGE_CLK_SAMPLE)
 						{
-							LOGD("NPX TIMESTAMP JUMP: ", npx_timestamp - last_npx_timestamp,
-								", expected 3 or 4...Possible data loss on slot ",
-								int(basestation->slot_c), ", probe ", int(headstage->port_c),
-								" at sample number ", ap_timestamp);
+							String msg = "NPX TIMESTAMP JUMP: " + String(timestamp_jump) +
+								", expected 3 or 4...Possible data loss on slot " +
+								String(basestation->slot_c) + ", probe " + String(headstage->port_c) +
+								" at sample number " + String(ap_timestamp);
+
+							LOGC(msg);
+
+							neuropixThread->sendBroadcastMessage(msg);
 						}
 					}
 

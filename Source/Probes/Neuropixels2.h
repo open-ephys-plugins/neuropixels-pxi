@@ -41,7 +41,11 @@ class Neuropixels2 : public Probe
 public:
 
 	/** Constructor */
-	Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock);
+	Neuropixels2(NeuropixThread*, 
+		Basestation*, 
+		Headstage*, 
+		Flex*,
+		int dock);
 
 	/** Reads probe part number and serial number */
 	void getInfo() override;

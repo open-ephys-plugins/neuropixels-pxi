@@ -85,7 +85,7 @@ BasestationConnectBoard_v1::BasestationConnectBoard_v1(Basestation* bs) : Basest
 	getInfo();
 }
 
-Basestation_v1::Basestation_v1(int slot_number) : Basestation(slot_number)
+Basestation_v1::Basestation_v1(NeuropixThread* neuropixThread, int slot_number) : Basestation(neuropixThread, slot_number)
 {
 	type = BasestationType::V1;
 
@@ -127,7 +127,7 @@ bool Basestation_v1::open()
 			} 
 			else if (errorCode == np::TIMEOUT)
 			{ //either headstage test module detected or broken connection to real probe
-				Headstage* headstage = new Headstage1_v1(this, port);
+				Headstage* headstage = new Headstage1_v1(neuropixThread, this, port);
 				if (headstage->hasTestModule())
 				{
 					headstage->runTestModule();
@@ -141,7 +141,7 @@ bool Basestation_v1::open()
 			} 
 			else if (errorCode == np::SUCCESS)
 			{
-				Headstage* headstage = new Headstage1_v1(this, port);
+				Headstage* headstage = new Headstage1_v1(neuropixThread, this, port);
 				headstages.add(headstage);
 				probes.add(headstage->probes[0]);
 			}

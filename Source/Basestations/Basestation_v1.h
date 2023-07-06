@@ -67,7 +67,7 @@ class Basestation_v1 : public Basestation
 {
 public:
 	/** Constructor */
-	Basestation_v1(int slot);
+	Basestation_v1(NeuropixThread*, int slot);
 
 	/** Destructor */
 	~Basestation_v1();

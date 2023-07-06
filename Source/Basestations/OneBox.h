@@ -41,7 +41,7 @@ class OneBox : public Basestation
 public:
 
 	/** Constructor */
-	OneBox(int ID);
+	OneBox(NeuropixThread*, int ID);
 
 	/** Destructor */
 	~OneBox();

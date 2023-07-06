@@ -42,7 +42,10 @@ class NeuropixelsOpto : public Probe
 public:
 
 	/** Constructor */
-	NeuropixelsOpto(Basestation* bs, Headstage* hs, Flex* fl);
+	NeuropixelsOpto(NeuropixThread*,
+		Basestation*, 
+		Headstage*, 
+		Flex*);
 
 	/** Reads probe part number and serial number */
 	void getInfo() override;

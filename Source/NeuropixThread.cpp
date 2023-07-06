@@ -79,7 +79,7 @@ void Initializer::run()
 			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
 			{
 
-				Basestation* bs = new Basestation_v3(slotID);
+				Basestation* bs = new Basestation_v3(neuropixThread, slotID);
 
 				if (bs->open()) //returns true if Basestation firmware >= 2.0
 				{
@@ -118,7 +118,7 @@ void Initializer::run()
 			}
 			else {
 
-				Basestation* bs = new OneBox(list[i].ID);
+				Basestation* bs = new OneBox(neuropixThread, list[i].ID);
 
 				if (bs->open())
 				{
@@ -152,7 +152,7 @@ void Initializer::run()
 
 				    LOGD("  Found V1 Basestation");
 
-					Basestation* bs = new Basestation_v1(slot);
+					Basestation* bs = new Basestation_v1(neuropixThread, slot);
 
 					if (bs->open()) // detects # of probes; returns true if API version matches
 					{
@@ -190,7 +190,7 @@ void Initializer::run()
 
 		if (response)
 		{
-			basestations.add(new SimulatedBasestation(2));
+			basestations.add(new SimulatedBasestation(neuropixThread, 2));
 			basestations.getLast()->open(); // detects # of probes
 		}
 
@@ -216,7 +216,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	LOGD("Setting debug level to 0");
 	Neuropixels::np_dbg_setlevel(0);
 
-	initializer = std::make_unique<Initializer>(basestations, api_v1, api_v3);
+	initializer = std::make_unique<Initializer>(this, basestations, api_v1, api_v3);
 	initializer->run();
 
 	bool foundSync = false;

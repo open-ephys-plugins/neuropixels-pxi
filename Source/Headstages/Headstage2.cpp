@@ -72,7 +72,7 @@ void Flex2::getInfo()
 }
 
 
-Headstage2::Headstage2(Basestation* bs_, int port) : Headstage(bs_, port)
+Headstage2::Headstage2(NeuropixThread* thread, Basestation* bs_, int port) : Headstage(bs_, port)
 {
 	getInfo();
 
@@ -89,7 +89,7 @@ Headstage2::Headstage2(Basestation* bs_, int port) : Headstage(bs_, port)
 		if (flexDetected)
 		{
 			flexCables.add(new Flex2(this, dock));
-			Neuropixels2* probe = new Neuropixels2(basestation, this, flexCables.getLast(), dock);
+			Neuropixels2* probe = new Neuropixels2(thread, basestation, this, flexCables.getLast(), dock);
 
 			if (probe->isValid)
 			{

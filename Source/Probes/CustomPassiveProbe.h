@@ -42,7 +42,10 @@ class CustomPassiveProbe : public Probe
 public:
 
 	/** Constructor */
-	CustomPassiveProbe(Basestation* bs, Headstage* hs, Flex* fl);
+	CustomPassiveProbe(NeuropixThread*,
+		Basestation*, 
+		Headstage*, 
+		Flex*);
 
 	/** Reads probe part number and serial number */
 	void getInfo() override;

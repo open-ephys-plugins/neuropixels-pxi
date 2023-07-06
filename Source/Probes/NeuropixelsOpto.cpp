@@ -24,6 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "NeuropixelsOpto.h"
 #include "Geometry.h"
 
+#include "../NeuropixThread.h"
+
 #define MAXLEN 50
 
 void NeuropixelsOpto::getInfo()
@@ -36,7 +38,7 @@ void NeuropixelsOpto::getInfo()
 	info.part_number = String(pn);
 }
 
-NeuropixelsOpto::NeuropixelsOpto(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
+NeuropixelsOpto::NeuropixelsOpto(NeuropixThread* thread, Basestation* bs, Headstage* hs, Flex* fl) : Probe(thread, bs, hs, fl, 1)
 {
 
 	getInfo();
@@ -401,6 +403,25 @@ void NeuropixelsOpto::run()
 
 					uint32_t npx_timestamp = packet[packetNum].timestamp[i];
 
+					uint32_t timestamp_jump = npx_timestamp - last_npx_timestamp;
+
+					if (timestamp_jump > MAX_ALLOWABLE_TIMESTAMP_JUMP)
+					{
+						if (passedOneSecond && timestamp_jump < MAX_HEADSTAGE_CLK_SAMPLE)
+						{
+							String msg = "NPX TIMESTAMP JUMP: " + String(timestamp_jump) +
+								", expected 3 or 4...Possible data loss on slot " +
+								String(basestation->slot_c) + ", probe " + String(headstage->port_c) +
+								" at sample number " + String(ap_timestamp);
+
+							LOGC(msg);
+
+							neuropixThread->sendBroadcastMessage(msg);
+						}
+					}
+
+					last_npx_timestamp = npx_timestamp;
+
 					for (int j = 0; j < 384; j++)
 					{
 
@@ -455,6 +476,12 @@ void NeuropixelsOpto::run()
 
 		int packetsAvailable;
 		int headroom;
+
+		if (!passedOneSecond)
+		{
+			if (ap_timestamp > 30000)
+				passedOneSecond = true;
+		}
 
 		Neuropixels::getElectrodeDataFifoState(
 			basestation->slot,
