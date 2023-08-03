@@ -368,15 +368,6 @@ Array<int> Basestation_v3::getSyncFrequencies()
 
 void Basestation_v3::setSyncAsOutput(int freqIndex)
 {
-
-	LOGD("Setting sync as output...");
-
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGC("Failed to set sync on SMA output on slot: ", slot);
-	}
-
 	
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
 	if (errorCode != Neuropixels::SUCCESS)
@@ -400,6 +391,14 @@ void Basestation_v3::setSyncAsOutput(int freqIndex)
 	{
 		LOGC("Failed to set slot ", slot, " sync frequency to ", freq, " Hz!");
 		return;
+	}
+
+	LOGD("Setting sync as output...");
+
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true);
+	if (errorCode != Neuropixels::SUCCESS)
+	{
+		LOGC("Failed to set sync on SMA output on slot: ", slot);
 	}
 
 
