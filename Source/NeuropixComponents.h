@@ -289,9 +289,8 @@ class DataSource : public NeuropixComponent, public Thread
 public:
 
 	/** Constructor */
-	DataSource(NeuropixThread* thread_, Basestation* bs_) : NeuropixComponent(), Thread("DataSourceThread")
+	DataSource(Basestation* bs_) : NeuropixComponent(), Thread("DataSourceThread")
 	{
-		neuropixThread = thread_;
 		basestation = bs_;
 	}
 
@@ -338,8 +337,6 @@ public:
 protected:
 	SourceStatus status;
 
-	NeuropixThread* neuropixThread;
-
 };
 
 
@@ -353,8 +350,7 @@ class Probe : public DataSource
 public:
 
 	/** Constructor */
-	Probe(NeuropixThread*,
-		Basestation*, 
+	Probe(Basestation*, 
 		Headstage*,
 		Flex*, 
 		int dock);
@@ -698,7 +694,7 @@ public:
 		
 	}
 
-	NeuropixThread* neuropixThread;
+	NeuropixThread* neuropixThread; // Probes can access this via Basestation pointer
 
 protected:
 

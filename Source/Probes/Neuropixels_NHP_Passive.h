@@ -42,8 +42,7 @@ class Neuropixels_NHP_Passive : public Probe
 public:
 
 	/** Constructor */
-	Neuropixels_NHP_Passive(NeuropixThread*,
-		Basestation*, 
+	Neuropixels_NHP_Passive(Basestation*, 
 		Headstage*, 
 		Flex*);
 

@@ -27,8 +27,8 @@ float FirmwareUpdater::totalFirmwareBytes = 0;
 FirmwareUpdater* FirmwareUpdater::currentThread = nullptr;
 
 
-Probe::Probe(NeuropixThread* thread_, Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) 
-	: DataSource(thread_, bs_),
+Probe::Probe(Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_) 
+	: DataSource(bs_),
 	  headstage(hs_),
 	  flex(fl_),
 	  dock(dock_),

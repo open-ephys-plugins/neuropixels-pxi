@@ -43,8 +43,7 @@ class Neuropixels_NHP_Active : public Probe
 public:
 
 	/** Constructor */
-	Neuropixels_NHP_Active(NeuropixThread*,
-		Basestation*,
+	Neuropixels_NHP_Active(Basestation*,
 		Headstage*, 
 		Flex*);
 

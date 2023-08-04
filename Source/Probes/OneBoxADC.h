@@ -36,8 +36,7 @@ class OneBoxInterface;
 class OneBoxADC : public DataSource
 {
 public:
-	OneBoxADC(NeuropixThread*, 
-		Basestation*);
+	OneBoxADC(Basestation*);
 
 	void getInfo() override;
 

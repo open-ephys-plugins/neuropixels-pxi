@@ -42,8 +42,7 @@ class CustomPassiveProbe : public Probe
 public:
 
 	/** Constructor */
-	CustomPassiveProbe(NeuropixThread*,
-		Basestation*, 
+	CustomPassiveProbe(Basestation*, 
 		Headstage*, 
 		Flex*);
 

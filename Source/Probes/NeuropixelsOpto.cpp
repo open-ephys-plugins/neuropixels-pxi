@@ -38,7 +38,7 @@ void NeuropixelsOpto::getInfo()
 	info.part_number = String(pn);
 }
 
-NeuropixelsOpto::NeuropixelsOpto(NeuropixThread* thread, Basestation* bs, Headstage* hs, Flex* fl) : Probe(thread, bs, hs, fl, 1)
+NeuropixelsOpto::NeuropixelsOpto(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
 {
 
 	getInfo();
@@ -416,7 +416,7 @@ void NeuropixelsOpto::run()
 
 							LOGC(msg);
 
-							neuropixThread->sendBroadcastMessage(msg);
+							basestation->neuropixThread->sendBroadcastMessage(msg);
 						}
 					}
 

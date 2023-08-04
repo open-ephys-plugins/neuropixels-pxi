@@ -38,7 +38,7 @@ void Neuropixels_UHD::getInfo()
 	info.part_number = String(pn);
 }
 
-Neuropixels_UHD::Neuropixels_UHD(NeuropixThread* thread, Basestation* bs, Headstage* hs, Flex* fl) : Probe(thread, bs, hs, fl, 1)
+Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
 {
 	getInfo();
 
@@ -484,7 +484,7 @@ void Neuropixels_UHD::run()
 
 							LOGC(msg);
 
-							neuropixThread->sendBroadcastMessage(msg);
+							basestation->neuropixThread->sendBroadcastMessage(msg);
 						}
 					}
 

@@ -42,8 +42,7 @@ class NeuropixelsOpto : public Probe
 public:
 
 	/** Constructor */
-	NeuropixelsOpto(NeuropixThread*,
-		Basestation*, 
+	NeuropixelsOpto(Basestation*, 
 		Headstage*, 
 		Flex*);
 

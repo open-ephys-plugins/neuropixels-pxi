@@ -42,8 +42,7 @@ class Neuropixels1_v3 : public Probe
 public:
 
 	/** Constructor */
-	Neuropixels1_v3(NeuropixThread*,
-		Basestation*, 
+	Neuropixels1_v3(Basestation*, 
 		Headstage*, 
 		Flex*);
 

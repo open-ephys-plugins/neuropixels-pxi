@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class Headstage_Analog128 : public Headstage
 {
 public:
-	Headstage_Analog128::Headstage_Analog128(NeuropixThread* neuropixThread, Basestation*, int port);
+	Headstage_Analog128::Headstage_Analog128(Basestation*, int port);
 	void getInfo() override;
 	bool hasTestModule() override { return false; }
 	void runTestModule() override {}

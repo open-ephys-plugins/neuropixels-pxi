@@ -38,7 +38,7 @@ void OneBoxADC::getInfo()
 	//info.part_number = String(pn);
 }
 
-OneBoxADC::OneBoxADC(NeuropixThread* thread, Basestation* bs) : DataSource(thread, bs)
+OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 {
 
 	ui = nullptr;

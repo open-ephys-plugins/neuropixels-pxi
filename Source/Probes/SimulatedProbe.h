@@ -51,8 +51,7 @@ struct SimulatedData {
 class SimulatedProbe : public Probe
 {
 public:
-	SimulatedProbe(NeuropixThread*, 
-		Basestation*,
+	SimulatedProbe(Basestation*,
 		Headstage*,
 		Flex*,
 		int dock,

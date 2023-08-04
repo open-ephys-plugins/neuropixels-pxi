@@ -38,7 +38,7 @@ void Neuropixels2::getInfo()
 	info.part_number = String(pn);
 }
 
-Neuropixels2::Neuropixels2(NeuropixThread* thread, Basestation* bs, Headstage* hs, Flex* fl, int dock) : Probe(thread, bs, hs, fl, dock)
+Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) : Probe(bs, hs, fl, dock)
 {
 	getInfo();
 
@@ -425,7 +425,7 @@ void Neuropixels2::run()
 
 						LOGC(msg);
 
-						neuropixThread->sendBroadcastMessage(msg);
+						basestation->neuropixThread->sendBroadcastMessage(msg);
 					}
 				}
 

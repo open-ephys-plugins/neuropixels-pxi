@@ -42,8 +42,7 @@ class Neuropixels_UHD : public Probe
 public:
 
 	/** Constructor */
-	Neuropixels_UHD(NeuropixThread*,
-		Basestation*, 
+	Neuropixels_UHD(Basestation*, 
 		Headstage*, 
 		Flex*);
 

@@ -38,7 +38,7 @@ void OneBoxDAC::getInfo()
 	//info.part_number = String(pn);
 }
 
-OneBoxDAC::OneBoxDAC(NeuropixThread* thread, Basestation* bs_) : DataSource(thread, bs), bs(bs_)
+OneBoxDAC::OneBoxDAC(Basestation* bs_) : DataSource(bs), bs(bs_)
 {
 
 	getInfo();

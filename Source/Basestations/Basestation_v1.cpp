@@ -127,7 +127,7 @@ bool Basestation_v1::open()
 			} 
 			else if (errorCode == np::TIMEOUT)
 			{ //either headstage test module detected or broken connection to real probe
-				Headstage* headstage = new Headstage1_v1(neuropixThread, this, port);
+				Headstage* headstage = new Headstage1_v1(this, port);
 				if (headstage->hasTestModule())
 				{
 					headstage->runTestModule();
@@ -141,7 +141,7 @@ bool Basestation_v1::open()
 			} 
 			else if (errorCode == np::SUCCESS)
 			{
-				Headstage* headstage = new Headstage1_v1(neuropixThread, this, port);
+				Headstage* headstage = new Headstage1_v1(this, port);
 				headstages.add(headstage);
 				probes.add(headstage->probes[0]);
 			}

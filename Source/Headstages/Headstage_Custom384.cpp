@@ -72,13 +72,13 @@ void Flex1_Custom::getInfo()
 }
 
 
-Headstage_Custom384::Headstage_Custom384(NeuropixThread* thread, Basestation* bs_, int port) : Headstage(bs_, port)
+Headstage_Custom384::Headstage_Custom384(Basestation* bs_, int port) : Headstage(bs_, port)
 {
 	getInfo();
 
 	flexCables.add(new Flex1_Custom(this));
 
-	probes.add(new CustomPassiveProbe(thread, basestation, this, flexCables[0]));
+	probes.add(new CustomPassiveProbe(basestation, this, flexCables[0]));
 	probes[0]->setStatus(SourceStatus::CONNECTING);
 }
 

@@ -32,10 +32,10 @@ void SimulatedProbe::getInfo()
 
 }
 
-SimulatedProbe::SimulatedProbe(NeuropixThread* thread, Basestation* bs,
+SimulatedProbe::SimulatedProbe(Basestation* bs,
 	Headstage* hs,
 	Flex* fl,
-	int dock, String PN, int SN) : Probe(thread, bs, hs, fl, dock)
+	int dock, String PN, int SN) : Probe(bs, hs, fl, dock)
 {
 
 	getInfo();

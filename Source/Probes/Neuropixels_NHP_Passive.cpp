@@ -33,7 +33,7 @@ void Neuropixels_NHP_Passive::getInfo()
 	info.part_number = "NP1200";
 }
 
-Neuropixels_NHP_Passive::Neuropixels_NHP_Passive(NeuropixThread* thread, Basestation* bs, Headstage* hs, Flex* fl) : Probe(thread, bs, hs, fl, 0)
+Neuropixels_NHP_Passive::Neuropixels_NHP_Passive( Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 0)
 {
 	getInfo();
 
@@ -333,7 +333,7 @@ void Neuropixels_NHP_Passive::run()
 
 							LOGC(msg);
 
-							neuropixThread->sendBroadcastMessage(msg);
+							basestation->neuropixThread->sendBroadcastMessage(msg);
 						}
 					}
 

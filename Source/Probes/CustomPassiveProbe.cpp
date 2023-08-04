@@ -38,7 +38,7 @@ void CustomPassiveProbe::getInfo()
 	info.part_number = String(pn);
 }
 
-CustomPassiveProbe::CustomPassiveProbe(NeuropixThread* np, Basestation* bs, Headstage* hs, Flex* fl) : Probe(np, bs, hs, fl, 1)
+CustomPassiveProbe::CustomPassiveProbe(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
 {
 	getInfo();
 
@@ -383,7 +383,7 @@ void CustomPassiveProbe::run()
 
 							LOGC(msg);
 
-							neuropixThread->sendBroadcastMessage(msg);
+							basestation->neuropixThread->sendBroadcastMessage(msg);
 						}
 					}
 

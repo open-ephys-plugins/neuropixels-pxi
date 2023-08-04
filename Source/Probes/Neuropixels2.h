@@ -41,8 +41,7 @@ class Neuropixels2 : public Probe
 public:
 
 	/** Constructor */
-	Neuropixels2(NeuropixThread*, 
-		Basestation*, 
+	Neuropixels2(Basestation*, 
 		Headstage*, 
 		Flex*,
 		int dock);
