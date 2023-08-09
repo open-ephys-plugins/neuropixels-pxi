@@ -1304,7 +1304,7 @@ String NeuropixThread::handleConfigMessage(String msg)
 								{
 									int electrode = parts[i].getIntValue();
 
-									std::cout << electrode << std::endl;
+									//std::cout << electrode << std::endl;
 
 									if (electrode > 0 && electrode < probe->electrodeMetadata.size() + 1)
 										electrodes.add(electrode - 1);
