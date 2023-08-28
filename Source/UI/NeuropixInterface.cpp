@@ -430,7 +430,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     bscFirmwareButton->setTooltip("Upload firmware to selected basestation connect board");
     addChildComponent(bscFirmwareButton);
 
-    bscFirmwareLabel = new Label("BSC FIRMWARE", "1. Update basestation connect board firmware:");
+    bscFirmwareLabel = new Label("BSC FIRMWARE", "1. Update basestation connect board firmware (QBSC_FPGA_B189.bin):");
     bscFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
     bscFirmwareLabel->setBounds(550, verticalOffset + 43, 500, 20);
     bscFirmwareLabel->setColour(Label::textColourId, Colours::orange);
@@ -449,7 +449,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     bsFirmwareButton->setTooltip("Upload firmware to selected basestation");
     addChildComponent(bsFirmwareButton);
 
-    bsFirmwareLabel = new Label("BS FIRMWARE", "2. Update basestation firmware:");
+    bsFirmwareLabel = new Label("BS FIRMWARE", "2. Update basestation firmware (BS_FPGA_B169.bin):");
     bsFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
     bsFirmwareLabel->setBounds(550, verticalOffset + 113, 500, 20);
     bsFirmwareLabel->setColour(Label::textColourId, Colours::orange);

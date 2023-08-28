@@ -185,8 +185,8 @@ bool Basestation_v3::open()
 			
 			// show popup notification window
 			String message = "The basestation on slot " + String(slot) + " has firmware version 2.0137, but version 2.0169 is required for this plugin. ";
+			message += "This is contained in the file named BS_FPGA_B169.bin. ";
 			message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update. ";
-			message += "You will be able to proceed with data acquisition using the current firmware, but there may be issues using the SMA port for synchronization.";
 
 			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Outdated basestation firmware on slot " + String(slot), message, "OK");
 
@@ -198,7 +198,20 @@ bool Basestation_v3::open()
 			LOGC("Found basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
 
 			// show popup notification window
-			String message = "The basestation on slot " + String(slot) + " has basestation firmware version 3.2176, but version 3.2186 is required for this plugin. ";
+			String message = "The basestation on slot " + String(slot) + " has basestation firmware version 3.2176, but version 3.2189 is required for this plugin. ";
+			message += "This is contained in the file named QBSC_FPGA_B189.bin. ";
+			message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
+
+			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String(slot), message, "OK");
+		}
+
+		if (basestationConnectBoard->info.boot_version.equalsIgnoreCase("3.2186"))
+		{
+			LOGC("Found basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
+
+			// show popup notification window
+			String message = "The basestation on slot " + String(slot) + " has basestation firmware version 3.2186, but version 3.2189 is required for this plugin. ";
+			message += "This is contained in the file named QBSC_FPGA_B189.bin. ";
 			message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
 
 			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String(slot), message, "OK");
