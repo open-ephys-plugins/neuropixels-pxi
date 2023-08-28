@@ -175,12 +175,15 @@ void NeuropixCanvas::applyParametersToAllProbes(ProbeSettings p)
 {
     for (auto settingsInterface : settingsInterfaces)
     {
-        if (settingsInterface->applyProbeSettings(p, false))
+        if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
         {
-            NeuropixInterface* ni = (NeuropixInterface*)settingsInterface;
-            p.probe = ni->probe;
-            p.probe->updateSettings(p);
-            thread->updateProbeSettingsQueue(p);
+            if (settingsInterface->applyProbeSettings(p, false))
+            {
+                NeuropixInterface* ni = (NeuropixInterface*)settingsInterface;
+                p.probe = ni->probe;
+                p.probe->updateSettings(p);
+                thread->updateProbeSettingsQueue(p);
+            }
         }
 
     }

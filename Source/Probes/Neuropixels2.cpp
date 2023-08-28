@@ -219,7 +219,7 @@ void Neuropixels2::selectElectrodes()
 
 	}
 
-	LOGD("Updating electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
+	LOGD("Updated electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
 
 }
 
@@ -351,6 +351,8 @@ void Neuropixels2::setAllReferences()
 									shank, 
 									refId, 
 									refElectrodeBank);
+
+	LOGD("Updated reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", refId);
 
 }
 

@@ -102,6 +102,8 @@ OneBoxInterface::OneBoxInterface(DataSource* dataSource_, NeuropixThread* thread
 	adc->ui = this;
 	dac = adc->dac;
 
+	type = SettingsInterface::ONEBOX_SETTINGS_INTERFACE;
+
 	for (int ch = 0; ch < 12; ch++)
 	{
 		AdcChannelButton* button = new AdcChannelButton(ch);

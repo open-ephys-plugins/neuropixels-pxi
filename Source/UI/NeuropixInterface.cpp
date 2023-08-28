@@ -45,6 +45,9 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
     if (probe != nullptr)
     {
+
+        type = SettingsInterface::PROBE_SETTINGS_INTERFACE;
+
         basestation = probe->basestation;
 
         probe->ui = this;
@@ -402,6 +405,9 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         probeSettingsLabel->setBounds(40, 610, 300, 20);
         probeSettingsLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(probeSettingsLabel);
+    }
+    else {
+       type = SettingsInterface::BASESTATION_SETTINGS_INTERFACE;
     }
 
     int verticalOffset = 550;

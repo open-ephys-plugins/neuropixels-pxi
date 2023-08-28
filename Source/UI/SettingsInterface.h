@@ -35,6 +35,15 @@ class NeuropixCanvas;
 class SettingsInterface : public Component
 {
 public:
+
+    enum Type
+    {
+        PROBE_SETTINGS_INTERFACE,
+        ONEBOX_SETTINGS_INTERFACE,
+        BASESTATION_SETTINGS_INTERFACE,
+        UNKNOWN_SETTINGS_INTERFACE
+    };
+
     SettingsInterface(DataSource* dataSource_, NeuropixThread* thread_, NeuropixEditor* editor_, NeuropixCanvas* canvas_)
     {
         dataSource = dataSource_;
@@ -53,6 +62,8 @@ public:
 	virtual void loadParameters(XmlElement* xml) = 0;
 
     virtual void updateInfoString() = 0;
+
+    Type type = UNKNOWN_SETTINGS_INTERFACE;
 
 protected:
 
