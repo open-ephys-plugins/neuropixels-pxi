@@ -10,7 +10,7 @@ public:
     static bool writeProbeSettingsToJson(File& file, ProbeSettings settings)
     {
 
-        std::cout << "Writing JSON file." << std::endl;
+        //std::cout << "Writing JSON file." << std::endl;
 
         DynamicObject output;
 
@@ -87,7 +87,7 @@ public:
     static bool readProbeSettingsFromJson(File& file, ProbeSettings& settings)
     {
 
-        std::cout << "Reading JSON file." << std::endl;
+       // std::cout << "Reading JSON file." << std::endl;
 
         var result;
 
@@ -148,7 +148,7 @@ public:
                     int xpos = int(contact_position->getReference(0));
                     int ypos = int(contact_position->getReference(1));
 
-                    std::cout << " Position: " << xpos << ", " << ypos << std::endl;
+                    //std::cout << " Position: " << xpos << ", " << ypos << std::endl;
                 }
             }
         }
