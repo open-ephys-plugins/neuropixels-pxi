@@ -117,7 +117,12 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 		else
 			probes.remove(0, true);
 
-		LOGC("Headstage has ", probes.size(), " valid probes connected.");
+		if (probes.size() != 1)
+		{
+			LOGC("Headstage has ", probes.size(), " valid probes connected.");
+		}
+		else
+			LOGC("Headstage has 1 valid probe connected.");
 	}
 
 }
