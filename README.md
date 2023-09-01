@@ -2,7 +2,7 @@
 
 ![Hardware diagram](https://open-ephys.github.io/gui-docs/_images/neuropix-pxi-01.png)
 
-This plugin makes it possible to stream Neuropixels data from a PXI-based  acquisition system into the [Open Ephys GUI](https://github.com/open-ephys/plugin-gui).
+This plugin makes it possible to stream Neuropixels data from a PXI-based acquisition system into the [Open Ephys GUI](https://github.com/open-ephys/plugin-gui).
 
 ## Installation
 
@@ -38,27 +38,25 @@ Instructions for using the Neuropixels PXI plugin are available [here](https://o
 
 - Neuropixels Opto
 
-## Compatible firmware
+## Compatible PXI basestation firmware
 
-### Plugin version: 0.4.1
+### Plugin version: 0.4.x
 
-v1 API version: 1.20
-- QBSC firmware: B151
-- BS firmware: ?
-
-v3 API version: 3.42
-- QBSC firmware: B176 (appears as 3.2176 in GUI)
-- BS firmware: B137 (appears as 2.0137 in GUI)
-
-### Plugin version: 0.5.0
-
-v1 API version: 1.20
-- QBSC firmware: B151
-- BS firmware: ?
-
-v3 API version: 3.57
+API version: 3.42
 - QBSC firmware: B176 (appears as 3.2176)
-- BS firmware: B169 (appears as 2.0169 in GUI) <--- updated
+- BS firmware: B137 (appears as 2.0137)
+
+### Plugin version: 0.5.x
+
+API version: 3.57
+- QBSC firmware: B176 (appears as 3.2176)
+- BS firmware: B169 (appears as 2.0169)
+
+### Plugin version: 0.6.x
+
+API version: 3.62
+- QBSC firmware: B189 (appears as 3.2189)
+- BS firmware: B169 (appears as 2.0169)
 
 ## License
 
@@ -70,4 +68,4 @@ This plugin was created by Josh Siegle, Pavel Kulik, and Anjal Doshi at the Alle
 
 We thank Bill Karsh (Janelia) and Jan Putzeys (imec) for helpful advice throughout the development process.
 
-© 2022 Allen Institute and Open Ephys
+© 2023 Allen Institute and Open Ephys
