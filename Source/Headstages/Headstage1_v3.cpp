@@ -213,7 +213,8 @@ void HeadstageTestModule_v3::showResults()
 		message+= "\n";
 	}
 
-	AlertWindow::showMessageBox(AlertWindow::AlertIconType::InfoIcon, "HST Module Detected!", message, "OK");
+	//AlertWindow::showMessageBox(AlertWindow::AlertIconType::InfoIcon, "HST Module Detected!", message, "OK");
+	LOGC("Headstage Module Test Results: ", message);
 
 }
 
