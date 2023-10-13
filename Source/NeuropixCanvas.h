@@ -97,8 +97,6 @@ public:
 
 	ProbeSettings savedSettings;
 
-	ScopedPointer<Viewport> neuropixViewport;
-
 	OwnedArray<SettingsInterface> settingsInterfaces;
 	Array<DataSource*> dataSources;
 	Array<Basestation*> basestations;

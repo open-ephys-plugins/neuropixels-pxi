@@ -35,8 +35,6 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
     thread(thread_)
 
 {
-    neuropixViewport = new Viewport();
-    neuropixViewport->setScrollBarsShown(true, true, true, true);
 
     Array<DataSource*> availableDataSources = thread->getDataSources();
 
@@ -47,12 +45,15 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
         {
             NeuropixInterface* neuropixInterface = new NeuropixInterface(source, thread, editor, this);
             settingsInterfaces.add((SettingsInterface*) neuropixInterface);
+            addChildComponent(neuropixInterface->viewport.get());
+        
             
         }
         else if (source->sourceType == DataSourceType::ADC)
         {
             OneBoxInterface* oneBoxInterface = new OneBoxInterface(source, thread, editor, this);
             settingsInterfaces.add(oneBoxInterface);
+            addChildComponent(oneBoxInterface->viewport.get());
         }
        // else if (source->sourceType == DataSourceType::DAC)
        // {
@@ -71,10 +72,13 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
         BasestationInterface* basestationInterface = new BasestationInterface(basestation, thread, editor, this);
         settingsInterfaces.add(basestationInterface);
         basestations.add(basestation);
+        addChildComponent(basestationInterface->viewport.get());
     }
 
-    neuropixViewport->setViewedComponent(settingsInterfaces.getFirst(), false);
-    addAndMakeVisible(neuropixViewport);
+    //neuropixViewport->setViewedComponent(settingsInterfaces.getFirst(), false);
+    //addAndMakeVisible(neuropixViewport);
+
+    settingsInterfaces[0]->viewport->setVisible(true);
 
     resized();
 
@@ -112,13 +116,10 @@ void NeuropixCanvas::resized()
 {
    
     for (int i = 0; i < settingsInterfaces.size(); i++)
-        settingsInterfaces[i]->setBounds(0, 0, 1000, 820);
-
-    neuropixViewport->setBounds(10, 10, getWidth()-10, getHeight()-10);
-
-    // why is this not working?
-    neuropixViewport->setScrollBarsShown(true, true, true, true);
-    neuropixViewport->setScrollBarThickness(10);
+    {
+        settingsInterfaces[i]->viewport->setBounds(10, 10, getWidth() - 10, getHeight() - 10);
+    }        
+    
 }
 
 
@@ -141,8 +142,13 @@ void NeuropixCanvas::setSelectedInterface(DataSource* dataSource)
 
         int index = dataSources.indexOf(dataSource);
 
-        if (index > -1)
-            neuropixViewport->setViewedComponent(settingsInterfaces[index], false);
+        for (int i = 0; i < settingsInterfaces.size(); i++)
+        {
+            if (i == index)
+                settingsInterfaces[i]->viewport->setVisible(true);
+            else
+                settingsInterfaces[i]->viewport->setVisible(false);
+        }
     }
 
 }
@@ -155,8 +161,13 @@ void NeuropixCanvas::setSelectedBasestation(Basestation* basestation)
 
         int index = basestations.indexOf(basestation) + dataSources.size();
 
-        if (index > -1)
-            neuropixViewport->setViewedComponent(settingsInterfaces[index], false);
+        for (int i = 0; i < settingsInterfaces.size(); i++)
+        {
+            if (i == index)
+                settingsInterfaces[i]->viewport->setVisible(true);
+            else
+                settingsInterfaces[i]->viewport->setVisible(false);
+        }
     }
 
 }

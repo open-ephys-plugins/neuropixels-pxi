@@ -50,7 +50,15 @@ public:
         editor = editor_;
         canvas = canvas_;
         thread = thread_;
+
+        viewport = std::make_unique<Viewport>();
+        viewport->setViewedComponent(this, false);
+        viewport->setScrollBarsShown(true, true, true, true);
+        viewport->setScrollBarThickness(10);
+
+        setBounds(0, 0, 1000, 820);
     }
+    
 	~SettingsInterface() {}
 
 	virtual void startAcquisition() = 0;
@@ -65,12 +73,15 @@ public:
 
     Type type = UNKNOWN_SETTINGS_INTERFACE;
 
+    std::unique_ptr<Viewport> viewport;
+
 protected:
 
 	NeuropixThread* thread;
 	NeuropixEditor* editor;
 	NeuropixCanvas* canvas;
 	DataSource* dataSource;
+
 };
 
 #endif //__SETTINGSINTERFACE_H_2C4C2D67__
