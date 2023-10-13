@@ -33,22 +33,30 @@ class NeuropixEditor;
 class NeuropixCanvas;
 class SettingsInterface;
 
+/** 
+
+    A viewport with a pointer to the settings interface it holds
+
+*/
 class CustomViewport : public Viewport
 {
 public:
     CustomViewport(SettingsInterface* settingsInterface_) :
-        settingsInterface(settingsInterface_)
-    {
-        
-    }
+        settingsInterface(settingsInterface_) { }
     
     SettingsInterface* settingsInterface;
 };
 
+/** 
+
+	A base class for the graphical interface for updating data source settings
+
+*/
 class SettingsInterface : public Component
 {
 public:
 
+    /** Settings interface type*/
     enum Type
     {
         PROBE_SETTINGS_INTERFACE,
@@ -57,7 +65,11 @@ public:
         UNKNOWN_SETTINGS_INTERFACE
     };
 
-    SettingsInterface(DataSource* dataSource_, NeuropixThread* thread_, NeuropixEditor* editor_, NeuropixCanvas* canvas_)
+    /** Constructor */
+    SettingsInterface(DataSource* dataSource_, 
+        NeuropixThread* thread_, 
+        NeuropixEditor* editor_, 
+        NeuropixCanvas* canvas_)
     {
         dataSource = dataSource_;
         editor = editor_;
@@ -68,27 +80,40 @@ public:
         viewport->setViewedComponent(this, false);
         viewport->setScrollBarsShown(true, true, true, true);
         viewport->setScrollBarThickness(15);
-        viewport->getVerticalScrollBar().setColour(ScrollBar::ColourIds::thumbColourId, Colours::pink);
-        viewport->getHorizontalScrollBar().setColour(ScrollBar::ColourIds::thumbColourId, Colours::pink);
+        viewport->getVerticalScrollBar().setColour(ScrollBar::ColourIds::thumbColourId, Colours::black);
+        viewport->getHorizontalScrollBar().setColour(ScrollBar::ColourIds::thumbColourId, Colours::black);
 
         setBounds(0, 0, 1000, 820);
     }
     
+    /** Destructor */
 	~SettingsInterface() {}
 
+    /** Called when acquisition begins */
 	virtual void startAcquisition() = 0;
+
+    /** Called when acquisition ends */
 	virtual void stopAcquisition() = 0;
 
+    /** Applies settings to the probe associated with this interface */
 	virtual bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) = 0;
 
+    /** Saves settings */
 	virtual void saveParameters(XmlElement* xml) = 0;
+
+	/** Loads settings */
 	virtual void loadParameters(XmlElement* xml) = 0;
 
+    /** Updates the string with info about the underlying data source*/
     virtual void updateInfoString() = 0;
 
+    /** Default type */
     Type type = UNKNOWN_SETTINGS_INTERFACE;
 
+    /** Viewport for scrolling around this interface */
     ScopedPointer<CustomViewport> viewport;
+
+    /** Pointer to the data source*/
     DataSource* dataSource;
 
 protected:
@@ -96,7 +121,6 @@ protected:
 	NeuropixThread* thread;
 	NeuropixEditor* editor;
 	NeuropixCanvas* canvas;
-	
 
 };
 

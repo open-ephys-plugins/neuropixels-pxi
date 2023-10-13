@@ -44,7 +44,7 @@ public:
 	/** Constructor */
 	CustomTabComponent(NeuropixEditor* editor_, bool isTopLevel_);
 
-	/** Callback when tab is changed */
+	/**/
 	void currentTabChanged(int newCurrentTabIndex, const String& newCurrentTabName) override;
 
 private:

@@ -665,6 +665,8 @@ void NeuropixEditor::selectSource(DataSource* source)
 			button->setSelectedState(false);
 		}
 	}
+
+	repaint();
 }
 
 

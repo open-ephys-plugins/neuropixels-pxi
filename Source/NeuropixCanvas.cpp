@@ -57,10 +57,12 @@ void CustomTabComponent::currentTabChanged(int newCurrentTabIndex, const String&
     }
     else {
         CustomViewport* viewport = (CustomViewport*)getCurrentContentComponent();
-        editor->selectSource(viewport->settingsInterface->dataSource);
+        
+        if (viewport != nullptr)
+            editor->selectSource(viewport->settingsInterface->dataSource);
     }
     
-    std::cout << newCurrentTabIndex << ", " << newCurrentTabName << std::endl;
+   // std::cout << newCurrentTabIndex << ", " << newCurrentTabName << std::endl;
 }
 
 
@@ -87,7 +89,7 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
     {
 
         CustomTabComponent* basestationTab = new CustomTabComponent(editor, false);
-        topLevelTabComponent->addTab(String("Slot " + String(basestation->slot)), 
+        topLevelTabComponent->addTab(String(" Slot " + String(basestation->slot) + " "),
             Colour(70,70,70),
             basestationTab, 
             true);
@@ -112,13 +114,13 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
                 NeuropixInterface* neuropixInterface = new NeuropixInterface(source, thread, editor, this);
                 settingsInterfaces.add((SettingsInterface*)neuropixInterface);
                 
-				basestationTab->addTab(source->getName(), 
+                basestationTab->addTab(" " + source->getName() + " ",
                     Colours::darkgrey,
                     neuropixInterface->viewport.get(), 
                     false);
 
 				topLevelTabIndex.add(topLevelTabNumber);
-                basestationTabIndex.add(basestationTabNumber);
+                basestationTabIndex.add(basestationTabNumber++);
 
             }
             else if (source->sourceType == DataSourceType::ADC && source->basestation == basestation)
@@ -127,13 +129,13 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
                 settingsInterfaces.add(oneBoxInterface);
                 
                 //addChildComponent(oneBoxInterface->viewport.get());
-                basestationTab->addTab(source->getName(), 
+                basestationTab->addTab(" " + source->getName() + " ",
                     Colours::darkgrey, 
                     oneBoxInterface->viewport.get(), 
                     false);
                 
                 topLevelTabIndex.add(topLevelTabNumber);
-                basestationTabIndex.add(basestationTabNumber);
+                basestationTabIndex.add(basestationTabNumber++);
             }
             // else if (source->sourceType == DataSourceType::DAC)
             // {
@@ -143,20 +145,18 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
             dataSources.add(source);
 
-            basestationTabNumber += 1;
-
         }
 
         if (basestationTabNumber == 0)
         {
             BasestationInterface* basestationInterface = new BasestationInterface(basestation, thread, editor, this);
             settingsInterfaces.add(basestationInterface);
-            basestationTab->addTab("Firmware Update",
+            basestationTab->addTab(" Firmware Update ",
                 Colours::darkgrey,
                 basestationInterface->viewport.get(),
                 false);
             topLevelTabIndex.add(topLevelTabNumber);
-            basestationTabIndex.add(basestationTabNumber);
+            basestationTabIndex.add(basestationTabNumber++);
 
             dataSources.add(nullptr);
         }
@@ -164,6 +164,7 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
         topLevelTabNumber += 1;
     }
 
+    topLevelTabComponent->setCurrentTabIndex(topLevelTabNumber - 1);
 
     //neuropixViewport->setViewedComponent(settingsInterfaces.getFirst(), false);
     //addAndMakeVisible(neuropixViewport);
@@ -199,21 +200,31 @@ void NeuropixCanvas::update()
 {
     for (int i = 0; i < settingsInterfaces.size(); i++)
         settingsInterfaces[i]->updateInfoString();
+
+    for (int i = 0; i < topLevelTabComponent->getNumTabs(); i++)
+    {
+		CustomTabComponent* t = (CustomTabComponent*)topLevelTabComponent->getTabContentComponent(i);
+        
+        for (int j = 0; j < t->getNumTabs(); j++)
+        {
+			if (t->getTabContentComponent(j) != nullptr)
+			{
+                CustomViewport* v = (CustomViewport*)t->getTabContentComponent(j);
+
+                if (v != nullptr)
+                {
+                    t->setTabName(j, " " + v->settingsInterface->dataSource->getName() + " ");
+                }
+			}
+        }
+    }
 }
 
 
 void NeuropixCanvas::resized()
 {
 
-    topLevelTabComponent->setBounds(0, -3, getWidth(), getHeight()+3);
-
-    //for (int i = 0; i < basestationTabs.size(); i++)
-	//	basestationTabs[i]->setBounds(0, 20, getWidth(), getHeight() - 20);
-   
-    //for (int i = 0; i < settingsInterfaces.size(); i++)
-    //{
-    ///    settingsInterfaces[i]->viewport->setBounds(10, 0, getWidth() -10, getHeight() - 20);
-   // }        
+    topLevelTabComponent->setBounds(0, -3, getWidth(), getHeight()+3); 
     
 }
 
@@ -236,9 +247,9 @@ void NeuropixCanvas::setSelectedInterface(DataSource* dataSource)
     {
 
         int index = dataSources.indexOf(dataSource);
-        std::cout << "Index: " << index << std::endl;
-		std::cout << "Top Level Tab Index: " << topLevelTabIndex[index] << std::endl;
-		std::cout << "Basestation Tab Index: " << basestationTabIndex[index] << std::endl;
+       // std::cout << "Index: " << index << std::endl;
+		//std::cout << "Top Level Tab Index: " << topLevelTabIndex[index] << std::endl;
+		//std::cout << "Basestation Tab Index: " << basestationTabIndex[index] << std::endl;
 
         topLevelTabComponent->setCurrentTabIndex(topLevelTabIndex[index], false);
         basestationTabs[topLevelTabIndex[index]]->setCurrentTabIndex(basestationTabIndex[index], false);
