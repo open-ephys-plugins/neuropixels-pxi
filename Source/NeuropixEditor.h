@@ -263,6 +263,9 @@ public:
 	/** Update settings */
 	void update();
 
+	/** Select a data source button */
+	void selectSource(DataSource* source);
+
 	OwnedArray<SourceButton> sourceButtons;
 
 	ScopedPointer<BackgroundLoader> uiLoader;

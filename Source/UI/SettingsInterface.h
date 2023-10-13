@@ -31,6 +31,19 @@
 class NeuropixThread;
 class NeuropixEditor;
 class NeuropixCanvas;
+class SettingsInterface;
+
+class CustomViewport : public Viewport
+{
+public:
+    CustomViewport(SettingsInterface* settingsInterface_) :
+        settingsInterface(settingsInterface_)
+    {
+        
+    }
+    
+    SettingsInterface* settingsInterface;
+};
 
 class SettingsInterface : public Component
 {
@@ -51,7 +64,7 @@ public:
         canvas = canvas_;
         thread = thread_;
 
-        viewport = new Viewport();
+        viewport = new CustomViewport(this);
         viewport->setViewedComponent(this, false);
         viewport->setScrollBarsShown(true, true, true, true);
         viewport->setScrollBarThickness(15);
@@ -75,14 +88,15 @@ public:
 
     Type type = UNKNOWN_SETTINGS_INTERFACE;
 
-    ScopedPointer<Viewport> viewport;
+    ScopedPointer<CustomViewport> viewport;
+    DataSource* dataSource;
 
 protected:
 
 	NeuropixThread* thread;
 	NeuropixEditor* editor;
 	NeuropixCanvas* canvas;
-	DataSource* dataSource;
+	
 
 };
 

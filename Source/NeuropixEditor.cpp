@@ -652,6 +652,22 @@ void NeuropixEditor::buttonClicked(Button* button)
 }
 
 
+void NeuropixEditor::selectSource(DataSource* source)
+{
+	for (auto button : sourceButtons)
+	{
+
+		if (source == button->dataSource)
+		{
+			button->setSelectedState(true);
+		}
+		else {
+			button->setSelectedState(false);
+		}
+	}
+}
+
+
 void NeuropixEditor::saveVisualizerEditorParameters(XmlElement* xml)
 {
 	LOGD("Saving Neuropix editor.");

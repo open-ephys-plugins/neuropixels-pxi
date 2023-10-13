@@ -32,6 +32,27 @@ class NeuropixEditor;
 class Probe;
 
 /** 
+	
+	Adds a callback when tab is changed
+
+*/
+
+class CustomTabComponent : public TabbedComponent
+{
+public:
+
+	/** Constructor */
+	CustomTabComponent(NeuropixEditor* editor_, bool isTopLevel_);
+
+	/** Callback when tab is changed */
+	void currentTabChanged(int newCurrentTabIndex, const String& newCurrentTabName) override;
+
+private:
+	NeuropixEditor* editor;
+	bool isTopLevel;
+};
+
+/** 
 
 	Holds the visualizer for additional probe settings
 
@@ -108,7 +129,10 @@ public:
 
 private:
 
-	ScopedPointer<TabbedComponent> topLevelTabComponent;
-	Array<TabbedComponent*> basestationTabs;
+	ScopedPointer<CustomTabComponent> topLevelTabComponent;
+	Array<CustomTabComponent*> basestationTabs;
+
+	Array<int> topLevelTabIndex;
+	Array<int> basestationTabIndex;
 
 };

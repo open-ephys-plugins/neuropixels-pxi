@@ -28,6 +28,41 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "NeuropixEditor.h"
 #include "NeuropixThread.h"
 
+CustomTabComponent::CustomTabComponent(NeuropixEditor* editor_, bool isTopLevel_) :
+    TabbedComponent(TabbedButtonBar::TabsAtTop),
+    editor(editor_),
+    isTopLevel(isTopLevel_)
+{
+    setTabBarDepth(26);
+    setOutline(0);
+    setIndent(0);
+}
+
+
+
+void CustomTabComponent::currentTabChanged(int newCurrentTabIndex, const String& newCurrentTabName)
+{
+    if (isTopLevel)
+    {
+        TabbedComponent* currentTab = (TabbedComponent*)getCurrentContentComponent();
+
+        if (currentTab != nullptr)
+        {
+            CustomViewport* viewport = (CustomViewport*)currentTab->getCurrentContentComponent();
+
+            if (viewport != nullptr)
+                editor->selectSource(viewport->settingsInterface->dataSource);
+        }
+        
+    }
+    else {
+        CustomViewport* viewport = (CustomViewport*)getCurrentContentComponent();
+        editor->selectSource(viewport->settingsInterface->dataSource);
+    }
+    
+    std::cout << newCurrentTabIndex << ", " << newCurrentTabName << std::endl;
+}
+
 
 NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* editor_, NeuropixThread* thread_) : 
     processor(processor_),
@@ -36,11 +71,8 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
 {
 
-    topLevelTabComponent = new TabbedComponent(TabbedButtonBar::TabsAtTop);
-    topLevelTabComponent->setTabBarDepth(26);
-    topLevelTabComponent->setOutline(0);
-    topLevelTabComponent->setIndent(0); // gap to leave around the edge
-    // of the content component
+    topLevelTabComponent = new CustomTabComponent(editor, true);
+
     topLevelTabComponent->setColour(TabbedComponent::outlineColourId,
         Colours::darkgrey);
     topLevelTabComponent->setColour(TabbedComponent::backgroundColourId,
@@ -49,10 +81,12 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
     Array<Basestation*> availableBasestations = thread->getBasestations();
 
+    int topLevelTabNumber = 0;
+
     for (auto basestation : availableBasestations)
     {
 
-		TabbedComponent* basestationTab = new TabbedComponent(TabbedButtonBar::TabsAtTop);
+        CustomTabComponent* basestationTab = new CustomTabComponent(editor, false);
         topLevelTabComponent->addTab(String("Slot " + String(basestation->slot)), 
             Colour(70,70,70),
             basestationTab, 
@@ -68,6 +102,8 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
         Array<DataSource*> availableDataSources = thread->getDataSources();
 
+		int basestationTabNumber = 0;
+
         for (auto source : availableDataSources)
         {
 
@@ -81,6 +117,9 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
                     neuropixInterface->viewport.get(), 
                     false);
 
+				topLevelTabIndex.add(topLevelTabNumber);
+                basestationTabIndex.add(basestationTabNumber);
+
             }
             else if (source->sourceType == DataSourceType::ADC && source->basestation == basestation)
             {
@@ -92,6 +131,9 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
                     Colours::darkgrey, 
                     oneBoxInterface->viewport.get(), 
                     false);
+                
+                topLevelTabIndex.add(topLevelTabNumber);
+                basestationTabIndex.add(basestationTabNumber);
             }
             // else if (source->sourceType == DataSourceType::DAC)
             // {
@@ -101,15 +143,25 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
             dataSources.add(source);
 
+            basestationTabNumber += 1;
+
         }
 
-        BasestationInterface* basestationInterface = new BasestationInterface(basestation, thread, editor, this);
-        settingsInterfaces.add(basestationInterface);
-        basestationTab->addTab("Firmware Update", 
-            Colours::darkgrey,
-            basestationInterface->viewport.get(), 
-            false);
-        
+        if (basestationTabNumber == 0)
+        {
+            BasestationInterface* basestationInterface = new BasestationInterface(basestation, thread, editor, this);
+            settingsInterfaces.add(basestationInterface);
+            basestationTab->addTab("Firmware Update",
+                Colours::darkgrey,
+                basestationInterface->viewport.get(),
+                false);
+            topLevelTabIndex.add(topLevelTabNumber);
+            basestationTabIndex.add(basestationTabNumber);
+
+            dataSources.add(nullptr);
+        }
+
+        topLevelTabNumber += 1;
     }
 
 
@@ -184,14 +236,12 @@ void NeuropixCanvas::setSelectedInterface(DataSource* dataSource)
     {
 
         int index = dataSources.indexOf(dataSource);
+        std::cout << "Index: " << index << std::endl;
+		std::cout << "Top Level Tab Index: " << topLevelTabIndex[index] << std::endl;
+		std::cout << "Basestation Tab Index: " << basestationTabIndex[index] << std::endl;
 
-        for (int i = 0; i < settingsInterfaces.size(); i++)
-        {
-            if (i == index)
-                settingsInterfaces[i]->viewport->setVisible(true);
-            else
-                settingsInterfaces[i]->viewport->setVisible(false);
-        }
+        topLevelTabComponent->setCurrentTabIndex(topLevelTabIndex[index], false);
+        basestationTabs[topLevelTabIndex[index]]->setCurrentTabIndex(basestationTabIndex[index], false);
     }
 
 }
