@@ -57,6 +57,8 @@ public:
 
 	float getChannelGain(int chan);
 
+	String getName() { return "ADC"; }
+
 	Neuropixels::NP_ErrorCode errorCode;
 
 	float bitVolts;

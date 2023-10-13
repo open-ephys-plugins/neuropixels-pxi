@@ -57,6 +57,8 @@ public:
 	void disableOutput(int chan);
 	void enableOutput(int chan);
 
+	String getName() { return "DAC"; }
+
 	Neuropixels::NP_ErrorCode errorCode;
 
 	float bitVolts;

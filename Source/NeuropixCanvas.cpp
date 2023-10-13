@@ -36,51 +36,89 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
 {
 
-    Array<DataSource*> availableDataSources = thread->getDataSources();
-
-    for (auto source : availableDataSources)
-    {
-
-        if (source->sourceType == DataSourceType::PROBE)
-        {
-            NeuropixInterface* neuropixInterface = new NeuropixInterface(source, thread, editor, this);
-            settingsInterfaces.add((SettingsInterface*) neuropixInterface);
-            addChildComponent(neuropixInterface->viewport.get());
-        
-            
-        }
-        else if (source->sourceType == DataSourceType::ADC)
-        {
-            OneBoxInterface* oneBoxInterface = new OneBoxInterface(source, thread, editor, this);
-            settingsInterfaces.add(oneBoxInterface);
-            addChildComponent(oneBoxInterface->viewport.get());
-        }
-       // else if (source->sourceType == DataSourceType::DAC)
-       // {
-       //     DacInterface* dacInterface = new DacInterface(source, thread, editor, this);
-        //    settingsInterfaces.add(dacInterface);
-        //}
-
-        dataSources.add(source);
-        
-    }
+    topLevelTabComponent = new TabbedComponent(TabbedButtonBar::TabsAtTop);
+    topLevelTabComponent->setTabBarDepth(26);
+    topLevelTabComponent->setOutline(0);
+    topLevelTabComponent->setIndent(0); // gap to leave around the edge
+    // of the content component
+    topLevelTabComponent->setColour(TabbedComponent::outlineColourId,
+        Colours::darkgrey);
+    topLevelTabComponent->setColour(TabbedComponent::backgroundColourId,
+        Colours::black.withAlpha(0.0f));
+	addAndMakeVisible(topLevelTabComponent);
 
     Array<Basestation*> availableBasestations = thread->getBasestations();
 
     for (auto basestation : availableBasestations)
     {
+
+		TabbedComponent* basestationTab = new TabbedComponent(TabbedButtonBar::TabsAtTop);
+        topLevelTabComponent->addTab(String("Slot " + String(basestation->slot)), 
+            Colour(70,70,70),
+            basestationTab, 
+            true);
+        
+        basestationTab->setTabBarDepth(26);
+        basestationTab->setIndent(0); // gap to leave around the edge
+        basestationTab->setOutline(0);
+        basestationTabs.add(basestationTab);
+        
+		int probeCount = basestation->getProbes().size();
+        basestations.add(basestation);
+
+        Array<DataSource*> availableDataSources = thread->getDataSources();
+
+        for (auto source : availableDataSources)
+        {
+
+            if (source->sourceType == DataSourceType::PROBE && source->basestation == basestation)
+            {
+                NeuropixInterface* neuropixInterface = new NeuropixInterface(source, thread, editor, this);
+                settingsInterfaces.add((SettingsInterface*)neuropixInterface);
+                
+				basestationTab->addTab(source->getName(), 
+                    Colours::darkgrey,
+                    neuropixInterface->viewport.get(), 
+                    false);
+
+            }
+            else if (source->sourceType == DataSourceType::ADC && source->basestation == basestation)
+            {
+                OneBoxInterface* oneBoxInterface = new OneBoxInterface(source, thread, editor, this);
+                settingsInterfaces.add(oneBoxInterface);
+                
+                //addChildComponent(oneBoxInterface->viewport.get());
+                basestationTab->addTab(source->getName(), 
+                    Colours::darkgrey, 
+                    oneBoxInterface->viewport.get(), 
+                    false);
+            }
+            // else if (source->sourceType == DataSourceType::DAC)
+            // {
+            //     DacInterface* dacInterface = new DacInterface(source, thread, editor, this);
+             //    settingsInterfaces.add(dacInterface);
+             //}
+
+            dataSources.add(source);
+
+        }
+
         BasestationInterface* basestationInterface = new BasestationInterface(basestation, thread, editor, this);
         settingsInterfaces.add(basestationInterface);
-        basestations.add(basestation);
-        addChildComponent(basestationInterface->viewport.get());
+        basestationTab->addTab("Firmware Update", 
+            Colours::darkgrey,
+            basestationInterface->viewport.get(), 
+            false);
+        
     }
+
 
     //neuropixViewport->setViewedComponent(settingsInterfaces.getFirst(), false);
     //addAndMakeVisible(neuropixViewport);
 
-    settingsInterfaces[0]->viewport->setVisible(true);
+    //settingsInterfaces[0]->viewport->setVisible(true);
 
-    resized();
+    //resized();
 
     savedSettings.probeType = ProbeType::NONE;
 }
@@ -92,7 +130,7 @@ NeuropixCanvas::~NeuropixCanvas()
 
 void NeuropixCanvas::paint(Graphics& g)
 {
-    g.fillAll(Colours::darkgrey);
+
 }
 
 void NeuropixCanvas::refresh()
@@ -114,11 +152,16 @@ void NeuropixCanvas::update()
 
 void NeuropixCanvas::resized()
 {
+
+    topLevelTabComponent->setBounds(0, -3, getWidth(), getHeight()+3);
+
+    //for (int i = 0; i < basestationTabs.size(); i++)
+	//	basestationTabs[i]->setBounds(0, 20, getWidth(), getHeight() - 20);
    
-    for (int i = 0; i < settingsInterfaces.size(); i++)
-    {
-        settingsInterfaces[i]->viewport->setBounds(10, 10, getWidth() - 10, getHeight() - 10);
-    }        
+    //for (int i = 0; i < settingsInterfaces.size(); i++)
+    //{
+    ///    settingsInterfaces[i]->viewport->setBounds(10, 0, getWidth() -10, getHeight() - 20);
+   // }        
     
 }
 

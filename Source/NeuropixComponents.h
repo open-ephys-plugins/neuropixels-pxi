@@ -311,6 +311,9 @@ public:
 	/** Stops data streaming */
 	virtual void stopAcquisition() = 0;
 
+	/** Returns the name of the data source */
+	virtual String getName() = 0;
+
 	// --------- GET / SET METHODS  --------- //
 
 	/** Sets the status (CONNECTING, CONNECTED, etc.) */
@@ -388,6 +391,8 @@ public:
 	virtual void run() = 0;
 
 	// ---------------------------------------- //
+
+	String getName() { return displayName; }
 
 	Headstage* headstage; // owned by Basestation
 	Flex* flex; // owned by Headstage

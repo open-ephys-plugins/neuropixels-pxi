@@ -51,10 +51,12 @@ public:
         canvas = canvas_;
         thread = thread_;
 
-        viewport = std::make_unique<Viewport>();
+        viewport = new Viewport();
         viewport->setViewedComponent(this, false);
         viewport->setScrollBarsShown(true, true, true, true);
-        viewport->setScrollBarThickness(10);
+        viewport->setScrollBarThickness(15);
+        viewport->getVerticalScrollBar().setColour(ScrollBar::ColourIds::thumbColourId, Colours::pink);
+        viewport->getHorizontalScrollBar().setColour(ScrollBar::ColourIds::thumbColourId, Colours::pink);
 
         setBounds(0, 0, 1000, 820);
     }
@@ -73,7 +75,7 @@ public:
 
     Type type = UNKNOWN_SETTINGS_INTERFACE;
 
-    std::unique_ptr<Viewport> viewport;
+    ScopedPointer<Viewport> viewport;
 
 protected:
 

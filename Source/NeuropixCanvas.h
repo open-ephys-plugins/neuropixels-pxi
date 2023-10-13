@@ -106,4 +106,9 @@ public:
 
 	GenericProcessor* processor;
 
+private:
+
+	ScopedPointer<TabbedComponent> topLevelTabComponent;
+	Array<TabbedComponent*> basestationTabs;
+
 };
