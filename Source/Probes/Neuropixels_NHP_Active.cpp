@@ -221,6 +221,17 @@ void Neuropixels_NHP_Active::selectElectrodes()
 
 }
 
+Array<int> Neuropixels_NHP_Active::selectElectrodeConfiguration(String config)
+{
+	Array<int> selection;
+
+	for (int i = 0; i < 384; i++)
+		selection.add(i);
+
+	return selection;
+}
+
+
 void Neuropixels_NHP_Active::setApFilterState()
 {
 

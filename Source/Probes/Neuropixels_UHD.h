@@ -61,8 +61,8 @@ public:
 	/** Selects active electrodes based on settings.selectedChannel */
 	void selectElectrodes() override;
 
-	/** Select 1 of 18 pre-configured electrode configurations */
-	void selectElectrodeConfiguration(int index);
+	/** Select a preset electrode configuration */
+	Array<int> selectElectrodeConfiguration(String config);
 
 	/** Sets reference for all channels based on settings.referenceIndex */
 	void setAllReferences() override;

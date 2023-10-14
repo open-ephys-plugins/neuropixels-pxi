@@ -269,6 +269,18 @@ void NeuropixelsOpto::selectElectrodes()
 
 }
 
+Array<int> NeuropixelsOpto::selectElectrodeConfiguration(String config)
+{
+	Array<int> selection;
+
+	for (int i = 0; i < 384; i++)
+		selection.add(i);
+
+	return selection;
+}
+
+
+
 void NeuropixelsOpto::setApFilterState()
 {
 

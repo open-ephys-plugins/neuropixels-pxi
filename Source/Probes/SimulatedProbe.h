@@ -51,6 +51,8 @@ struct SimulatedData {
 class SimulatedProbe : public Probe
 {
 public:
+
+	/** Constructor */
 	SimulatedProbe(Basestation*,
 		Headstage*,
 		Flex*,
@@ -58,32 +60,57 @@ public:
 		String partNumber,
 		int serialNumber);
 
+	/** Opens the connection to the probe */
 	bool open() override;
+
+	/** Closes the connection to the probe*/
 	bool close() override;
 
+	/** Call init, setOPMODE, and setHSLED*/
 	void initialize(bool signalChainIsLoading) override;
 
+	/** Selects active electrodes based on settings.selectedChannel */
 	void selectElectrodes() override;
+
+	/** Select a preset electrode configuration */
+	Array<int> selectElectrodeConfiguration(String config);
+	
+	/** Sets reference for all channels based on settings.referenceIndex */
 	void setAllReferences() override;
+
+	/** Sets gains for all channels based on settings.apGainIndex and settings.lfpGainIndex */
 	void setAllGains() override;
+
+	/** Sets AP filter cut based on settings.apFilterState */
 	void setApFilterState() override;
 	
+	/** Writes latest settings to the probe (slow) */
 	void writeConfiguration() override;
 
+	/** Resets timestamps, clears buffers, and starts the thread*/
 	void startAcquisition() override;
+
+	/** Stops the thread */
 	void stopAcquisition() override;
 
+	/** Runs a built-in self test. */
 	bool runBist(BIST bistType) override;
 
+	/** Uploads ADC, gain, and optical switch calibration files */
 	void calibrate() override;
 
+	/** Reads probe part number and serial number */
 	void getInfo() override;
 
+	/** Signals whether this probe has an LFP data stream*/
 	bool generatesLfpData(); 
+
+	/** Signals whether this probe has an AP filter switch*/
 	bool hasApFilterSwitch() {
 		return apFilterSwitch;
 	}
 
+	/** Acquires data from the probe */
 	void run() override;
 
 	bool apFilterSwitch;

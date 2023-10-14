@@ -66,40 +66,51 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
         int currentHeight = 55;
 
-        if (probe->info.part_number.equalsIgnoreCase("NP1110"))
-        {
-
-            electrodeConfigurationComboBox = new ComboBox("electrodeConfigurationComboBox");
-            electrodeConfigurationComboBox->setBounds(450, currentHeight, 65, 22);
-            electrodeConfigurationComboBox->addListener(this);
-            electrodeConfigurationComboBox->setTooltip("Enable a pre-configured set of channels");
-
-            for (int i = 0; i < probe->settings.availableElectrodeConfigurations.size(); i++)
-            {
-                electrodeConfigurationComboBox->addItem(probe->settings.availableElectrodeConfigurations[i], i + 1);
-            }
-
-            if (electrodeConfigurationComboBox->getNumItems() > 0)
-                electrodeConfigurationComboBox->setSelectedId(1);
-
-            addAndMakeVisible(electrodeConfigurationComboBox);
-        }
-        else
-        {
-            enableButton = new UtilityButton("ENABLE", Font("Small Text", 13, Font::plain));
-            enableButton->setRadius(3.0f);
-            enableButton->setBounds(450, currentHeight, 65, 22);
-            enableButton->addListener(this);
-            enableButton->setTooltip("Enable selected channel(s)");
-            addAndMakeVisible(enableButton);
-        }
+        electrodesLabel = new Label("ELECTRODES", "ELECTRODES");
+        electrodesLabel->setFont(Font("Small Text", 13, Font::plain));
+        electrodesLabel->setBounds(446, currentHeight - 20, 100, 20);
+        electrodesLabel->setColour(Label::textColourId, Colours::grey);
+        addAndMakeVisible(electrodesLabel);
 
         enableViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
         enableViewButton->setRadius(3.0f);
         enableViewButton->setBounds(530, currentHeight + 2, 45, 18);
         enableViewButton->addListener(this);
-        enableViewButton->setTooltip("View channel enabled state");
+        enableViewButton->setTooltip("View electrode enabled state");
         addAndMakeVisible(enableViewButton);
+        
+        enableButton = new UtilityButton("ENABLE", Font("Small Text", 13, Font::plain));
+        enableButton->setRadius(3.0f);
+        enableButton->setBounds(450, currentHeight, 65, 22);
+        enableButton->addListener(this);
+        enableButton->setTooltip("Enable selected electrodes");
+        addAndMakeVisible(enableButton);
+
+        currentHeight += 58;
+
+        electrodePresetLabel = new Label("ELECTRODE PRESET", "ELECTRODE PRESET");
+        electrodePresetLabel->setFont(Font("Small Text", 13, Font::plain));
+        electrodePresetLabel->setBounds(446, currentHeight - 20, 150, 20);
+        electrodePresetLabel->setColour(Label::textColourId, Colours::grey);
+        addAndMakeVisible(electrodePresetLabel);
+
+        electrodeConfigurationComboBox = new ComboBox("electrodeConfigurationComboBox");
+        electrodeConfigurationComboBox->setBounds(450, currentHeight, 135, 22);
+        electrodeConfigurationComboBox->addListener(this);
+        electrodeConfigurationComboBox->setTooltip("Enable a pre-configured set of electrodes");
+
+        electrodeConfigurationComboBox->addItem("Select a preset...", 1);
+        electrodeConfigurationComboBox->setItemEnabled(1, false);
+        electrodeConfigurationComboBox->addSeparator();
+        
+        for (int i = 0; i < probe->settings.availableElectrodeConfigurations.size(); i++)
+        {
+            electrodeConfigurationComboBox->addItem(probe->settings.availableElectrodeConfigurations[i], i + 2);
+        }
+
+        electrodeConfigurationComboBox->setSelectedId(1);
+
+        addAndMakeVisible(electrodeConfigurationComboBox);
 
         currentHeight += 55;
 
@@ -630,7 +641,17 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
     {
         if (comboBox == electrodeConfigurationComboBox)
         {
-            updateProbeSettingsInBackground();
+
+            String preset = electrodeConfigurationComboBox->getText();
+            
+			if (probe->type == ProbeType::UHD2)
+                updateProbeSettingsInBackground();
+            else
+            {
+                Array<int> selection = probe->selectElectrodeConfiguration(preset);
+
+                selectElectrodes(selection);
+            }
         }
         else if ((comboBox == apGainComboBox) || (comboBox == lfpGainComboBox))
         {
@@ -817,12 +838,16 @@ void NeuropixInterface::buttonClicked(Button* button)
     }
     else if (button == enableButton)
     {
+        
 
         Array<int> selection = getSelectedElectrodes();
 
-        selectElectrodes(selection);
+        if (selection.size() > 0)
+        {
+            electrodeConfigurationComboBox->setSelectedId(1);
+            selectElectrodes(selection);
+        }
 
-     
     }
     else if (button == annotationButton)
     {
@@ -1351,8 +1376,8 @@ bool NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
         return false;
     }
 
-    if (electrodeConfigurationComboBox != 0)
-        electrodeConfigurationComboBox->setSelectedId(p.electrodeConfigurationIndex + 1, dontSendNotification);
+    //if (electrodeConfigurationComboBox != 0)
+    //    electrodeConfigurationComboBox->setSelectedId(p.electrodeConfigurationIndex + 2, dontSendNotification);
 
     // update display
     if (apGainComboBox != 0)
@@ -1424,7 +1449,7 @@ ProbeSettings NeuropixInterface::getProbeSettings()
 
     // Set probe variables
     if (electrodeConfigurationComboBox != nullptr)
-        p.electrodeConfigurationIndex = electrodeConfigurationComboBox->getSelectedId() - 1;
+        p.electrodeConfigurationIndex = electrodeConfigurationComboBox->getSelectedId() - 2;
     else
         p.electrodeConfigurationIndex = -1;
 
@@ -1519,7 +1544,14 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
         if (electrodeConfigurationComboBox != nullptr)
         {
-            xmlNode->setAttribute("electrodeConfiguration", electrodeConfigurationComboBox->getSelectedId() - 1);
+            if (electrodeConfigurationComboBox->getSelectedId() > 1)
+            {
+                xmlNode->setAttribute("electrodeConfigurationPreset", electrodeConfigurationComboBox->getText());
+            }
+            else {
+                xmlNode->setAttribute("electrodeConfigurationPreset", "NONE");
+            }
+            
         }
 
         if (referenceComboBox != nullptr)
@@ -1770,7 +1802,23 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
             settings.apGainIndex = matchingNode->getIntAttribute("apGainIndex", 3);
             settings.lfpGainIndex = matchingNode->getIntAttribute("lfpGainIndex", 2);
             settings.referenceIndex = matchingNode->getIntAttribute("referenceChannelIndex", 0);
-            settings.electrodeConfigurationIndex = matchingNode->getIntAttribute("electrodeConfiguration", 0);
+            
+            String configurationName = matchingNode->getStringAttribute("electrodeConfigurationPreset", "NONE");
+
+            std::cout << "configurationName: " << configurationName << std::endl;
+ 			settings.electrodeConfigurationIndex = settings.availableElectrodeConfigurations.indexOf(configurationName);
+            std::cout << "electrodeConfigurationIndex: " << settings.electrodeConfigurationIndex << std::endl;
+
+            for (int i = 0; i < electrodeConfigurationComboBox->getNumItems(); i++)
+            {
+                if (electrodeConfigurationComboBox->getItemText(i).equalsIgnoreCase(configurationName))
+                {
+                    electrodeConfigurationComboBox->setSelectedItemIndex(i, dontSendNotification);
+                    break;
+                }
+                    
+            }
+            
             settings.apFilterState = matchingNode->getIntAttribute("filterCutIndex", 1) == 1;
 
             forEachXmlChildElement(*matchingNode, imroNode)

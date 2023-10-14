@@ -105,6 +105,10 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 		settings.availableLfpGains.add(2000.0f);
 		settings.availableLfpGains.add(3000.0f);
 
+		settings.availableElectrodeConfigurations.add("Bank A");
+		settings.availableElectrodeConfigurations.add("Bank B");
+		settings.availableElectrodeConfigurations.add("Bank C");
+
 		settings.apGainIndex = 3;
 		settings.lfpGainIndex = 2;
 		settings.apFilterState = true;
@@ -205,6 +209,31 @@ void SimulatedProbe::selectElectrodes()
 
 	LOGC("Selecting channels for simulated probe.");
 
+}
+
+Array<int> SimulatedProbe::selectElectrodeConfiguration(String config)
+{
+	Array<int> selection;
+
+	if (config.equalsIgnoreCase("Bank A"))
+	{
+		for (int i = 0; i < 384; i++)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Bank B"))
+	{
+		for (int i = 384; i < 768; i++)
+			selection.add(i);
+	} 
+	else if (config.equalsIgnoreCase("Bank C"))
+	{
+		for (int i = 576; i < 960; i++)
+			selection.add(i);
+	}
+
+	
+
+	return selection;
 }
 
 void SimulatedProbe::setApFilterState()

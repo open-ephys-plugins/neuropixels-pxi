@@ -207,6 +207,14 @@ void Neuropixels_NHP_Passive::selectElectrodes()
 
 }
 
+Array<int> Neuropixels_NHP_Passive::selectElectrodeConfiguration(String config)
+{
+	// not available
+
+	return Array<int>();
+}
+
+
 void Neuropixels_NHP_Passive::setApFilterState()
 {
 	for (int channel = 0; channel < 128; channel++)

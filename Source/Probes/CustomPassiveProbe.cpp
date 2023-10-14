@@ -230,6 +230,13 @@ void CustomPassiveProbe::selectElectrodes()
 
 }
 
+Array<int> CustomPassiveProbe::selectElectrodeConfiguration(String config)
+{
+
+	return Array<int>(); // not possible
+
+}
+
 void CustomPassiveProbe::setApFilterState()
 {
 

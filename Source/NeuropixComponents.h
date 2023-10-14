@@ -369,6 +369,9 @@ public:
 	/** Used to select channels. Returns the currently active electrodes*/
 	virtual void selectElectrodes() = 0;
 
+	/** Returns selected electrodes for a named preset electrode configuration*/
+	virtual Array<int> selectElectrodeConfiguration(String config) = 0;
+
 	/** Used to set references (same for all channels).*/
 	virtual void setAllReferences() = 0;
 

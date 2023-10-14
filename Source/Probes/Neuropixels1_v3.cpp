@@ -250,6 +250,17 @@ void Neuropixels1_v3::selectElectrodes()
 
 }
 
+Array<int> Neuropixels1_v3::selectElectrodeConfiguration(String config)
+{
+	Array<int> selection;
+
+	for (int i = 0; i < 384; i++)
+		selection.add(i);
+
+	return selection;
+}
+
+
 void Neuropixels1_v3::setApFilterState()
 {
 

@@ -228,12 +228,14 @@ void Neuropixels_UHD::printSettings()
 void Neuropixels_UHD::selectElectrodes()
 {
 	if (settings.electrodeConfigurationIndex >= 0 && switchable) {
-		selectElectrodeConfiguration(settings.electrodeConfigurationIndex);
+		selectElectrodeConfiguration(settings.availableElectrodeConfigurations[settings.electrodeConfigurationIndex]);
 	}
 }
 
-void Neuropixels_UHD::selectElectrodeConfiguration(int index)
+Array<int> Neuropixels_UHD::selectElectrodeConfiguration(String electrodeConfiguration)
 {
+
+	Array<int> returnValue;
 
 	/*
 	*           ---------BANK 0--------|---------BANK 1--------
@@ -250,6 +252,11 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 	int electrodesPerGroup	= 16;
 
     Neuropixels::NP_ErrorCode ec;
+
+	int index = settings.availableElectrodeConfigurations.indexOf(electrodeConfiguration);
+
+	if (index == -1)
+		return returnValue;
 
 	if (index < banksPerProbe)
 	{
@@ -289,7 +296,7 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 				group,				// group number
 				index);				// bank index
 
-		return;
+		return returnValue;
     }
 
 	// Select a subset of groups in multiple banks to span half of the probe
@@ -331,6 +338,8 @@ void Neuropixels_UHD::selectElectrodeConfiguration(int index)
 		}
 
 	}
+
+	return returnValue;
 
 }
 

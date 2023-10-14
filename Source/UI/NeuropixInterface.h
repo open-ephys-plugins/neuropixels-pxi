@@ -140,6 +140,8 @@ private:
 	ScopedPointer<Label> infoLabel;
 	ScopedPointer<Label> lfpGainLabel;
 	ScopedPointer<Label> apGainLabel;
+	ScopedPointer<Label> electrodesLabel;
+	ScopedPointer<Label> electrodePresetLabel;
 	ScopedPointer<Label> referenceLabel;
 	ScopedPointer<Label> filterLabel;
 	ScopedPointer<Label> bankViewLabel;
