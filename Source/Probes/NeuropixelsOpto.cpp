@@ -108,6 +108,13 @@ NeuropixelsOpto::NeuropixelsOpto(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 			Bank::K,
 			Bank::L};
 
+		settings.availableElectrodeConfigurations.add("Bank A");
+		settings.availableElectrodeConfigurations.add("Bank B");
+		settings.availableElectrodeConfigurations.add("Bank C");
+		settings.availableElectrodeConfigurations.add("Single Column");
+		settings.availableElectrodeConfigurations.add("Tetrodes");
+
+
 		open();
 
 	}
@@ -273,8 +280,46 @@ Array<int> NeuropixelsOpto::selectElectrodeConfiguration(String config)
 {
 	Array<int> selection;
 
-	for (int i = 0; i < 384; i++)
-		selection.add(i);
+	if (config.equalsIgnoreCase("Bank A"))
+	{
+		for (int i = 0; i < 384; i++)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Bank B"))
+	{
+		for (int i = 384; i < 768; i++)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Bank C"))
+	{
+		for (int i = 576; i < 960; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Single Column"))
+	{
+		for (int i = 0; i < 384; i += 2)
+			selection.add(i);
+
+		for (int i = 385; i < 768; i += 2)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Tetrodes"))
+	{
+		for (int i = 0; i < 384; i += 8)
+		{
+			for (int j = 0; j < 4; j++)
+				selection.add(i + j);
+		}
+
+		for (int i = 388; i < 768; i += 8)
+		{
+			for (int j = 0; j < 4; j++)
+				selection.add(i + j);
+		}
+
+	}
 
 	return selection;
 }

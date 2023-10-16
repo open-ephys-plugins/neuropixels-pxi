@@ -1198,6 +1198,7 @@ String NeuropixThread::handleConfigMessage(String msg)
 {
 	// Available commands:
 	// NP SELECT <bs> <port> <dock> <electrode> <electrode> <electrode> ...
+	// NP SELECT "<preset>"
 	// NP GAIN <bs> <port> <dock> <AP/LFP> <gainval>
 	// NP REFERENCE <bs> <port> <dock> <EXT/TIP>
 	// NP FILTER <bs> <port> <dock> <ON/OFF>
@@ -1300,17 +1301,32 @@ String NeuropixThread::handleConfigMessage(String msg)
 							{
 								Array<int> electrodes;
 
-								for (int i = 5; i < parts.size(); i++)
+								if (parts[5].substring(0, 1) == "\"")
 								{
-									int electrode = parts[i].getIntValue();
+									String presetName = msg.fromFirstOccurrenceOf("\"", false, false).upToFirstOccurrenceOf("\"", false, false);
 
-									//std::cout << electrode << std::endl;
+									LOGD("Selecting preset: ", presetName);
 
-									if (electrode > 0 && electrode < probe->electrodeMetadata.size() + 1)
-										electrodes.add(electrode - 1);
+									electrodes = probe->selectElectrodeConfiguration(presetName);
+									
+									probe->ui->selectElectrodes(electrodes);
 								}
-								
-								probe->ui->selectElectrodes(electrodes);
+								else {
+
+									LOGD("Selecting electrodes: ")
+
+									for (int i = 5; i < parts.size(); i++)
+									{
+										int electrode = parts[i].getIntValue();
+
+										//std::cout << electrode << std::endl;
+
+										if (electrode > 0 && electrode < probe->electrodeMetadata.size() + 1)
+											electrodes.add(electrode - 1);
+									}
+
+									probe->ui->selectElectrodes(electrodes);
+								}
 							}
 						}
 					}

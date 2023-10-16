@@ -93,7 +93,30 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
 
 	settings.availableReferences.add("REF_ELEC");
 	settings.availableReferences.add("TIP_REF");
-	//settings.availableReferences.add("INT_REF");
+
+	settings.availableElectrodeConfigurations.add("Bank A");
+	settings.availableElectrodeConfigurations.add("Bank B");
+	settings.availableElectrodeConfigurations.add("Bank C");
+
+	if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
+	{
+		settings.availableElectrodeConfigurations.add("Bank D");
+		settings.availableElectrodeConfigurations.add("Bank E");
+		settings.availableElectrodeConfigurations.add("Bank F");
+		settings.availableElectrodeConfigurations.add("Bank G");
+
+		if (type == ProbeType::NHP45)
+		{
+			settings.availableElectrodeConfigurations.add("Bank H");
+			settings.availableElectrodeConfigurations.add("Bank I");
+			settings.availableElectrodeConfigurations.add("Bank J");
+			settings.availableElectrodeConfigurations.add("Bank K");
+			settings.availableElectrodeConfigurations.add("Bank L");
+		}
+	}
+
+	settings.availableElectrodeConfigurations.add("Single Column");
+	settings.availableElectrodeConfigurations.add("Tetrodes");
 
 	open();
 }
@@ -225,8 +248,116 @@ Array<int> Neuropixels_NHP_Active::selectElectrodeConfiguration(String config)
 {
 	Array<int> selection;
 
-	for (int i = 0; i < 384; i++)
-		selection.add(i);
+	if (config.equalsIgnoreCase("Bank A"))
+	{
+		for (int i = 0; i < 384; i++)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Bank B"))
+	{
+		for (int i = 384; i < 768; i++)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Bank C"))
+	{
+		if (type == ProbeType::NHP25 || type == ProbeType::NHP45 || type == ProbeType::NP2_1)
+		{
+			for (int i = 768; i < 1152; i++)
+				selection.add(i);
+		}
+		else {
+			for (int i = 576; i < 960; i++)
+				selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Bank D"))
+	{
+		if (type == ProbeType::NP2_1)
+		{
+			for (int i = 896; i < 1280; i++)
+				selection.add(i);
+		}
+		else {
+			for (int i = 1152; i < 1536; i++)
+				selection.add(i);
+		}
+
+	}
+	else if (config.equalsIgnoreCase("Bank E"))
+	{
+		for (int i = 1536; i < 1920; i++)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Bank F"))
+	{
+		for (int i = 1920; i < 2304; i++)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Bank G"))
+	{
+		if (type == ProbeType::NHP45)
+		{
+			for (int i = 2304; i < 2688; i++)
+				selection.add(i);
+		}
+		else {
+			for (int i = 2112; i < 2496; i++)
+				selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Bank H"))
+	{
+		for (int i = 2688; i < 3072; i++)
+			selection.add(i);
+
+	}
+	else if (config.equalsIgnoreCase("Bank I"))
+	{
+		for (int i = 3072; i < 3456; i++)
+			selection.add(i);
+
+	}
+	else if (config.equalsIgnoreCase("Bank J"))
+	{
+		for (int i = 3456; i < 3840; i++)
+			selection.add(i);
+
+	}
+	else if (config.equalsIgnoreCase("Bank K"))
+	{
+		for (int i = 3840; i < 4224; i++)
+			selection.add(i);
+
+	}
+	else if (config.equalsIgnoreCase("Bank L"))
+	{
+		for (int i = 4032; i < 4416; i++)
+			selection.add(i);
+
+	}
+	else if (config.equalsIgnoreCase("Single Column"))
+	{
+		for (int i = 0; i < 384; i += 2)
+			selection.add(i);
+
+		for (int i = 385; i < 768; i += 2)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Tetrodes"))
+	{
+		for (int i = 0; i < 384; i += 8)
+		{
+			for (int j = 0; j < 4; j++)
+				selection.add(i + j);
+		}
+
+		for (int i = 388; i < 768; i += 8)
+		{
+			for (int j = 0; j < 4; j++)
+				selection.add(i + j);
+		}
+
+	}
 
 	return selection;
 }

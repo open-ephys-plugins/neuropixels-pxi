@@ -644,7 +644,7 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
 
             String preset = electrodeConfigurationComboBox->getText();
             
-			if (probe->type == ProbeType::UHD2)
+			if (probe->type == ProbeType::UHD2) // switchable probe
                 updateProbeSettingsInBackground();
             else
             {

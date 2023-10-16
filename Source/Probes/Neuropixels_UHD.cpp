@@ -237,6 +237,9 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration(String electrodeConfigu
 
 	Array<int> returnValue;
 
+	for (int i = 0; i < 384; i++)
+		returnValue.add(i);
+
 	/*
 	*           ---------BANK 0--------|---------BANK 1--------
 	*         /| 0 | 4 | 8 | 12| 16| 20| 2 | 6 | 10| 14| 18| 22|         |

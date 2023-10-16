@@ -77,10 +77,11 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 		{
 			settings.availableReferences.add("Ext");
 			settings.availableReferences.add("Tip");
-			//settings.availableReferences.add("128");
-			//settings.availableReferences.add("508");
-			//settings.availableReferences.add("888");
-			//settings.availableReferences.add("1252");
+			
+			settings.availableElectrodeConfigurations.add("Bank A");
+			settings.availableElectrodeConfigurations.add("Bank B");
+			settings.availableElectrodeConfigurations.add("Bank C");
+			settings.availableElectrodeConfigurations.add("Bank D");
 		}
 		else {
 			settings.availableReferences.add("Ext");
@@ -104,6 +105,32 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 			//settings.availableReferences.add("4: 512");
 			//settings.availableReferences.add("4: 896");
 			//settings.availableReferences.add("4: 1280");
+
+			settings.availableElectrodeConfigurations.add("Shank 1 Bank A");
+			settings.availableElectrodeConfigurations.add("Shank 1 Bank B");
+			settings.availableElectrodeConfigurations.add("Shank 1 Bank C");
+			settings.availableElectrodeConfigurations.add("Shank 2 Bank A");
+			settings.availableElectrodeConfigurations.add("Shank 2 Bank B");
+			settings.availableElectrodeConfigurations.add("Shank 2 Bank C");
+			settings.availableElectrodeConfigurations.add("Shank 3 Bank A");
+			settings.availableElectrodeConfigurations.add("Shank 3 Bank B");
+			settings.availableElectrodeConfigurations.add("Shank 3 Bank C");
+			settings.availableElectrodeConfigurations.add("Shank 4 Bank A");
+			settings.availableElectrodeConfigurations.add("Shank 4 Bank B");
+			settings.availableElectrodeConfigurations.add("Shank 4 Bank C");
+			settings.availableElectrodeConfigurations.add("All Shanks 1-96");
+			settings.availableElectrodeConfigurations.add("All Shanks 97-192");
+			settings.availableElectrodeConfigurations.add("All Shanks 193-288");
+			settings.availableElectrodeConfigurations.add("All Shanks 289-384");
+			settings.availableElectrodeConfigurations.add("All Shanks 385-480");
+			settings.availableElectrodeConfigurations.add("All Shanks 481-576");
+			settings.availableElectrodeConfigurations.add("All Shanks 577-672");
+			settings.availableElectrodeConfigurations.add("All Shanks 673-768");
+			settings.availableElectrodeConfigurations.add("All Shanks 769-864");
+			settings.availableElectrodeConfigurations.add("All Shanks 865-960");
+			settings.availableElectrodeConfigurations.add("All Shanks 961-1056");
+			settings.availableElectrodeConfigurations.add("All Shanks 1057-1152");
+			settings.availableElectrodeConfigurations.add("All Shanks 1153-1248");
 		}
 
 		open();
@@ -227,8 +254,301 @@ Array<int> Neuropixels2::selectElectrodeConfiguration(String config)
 {
 	Array<int> selection;
 
-	for (int i = 0; i < 384; i++)
-		selection.add(i);
+	if (config.equalsIgnoreCase("Bank A"))
+	{
+		for (int i = 0; i < 384; i++)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Bank B"))
+	{
+		for (int i = 384; i < 768; i++)
+			selection.add(i);
+	}
+	else if (config.equalsIgnoreCase("Bank C"))
+	{
+
+		for (int i = 768; i < 1152; i++)
+			selection.add(i);
+
+	}
+	else if (config.equalsIgnoreCase("Bank D"))
+	{
+
+		for (int i = 896; i < 1280; i++)
+			selection.add(i);
+
+	}
+	else if (config.equalsIgnoreCase("Shank 1 Bank A"))
+	{
+		for (int i = 0; i < 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 1 Bank B"))
+	{
+		for (int i = 384; i < 768; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 1 Bank C"))
+	{
+		for (int i = 768; i < 1152; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 2 Bank A"))
+	{
+		int startElectrode = 1280;
+
+		for (int i = startElectrode; i < startElectrode + 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 2 Bank B"))
+	{
+		int startElectrode = 1280 + 384;
+
+		for (int i = startElectrode; i < startElectrode + 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 2 Bank C"))
+	{
+		int startElectrode = 1280 + 384 * 2;
+
+		for (int i = startElectrode; i < startElectrode + 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 3 Bank A"))
+	{
+		int startElectrode = 1280 * 2;
+
+		for (int i = startElectrode; i < startElectrode + 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 3 Bank B"))
+	{
+		int startElectrode = 1280 * 2 + 384;
+
+		for (int i = startElectrode; i < startElectrode + 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 3 Bank C"))
+	{
+		int startElectrode = 1280 * 2 + 384 * 2;
+
+		for (int i = startElectrode; i < startElectrode + 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 4 Bank A"))
+	{
+		int startElectrode = 1280 * 3;
+
+		for (int i = startElectrode; i < startElectrode + 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 4 Bank B"))
+	{
+		int startElectrode = 1280 * 3 + 384;
+
+		for (int i = startElectrode; i < startElectrode + 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("Shank 4 Bank C"))
+	{
+		int startElectrode = 1280 * 3 + 384 * 2;
+
+		for (int i = startElectrode; i < startElectrode + 384; i++)
+		{
+			selection.add(i);
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 1-96"))
+	{
+
+		int startElectrode = 0;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 97-192"))
+	{
+
+		int startElectrode = 96;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 193-288"))
+	{
+
+		int startElectrode = 192;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 289-384"))
+	{
+
+		int startElectrode = 288;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 385-480"))
+	{
+
+		int startElectrode = 384;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 481-576"))
+	{
+
+		int startElectrode = 480;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 577-672"))
+	{
+
+		int startElectrode = 576;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 673-768"))
+	{
+
+		int startElectrode = 672;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 769-864"))
+	{
+
+		int startElectrode = 768;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 865-960"))
+	{
+
+		int startElectrode = 864;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 961-1056"))
+	{
+
+		int startElectrode = 960;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 1057-1152"))
+	{
+
+		int startElectrode = 1056;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
+	else if (config.equalsIgnoreCase("All Shanks 1153-1248"))
+	{
+
+		int startElectrode = 1152;
+
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			{
+				selection.add(i);
+			}
+		}
+	}
 
 	return selection;
 }
