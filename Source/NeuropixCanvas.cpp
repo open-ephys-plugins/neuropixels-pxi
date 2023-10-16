@@ -213,7 +213,13 @@ void NeuropixCanvas::update()
 
                 if (v != nullptr)
                 {
-                    t->setTabName(j, " " + v->settingsInterface->dataSource->getName() + " ");
+
+                    DataSource* dataSource = v->settingsInterface->dataSource;
+
+                    if (dataSource != nullptr)
+                        t->setTabName(j, " " + dataSource->getName() + " ");
+                    else
+                        t->setTabName(j, "Firmware update");
                 }
 			}
         }
@@ -263,15 +269,10 @@ void NeuropixCanvas::setSelectedBasestation(Basestation* basestation)
     if (basestation != nullptr)
     {
 
-        int index = basestations.indexOf(basestation) + dataSources.size();
+        int index = basestations.indexOf(basestation);
 
-        for (int i = 0; i < settingsInterfaces.size(); i++)
-        {
-            if (i == index)
-                settingsInterfaces[i]->viewport->setVisible(true);
-            else
-                settingsInterfaces[i]->viewport->setVisible(false);
-        }
+        topLevelTabComponent->setCurrentTabIndex(index, false);
+
     }
 
 }
