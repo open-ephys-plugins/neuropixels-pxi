@@ -57,12 +57,6 @@ struct StreamInfo {
 	OneBoxADC* adc;
 };
 
-enum DeviceType
-{
-	PXI,
-	ONEBOX
-};
-
 /** 
 	
 	Shows a progress window while searching for probes.

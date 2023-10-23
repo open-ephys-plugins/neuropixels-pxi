@@ -30,7 +30,7 @@ SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow(SimulatedBase
 	: bs(bs_)
 {
 	
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < bs->headstage_count; i++)
 	{
 		ComboBox* comboBox = new ComboBox("Port " + String(i) + " Combo Box");
 
@@ -65,7 +65,7 @@ void SimulatedBasestationConfigWindow::paint(Graphics& g)
 	g.drawText("PORT", 22, 22, 50, 25, Justification::centred);
 	g.drawText("PROBE TYPE", 62, 22, 200, 20, Justification::centred);
 
-	for (int port_index = 0; port_index < 4; port_index++)
+	for (int port_index = 0; port_index < bs->headstage_count; port_index++)
 	{
 		g.drawText(String(port_index + 1), 25, 50 + 35 * port_index, 25, 20, Justification::right);
 	}
@@ -74,7 +74,7 @@ void SimulatedBasestationConfigWindow::paint(Graphics& g)
 void SimulatedBasestationConfigWindow::buttonClicked(Button* button)
 {
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < bs->headstage_count; i++)
 		bs->simulatedProbeTypes[i] = (ProbeType)portComboBoxes[i]->getSelectedId();
 
 	if (DialogWindow* dw = findParentComponentOfClass<DialogWindow>())
@@ -98,10 +98,17 @@ void SimulatedBasestation::getInfo()
 
 /// ###########################################
 
-SimulatedBasestation::SimulatedBasestation(NeuropixThread* neuropixThread, int slot_number) : Basestation(neuropixThread, slot_number)
+SimulatedBasestation::SimulatedBasestation(NeuropixThread* neuropixThread, 
+	DeviceType deviceType, 
+	int slot_number) : Basestation(neuropixThread, slot_number)
 {
 	
 	type = BasestationType::SIMULATED;
+
+	if (deviceType == PXI)
+		headstage_count = 4;
+	else
+		headstage_count = 2;
 
 	simulatedProbeTypes[0] = ProbeType::NP1;
 	simulatedProbeTypes[1] = ProbeType::NONE;
@@ -135,7 +142,7 @@ bool SimulatedBasestation::open()
 	basestationConnectBoard = new SimulatedBasestationConnectBoard(this);
 	basestationConnectBoard->getInfo();
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < headstage_count; i++)
 	{
 		switch (simulatedProbeTypes[i])
 		{

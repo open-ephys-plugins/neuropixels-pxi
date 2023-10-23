@@ -57,6 +57,12 @@ struct ComponentInfo
 	String boot_version = "";
 };
 
+enum DeviceType
+{
+	PXI,
+	ONEBOX
+};
+
 enum class DataSourceType {
 	PROBE,
 	ADC,

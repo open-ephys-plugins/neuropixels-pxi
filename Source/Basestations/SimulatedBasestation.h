@@ -72,7 +72,7 @@ class SimulatedBasestation : public Basestation
 public:
 
 	/** Constructor */
-	SimulatedBasestation(NeuropixThread*, int slot);
+	SimulatedBasestation(NeuropixThread*, DeviceType type, int slot);
 
 	/** Destructor */
 	~SimulatedBasestation() { }
@@ -112,6 +112,9 @@ public:
 
 	/** Probes for each slot */
 	ProbeType simulatedProbeTypes[4];
+
+	/** Number of headstages that can be connected */
+	int headstage_count;
 
 private:
 

@@ -204,8 +204,16 @@ void Initializer::run()
 
 		if (response)
 		{
-			basestations.add(new SimulatedBasestation(neuropixThread, 2));
-			basestations.getLast()->open(); // detects # of probes
+			if (type == PXI)
+			{
+				basestations.add(new SimulatedBasestation(neuropixThread, type, 2));
+				basestations.getLast()->open(); // detects # of probes
+			}
+			else if (type == ONEBOX)
+			{
+				basestations.add(new SimulatedBasestation(neuropixThread, type, 16));
+				basestations.getLast()->open(); // detects # of probes
+			}
 		}
 
 	}
