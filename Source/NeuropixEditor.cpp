@@ -132,7 +132,14 @@ void EditorBackground::paint(Graphics& g)
 	else {
 		g.setColour(Colours::darkgrey);
 		g.setFont(15);
-		g.drawText(String("NO BASESTATIONS DETECTED"), 0, 10, 250, 100, Justification::centred);
+		if (getName().equalsIgnoreCase("Neuropix-PXI"))
+		{
+			g.drawText(String("NO BASESTATIONS DETECTED"), 0, 10, 250, 100, Justification::centred);
+		}
+		else {
+			g.drawText(String("NO ONEBOX DETECTED"), 0, 10, 250, 100, Justification::centred);
+		}
+		
 	}
 
 }

@@ -1514,43 +1514,6 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
 
     if (probe != nullptr)
-    { 
-    LOGD("Saving Neuropix display.");
-
-    XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
-
-    xmlNode->setAttribute("slot", probe->basestation->slot);
-    xmlNode->setAttribute("bs_firmware_version", probe->basestation->info.boot_version);
-    xmlNode->setAttribute("bs_hardware_version", probe->basestation->info.version);
-    xmlNode->setAttribute("bs_serial_number", String(probe->basestation->info.serial_number));
-    xmlNode->setAttribute("bs_part_number", probe->basestation->info.part_number);
-
-    if (thread->type == PXI)
-    {
-        xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
-        xmlNode->setAttribute("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
-        xmlNode->setAttribute("bsc_serial_number", String(probe->basestation->basestationConnectBoard->info.serial_number));
-        xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
-    }
-    
-    xmlNode->setAttribute("headstage_serial_number", String(probe->headstage->info.serial_number));
-    xmlNode->setAttribute("headstage_part_number", probe->headstage->info.part_number);
-
-    xmlNode->setAttribute("flex_version", probe->flex->info.version);
-    xmlNode->setAttribute("flex_part_number", probe->headstage->info.part_number);
-
-    xmlNode->setAttribute("port", probe->headstage->port);
-    xmlNode->setAttribute("dock", probe->dock);
-    xmlNode->setAttribute("probe_serial_number", String(probe->info.serial_number));
-    xmlNode->setAttribute("probe_part_number", probe->info.part_number);
-    xmlNode->setAttribute("probe_name", probe->name);
-    xmlNode->setAttribute("num_adcs", probe->probeMetadata.num_adcs);
-    xmlNode->setAttribute("custom_probe_name", probe->customName.probeSpecific);
-
-    xmlNode->setAttribute("ZoomHeight", probeBrowser->getZoomHeight());
-    xmlNode->setAttribute("ZoomOffset", probeBrowser->getZoomOffset());
-
-    if (apGainComboBox != nullptr)
     {
         LOGD("Saving Neuropix display.");
 
@@ -1562,10 +1525,13 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
         xmlNode->setAttribute("bs_serial_number", String(probe->basestation->info.serial_number));
         xmlNode->setAttribute("bs_part_number", probe->basestation->info.part_number);
 
-        xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
-        xmlNode->setAttribute("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
-        xmlNode->setAttribute("bsc_serial_number", String(probe->basestation->basestationConnectBoard->info.serial_number));
-        xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
+        if (thread->type == PXI)
+        {
+            xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
+            xmlNode->setAttribute("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
+            xmlNode->setAttribute("bsc_serial_number", String(probe->basestation->basestationConnectBoard->info.serial_number));
+            xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
+        }
 
         xmlNode->setAttribute("headstage_serial_number", String(probe->headstage->info.serial_number));
         xmlNode->setAttribute("headstage_part_number", probe->headstage->info.part_number);
@@ -1605,7 +1571,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
             else {
                 xmlNode->setAttribute("electrodeConfigurationPreset", "NONE");
             }
-            
+
         }
 
         if (referenceComboBox != nullptr)
@@ -1679,7 +1645,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
                     XmlElement* imroFileNode = imroFilesNode->createNewChildElement("FILE");
                     imroFileNode->setAttribute("PATH", imroFiles[i]);
                 }
-                
+
             }
         }
 
@@ -1697,6 +1663,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
             annotationNode->setAttribute("G", a.colour.getGreen());
             annotationNode->setAttribute("B", a.colour.getBlue());
         }
+        
     }
     
 }

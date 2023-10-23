@@ -40,7 +40,7 @@ using namespace Plugin;
 extern "C" EXPORT void getLibInfo(Plugin::LibraryInfo* info)
 {
 	info->apiVersion = PLUGIN_API_VER;
-	info->name = "Neuropixels-Sources";
+	info->name = "Neuropix-PXI";
 	info->libVersion = PLUGIN_VERSION;
 	info->numPlugins = NUM_PLUGINS;
 }

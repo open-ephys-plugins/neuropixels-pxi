@@ -70,8 +70,6 @@ OneBox::OneBox(NeuropixThread* neuropixThread, int slot_number) : Basestation(ne
 	slot = 16;
 	LOGD("Stored slot number: ", slot);
 
-	getInfo();
-
 	box_count++;
 }
 
@@ -99,10 +97,12 @@ bool OneBox::open()
 	else if (errorCode != Neuropixels::SUCCESS)
 	{
 		LOGD("Opening OneBox, error code: ", errorCode);
+		return false;
 	}
 
 	if (errorCode == Neuropixels::SUCCESS)
 	{
+		getInfo();
 
 		//Confirm v3 basestation by BS version 2.0 or greater.
 		LOGD("  BS firmware: ", info.boot_version);

@@ -74,10 +74,10 @@ void Initializer::run()
 
 			Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo(list[i].ID, &list[i]);
 
-			LOGC("  Opening device on slot ", slotID);
-
 			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
 			{
+
+				LOGC("  Opening device on slot ", slotID);
 
 				Basestation* bs = new Basestation_v3(neuropixThread, slotID);
 
@@ -116,25 +116,24 @@ void Initializer::run()
 				}
 
 			}
-			else {
+			else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX) {
 
-				if (type == ONEBOX)
+				Basestation* bs = new OneBox(neuropixThread, list[i].ID);
+
+				if (bs->open())
 				{
-					Basestation* bs = new OneBox(neuropixThread, list[i].ID);
+						
+					basestations.add(bs);
 
-					if (bs->open())
-					{
-
-						basestations.add(bs);
-
-						if (!bs->getProbeCount())
-							CoreServices::sendStatusMessage("OneBox found, no probes connected.");
-					}
-					else
-					{
-						delete bs;
-					}
+					if (!bs->getProbeCount())
+						CoreServices::sendStatusMessage("OneBox found, no probes connected.");
 				}
+				else {
+					delete bs;
+				}
+			}
+			else {
+				LOGC("   Slot ", slotID, " did not match desired platform.");
 			}
 		}
 
@@ -185,10 +184,22 @@ void Initializer::run()
 
 		if (!FORCE_SIMULATION_MODE)
 		{
-			response = AlertWindow::showOkCancelBox(AlertWindow::NoIcon,
-				"No basestations detected",
-				"No Neuropixels PXI basestations were detected. Do you want to run this plugin in simulation mode?",
-				"Yes", "No", 0, 0);
+
+			if (type == PXI)
+			{
+				response = AlertWindow::showOkCancelBox(AlertWindow::NoIcon,
+					"No basestations detected",
+					"No Neuropixels PXI basestations were detected. Do you want to run this plugin in simulation mode?",
+					"Yes", "No", 0, 0);
+			}
+			else if (type == ONEBOX) 
+			{
+				response = AlertWindow::showOkCancelBox(AlertWindow::NoIcon,
+					"No OneBox detected",
+					"No OneBox was detected. Do you want to run this plugin in simulation mode?",
+					"Yes", "No", 0, 0);
+			}
+			
 		}
 
 		if (response)
