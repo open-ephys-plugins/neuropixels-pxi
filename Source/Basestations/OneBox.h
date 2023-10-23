@@ -87,10 +87,11 @@ public:
 
 	Neuropixels::NP_ErrorCode errorCode;
 
-	static int box_count;
+	static Array<int> existing_oneboxes;
+	int original_slot_number;
 
 	const int first_available_slot = 16;
-
+	
 	ScopedPointer<OneBoxADC> adcSource;
 	ScopedPointer<OneBoxDAC> dacSource;
 

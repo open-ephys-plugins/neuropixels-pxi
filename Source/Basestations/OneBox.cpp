@@ -37,7 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MAXLEN 50
 
-int OneBox::box_count = 0;
+Array<int> OneBox::existing_oneboxes = Array<int>();
 
 void OneBox::getInfo()
 {
@@ -56,7 +56,9 @@ OneBox::OneBox(NeuropixThread* neuropixThread, int slot_number) : Basestation(ne
 
 	type = BasestationType::ONEBOX;
 
-	errorCode = Neuropixels::mapBS(slot_number, first_available_slot + box_count); // assign to slot ID
+	int next_slot = first_available_slot + existing_oneboxes.size();
+
+	errorCode = Neuropixels::mapBS(slot_number, next_slot); // assign to slot ID
 
 	if (errorCode == Neuropixels::NO_SLOT || errorCode == Neuropixels::IO_ERROR)
 	{
@@ -64,13 +66,34 @@ OneBox::OneBox(NeuropixThread* neuropixThread, int slot_number) : Basestation(ne
 		return;
 	}
 		
-	LOGD("Mapped basestation ", slot_number, " to slot ", first_available_slot + box_count, ", error code: ", errorCode);
+	LOGD("Mapped basestation ", slot_number, " to slot ", next_slot, ", error code: ", errorCode);
 
 	LOGD("Stored slot number: ", slot);
-	slot = 16;
+	slot = next_slot;
+	slot_c = next_slot;
+
+	customPortNames.clear();
+
+	for (int p = 0; p < 4; p++)
+	{
+		for (int d = 0; d < 2; d++)
+		{
+			customPortNames.add("slot" + String(slot) + "-port" + String(p + 1) + "-" + String(d + 1));
+		}
+	}
+
 	LOGD("Stored slot number: ", slot);
 
-	box_count++;
+	if (!existing_oneboxes.contains(slot_number))
+	{
+		existing_oneboxes.add(slot_number);
+		original_slot_number = slot_number;
+	}
+	else
+	{
+		original_slot_number = -1;
+	}
+
 }
 
 OneBox::~OneBox()
@@ -79,12 +102,14 @@ OneBox::~OneBox()
 	setSyncAsInput();
 	close();
 
+	existing_oneboxes.removeFirstMatchingValue(original_slot_number);
+
 }
 
 bool OneBox::open()
 {
 
-	if (box_count == 0)
+	if (original_slot_number == -1)
 		return false;
 
 	errorCode = Neuropixels::openBS(slot);
