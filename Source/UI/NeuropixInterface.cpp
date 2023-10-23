@@ -432,51 +432,67 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     firmwareToggleButton->addListener(this);
     firmwareToggleButton->setBounds(650, verticalOffset, 150, 22);
     firmwareToggleButton->setClickingTogglesState(true);
-    addAndMakeVisible(firmwareToggleButton);
+
+    if (thread->type == PXI)
+        addAndMakeVisible(firmwareToggleButton);
 
     bscFirmwareComboBox = new ComboBox("bscFirmwareComboBox");
     bscFirmwareComboBox->setBounds(550, verticalOffset + 70, 375, 22);
     bscFirmwareComboBox->addListener(this);
     bscFirmwareComboBox->addItem("Select file...", 1);
-    addChildComponent(bscFirmwareComboBox);
+
+    if (thread->type == PXI)
+        addChildComponent(bscFirmwareComboBox);
 
     bscFirmwareButton = new UtilityButton("UPLOAD", Font("Small Text", 12, Font::plain));
     bscFirmwareButton->setRadius(3.0f);
     bscFirmwareButton->setBounds(930, verticalOffset + 70, 60, 22);
     bscFirmwareButton->addListener(this);
     bscFirmwareButton->setTooltip("Upload firmware to selected basestation connect board");
-    addChildComponent(bscFirmwareButton);
+
+    if (thread->type == PXI)
+        addChildComponent(bscFirmwareButton);
 
     bscFirmwareLabel = new Label("BSC FIRMWARE", "1. Update basestation connect board firmware (QBSC_FPGA_B189.bin):");
     bscFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
     bscFirmwareLabel->setBounds(550, verticalOffset + 43, 500, 20);
     bscFirmwareLabel->setColour(Label::textColourId, Colours::orange);
-    addChildComponent(bscFirmwareLabel);
+    
+    if (thread->type == PXI)
+        addChildComponent(bscFirmwareLabel);
 
     bsFirmwareComboBox = new ComboBox("bscFirmwareComboBox");
     bsFirmwareComboBox->setBounds(550, verticalOffset + 140, 375, 22);
     bsFirmwareComboBox->addListener(this);
     bsFirmwareComboBox->addItem("Select file...", 1);
-    addChildComponent(bsFirmwareComboBox);
+
+    if (thread->type == PXI)
+        addChildComponent(bsFirmwareComboBox);
 
     bsFirmwareButton = new UtilityButton("UPLOAD", Font("Small Text", 12, Font::plain));
     bsFirmwareButton->setRadius(3.0f);
     bsFirmwareButton->setBounds(930, verticalOffset + 140, 60, 22);
     bsFirmwareButton->addListener(this);
     bsFirmwareButton->setTooltip("Upload firmware to selected basestation");
-    addChildComponent(bsFirmwareButton);
+
+    if (thread->type == PXI)
+        addChildComponent(bsFirmwareButton);
 
     bsFirmwareLabel = new Label("BS FIRMWARE", "2. Update basestation firmware (BS_FPGA_B169.bin):");
     bsFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
     bsFirmwareLabel->setBounds(550, verticalOffset + 113, 500, 20);
     bsFirmwareLabel->setColour(Label::textColourId, Colours::orange);
-    addChildComponent(bsFirmwareLabel);
+
+    if (thread->type == PXI)
+        addChildComponent(bsFirmwareLabel);
 
     firmwareInstructionsLabel = new Label("FIRMWARE INSTRUCTIONS", "3. Power cycle computer and PXI chassis");
     firmwareInstructionsLabel->setFont(Font("Small Text", 13, Font::plain));
     firmwareInstructionsLabel->setBounds(550, verticalOffset + 183, 500, 20);
     firmwareInstructionsLabel->setColour(Label::textColourId, Colours::orange);
-    addChildComponent(firmwareInstructionsLabel);
+
+    if (thread->type == PXI)
+        addChildComponent(firmwareInstructionsLabel);
 
     // PROBE INFO 
     mainLabel = new Label("MAIN", "MAIN");
@@ -1496,7 +1512,45 @@ ProbeSettings NeuropixInterface::getProbeSettings()
 void NeuropixInterface::saveParameters(XmlElement* xml)
 {
 
+
     if (probe != nullptr)
+    { 
+    LOGD("Saving Neuropix display.");
+
+    XmlElement* xmlNode = xml->createNewChildElement("NP_PROBE");
+
+    xmlNode->setAttribute("slot", probe->basestation->slot);
+    xmlNode->setAttribute("bs_firmware_version", probe->basestation->info.boot_version);
+    xmlNode->setAttribute("bs_hardware_version", probe->basestation->info.version);
+    xmlNode->setAttribute("bs_serial_number", String(probe->basestation->info.serial_number));
+    xmlNode->setAttribute("bs_part_number", probe->basestation->info.part_number);
+
+    if (thread->type == PXI)
+    {
+        xmlNode->setAttribute("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
+        xmlNode->setAttribute("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
+        xmlNode->setAttribute("bsc_serial_number", String(probe->basestation->basestationConnectBoard->info.serial_number));
+        xmlNode->setAttribute("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
+    }
+    
+    xmlNode->setAttribute("headstage_serial_number", String(probe->headstage->info.serial_number));
+    xmlNode->setAttribute("headstage_part_number", probe->headstage->info.part_number);
+
+    xmlNode->setAttribute("flex_version", probe->flex->info.version);
+    xmlNode->setAttribute("flex_part_number", probe->headstage->info.part_number);
+
+    xmlNode->setAttribute("port", probe->headstage->port);
+    xmlNode->setAttribute("dock", probe->dock);
+    xmlNode->setAttribute("probe_serial_number", String(probe->info.serial_number));
+    xmlNode->setAttribute("probe_part_number", probe->info.part_number);
+    xmlNode->setAttribute("probe_name", probe->name);
+    xmlNode->setAttribute("num_adcs", probe->probeMetadata.num_adcs);
+    xmlNode->setAttribute("custom_probe_name", probe->customName.probeSpecific);
+
+    xmlNode->setAttribute("ZoomHeight", probeBrowser->getZoomHeight());
+    xmlNode->setAttribute("ZoomOffset", probeBrowser->getZoomOffset());
+
+    if (apGainComboBox != nullptr)
     {
         LOGD("Saving Neuropix display.");
 

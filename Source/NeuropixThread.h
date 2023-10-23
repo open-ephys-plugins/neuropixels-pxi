@@ -57,6 +57,12 @@ struct StreamInfo {
 	OneBoxADC* adc;
 };
 
+enum DeviceType
+{
+	PXI,
+	ONEBOX
+};
+
 /** 
 	
 	Shows a progress window while searching for probes.
@@ -67,10 +73,15 @@ class Initializer : public Thread
 public:
 
 	/** Constructor */
-	Initializer(NeuropixThread* neuropixThread_, OwnedArray<Basestation>& basestations_, NeuropixAPIv1& api_v1_, NeuropixAPIv3& api_v3_)
+	Initializer(NeuropixThread* neuropixThread_, 
+		  OwnedArray<Basestation>& basestations_, 
+		  DeviceType type_,
+		  NeuropixAPIv1& api_v1_, 
+		  NeuropixAPIv3& api_v3_)
 		: Thread("Neuropixels Initialization"),
 	      neuropixThread(neuropixThread_),
 		  basestations(basestations_),
+		  type(type_),
 		  api_v1(api_v1_),
 		  api_v3(api_v3_) { }
 
@@ -84,8 +95,11 @@ private:
 	OwnedArray<Basestation>& basestations;
 	NeuropixAPIv1& api_v1;
 	NeuropixAPIv3& api_v3;
+	DeviceType type;
 
 };
+
+
 
 /**
 
@@ -101,13 +115,13 @@ class NeuropixThread : public DataThread, public Timer
 public:
 
 	/** Constructor */
-	NeuropixThread(SourceNode* sn);
+	NeuropixThread(SourceNode* sn, DeviceType type);
 
 	/** Destructor */
 	~NeuropixThread();
 
 	/** Static method for creating the DataThread object */
-	static DataThread* createDataThread(SourceNode* sn);
+	static DataThread* createDataThread(SourceNode* sn, DeviceType type);
 
 	/** Creates the custom editor */
 	std::unique_ptr<GenericEditor> createEditor(SourceNode* sn);
@@ -241,6 +255,8 @@ public:
 	void sendBroadcastMessage(String msg) { broadcastMessage(msg); }
 
 	std::map<String, String> customProbeNames;
+
+	DeviceType type;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixThread);
 

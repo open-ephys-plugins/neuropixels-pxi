@@ -37,9 +37,9 @@
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
 #define FORCE_SIMULATION_MODE false
 
-DataThread* NeuropixThread::createDataThread(SourceNode *sn)
+DataThread* NeuropixThread::createDataThread(SourceNode *sn, DeviceType type)
 {
-	return new NeuropixThread(sn);
+	return new NeuropixThread(sn, type);
 }
 
 std::unique_ptr<GenericEditor> NeuropixThread::createEditor(SourceNode* sn)
@@ -76,7 +76,7 @@ void Initializer::run()
 
 			LOGC("  Opening device on slot ", slotID);
 
-			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI)
+			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
 			{
 
 				Basestation* bs = new Basestation_v3(neuropixThread, slotID);
@@ -118,25 +118,28 @@ void Initializer::run()
 			}
 			else {
 
-				Basestation* bs = new OneBox(neuropixThread, list[i].ID);
-
-				if (bs->open())
+				if (type == ONEBOX)
 				{
+					Basestation* bs = new OneBox(neuropixThread, list[i].ID);
 
-					basestations.add(bs);
+					if (bs->open())
+					{
 
-					if (!bs->getProbeCount())
-						CoreServices::sendStatusMessage("OneBox found, no probes connected.");
-				}
-				else
-				{
-					delete bs;
+						basestations.add(bs);
+
+						if (!bs->getProbeCount())
+							CoreServices::sendStatusMessage("OneBox found, no probes connected.");
+					}
+					else
+					{
+						delete bs;
+					}
 				}
 			}
 		}
 
 
-		if (basestations.size() == 0) // no basestations with API version match
+		if (basestations.size() == 0 && type == PXI) // no basestations with API version match
 		{
 			LOGD("Checking for V1 basestations...");
 
@@ -198,8 +201,9 @@ void Initializer::run()
 
 }
 
-NeuropixThread::NeuropixThread(SourceNode* sn) :
+NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 	DataThread(sn),
+	type(type_),
 	baseStationAvailable(false),
 	probesInitialized(false),
 	initializationComplete(false)
@@ -216,7 +220,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn) :
 	LOGD("Setting debug level to 0");
 	Neuropixels::np_dbg_setlevel(0);
 
-	initializer = std::make_unique<Initializer>(this, basestations, api_v1, api_v3);
+	initializer = std::make_unique<Initializer>(this, basestations, type, api_v1, api_v3);
+
 	initializer->run();
 
 	bool foundSync = false;
@@ -342,19 +347,23 @@ void NeuropixThread::updateStreamInfo()
 		}
 		else {
 
-			StreamInfo adcInfo;
+			if (true)
+			{
+				StreamInfo adcInfo;
 
-			adcInfo.num_channels = source->channel_count;
-			adcInfo.sample_rate = source->sample_rate;
-			adcInfo.type = ADC;
-			adcInfo.sendSyncAsContinuousChannel = false;
-			adcInfo.probe = nullptr;
-			adcInfo.adc = (OneBoxADC*)source;
+				adcInfo.num_channels = source->channel_count;
+				adcInfo.sample_rate = source->sample_rate;
+				adcInfo.type = ADC;
+				adcInfo.sendSyncAsContinuousChannel = false;
+				adcInfo.probe = nullptr;
+				adcInfo.adc = (OneBoxADC*)source;
 
-			sourceBuffers.add(new DataBuffer(adcInfo.num_channels, 10000));  // data buffer
-			source->apBuffer = sourceBuffers.getLast();
+				sourceBuffers.add(new DataBuffer(adcInfo.num_channels, 10000));  // data buffer
+				source->apBuffer = sourceBuffers.getLast();
 
-			streamInfo.add(adcInfo);
+				streamInfo.add(adcInfo);
+			}
+			
 
 		}
 		
@@ -721,7 +730,7 @@ String NeuropixThread::getInfoString()
 /** Initializes data transfer.*/
 bool NeuropixThread::startAcquisition()
 {
-
+	std::cout << "NeuropixThread::startAcquisition()" << std::endl;
 	startTimer(100);
 	
     return true;
@@ -729,6 +738,7 @@ bool NeuropixThread::startAcquisition()
 
 void NeuropixThread::timerCallback()
 {
+	LOGD("Timer callback.");
 
 	if (editor->uiLoader->isThreadRunning())
 		editor->uiLoader->waitForThreadToExit(10000);
@@ -1050,30 +1060,33 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 		dataStreams->add(new DataStream(*currentStream)); // copy existing stream
 
-		DeviceInfo::Settings deviceSettings{
+		if (info.probe != nullptr)
+		{
+			DeviceInfo::Settings deviceSettings{
 			info.probe->name,
 			"Neuropixels probe",
 			info.probe->info.part_number,
 
 			String(info.probe->info.serial_number),
 			"imec"
-		};
+			};
 
-		DeviceInfo* device = new DeviceInfo(deviceSettings);
+			DeviceInfo* device = new DeviceInfo(deviceSettings);
 
-		MetadataDescriptor descriptor(MetadataDescriptor::MetadataType::UINT16, 
-			1, "num_adcs", 
-			"Number of analog-to-digital converter for this probe", "neuropixels.adcs");
+			MetadataDescriptor descriptor(MetadataDescriptor::MetadataType::UINT16,
+				1, "num_adcs",
+				"Number of analog-to-digital converter for this probe", "neuropixels.adcs");
 
-		MetadataValue value(MetadataDescriptor::MetadataType::UINT16, 1);
-		value.setValue((uint16) info.probe->probeMetadata.num_adcs);
+			MetadataValue value(MetadataDescriptor::MetadataType::UINT16, 1);
+			value.setValue((uint16)info.probe->probeMetadata.num_adcs);
 
-		device->addMetadata(descriptor, value);
+			device->addMetadata(descriptor, value);
 
-		devices->add(device); // unique device object owned by SourceNode
+			devices->add(device); // unique device object owned by SourceNode
 
-		dataStreams->getLast()->device = device; // DataStream object just gets a pointer
-
+			dataStreams->getLast()->device = device; // DataStream object just gets a pointer
+		}
+		
 	} // end source stream loop
 
 	editor->update();

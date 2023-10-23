@@ -191,9 +191,6 @@ bool OneBox::open()
 
 		adcSource->dac = dacSource;
 		dacSource->adc = adcSource;
-		
-		headstages.add(nullptr);
-		headstages.add(nullptr);
 	}
 
 	syncFrequencies.add(1);
@@ -218,7 +215,6 @@ void OneBox::initialize(bool signalChainIsLoading)
 
 	if (!probesInitialized)
 	{
-		//errorCode = Neuropixels::setTriggerInput(slot, Neuropixels::TRIGIN_SW);
 
 		for (auto probe : probes)
 		{
