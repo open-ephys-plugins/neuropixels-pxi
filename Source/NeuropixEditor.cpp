@@ -362,7 +362,7 @@ void NeuropixEditor::initialize(bool signalChainIsLoading)
 
 
 NeuropixEditor::NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* t)
- : VisualizerEditor(parentNode, "Neuropix PXI")
+ : VisualizerEditor(parentNode, t->type == ONEBOX ? "OneBox" : "Neuropix PXI")
 {
 
     thread = t;
