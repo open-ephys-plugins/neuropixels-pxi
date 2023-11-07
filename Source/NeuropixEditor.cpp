@@ -71,7 +71,7 @@ void SlotButton::componentBeingDeleted(Component& component)
 }
 
 EditorBackground::EditorBackground(NeuropixThread* t, bool freqSelectEnabled)
-	: basestations(t->getBasestations()),
+	: basestations(t->getBasestations()), type(t->type),
 	freqSelectEnabled(freqSelectEnabled)
 {
 
@@ -132,11 +132,11 @@ void EditorBackground::paint(Graphics& g)
 	else {
 		g.setColour(Colours::darkgrey);
 		g.setFont(15);
-		if (getName().equalsIgnoreCase("Neuropix-PXI"))
+		if (type == PXI)
 		{
 			g.drawText(String("NO BASESTATIONS DETECTED"), 0, 10, 250, 100, Justification::centred);
 		}
-		else {
+		else if (type == ONEBOX) {
 			g.drawText(String("NO ONEBOX DETECTED"), 0, 10, 250, 100, Justification::centred);
 		}
 		

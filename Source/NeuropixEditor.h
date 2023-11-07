@@ -111,6 +111,8 @@ private:
 	/* An array of Basestation objections, one for each basestation detected */
 	Array<Basestation*> basestations;
 
+	DeviceType type;
+
 };
 
 /** 

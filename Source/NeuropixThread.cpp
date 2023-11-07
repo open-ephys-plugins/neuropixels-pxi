@@ -74,6 +74,8 @@ void Initializer::run()
 
 			Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo(list[i].ID, &list[i]);
 
+			LOGD("Slot ID: ", slotID, "Platform ID : ", list[i].platformid);
+
 			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
 			{
 
