@@ -48,7 +48,7 @@ OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 	//setStatus(ProbeStatus::ADC);
 
 	channel_count = 12;
-	sample_rate = 30000.0f;
+	sample_rate = 30300.0f;
 
 	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
 
