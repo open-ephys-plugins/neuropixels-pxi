@@ -1148,6 +1148,8 @@ void NeuropixInterface::selectElectrodes(Array<int> electrodes)
 
 void NeuropixInterface::startAcquisition()
 {
+    
+    std::cout << "Neuropix Interface startAcquisition()" << std::endl;
 
     bool enabledState = false;
     acquisitionIsActive = true;

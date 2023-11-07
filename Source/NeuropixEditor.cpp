@@ -814,6 +814,12 @@ Visualizer* NeuropixEditor::createNewCanvas(void)
 {
     GenericProcessor* processor = (GenericProcessor*) getProcessor();
     canvas = new NeuropixCanvas(processor, this, thread);
+
+	if (acquisitionIsActive)
+	{
+		canvas->startAcquisition();
+	}
+	
     return canvas;
 }
 
