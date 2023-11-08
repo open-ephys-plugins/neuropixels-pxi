@@ -151,16 +151,15 @@ OneBoxInterface::OneBoxInterface(DataSource* dataSource_, NeuropixThread* thread
 	mappingSelector->addListener(this);
 	addAndMakeVisible(mappingSelector);
 
-	updateMappingSelector();
-
 	wavePlayer = new WavePlayer(dac);
 	wavePlayer->setBounds(500, 100, 320, 180);
 	addAndMakeVisible(wavePlayer);
 
-	dataPlayer = new DataPlayer(dac);
+	dataPlayer = new DataPlayer(dac, this);
 	dataPlayer->setBounds(500, 340, 320, 180);
 	addAndMakeVisible(dataPlayer);
-	
+
+	updateMappingSelector();
 	
 }
 
@@ -176,15 +175,23 @@ void OneBoxInterface::stopAcquisition()
 
 }
 
-void OneBoxInterface::enableInput(int chan)
+void OneBoxInterface::enableInput(int chan, bool remap)
 {
 	channels[chan]->setStatus(AdcChannelStatus::AVAILABLE);
+
+	if (remap)
+		channels[chan]->mapToOutput = 999;
+
 	repaint();
 }
 
-void OneBoxInterface::disableInput(int chan)
+void OneBoxInterface::disableInput(int chan, bool remap)
 {
 	channels[chan]->setStatus(AdcChannelStatus::IN_USE);
+
+	if (remap)
+		channels[chan]->mapToOutput = -1;
+
 	repaint();
 }
 
@@ -285,6 +292,8 @@ void OneBoxInterface::updateMappingSelector()
 	}
 		
 	mappingSelector->setSelectedId(selectedChannel->mapToOutput, dontSendNotification);
+
+	dataPlayer->setAvailableChans(mappingSelector);
 }
 
 

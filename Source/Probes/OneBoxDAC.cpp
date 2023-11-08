@@ -146,12 +146,16 @@ void OneBoxDAC::disableOutput(int chan)
 {
 	errorCode = Neuropixels::DAC_enableOutput(bs->slot, chan, false);
 
+	LOGC("Disabling DAC ", chan);
+
 	adc->enableInput(chan);
 }
 
 void OneBoxDAC::enableOutput(int chan)
 {
 	errorCode = Neuropixels::DAC_enableOutput(bs->slot, chan, true);
+
+	LOGC("Enabling DAC ", chan);
 
 	adc->disableInput(chan);
 }

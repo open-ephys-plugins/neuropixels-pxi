@@ -96,6 +96,9 @@ void OneBoxADC::initialize(bool signalChainIsLoading)
 
 void OneBoxADC::enableInput(int chan)
 {
+
+	LOGC("Enabling ADC ", chan);
+
 	if (ui != nullptr)
 	{
 		ui->enableInput(chan);
@@ -104,6 +107,9 @@ void OneBoxADC::enableInput(int chan)
 
 void OneBoxADC::disableInput(int chan)
 {
+
+	LOGC("Disabling ADC ", chan);
+
 	if (ui != nullptr)
 	{
 		ui->disableInput(chan);

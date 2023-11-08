@@ -132,8 +132,8 @@ public:
 
     void paint(Graphics& g);
 
-    void enableInput(int chan);
-    void disableInput(int chan);
+    void enableInput(int chan, bool remap = false);
+    void disableInput(int chan, bool remap = false);
 
     void comboBoxChanged(ComboBox*);
     void buttonClicked(Button*);

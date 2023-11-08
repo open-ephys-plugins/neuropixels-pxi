@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "DataPlayer.h"
 
 #include "../Probes/OneBoxDAC.h"
+#include "OneBoxInterface.h"
 
 #include "../NeuropixComponents.h"
 
@@ -55,8 +56,8 @@ void DataPlayerBackground::paint(Graphics& g)
 
 }
 
-DataPlayer::DataPlayer(OneBoxDAC* dac_)
-	: dac(dac_)
+DataPlayer::DataPlayer(OneBoxDAC* dac_, OneBoxInterface* onebox_)
+	: dac(dac_), onebox(onebox_)
 {
 	inputChan = 0;
 	outputChan = -1;
@@ -88,8 +89,7 @@ DataPlayer::DataPlayer(OneBoxDAC* dac_)
 		if (i == 0)
 			selectedProbe = currentProbe;
 
-		probeSelector->addItem("Probe " + 
-			String(currentProbe->dock), i + 1);
+		probeSelector->addItem(currentProbe->getName(), i + 1);
 	}
 
 	probeSelector->setSelectedId(1, dontSendNotification);
@@ -154,16 +154,38 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 	else if (comboBox == outputSelector)
 	{
 
-		if (comboBox->getSelectedId() == 1 && outputChan != -1)
+		if (comboBox->getSelectedId() == 1) // deselect output
 		{
-			dac->disableOutput(outputChan);
+			std::cout << "Selected: " << comboBox->getSelectedId() << std::endl;
+			std::cout << "Current output: " << outputChan << std::endl;
+
+			if (outputChan > -1)
+			{
+				dac->disableOutput(outputChan);
+				onebox->enableInput(outputChan);
+			}
+				
 			outputChan = -1;
-			return;
+
+			std::cout << "New output: " << outputChan << std::endl;
 		}
 		else if (comboBox->getSelectedId() > 1)
 		{
+
+			std::cout << "Selected: " << comboBox->getSelectedId() << std::endl;
+			std::cout << "Current output: " << outputChan << std::endl;
+
+			if (outputChan > -1)
+			{
+				dac->disableOutput(outputChan);
+				onebox->enableInput(outputChan);
+			}
+				
 			outputChan = comboBox->getSelectedId() - 2;
 			dac->enableOutput(outputChan);
+			onebox->disableInput(outputChan);
+
+			std::cout << "New output: " << outputChan << std::endl;
 		}
 	}
 
@@ -176,6 +198,17 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 
 }
 
+
+void DataPlayer::setAvailableChans(ComboBox* comboBox)
+{
+
+	outputSelector->clear();
+
+	for (int i = 0; i < comboBox->getNumItems(); i++)
+	{
+		outputSelector->addItem(comboBox->getItemText(i), comboBox->getItemId(i));
+	}
+}
 
 
 void DataPlayer::saveCustomParameters(XmlElement* xml)

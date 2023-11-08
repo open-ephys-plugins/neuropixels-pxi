@@ -30,6 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class Probe;
 
+class OneBoxInterface;
+
 class UtilityButton;
 
 /**
@@ -62,13 +64,15 @@ class DataPlayer : public Component,
 				   public ComboBox::Listener
 {
 public:
-	DataPlayer(OneBoxDAC*);
+	DataPlayer(OneBoxDAC*, OneBoxInterface*);
 	virtual ~DataPlayer();
 
 	void comboBoxChanged(ComboBox*);
 
 	void saveCustomParameters(XmlElement*);
 	void loadCustomParameters(XmlElement*);
+
+	void setAvailableChans(ComboBox* comboBox);
 
 	void resized();
 
@@ -84,6 +88,7 @@ private:
 	ScopedPointer<DataPlayerBackground> background;
 
 	OneBoxDAC* dac;
+	OneBoxInterface* onebox;
 
 	Probe* selectedProbe;
 	int inputChan;
