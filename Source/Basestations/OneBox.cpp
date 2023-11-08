@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage1_v3.h"
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
+#include "../Headstages/Headstage_Custom384.h"
 #include "../Probes/OneBoxADC.h"
 #include "../Probes/OneBoxDAC.h"
 
@@ -129,12 +130,7 @@ bool OneBox::open()
 	{
 		getInfo();
 
-		//Confirm v3 basestation by BS version 2.0 or greater.
-		LOGD("  BS firmware: ", info.boot_version);
-		if (std::stod((info.boot_version.toStdString())) < 2.0)
-			return false;
-
-		savingDirectory = File();
+		LOGC("  Opened OneBox on slot ", slot);
 
 		LOGD("    Searching for probes...");
 
@@ -165,12 +161,17 @@ bool OneBox::open()
 						headstage = nullptr;
 					}
 				}
-				else if (hsPartNumber == "NPNH_HS_30") // 128-ch analog headstage
+				else if (hsPartNumber == "NPNH_HS_30" || hsPartNumber == "NPNH_HS_31") // 128-ch analog headstage
 				{
 					LOGD("      Found 128-ch analog headstage on port: ", port);
 					headstage = new Headstage_Analog128(this, port);
 				}
-				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
+				else if (hsPartNumber == "NPNH_HS_00") // custom 384-ch headstage
+				{
+					LOGC("      Found 384-ch custom headstage on port: ", port);
+					headstage = new Headstage_Custom384(this, port);
+				}
+				else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
 				{
 					LOGD("      Found 2.0 dual-dock headstage on port: ", port);
 					headstage = new Headstage2(this, port);
@@ -203,6 +204,9 @@ bool OneBox::open()
 				{
 					LOGDD("  No headstage detected on port: ", port);
 				}
+
+				errorCode = Neuropixels::closePort(slot, port); // close port
+
 				headstages.add(nullptr);
 			}
 
@@ -252,7 +256,7 @@ void OneBox::initialize(bool signalChainIsLoading)
 	adcSource->initialize(signalChainIsLoading);
 
 	errorCode = Neuropixels::arm(slot);
-	LOGD("One box is armed");
+	LOGD("OneBox is armed");
 }
 
 

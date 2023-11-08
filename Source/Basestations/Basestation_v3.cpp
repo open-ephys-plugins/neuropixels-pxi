@@ -216,8 +216,6 @@ bool Basestation_v3::open()
 
 			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String(slot), message, "OK");
 		}
-			
-		savingDirectory = File();
 
 		LOGC("    Searching for probes...");
 
