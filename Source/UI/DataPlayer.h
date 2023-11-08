@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <VisualizerEditorHeaders.h>
 
 #include "AnalogPatternGenerator.h"
+#include "../NeuropixComponents.h"
 
 class Probe;
 
@@ -41,6 +42,7 @@ User interface for defining custom OneBox DAC waveforms
 */
 
 class OneBoxDAC;
+class OneBoxADC;
 
 enum StreamType {
 	AP = 1,
@@ -64,7 +66,7 @@ class DataPlayer : public Component,
 				   public ComboBox::Listener
 {
 public:
-	DataPlayer(OneBoxDAC*, OneBoxInterface*);
+	DataPlayer(OneBoxDAC*, OneBoxADC*, OneBoxInterface*);
 	virtual ~DataPlayer();
 
 	void comboBoxChanged(ComboBox*);
@@ -72,7 +74,7 @@ public:
 	void saveCustomParameters(XmlElement*);
 	void loadCustomParameters(XmlElement*);
 
-	void setAvailableChans(ComboBox* comboBox);
+	void setAvailableChans(Array<DataSourceType> channelTypes);
 
 	void resized();
 
@@ -87,6 +89,7 @@ private:
 
 	ScopedPointer<DataPlayerBackground> background;
 
+	OneBoxADC* adc;
 	OneBoxDAC* dac;
 	OneBoxInterface* onebox;
 

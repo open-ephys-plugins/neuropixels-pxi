@@ -122,7 +122,6 @@ void OneBoxDAC::setWaveform(Array<float> samples)
 
 	std::cout << "waveplayer_arm error code: " << errorCode << std::endl;
 
-	adc->disableInput(0);
 
 }
 
@@ -139,7 +138,6 @@ void OneBoxDAC::configureDataPlayer(int DACChannel, int portID, int dockID, int 
 
 	std::cout << "DAC_setProbeSniffer error code: " << errorCode << std::endl;
 
-	adc->disableInput(DACChannel);
 }
 
 void OneBoxDAC::disableOutput(int chan)
@@ -148,7 +146,6 @@ void OneBoxDAC::disableOutput(int chan)
 
 	LOGC("Disabling DAC ", chan);
 
-	adc->enableInput(chan);
 }
 
 void OneBoxDAC::enableOutput(int chan)
@@ -157,7 +154,6 @@ void OneBoxDAC::enableOutput(int chan)
 
 	LOGC("Enabling DAC ", chan);
 
-	adc->disableInput(chan);
 }
 
 

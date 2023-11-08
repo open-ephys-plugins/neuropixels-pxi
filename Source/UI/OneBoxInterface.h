@@ -113,36 +113,62 @@ private:
 
 };
 
+/** 
+
+    User interface for the OneBox ADC/DAC channels
+
+*/
 class OneBoxInterface : public SettingsInterface, 
                      public ComboBox::Listener, 
                      public Button::Listener
 {
 public:
-    OneBoxInterface(DataSource* dataSource_, NeuropixThread* thread_, NeuropixEditor* editor_, NeuropixCanvas* canvas_);
+    /** Constructor */
+    OneBoxInterface(DataSource* dataSource_, 
+        NeuropixThread* thread_, 
+        NeuropixEditor* editor_, 
+        NeuropixCanvas* canvas_);
 
+    /** Destructor */
     ~OneBoxInterface();
 
+    /** Disable UI elements that can't be changed during acquisition */
     void startAcquisition() override;
+
+    /** Re-enable UI elements once acquisition stops */
     void stopAcquisition() override;
 
-    bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) override { return false; }
+    /** Not used */
+    bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) override 
+    { 
+        return false; 
+    }
 
+    /** Save parameters */
     void saveParameters(XmlElement* xml) override;
+
+    /** Load parameters */
     void loadParameters(XmlElement* xml) override;
 
+    /** Draw the interface */
     void paint(Graphics& g);
 
-    void enableInput(int chan, bool remap = false);
-    void disableInput(int chan, bool remap = false);
+    /** Set channel as ADC or DAC */
+    void setChannelType(int chan, DataSourceType type);
 
+    /** ComboBox callback */
     void comboBoxChanged(ComboBox*);
+
+    /** Button callback */
     void buttonClicked(Button*);
 
-    void updateInfoString() { }
+    /** DataSource method */
+    void updateInfoString() override { }
+
+    /** Update combo boxes to reflect available channels */
+    void updateAvailableChannels();
 
 private:
-
-    void updateMappingSelector();
 
     OwnedArray<AdcChannelButton> channels;
     AdcChannelButton* selectedChannel;

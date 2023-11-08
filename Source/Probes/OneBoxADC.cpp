@@ -26,28 +26,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../UI/OneBoxInterface.h"
 
-#define MAXLEN 50
-
-void OneBoxADC::getInfo()
-{
-	//errorCode = Neuropixels::readProbeSN(basestation->slot, headstage->port, dock, &info.serial_number);
-
-	//char pn[MAXLEN];
-	//errorCode = Neuropixels::readProbePN(basestation->slot_c, headstage->port_c, dock, pn, MAXLEN);
-
-	//info.part_number = String(pn);
-}
-
 OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 {
 
 	ui = nullptr;
 
-	getInfo();
-
-	//setStatus(ProbeStatus::ADC);
-
-	channel_count = 12;
+	channel_count = NUM_ADCS;
 	sample_rate = 30300.0f;
 
 	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
@@ -56,22 +40,12 @@ OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 	status = SourceStatus::CONNECTED;
 
 	for (int i = 0; i < channel_count; i++)
-		channelGains.add(1.0f);
+		channelTypes.add(DataSourceType::ADC);
 
 	bitVolts = 5.0f / float(pow(2, 15));
 
 }
 
-bool OneBoxADC::open()
-{
-	return true;
-
-}
-
-bool OneBoxADC::close()
-{
-	return true;
-}
 
 void OneBoxADC::initialize(bool signalChainIsLoading)
 {
@@ -85,7 +59,6 @@ void OneBoxADC::initialize(bool signalChainIsLoading)
 
 		for (int i = 0; i < 12; i++)
 		{
-			std::cout << "Initializing ADC" << i << " on slot " << basestation->slot << std::endl;
 			Neuropixels::DAC_enableOutput(basestation->slot, i, false);
 			Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_5V);
 		}
@@ -94,26 +67,30 @@ void OneBoxADC::initialize(bool signalChainIsLoading)
 
 }
 
-void OneBoxADC::enableInput(int chan)
+void OneBoxADC::setChannelType(int chan, DataSourceType type)
 {
 
-	LOGC("Enabling ADC ", chan);
+	if (chan >= channel_count)
+		return;
 
-	if (ui != nullptr)
+	String channelTypeString;
+
+	switch (type)
 	{
-		ui->enableInput(chan);
+	case DataSourceType::ADC:
+		channelTypeString = "ADC";
+		break;
+	case DataSourceType::DAC:
+		channelTypeString = "DAC";
+		break;
+	default:
+		channelTypeString = "NONE";
 	}
-}
 
-void OneBoxADC::disableInput(int chan)
-{
+	LOGD("Setting channel ", chan, " to ", channelTypeString);
 
-	LOGC("Disabling ADC ", chan);
+	channelTypes.set(chan, type);
 
-	if (ui != nullptr)
-	{
-		ui->disableInput(chan);
-	}
 }
 
 void OneBoxADC::startAcquisition()
@@ -159,13 +136,7 @@ void OneBoxADC::setAdcInputRange(AdcInputRange range)
 
 float OneBoxADC::getChannelGain(int chan)
 {
-	if (chan < channelGains.size())
-	{
-		return bitVolts; // channelGains[chan];
-	}
-	else {
-		return bitVolts; // 1.0f;
-	}
+	return bitVolts;
 }
 
 void OneBoxADC::run()
@@ -204,15 +175,9 @@ void OneBoxADC::run()
 					
 					adcSamples[j] = float(data[packetNum * 12 + j]) * bitVolts; // convert to volts
 
-					//if (packetNum == 0 && j == 0)
-					//{
-					//	std::cout << float(data[packetNum * 12 + j]) << " : " << bitVolts << " : " << adcSamples[j] << std::endl;
-					//}
 				}
 
 				timestamp += 1;
-
-				
 
 				apBuffer->addToBuffer(adcSamples, &timestamp, &ts_s, &eventCode, 1);
 

@@ -56,8 +56,8 @@ void DataPlayerBackground::paint(Graphics& g)
 
 }
 
-DataPlayer::DataPlayer(OneBoxDAC* dac_, OneBoxInterface* onebox_)
-	: dac(dac_), onebox(onebox_)
+DataPlayer::DataPlayer(OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* onebox_)
+	: dac(dac_), adc(adc_), onebox(onebox_)
 {
 	inputChan = 0;
 	outputChan = -1;
@@ -116,11 +116,6 @@ DataPlayer::DataPlayer(OneBoxDAC* dac_, OneBoxInterface* onebox_)
 	outputSelector = new ComboBox();
 	outputSelector->setBounds(leftMargin, 130, 110, 20);
 	outputSelector->addListener(this);
-	outputSelector->addItem("-", 1);
-
-	for (int i = 0; i < 12; i++)
-		outputSelector->addItem("DAC" + String(i), i + 2);
-	outputSelector->setSelectedId(1, dontSendNotification);
 
 	addAndMakeVisible(outputSelector);
 }
@@ -161,8 +156,8 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 
 			if (outputChan > -1)
 			{
-				dac->disableOutput(outputChan);
-				onebox->enableInput(outputChan);
+				adc->setChannelType(outputChan, DataSourceType::ADC);
+				//onebox->enableInput(outputChan);
 			}
 				
 			outputChan = -1;
@@ -177,17 +172,19 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 
 			if (outputChan > -1)
 			{
-				dac->disableOutput(outputChan);
-				onebox->enableInput(outputChan);
+				adc->setChannelType(outputChan, DataSourceType::ADC);
+				//onebox->enableInput(outputChan);
 			}
 				
 			outputChan = comboBox->getSelectedId() - 2;
-			dac->enableOutput(outputChan);
-			onebox->disableInput(outputChan);
+			adc->setChannelType(outputChan, DataSourceType::DAC);
+			//onebox->disableInput(outputChan);
 
 			std::cout << "New output: " << outputChan << std::endl;
 		}
 	}
+
+	//onebox->updateAvailableChannels();
 
 	//dac->configureDataPlayer(selectedProbe->basestation->slot,
 	//	outputChan,
@@ -199,15 +196,18 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 }
 
 
-void DataPlayer::setAvailableChans(ComboBox* comboBox)
+void DataPlayer::setAvailableChans(Array<DataSourceType> channelTypes)
 {
 
 	outputSelector->clear();
+	outputSelector->addItem("-", 1);
 
-	for (int i = 0; i < comboBox->getNumItems(); i++)
+	for (int i = 0; i < channelTypes.size(); i++)
 	{
-		outputSelector->addItem(comboBox->getItemText(i), comboBox->getItemId(i));
+		outputSelector->addItem("DAC" + String(i), i + 2);
 	}
+
+	outputSelector->setSelectedId(outputChan + 2, dontSendNotification);
 }
 
 

@@ -95,7 +95,10 @@ void AdcChannelButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonD
 	
 }
 
-OneBoxInterface::OneBoxInterface(DataSource* dataSource_, NeuropixThread* thread_, NeuropixEditor* editor_, NeuropixCanvas* canvas_) :
+OneBoxInterface::OneBoxInterface(DataSource* dataSource_, 
+	NeuropixThread* thread_, 
+	NeuropixEditor* editor_, 
+	NeuropixCanvas* canvas_) :
     SettingsInterface(dataSource_, thread_, editor_, canvas_)
 {
 	adc = (OneBoxADC*) dataSource_;
@@ -155,11 +158,11 @@ OneBoxInterface::OneBoxInterface(DataSource* dataSource_, NeuropixThread* thread
 	wavePlayer->setBounds(500, 100, 320, 180);
 	addAndMakeVisible(wavePlayer);
 
-	dataPlayer = new DataPlayer(dac, this);
+	dataPlayer = new DataPlayer(dac, adc, this);
 	dataPlayer->setBounds(500, 340, 320, 180);
 	addAndMakeVisible(dataPlayer);
 
-	updateMappingSelector();
+	updateAvailableChannels();
 	
 }
 
@@ -175,22 +178,9 @@ void OneBoxInterface::stopAcquisition()
 
 }
 
-void OneBoxInterface::enableInput(int chan, bool remap)
+void OneBoxInterface::setChannelType(int chan, DataSourceType type)
 {
-	channels[chan]->setStatus(AdcChannelStatus::AVAILABLE);
-
-	if (remap)
-		channels[chan]->mapToOutput = 999;
-
-	repaint();
-}
-
-void OneBoxInterface::disableInput(int chan, bool remap)
-{
-	channels[chan]->setStatus(AdcChannelStatus::IN_USE);
-
-	if (remap)
-		channels[chan]->mapToOutput = -1;
+	adc->setChannelType(chan, type);
 
 	repaint();
 }
@@ -227,13 +217,17 @@ void OneBoxInterface::comboBoxChanged(ComboBox* comboBox)
 
 		if (selectedChannel->mapToOutput > 1)
 		{
-			enableInput(selectedChannel->mapToOutput - 2);
+			adc->setChannelType(selectedChannel->mapToOutput,
+				DataSourceType::ADC);
 		}
 
-		selectedChannel->mapToOutput = comboBox->getSelectedId();
+		selectedChannel->mapToOutput = comboBox->getSelectedId() - 2;
 
-		if (comboBox->getSelectedId() > 1)
-			disableInput(comboBox->getSelectedId() - 2);
+		if (selectedChannel->mapToOutput > -1)
+			adc->setChannelType(selectedChannel->mapToOutput,
+				DataSourceType::DAC);
+
+		//updateAvailableChannels();
 	}
 }
 
@@ -249,51 +243,46 @@ void OneBoxInterface::buttonClicked(Button* button)
 			rangeSelector->setSelectedId(channel->inputRange);
 			thresholdSelector->setSelectedId(channel->threshold);
 			triggerSelector->setSelectedId(channel->triggerWavePlayer);
-			updateMappingSelector();
-			mappingSelector->setSelectedId(channel->mapToOutput);
 		}
 		else {
 			channel->setSelectedState(false);
 		}
+
+		channel->repaint();
 	}
 	
+	updateAvailableChannels();
+
 	repaint();
+
 }
 
-void OneBoxInterface::updateMappingSelector()
+void OneBoxInterface::updateAvailableChannels()
 {
 	mappingSelector->clear();
 	mappingSelector->addItem("-", 1);
 
-	Array<int> occupiedDacs;
+	Array<DataSourceType> channelTypes = adc->getChannelTypes();
 
 	//std::cout << "OCCUPIED: " << std::endl;
 
-	for (int i = 0; i < 12; i++)
+	for (int i = 0; i < channelTypes.size(); i++)
 	{
 		//std::cout << "ADC " << i << " : " << channels[i]->mapToOutput << std::endl;
 
-		if (channels[i]->mapToOutput > 1)
+		if (selectedChannel->channel != i &&
+			channelTypes[i] == DataSourceType::ADC)
 		{
-			occupiedDacs.add(channels[i]->mapToOutput - 2);
+			mappingSelector->addItem("DAC" + String(i), i + 2);
 			//std::cout << "   added." << std::endl;
 		}
 	}
 
-	for (int i = 0; i < 12; i++)
-	{
-		//std::cout << "Checking ADC " << i << std::endl;
+	mappingSelector->setSelectedId(selectedChannel->mapToOutput, 
+		dontSendNotification);
 
-		if (selectedChannel->channel != i && !occupiedDacs.contains(i))
-		{
-			mappingSelector->addItem("DAC" + String(i), i + 2);
-		}
-		
-	}
-		
-	mappingSelector->setSelectedId(selectedChannel->mapToOutput, dontSendNotification);
+	dataPlayer->setAvailableChans(channelTypes);
 
-	dataPlayer->setAvailableChans(mappingSelector);
 }
 
 
