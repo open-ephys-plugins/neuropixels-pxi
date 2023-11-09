@@ -151,8 +151,8 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 
 		if (comboBox->getSelectedId() == 1) // deselect output
 		{
-			std::cout << "Selected: " << comboBox->getSelectedId() << std::endl;
-			std::cout << "Current output: " << outputChan << std::endl;
+			//std::cout << "Selected: " << comboBox->getSelectedId() << std::endl;
+			//std::cout << "Current output: " << outputChan << std::endl;
 
 			if (outputChan > -1)
 			{
@@ -162,13 +162,13 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 				
 			outputChan = -1;
 
-			std::cout << "New output: " << outputChan << std::endl;
+			//std::cout << "New output: " << outputChan << std::endl;
 		}
 		else if (comboBox->getSelectedId() > 1)
 		{
 
-			std::cout << "Selected: " << comboBox->getSelectedId() << std::endl;
-			std::cout << "Current output: " << outputChan << std::endl;
+			//std::cout << "Selected: " << comboBox->getSelectedId() << std::endl;
+			//std::cout << "Current output: " << outputChan << std::endl;
 
 			if (outputChan > -1)
 			{
@@ -180,7 +180,7 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 			adc->setChannelType(outputChan, DataSourceType::DAC);
 			//onebox->disableInput(outputChan);
 
-			std::cout << "New output: " << outputChan << std::endl;
+			//std::cout << "New output: " << outputChan << std::endl;
 		}
 	}
 
