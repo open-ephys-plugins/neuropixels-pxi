@@ -725,7 +725,7 @@ void Geometry::UHD(bool switchable,
 		metadata.shank_local_index = i;
 		metadata.global_index = i;
 		metadata.xpos = i % numColumns * siteSpacing + 2*siteSpacing;
-		metadata.ypos = (i - (i % numColumns)) * siteSpacing;
+		metadata.ypos = (i - (i % numColumns)) * siteSpacing / numColumns;
 		metadata.column_index = i % numColumns;
 		metadata.row_index = i / numColumns;
 		metadata.site_width = siteSpacing - 1;
