@@ -762,7 +762,12 @@ void NeuropixThread::timerCallback()
 	LOGD("Timer callback.");
 
 	if (editor->uiLoader->isThreadRunning())
-		editor->uiLoader->waitForThreadToExit(10000);
+	{
+		LOGD("Waiting for Neuropixels settings thread to exit.");
+		editor->uiLoader->waitForThreadToExit(20000);
+		LOGD("Neuropixels settings thread finished.");
+	}
+		
 
 	for (int i = 0; i < basestations.size(); i++)
 	{
