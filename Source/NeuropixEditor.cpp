@@ -295,7 +295,6 @@ void SourceButton::timerCallback()
 	if (dataSource != nullptr)
 	{
 		setSourceStatus(dataSource->getStatus());
-		//std::cout << "Setting for slot: " << String(slot) << " port: " << String(port) << " status: " << String(status) << " selected: " << String(selected) << std::endl;
 	}
 }
 

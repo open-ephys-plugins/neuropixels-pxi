@@ -751,7 +751,6 @@ String NeuropixThread::getInfoString()
 /** Initializes data transfer.*/
 bool NeuropixThread::startAcquisition()
 {
-	std::cout << "NeuropixThread::startAcquisition()" << std::endl;
 	startTimer(100);
 	
     return true;

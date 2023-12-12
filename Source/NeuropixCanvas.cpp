@@ -236,9 +236,7 @@ void NeuropixCanvas::resized()
 
 
 void NeuropixCanvas::startAcquisition()
-{
-    std::cout << "Neuropix Canvas startAcquisition()" << std::endl;
-    
+{    
     for (auto settingsInterface : settingsInterfaces)
         settingsInterface->startAcquisition();
 }

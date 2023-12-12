@@ -1149,8 +1149,6 @@ void NeuropixInterface::selectElectrodes(Array<int> electrodes)
 void NeuropixInterface::startAcquisition()
 {
     
-    std::cout << "Neuropix Interface startAcquisition()" << std::endl;
-
     bool enabledState = false;
     acquisitionIsActive = true;
 
@@ -1828,9 +1826,9 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
             
             String configurationName = matchingNode->getStringAttribute("electrodeConfigurationPreset", "NONE");
 
-            std::cout << "configurationName: " << configurationName << std::endl;
+            //std::cout << "configurationName: " << configurationName << std::endl;
  			settings.electrodeConfigurationIndex = settings.availableElectrodeConfigurations.indexOf(configurationName);
-            std::cout << "electrodeConfigurationIndex: " << settings.electrodeConfigurationIndex << std::endl;
+           //std::cout << "electrodeConfigurationIndex: " << settings.electrodeConfigurationIndex << std::endl;
 
             for (int i = 0; i < electrodeConfigurationComboBox->getNumItems(); i++)
             {
