@@ -756,6 +756,7 @@ bool NeuropixThread::startAcquisition()
     return true;
 }
 
+
 void NeuropixThread::timerCallback()
 {
 	LOGD("Timer callback.");

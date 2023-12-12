@@ -1176,8 +1176,40 @@ void NeuropixInterface::startAcquisition()
     if (bistButton != nullptr)
         bistButton->setEnabled(enabledState);
 
+    if (copyButton != nullptr)
+        copyButton->setEnabled(enabledState);
+    
+    if (pasteButton != nullptr)
+        pasteButton->setEnabled(enabledState);
+
+    if (applyToAllButton != nullptr)
+        applyToAllButton->setEnabled(enabledState);
+
+    if (loadImroButton != nullptr)
+        loadImroButton->setEnabled(enabledState);
+
+    if (loadJsonButton != nullptr)
+        loadJsonButton->setEnabled(enabledState);
+
+    if (firmwareToggleButton != nullptr)
+        firmwareToggleButton->setEnabled(enabledState);
+
+    if (bscFirmwareComboBox != nullptr)
+        bscFirmwareComboBox->setEnabled(enabledState);
+
+    if (bsFirmwareComboBox != nullptr)
+        bsFirmwareComboBox->setEnabled(enabledState);
+
+    if (bsFirmwareButton != nullptr)
+        bsFirmwareButton->setEnabled(enabledState);
+
+    if (bscFirmwareButton != nullptr)
+        bscFirmwareButton->setEnabled(enabledState);
+
     if (mode == ACTIVITY_VIEW)
         probeBrowser->startTimer(100);
+
+
 }
 
 void NeuropixInterface::stopAcquisition()
@@ -1208,6 +1240,36 @@ void NeuropixInterface::stopAcquisition()
 
     if (bistButton != nullptr)
         bistButton->setEnabled(enabledState);
+
+    if (copyButton != nullptr)
+        copyButton->setEnabled(enabledState);
+
+    if (pasteButton != nullptr)
+        pasteButton->setEnabled(enabledState);
+
+    if (applyToAllButton != nullptr)
+        applyToAllButton->setEnabled(enabledState);
+
+    if (loadImroButton != nullptr)
+        loadImroButton->setEnabled(enabledState);
+
+    if (loadJsonButton != nullptr)
+        loadJsonButton->setEnabled(enabledState);
+
+    if (firmwareToggleButton != nullptr)
+        firmwareToggleButton->setEnabled(enabledState);
+
+    if (bscFirmwareComboBox != nullptr)
+        bscFirmwareComboBox->setEnabled(enabledState);
+
+    if (bsFirmwareComboBox != nullptr)
+        bsFirmwareComboBox->setEnabled(enabledState);
+
+    if (bsFirmwareButton != nullptr)
+        bsFirmwareButton->setEnabled(enabledState);
+
+    if (bscFirmwareButton != nullptr)
+        bscFirmwareButton->setEnabled(enabledState);
 
     //probeBrowser->stopTimer();
 }
