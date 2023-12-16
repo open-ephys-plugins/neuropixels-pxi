@@ -28,6 +28,8 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "NeuropixEditor.h"
 #include "NeuropixThread.h"
 
+SettingsUpdater* SettingsUpdater::currentThread = nullptr;
+
 CustomTabComponent::CustomTabComponent(NeuropixEditor* editor_, bool isTopLevel_) :
     TabbedComponent(TabbedButtonBar::TabsAtTop),
     editor(editor_),
@@ -289,6 +291,9 @@ ProbeSettings NeuropixCanvas::getProbeSettings()
 
 void NeuropixCanvas::applyParametersToAllProbes(ProbeSettings p)
 {
+
+    std::unique_ptr<SettingsUpdater> settingsUpdater = std::make_unique<SettingsUpdater>(this, p);
+    /*
     for (auto settingsInterface : settingsInterfaces)
     {
         if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
@@ -303,8 +308,8 @@ void NeuropixCanvas::applyParametersToAllProbes(ProbeSettings p)
         }
 
     }
-
     editor->uiLoader->startThread();
+    */
 
     CoreServices::updateSignalChain(editor);
 }
@@ -321,4 +326,54 @@ void NeuropixCanvas::loadCustomParametersFromXml(XmlElement* xml)
 
     for (int i = 0; i < settingsInterfaces.size(); i++)
         settingsInterfaces[i]->loadParameters(xml);
+}
+
+SettingsUpdater::SettingsUpdater(NeuropixCanvas* canvas_, ProbeSettings p) :
+    ThreadWithProgressWindow("Updating settings", true, true),
+    canvas(canvas_),
+    settings(p),
+    numProbesToUpdate(0)
+{
+    SettingsUpdater::currentThread = this;
+
+    // Only update probes of the same type and with different names
+    for (auto settingsInterface : canvas->settingsInterfaces)
+    {
+        if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
+        {
+            NeuropixInterface* ni = (NeuropixInterface*)settingsInterface;
+            if (ni->probe->type == settings.probe->type && ni->probe->getName() != settings.probe->getName())
+                numProbesToUpdate++;
+        }
+    }
+
+    if (numProbesToUpdate > 0)
+    {
+        String message = "Found " + String(numProbesToUpdate) + (numProbesToUpdate > 1 ? " probes " : " probe ") + "to update";
+        this->setStatusMessage(message);
+	    runThread();
+    }
+}
+
+void SettingsUpdater::run()
+{
+    // Pause to show how many probes were detected and are being updated
+    Time::waitForMillisecondCounter(Time::getMillisecondCounter() + 1000);
+    int count = 0;
+    for (auto settingsInterface : canvas->settingsInterfaces)
+    {
+        if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
+        {
+            NeuropixInterface* ni = (NeuropixInterface*)settingsInterface;
+            if (settings.probe->getName() != ni->probe->getName())
+            {
+                count++;
+                this->setStatusMessage("Updating settings for Probe " + String(count) + " of " + String(numProbesToUpdate));
+                ni->applyProbeSettings(settings, false);
+                ni->updateProbeSettingsInBackground();
+                currentThread->setProgress(float(count) / float(numProbesToUpdate));
+                Time::waitForMillisecondCounter(Time::getMillisecondCounter() + 1000);
+            }
+        }
+    }
 }

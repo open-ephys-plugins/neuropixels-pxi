@@ -817,6 +817,7 @@ void NeuropixInterface::setAnnotationLabel(String s, Colour c)
     annotationLabel->setColour(Label::textColourId, c);
 }
 
+
 void NeuropixInterface::buttonClicked(Button* button)
 {
     if (button == enableViewButton)
@@ -1504,8 +1505,8 @@ bool NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
     {
         
         thread->updateProbeSettingsQueue(p);
-         updateProbeSettingsInBackground();
-         CoreServices::saveRecoveryConfig();
+        updateProbeSettingsInBackground();
+        CoreServices::saveRecoveryConfig();
     }
 
     repaint();

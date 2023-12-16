@@ -136,3 +136,34 @@ private:
 	Array<int> basestationTabIndex;
 
 };
+
+class SettingsUpdater : public ThreadWithProgressWindow
+{
+public:
+
+    /** Constructor */
+    SettingsUpdater(NeuropixCanvas* canvas, ProbeSettings p);
+
+    /** Destructor */
+    ~SettingsUpdater() {}
+
+    /** Thread for firmware update */
+    void run() override;
+
+    /** Callback to update progress bar*/
+	/*
+    static int settingsUpdateCallback(size_t count)
+    {
+        currentThread->setProgress(float(count) / float(numProbesToUpdate));
+
+        return 1;
+    }
+	*/
+
+    static SettingsUpdater* currentThread;
+    int numProbesToUpdate;
+
+private:
+	NeuropixCanvas* canvas;
+	ProbeSettings settings;
+};
