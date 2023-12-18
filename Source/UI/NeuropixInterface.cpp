@@ -408,13 +408,20 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
         File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
         File imroDirectory = baseDirectory.getChildFile("IMRO");
+
+        if (File(imroDirectory).findChildFiles(File::findFiles, false, "*.imro").size())
+            loadImroComboBox->addItem("Select a preset...", 1);
+        else
+            loadImroComboBox->addItem("No pre-set IMRO found", 1);
+
+        loadImroComboBox->addSeparator();
+
         for (const auto& filename : File(imroDirectory).findChildFiles(File::findFiles, false, "*.imro")) {
             imroFiles.add(filename.getFileNameWithoutExtension());
             imroLoadedFromFolder.add(true);
-            loadImroComboBox->addItem(imroFiles.getLast(), imroFiles.size());
+            loadImroComboBox->addItem(imroFiles.getLast(), imroFiles.size() + 1);
         }
-        if (!imroFiles.size())
-            loadImroComboBox->addItem("No pre-set IMRO found", 1);
+        loadImroComboBox->setSelectedId(1, dontSendNotification);
         addAndMakeVisible(loadImroComboBox);
    
         probeSettingsLabel = new Label("Settings", "Probe settings:");
@@ -756,22 +763,24 @@ void NeuropixInterface::comboBoxChanged(ComboBox* comboBox)
                 return;
             }
 
-            int i = comboBox->getSelectedId() - 1;
+            int fileIndex = comboBox->getSelectedId() - 2;
 
-            LOGC("Attempting to load IMRO file: ", imroFiles[i]);
-
-            if (imroFiles[i].length())
+            if (imroFiles[fileIndex].length())
             {
                 ProbeSettings settings = getProbeSettings();
 
                 settings.clearElectrodeSelection();
 
-                bool success = IMRO::readSettingsFromImro(File(imroFiles[i]), settings);
+                bool success = IMRO::readSettingsFromImro(File(imroFiles[fileIndex]), settings);
 
                 if (success)
                 {
                     applyProbeSettings(settings);
-                    loadImroComboBox->setSelectedId(0, false);
+                    loadImroComboBox->setSelectedId(comboBox->getSelectedId(), false);
+                }
+                else
+                {
+                    loadImroComboBox->setSelectedId(1, false);
                 }
             }
 
