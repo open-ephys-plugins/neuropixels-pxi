@@ -1326,8 +1326,8 @@ void NeuropixInterface::drawLegend(Graphics& g)
     g.setColour(Colour(55, 55, 55));
     g.setFont(15);
 
-    int xOffset = 500;
-    int yOffset = 490;
+    int xOffset = 450;
+    int yOffset = 380;
 
     switch (mode)
     {
