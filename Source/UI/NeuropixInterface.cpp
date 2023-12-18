@@ -303,33 +303,39 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         bistComboBox->setBounds(650, 500, 225, 22);
         bistComboBox->addListener(this);
 
+        bistComboBox->addItem("Select a test...", 1);
+        bistComboBox->setItemEnabled(1, false);
+        bistComboBox->addSeparator();
+
         availableBists.add(BIST::EMPTY);
         availableBists.add(BIST::SIGNAL);
-        bistComboBox->addItem("Test probe signal", 1);
+        bistComboBox->addItem("Test probe signal", 2);
 
         availableBists.add(BIST::NOISE);
-        bistComboBox->addItem("Test probe noise", 2);
+        bistComboBox->addItem("Test probe noise", 3);
 
         availableBists.add(BIST::PSB);
-        bistComboBox->addItem("Test PSB bus", 3);
+        bistComboBox->addItem("Test PSB bus", 4);
 
         availableBists.add(BIST::SR);
-        bistComboBox->addItem("Test shift registers", 4);
+        bistComboBox->addItem("Test shift registers", 5);
 
         availableBists.add(BIST::EEPROM);
-        bistComboBox->addItem("Test EEPROM", 5);
+        bistComboBox->addItem("Test EEPROM", 6);
 
         availableBists.add(BIST::I2C);
-        bistComboBox->addItem("Test I2C", 6);
+        bistComboBox->addItem("Test I2C", 7);
 
         availableBists.add(BIST::SERDES);
-        bistComboBox->addItem("Test Serdes", 7);
+        bistComboBox->addItem("Test Serdes", 8);
 
         availableBists.add(BIST::HB);
-        bistComboBox->addItem("Test Heartbeat", 8);
+        bistComboBox->addItem("Test Heartbeat", 9);
 
         availableBists.add(BIST::BS);
-        bistComboBox->addItem("Test Basestation", 9);
+        bistComboBox->addItem("Test Basestation", 10);
+
+        bistComboBox->setSelectedId(1, dontSendNotification);
         addAndMakeVisible(bistComboBox);
 
         bistButton = new UtilityButton("RUN", Font("Small Text", 12, Font::plain));
@@ -880,7 +886,7 @@ void NeuropixInterface::buttonClicked(Button* button)
     {
         if (!editor->acquisitionIsActive)
         {
-            if (bistComboBox->getSelectedId() == 0)
+            if (bistComboBox->getSelectedId() == 1)
             {
                 CoreServices::sendStatusMessage("Please select a test to run.");
             }
@@ -890,7 +896,7 @@ void NeuropixInterface::buttonClicked(Button* button)
                 ProbeSettings settings = getProbeSettings();
 
                 //Run test
-                bool passed = probe->runBist(availableBists[bistComboBox->getSelectedId()]);
+                bool passed = probe->runBist(availableBists[bistComboBox->getSelectedId() - 1]);
 
                 String testString = bistComboBox->getText();
 
