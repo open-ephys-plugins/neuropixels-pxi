@@ -308,7 +308,7 @@ void Basestation_v3::close()
 	}
 
 	errorCode = Neuropixels::closeBS(slot);
-	LOGD("Closed basestation on slot: ", slot, "w/ error code: ", errorCode);
+	LOGD("Closed basestation on slot: ", slot, " w/ error code: ", errorCode);
 }
 
 bool Basestation_v3::isBusy()
