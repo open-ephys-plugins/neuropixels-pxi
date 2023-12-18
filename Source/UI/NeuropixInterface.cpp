@@ -108,7 +108,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
             electrodeConfigurationComboBox->addItem(probe->settings.availableElectrodeConfigurations[i], i + 2);
         }
 
-        electrodeConfigurationComboBox->setSelectedId(1);
+        electrodeConfigurationComboBox->setSelectedId(1, dontSendNotification);
 
         addAndMakeVisible(electrodeConfigurationComboBox);
 
