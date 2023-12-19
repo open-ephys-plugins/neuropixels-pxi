@@ -347,7 +347,6 @@ SettingsUpdater::SettingsUpdater(NeuropixCanvas* canvas_, ProbeSettings p) :
                 ni->applyProbeSettings(settings, false);
                 numProbesToUpdate++;
             }
-                
         }
     }
 
@@ -368,28 +367,24 @@ void SettingsUpdater::run()
     // Pause to show how many probes were detected and are being updated
     //Time::waitForMillisecondCounter(Time::getMillisecondCounter() + 1000);
     int count = 0;
-    
     for (auto settingsInterface : canvas->settingsInterfaces)
     {
         if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
         {
-            NeuropixInterface* ni = (NeuropixInterface*) settingsInterface;
-            
+            NeuropixInterface* ni = (NeuropixInterface*)settingsInterface;
             if (ni->probe->type == settings.probe->type && settings.probe->getName() != ni->probe->getName())
             {
-                
-                this->setStatusMessage("Updating settings for " + ni->probe->getName() + " (" + String(count + 1) + " of " + String(numProbesToUpdate) + ")");
-                
+                count++;
+                this->setStatusMessage("Updating settings for Probe " + String(count) + " of " + String(numProbesToUpdate));
                 ni->updateProbeSettingsInBackground();
-
+                float updateTime = 1000.0; // milliseconds
                 for (float fraction = 0.0; fraction < 1.0; fraction += 0.01)
                 {
-                    currentThread->setProgress(float(count  + fraction) / float(numProbesToUpdate));
-					Time::waitForMillisecondCounter(Time::getMillisecondCounter() + 10);
+                    currentThread->setProgress(float(count + fraction - 1) / float(numProbesToUpdate));
+                    Time::waitForMillisecondCounter(Time::getMillisecondCounter() + updateTime / 100.0);
                 }
-
-                count++;
-               
+                while (canvas->editor->uiLoader->isThreadRunning())
+                    Time::waitForMillisecondCounter(10);
             }
         }
     }
