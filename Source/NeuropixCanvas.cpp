@@ -353,6 +353,10 @@ SettingsUpdater::SettingsUpdater(NeuropixCanvas* canvas_, ProbeSettings p) :
         this->setStatusMessage(message);
 	    runThread();
     }
+    else
+    {
+        CoreServices::sendStatusMessage("No probes of same type found, not applying settings.");
+    }
 }
 
 void SettingsUpdater::run()
@@ -365,7 +369,7 @@ void SettingsUpdater::run()
         if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
         {
             NeuropixInterface* ni = (NeuropixInterface*)settingsInterface;
-            if (settings.probe->getName() != ni->probe->getName())
+            if (ni->probe->type == settings.probe->type && settings.probe->getName() != ni->probe->getName())
             {
                 count++;
                 this->setStatusMessage("Updating settings for Probe " + String(count) + " of " + String(numProbesToUpdate));
@@ -376,4 +380,5 @@ void SettingsUpdater::run()
             }
         }
     }
+    CoreServices::sendStatusMessage("Applied saved settings to all probes of same type.");
 }

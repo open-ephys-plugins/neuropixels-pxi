@@ -1028,7 +1028,6 @@ void NeuropixInterface::buttonClicked(Button* button)
     else if (button == applyToAllButton)
     {
         canvas->applyParametersToAllProbes(getProbeSettings());
-        CoreServices::sendStatusMessage("Applied saved settings to all probes of same type.");
     }
     else if (button == firmwareToggleButton)
     {
