@@ -1342,7 +1342,7 @@ void NeuropixInterface::drawLegend(Graphics& g)
     g.setFont(15);
 
     int xOffset = 450;
-    int yOffset = 380;
+    int yOffset = 440;
 
     switch (mode)
     {
@@ -1522,9 +1522,11 @@ bool NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
         thread->updateProbeSettingsQueue(p);
         updateProbeSettingsInBackground();
         CoreServices::saveRecoveryConfig();
+
+        repaint();
     }
 
-    repaint();
+    
 
     return true;
 

@@ -833,7 +833,7 @@ void ProbeBrowser::paint(Graphics& g)
         g.setColour(Colour(55, 55, 55));
         g.setFont(15);
         g.drawMultiLineText(electrodeInfoString,
-            250 + shankOffset + 80, 350, 250);
+            250 + shankOffset + 45, 330, 250);
     }
 }
 
