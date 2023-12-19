@@ -343,7 +343,11 @@ SettingsUpdater::SettingsUpdater(NeuropixCanvas* canvas_, ProbeSettings p) :
         {
             NeuropixInterface* ni = (NeuropixInterface*)settingsInterface;
             if (ni->probe->type == settings.probe->type && ni->probe->getName() != settings.probe->getName())
+            {
+                ni->applyProbeSettings(settings, false);
                 numProbesToUpdate++;
+            }
+                
         }
     }
 
@@ -362,21 +366,30 @@ SettingsUpdater::SettingsUpdater(NeuropixCanvas* canvas_, ProbeSettings p) :
 void SettingsUpdater::run()
 {
     // Pause to show how many probes were detected and are being updated
-    Time::waitForMillisecondCounter(Time::getMillisecondCounter() + 1000);
+    //Time::waitForMillisecondCounter(Time::getMillisecondCounter() + 1000);
     int count = 0;
+    
     for (auto settingsInterface : canvas->settingsInterfaces)
     {
         if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
         {
-            NeuropixInterface* ni = (NeuropixInterface*)settingsInterface;
+            NeuropixInterface* ni = (NeuropixInterface*) settingsInterface;
+            
             if (ni->probe->type == settings.probe->type && settings.probe->getName() != ni->probe->getName())
             {
-                count++;
-                this->setStatusMessage("Updating settings for Probe " + String(count) + " of " + String(numProbesToUpdate));
-                ni->applyProbeSettings(settings, false);
+                
+                this->setStatusMessage("Updating settings for " + ni->probe->getName() + " (" + String(count + 1) + " of " + String(numProbesToUpdate) + ")");
+                
                 ni->updateProbeSettingsInBackground();
-                currentThread->setProgress(float(count) / float(numProbesToUpdate));
-                Time::waitForMillisecondCounter(Time::getMillisecondCounter() + 1000);
+
+                for (float fraction = 0.0; fraction < 1.0; fraction += 0.01)
+                {
+                    currentThread->setProgress(float(count  + fraction) / float(numProbesToUpdate));
+					Time::waitForMillisecondCounter(Time::getMillisecondCounter() + 10);
+                }
+
+                count++;
+               
             }
         }
     }

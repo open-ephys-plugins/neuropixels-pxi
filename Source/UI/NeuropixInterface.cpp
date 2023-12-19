@@ -1521,11 +1521,10 @@ bool NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
         thread->updateProbeSettingsQueue(p);
         updateProbeSettingsInBackground();
         CoreServices::saveRecoveryConfig();
-
-        repaint();
+        
     }
 
-    
+    repaint();
 
     return true;
 
