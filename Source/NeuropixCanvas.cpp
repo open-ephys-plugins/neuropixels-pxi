@@ -375,7 +375,7 @@ void SettingsUpdater::run()
             if (ni->probe->type == settings.probe->type && settings.probe->getName() != ni->probe->getName())
             {
                 count++;
-                this->setStatusMessage("Updating settings for Probe " + String(count) + " of " + String(numProbesToUpdate));
+                this->setStatusMessage("Updating settings for " + ni->probe->getName() + " (" + String(count) + " of " + String(numProbesToUpdate) + ")");
                 ni->updateProbeSettingsInBackground();
                 float updateTime = 1000.0; // milliseconds
                 for (float fraction = 0.0; fraction < 1.0; fraction += 0.01)
