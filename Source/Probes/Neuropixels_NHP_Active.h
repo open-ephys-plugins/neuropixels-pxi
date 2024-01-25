@@ -59,6 +59,9 @@ public:
 	/** Call init, setOPMODE, and setHSLED (slow) */
 	void initialize(bool signalChainIsLoading) override;
 
+	/** Logs current device settings to console */
+	void printSettings();
+
 	/** Selects active electrodes based on settings.selectedChannel */
 	void selectElectrodes() override;
 

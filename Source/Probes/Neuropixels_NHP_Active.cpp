@@ -91,8 +91,8 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
 	settings.availableLfpGains.add(2000.0f);
 	settings.availableLfpGains.add(3000.0f);
 
-	settings.availableReferences.add("REF_ELEC");
-	settings.availableReferences.add("TIP_REF");
+	settings.availableReferences.add("Ext");
+	settings.availableReferences.add("Tip");
 
 	settings.availableElectrodeConfigurations.add("Bank A");
 	settings.availableElectrodeConfigurations.add("Bank B");
@@ -123,7 +123,7 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active(Basestation* bs, Headstage* hs, F
 
 bool Neuropixels_NHP_Active::open()
 {
-
+	LOGC("Opening probe...");
 	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
 	LOGD("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
@@ -142,6 +142,7 @@ bool Neuropixels_NHP_Active::close()
 {
 	errorCode = Neuropixels::closeProbe(basestation->slot, headstage->port, dock);
 	LOGD("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+	
 	return errorCode == Neuropixels::SUCCESS;
 }
 
@@ -161,6 +162,9 @@ void Neuropixels_NHP_Active::initialize(bool signalChainIsLoading)
 
 void Neuropixels_NHP_Active::calibrate()
 {
+
+	LOGD("Calibrating probe...");
+
 	File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
 	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
 	File probeDirectory = calibrationDirectory.getChildFile(String(info.serial_number));
@@ -173,35 +177,11 @@ void Neuropixels_NHP_Active::calibrate()
 		probeDirectory = calibrationDirectory.getChildFile(String(info.serial_number));
 	}
 
-	if (probeDirectory.exists())
-	{
-		String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
-		String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
-		LOGD("ADC file: ", adcFile);
-
-		errorCode = Neuropixels::setADCCalibration(basestation->slot, headstage->port, adcFile.toRawUTF8());
-
-		if (errorCode == 0) { LOGD("Successful ADC calibration."); }
-		else { LOGD("Unsuccessful ADC calibration, failed with error code: ", errorCode); }
-
-		LOGD("Gain file: ", gainFile);
-
-		errorCode = Neuropixels::setGainCalibration(basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
-
-		if (errorCode == 0) { LOGD("Successful gain calibration."); }
-		else { LOGD("Unsuccessful gain calibration, failed with error code: ", errorCode); }
-
-		errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
-
-		if (!errorCode == Neuropixels::SUCCESS) { LOGD("Failed to write probe config w/ error code: ", errorCode); }
-		else { LOGD("Successfully wrote probe config "); }
-	}
-	else 
+	if (!probeDirectory.exists())
 	{
 
 		if (!calibrationWarningShown)
 		{
-
 			// show popup notification window
 			String message = "Missing calibration files for probe serial number " + String(info.serial_number);
 			message += ". ADC and Gain calibration files must be located in 'CalibrationInfo\\<serial_number>' folder in the directory where the Open Ephys GUI was launched.";
@@ -211,12 +191,43 @@ void Neuropixels_NHP_Active::calibrate()
 			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
 
 			calibrationWarningShown = true;
-
 		}
 
 		return;
-
 	}
+
+	String adcFile = probeDirectory.getChildFile(String(info.serial_number) + "_ADCCalibration.csv").getFullPathName();
+	String gainFile = probeDirectory.getChildFile(String(info.serial_number) + "_gainCalValues.csv").getFullPathName();
+	LOGDD("ADC file: ", adcFile);
+
+	errorCode = Neuropixels::setADCCalibration(basestation->slot, headstage->port, adcFile.toRawUTF8());
+
+	if (errorCode == 0) { LOGD("Successful ADC calibration."); }
+	else { LOGD("!!! Unsuccessful ADC calibration, failed with error code: ", errorCode); return; }
+
+	LOGDD("Gain file: ", gainFile);
+
+	errorCode = Neuropixels::setGainCalibration(basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
+
+	if (errorCode == 0) { LOGD("Successful gain calibration."); }
+	else { LOGD("!!! Unsuccessful gain calibration, failed with error code: ", errorCode); return; }
+
+	isCalibrated = true;
+}
+
+void Neuropixels_NHP_Active::printSettings()
+{
+	int apGainIndex;
+	int lfpGainIndex;
+
+	Neuropixels::getGain(basestation->slot, headstage->port, dock, 32, &apGainIndex, &lfpGainIndex);
+
+	LOGD("Current settings for probe on slot: ", basestation->slot,
+		" port: ", headstage->port,
+		" dock: ", dock,
+		" AP=", settings.availableApGains[apGainIndex],
+		" LFP=", settings.availableLfpGains[lfpGainIndex],
+		" REF=", settings.availableReferences[settings.referenceIndex]);
 }
 
 void Neuropixels_NHP_Active::selectElectrodes()
@@ -237,9 +248,6 @@ void Neuropixels_NHP_Active::selectElectrodes()
 				settings.availableBanks.indexOf(settings.selectedBank[ch]));
 
 		}
-
-		LOGD("Updating electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
-
 	}
 
 }
@@ -417,7 +425,20 @@ void Neuropixels_NHP_Active::setAllReferences()
 
 void Neuropixels_NHP_Active::writeConfiguration()
 {
+	if (basestation->isBusy())
+		basestation->waitForThreadToExit();
+
 	errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
+
+	if (errorCode == Neuropixels::SUCCESS)
+	{
+		LOGD("Succesfully wrote probe configuration");
+		printSettings();
+	}
+	else
+	{
+		LOGD("!!! FAILED TO WRITE PROBE CONFIGURATION !!! Slot: ", basestation->slot, " port: ", headstage->port, " error code: ", errorCode);
+	}
 }
 
 void Neuropixels_NHP_Active::startAcquisition()

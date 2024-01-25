@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Probes/Neuropixels1_v3.h"
 #include "../Probes/NeuropixelsOpto.h"
 #include "../Probes/Neuropixels_UHD.h"
+#include "../Probes/Neuropixels_NHP_Active.h"
 
 #define MAXLEN 50
 
@@ -93,7 +94,10 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 		flexCables.add(new Flex1_v3(this));
 
 		char partNumber[MAXLEN];
+
 		errorCode = Neuropixels::readProbePN(basestation->slot, port, 1, partNumber, MAXLEN);
+
+		LOGC("   Found probe part number: ", partNumber);
 
 		if (!CharPointer_ASCII::isValidString(partNumber, MAXLEN))
 		{
@@ -107,6 +111,19 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 		else if (String(partNumber).equalsIgnoreCase("NP1110"))
 		{
 			probes.add(new Neuropixels_UHD(basestation, this, flexCables[0]));
+		}
+		else if (String(partNumber).equalsIgnoreCase("NP1010") ||
+			String(partNumber).equalsIgnoreCase("NP1011") ||
+			String(partNumber).equalsIgnoreCase("NP1012") ||
+			String(partNumber).equalsIgnoreCase("NP1013") ||
+			String(partNumber).equalsIgnoreCase("NP1015") ||
+			String(partNumber).equalsIgnoreCase("NP1016") ||
+			String(partNumber).equalsIgnoreCase("NP1020") ||
+			String(partNumber).equalsIgnoreCase("NP1022") ||
+			String(partNumber).equalsIgnoreCase("NP1030") ||
+			String(partNumber).equalsIgnoreCase("NP1032"))
+		{
+			probes.add(new Neuropixels_NHP_Active(basestation, this, flexCables[0]));
 		}
 		else {
 			probes.add(new Neuropixels1_v3(basestation, this, flexCables[0]));

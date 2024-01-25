@@ -96,9 +96,6 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 		settings.availableReferences.add("Ext");
 		settings.availableReferences.add("Tip");
-		//settings.availableReferences.add("192");
-		//settings.availableReferences.add("576");
-		//settings.availableReferences.add("960");
 
 		settings.availableElectrodeConfigurations.add("Bank A");
 		settings.availableElectrodeConfigurations.add("Bank B");
@@ -130,7 +127,6 @@ bool Neuropixels1_v3::open()
 
 	apView = new ActivityView(384, 3000);
 	lfpView = new ActivityView(384, 250);
-
 
 	return errorCode == Neuropixels::SUCCESS;
 

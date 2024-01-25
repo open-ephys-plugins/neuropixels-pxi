@@ -52,8 +52,10 @@ public:
 		Available in 3 lengths: 10 mm, 25 mm, 45 mm
 
 		Available in 2 site layouts: staggered (true) or straight (false)
+
+		Available in Sapiens version (P/N = NP1016)
 	*/
-	static void NHP2(int length, bool siteLayout, Array<ElectrodeMetadata>& em,
+	static void NHP2(int length, bool siteLayout, bool sapiens, Array<ElectrodeMetadata>& em,
 		ProbeMetadata& pm);
 
 	/** Neuropixels 1.0

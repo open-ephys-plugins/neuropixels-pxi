@@ -30,27 +30,29 @@ bool Geometry::forPartNumber(String PN,
 
 	bool found_valid_part_number = true;
 
-	if (PN.equalsIgnoreCase("NP1010") 
+	if (PN.equalsIgnoreCase("NP1010")
 		|| PN.equalsIgnoreCase("NP1011")
 		|| PN.equalsIgnoreCase("NP1012")
 		|| PN.equalsIgnoreCase("NP1013"))
-		NHP2(10, true, em, pm); // staggered layout
+		NHP2(10, true, false, em, pm); // staggered layout
 
-	else if (PN.equalsIgnoreCase("NP1015")
-		|| PN.equalsIgnoreCase("NP1016"))
-		NHP2(10, false, em, pm); // linear layout
+	else if (PN.equalsIgnoreCase("NP1015"))
+		NHP2(10, false, false, em, pm); // linear layout
+
+	else if (PN.equalsIgnoreCase("NP1016"))
+		NHP2(10, false, true, em, pm); // linear layout, Sapiens version
 
 	else if (PN.equalsIgnoreCase("NP1020") || PN.equalsIgnoreCase("NP1021"))
-		NHP2(25, true, em, pm); // staggered layout
+		NHP2(25, true, false, em, pm); // staggered layout
 
 	else if (PN.equalsIgnoreCase("NP1022"))
-		NHP2(25, false, em, pm); // linear layout
+		NHP2(25, false, false, em, pm); // linear layout
 
 	else if (PN.equalsIgnoreCase("NP1030") || PN.equalsIgnoreCase("NP1031"))
-		NHP2(45, true, em, pm); // staggered layout
+		NHP2(45, true, false, em, pm); // staggered layout
 
 	else if (PN.equalsIgnoreCase("NP1032"))
-		NHP2(45, false, em, pm); // linear layout
+		NHP2(45, false, false, em, pm); // linear layout
 
 	else if (PN.equalsIgnoreCase("NP1200") || PN.equalsIgnoreCase("NP1210"))
 		NHP1(em, pm);
@@ -561,6 +563,7 @@ void Geometry::NHP1(Array<ElectrodeMetadata>& electrodeMetadata,
 
 void Geometry::NHP2(int length, 
 	bool siteLayout,
+	bool sapiensVersion,
 	Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
@@ -568,7 +571,10 @@ void Geometry::NHP2(int length,
 	if (length == 10)
 	{
 		probeMetadata.type = ProbeType::NHP10;
-		probeMetadata.name = "Neuropixels NHP - Active (10 mm)";
+		if (!sapiensVersion)
+			probeMetadata.name = "Neuropixels NHP - Active (10 mm)";
+		else
+			probeMetadata.name = "Neuropixels 1.0 - Sapiens";
 	}
 	else if (length == 25)
 	{
