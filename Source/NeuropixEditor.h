@@ -268,6 +268,8 @@ public:
 	/** Select a data source button */
 	void selectSource(DataSource* source);
 
+	void checkCanvas() { checkForCanvas(); };
+
 	OwnedArray<SourceButton> sourceButtons;
 
 	ScopedPointer<BackgroundLoader> uiLoader;
