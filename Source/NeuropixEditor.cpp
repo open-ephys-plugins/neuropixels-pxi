@@ -342,6 +342,8 @@ void BackgroundLoader::run()
 			LOGC(" Updating queue for probe ", probe->name);
 			thread->updateProbeSettingsQueue(ProbeSettings(probe->settings));
 		}
+
+		editor->checkCanvas();
 				
 		//}
 	}
