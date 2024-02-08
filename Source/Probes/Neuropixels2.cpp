@@ -89,25 +89,9 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 		else {
 			settings.availableReferences.add("Ext");
 			settings.availableReferences.add("1: Tip");
-			//settings.availableReferences.add("1: 128");
-			//settings.availableReferences.add("1: 512");
-			//settings.availableReferences.add("1: 896");
-			//settings.availableReferences.add("1: 1280");
 			settings.availableReferences.add("2: Tip");
-			//settings.availableReferences.add("2: 128");
-			//settings.availableReferences.add("2: 512");
-			//settings.availableReferences.add("2: 896");
-			//settings.availableReferences.add("2: 1280");
 			settings.availableReferences.add("3: Tip");
-			//settings.availableReferences.add("3: 128");
-			//settings.availableReferences.add("3: 512");
-			//settings.availableReferences.add("3: 896");
-			//settings.availableReferences.add("3: 1280");
 			settings.availableReferences.add("4: Tip");
-			//settings.availableReferences.add("4: 128");
-			//settings.availableReferences.add("4: 512");
-			//settings.availableReferences.add("4: 896");
-			//settings.availableReferences.add("4: 1280");
 
 			settings.availableElectrodeConfigurations.add("Shank 1 Bank A");
 			settings.availableElectrodeConfigurations.add("Shank 1 Bank B");
