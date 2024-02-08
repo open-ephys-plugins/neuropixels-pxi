@@ -1761,6 +1761,8 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
         settings.lfpGainIndex = probe->settings.lfpGainIndex;
         settings.apGainIndex = probe->settings.apGainIndex;
         settings.referenceIndex = probe->settings.referenceIndex;
+        if (settings.referenceIndex >= referenceComboBox->getNumItems())
+			settings.referenceIndex = 0;
         settings.availableApGains = probe->settings.availableApGains;
         settings.availableLfpGains = probe->settings.availableLfpGains;
         settings.availableBanks = probe->settings.availableBanks;
