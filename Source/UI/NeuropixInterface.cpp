@@ -1903,7 +1903,9 @@ void NeuropixInterface::loadParameters(XmlElement* xml)
             settings.apGainIndex = matchingNode->getIntAttribute("apGainIndex", 3);
             settings.lfpGainIndex = matchingNode->getIntAttribute("lfpGainIndex", 2);
             settings.referenceIndex = matchingNode->getIntAttribute("referenceChannelIndex", 0);
-            
+            if (settings.referenceIndex >= referenceComboBox->getNumItems())
+                settings.referenceIndex = 0;
+
             String configurationName = matchingNode->getStringAttribute("electrodeConfigurationPreset", "NONE");
 
             //std::cout << "configurationName: " << configurationName << std::endl;
