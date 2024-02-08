@@ -35,6 +35,9 @@ void Neuropixels2::getInfo()
 	char pn[MAXLEN];
 	errorCode = Neuropixels::readProbePN(basestation->slot_c, headstage->port_c, dock, pn, MAXLEN);
 
+	LOGC("   Found probe part number: ", pn);
+	LOGC("   Found probe serial number: ", info.serial_number);
+
 	info.part_number = String(pn);
 }
 
@@ -131,6 +134,11 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 			settings.availableElectrodeConfigurations.add("All Shanks 961-1056");
 			settings.availableElectrodeConfigurations.add("All Shanks 1057-1152");
 			settings.availableElectrodeConfigurations.add("All Shanks 1153-1248");
+		}
+
+		if (info.part_number.equalsIgnoreCase("NP2013"))
+		{
+			settings.availableReferences.add("Ground");
 		}
 
 		open();
@@ -579,96 +587,23 @@ void Neuropixels2::setAllReferences()
 		break;
 	case 1:
 		refId = Neuropixels::TIP_REF;
+		shank = 0;
 		break;
 	case 2:
-		refId = Neuropixels::INT_REF;
+		refId = Neuropixels::TIP_REF;
+		shank = 1;
 		break;
 	case 3:
-		refId = Neuropixels::INT_REF;
-		refElectrodeBank = 1;
+		refId = Neuropixels::TIP_REF;
+		shank = 2;
 		break;
 	case 4:
-		refId = Neuropixels::INT_REF;
-		refElectrodeBank = 2;
+		refId = Neuropixels::TIP_REF;
+		shank = 3;
 		break;
 	case 5:
-		refId = Neuropixels::INT_REF;
-		refElectrodeBank = 3;
+		refId = Neuropixels::GND_REF;
 		break;
-
-	case 6:
-		refId = Neuropixels::TIP_REF;
-		shank = 1;
-		break;
-	case 7:
-		refId = Neuropixels::INT_REF;
-		shank = 1;
-		break;
-	case 8:
-		refId = Neuropixels::INT_REF;
-		shank = 1;
-		refElectrodeBank = 1;
-		break;
-	case 9:
-		refId = Neuropixels::INT_REF;
-		shank = 1;
-		refElectrodeBank = 2;
-		break;
-	case 10:
-		refId = Neuropixels::INT_REF;
-		shank = 1;
-		refElectrodeBank = 3;
-		break;
-
-
-	case 11:
-		refId = Neuropixels::TIP_REF;
-		shank = 2;
-		break;
-	case 12:
-		refId = Neuropixels::INT_REF;
-		shank = 2;
-		break;
-	case 13:
-		refId = Neuropixels::INT_REF;
-		shank = 2;
-		refElectrodeBank = 1;
-		break;
-	case 14:
-		refId = Neuropixels::INT_REF;
-		shank = 2;
-		refElectrodeBank = 2;
-		break;
-	case 15:
-		refId = Neuropixels::INT_REF;
-		shank = 2;
-		refElectrodeBank = 3;
-		break;
-
-	case 16:
-		refId = Neuropixels::TIP_REF;
-		shank = 3;
-		break;
-	case 17:
-		refId = Neuropixels::INT_REF;
-		shank = 3;
-		break;
-	case 18:
-		refId = Neuropixels::INT_REF;
-		refElectrodeBank = 1;
-		shank = 3;
-		break;
-	case 19:
-		refId = Neuropixels::INT_REF;
-		refElectrodeBank = 2;
-		shank = 3;
-		break;
-	case 20:
-		refId = Neuropixels::INT_REF;
-		refElectrodeBank = 3;
-		shank = 3;
-		break;
-
 
 	default:
 		refId = Neuropixels::EXT_REF;
