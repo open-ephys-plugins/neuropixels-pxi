@@ -38,13 +38,46 @@ class SettingsInterface;
     A viewport with a pointer to the settings interface it holds
 
 */
-class CustomViewport : public Viewport
+class CustomViewport : public Component
 {
 public:
     CustomViewport(SettingsInterface* settingsInterface_) :
-        settingsInterface(settingsInterface_) { }
+        settingsInterface(settingsInterface_) 
+        { 
+            viewport = std::make_unique<Viewport>();
+            viewport->setViewedComponent((Component*)settingsInterface, false);
+            viewport->setScrollBarsShown(true, true, true, true);
+            viewport->setScrollBarThickness(12);
+
+            auto& horzScrollBar = viewport->getVerticalScrollBar();
+            horzScrollBar.setLookAndFeel(&lnf2);
+            horzScrollBar.setColour(ScrollBar::ColourIds::thumbColourId, Colour(50, 50, 50));
+            horzScrollBar.setColour(ScrollBar::ColourIds::trackColourId, Colours::darkgrey);
+
+            auto& vertScrollbar = viewport->getHorizontalScrollBar();
+            vertScrollbar.setLookAndFeel(&lnf2);
+            vertScrollbar.setColour(ScrollBar::ColourIds::thumbColourId, Colour(50, 50, 50));
+            vertScrollbar.setColour(ScrollBar::ColourIds::trackColourId, Colours::darkgrey);
+
+            addAndMakeVisible(viewport.get());
+        }
     
+    ~CustomViewport() 
+    {
+        viewport->getVerticalScrollBar().setLookAndFeel(nullptr);
+        viewport->getHorizontalScrollBar().setLookAndFeel(nullptr);
+    }
+    
+    void resized() override
+    {
+        viewport->setBounds(getLocalBounds());
+    }
+
     SettingsInterface* settingsInterface;
+
+private:
+    std::unique_ptr<Viewport> viewport;
+    LookAndFeel_V2 lnf2;
 };
 
 /** 
@@ -75,15 +108,11 @@ public:
         editor = editor_;
         canvas = canvas_;
         thread = thread_;
+        
+        setBounds(0, 0, 1000, 820);
 
         viewport = new CustomViewport(this);
-        viewport->setViewedComponent(this, false);
-        viewport->setScrollBarsShown(true, true, true, true);
-        viewport->setScrollBarThickness(15);
-        viewport->getVerticalScrollBar().setColour(ScrollBar::ColourIds::thumbColourId, Colours::black);
-        viewport->getHorizontalScrollBar().setColour(ScrollBar::ColourIds::thumbColourId, Colours::black);
-
-        setBounds(0, 0, 1000, 820);
+        
     }
     
     /** Destructor */
