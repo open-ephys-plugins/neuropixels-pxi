@@ -78,11 +78,11 @@ public:
 	/** Gets channel type array */
 	Array<DataSourceType> getChannelTypes() {return channelTypes;}
 
-	/** Sets range for ADC channel */
-	void setAdcInputRange(AdcInputRange range, int channel);
+	/** Sets input range for ADC channels */
+	void setAdcInputRange(AdcInputRange range);
 
-	/** Returns input range of a particular channel */
-	AdcInputRange getAdcInputRange(int channel);
+	/** Returns input range of all channels */
+	AdcInputRange getAdcInputRange();
 
 	/** Returns gain of a particular channel (depends on ADC input range) */
 	float getChannelGain(int channel);
@@ -114,10 +114,10 @@ private:
 	Array<DataSourceType> channelTypes;
 
 	/** Stores channel gains */
-	Array<float> bitVolts;
+	float bitVolts;
 
 	/** Stores channel input range */
-	Array<AdcInputRange> inputRanges;
+	AdcInputRange inputRange;
 
 	/** Stores channel trigger thresholds */
 	Array<AdcThresholdLevel> thresholdLevels;

@@ -269,10 +269,9 @@ void OneBox::close()
 		errorCode = Neuropixels::closeProbe(slot, probe->headstage->port, probe->dock);
 	}
 
-	LOGD("OneBox -- closeBS: ", slot);
 	errorCode = Neuropixels::closeBS(slot);
 
-	LOGD("Closed basestation on slot: ", slot, " w/ error code: ", errorCode);
+	LOGD("Closed OneBox on slot: ", slot, " w/ error code: ", errorCode);
 }
 
 void OneBox::setSyncAsInput()

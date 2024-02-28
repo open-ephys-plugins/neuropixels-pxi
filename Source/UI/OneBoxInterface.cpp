@@ -185,8 +185,7 @@ void OneBoxInterface::comboBoxChanged(ComboBox* comboBox)
 	{
 		// change range
 		// update bitVolts values
-		adc->setAdcInputRange((AdcInputRange) comboBox->getSelectedId(),
-			selectedChannel->getChannelIndex());
+		adc->setAdcInputRange((AdcInputRange) comboBox->getSelectedId());
 
 		CoreServices::updateSignalChain((GenericEditor*) editor);
 	}
@@ -238,7 +237,7 @@ void OneBoxInterface::buttonClicked(Button* button)
 			channel->setSelectedState(true);
 			selectedChannel = channel;
 
-			rangeSelector->setSelectedId((int) adc->getAdcInputRange(selectedChannel->getChannelIndex()), dontSendNotification);
+			rangeSelector->setSelectedId((int) adc->getAdcInputRange(), dontSendNotification);
 			thresholdSelector->setSelectedId((int)adc->getAdcThresholdLevel(selectedChannel->getChannelIndex()), dontSendNotification);
 			triggerSelector->setSelectedId((int)adc->getTriggersWaveplayer(selectedChannel->getChannelIndex()) + 1, dontSendNotification);
 		}
@@ -292,7 +291,7 @@ void OneBoxInterface::saveParameters(XmlElement* xml)
 		XmlElement* xmlNode = xml->createNewChildElement("ADC_CHANNEL");
 
 		xmlNode->setAttribute("index", channel->getChannelIndex());
-		xmlNode->setAttribute("input_range", (int) adc->getAdcInputRange(channel->getChannelIndex()));
+		xmlNode->setAttribute("input_range", (int) adc->getAdcInputRange());
 		xmlNode->setAttribute("threshold_level", (int) adc->getAdcThresholdLevel(channel->getChannelIndex()));
 		xmlNode->setAttribute("triggers_waveplayer", adc->getTriggersWaveplayer(channel->getChannelIndex()));
 		//xmlNode->setAttribute("map_to_output", channel->mapToOutput);
@@ -314,7 +313,9 @@ void OneBoxInterface::loadParameters(XmlElement* xml)
 			int threshold_level = xmlNode->getIntAttribute("threshold_level", (int)AdcThresholdLevel::ONE_VOLT);
 			bool triggers_waveplayer = xmlNode->getBoolAttribute("triggers_waveplayer", false); \
 
-				adc->setAdcInputRange((AdcInputRange)input_range, index);
+			if (index == 0)
+				adc->setAdcInputRange((AdcInputRange)input_range);
+
 			adc->setAdcThresholdLevel((AdcThresholdLevel)threshold_level, index);
 			adc->setTriggersWaveplayer(triggers_waveplayer, index);
 
