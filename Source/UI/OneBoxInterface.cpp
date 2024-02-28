@@ -238,9 +238,9 @@ void OneBoxInterface::buttonClicked(Button* button)
 			channel->setSelectedState(true);
 			selectedChannel = channel;
 
-			rangeSelector->setSelectedId((int) adc->getAdcInputRange(selectedChannel->getChannelIndex()));
-			thresholdSelector->setSelectedId((int)adc->getAdcThresholdLevel(selectedChannel->getChannelIndex()));
-			triggerSelector->setSelectedId((int)adc->getTriggersWaveplayer(selectedChannel->getChannelIndex()) + 1);
+			rangeSelector->setSelectedId((int) adc->getAdcInputRange(selectedChannel->getChannelIndex()), dontSendNotification);
+			thresholdSelector->setSelectedId((int)adc->getAdcThresholdLevel(selectedChannel->getChannelIndex()), dontSendNotification);
+			triggerSelector->setSelectedId((int)adc->getTriggersWaveplayer(selectedChannel->getChannelIndex()) + 1, dontSendNotification);
 		}
 		else {
 			channel->setSelectedState(false);
@@ -318,6 +318,8 @@ void OneBoxInterface::loadParameters(XmlElement* xml)
 
 		}
 	}
+
+	buttonClicked(channels[0]);
 }
 
 void OneBoxInterface::paint(Graphics& g)
