@@ -31,7 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # define SAMPLECOUNT 64
 # define NUM_ADCS 12
 
-class OneBoxDAC;
 class OneBoxInterface;
 
 /** 
@@ -49,20 +48,20 @@ public:
 	/** Constructor */
 	OneBoxADC(Basestation*);
 
-	/** Return info about part numbers, etc.; not currently used*/
+	/** Returns channel name */
+	String getName() { return "ADC"; }
+
+	/** Return info about part numbers, etc. -- not used*/
 	void getInfo() override { }
 
-	/** Open connection to the ADCs */
+	/** Open connection to the ADCs -- not used */
 	bool open() override { return true; }
 
-	/** Close connection to the ADCs */
+	/** Close connection to the ADCs -- not used */
 	bool close() override { return true; }
 
 	/** Initialize all channels as ADCs */
 	void initialize(bool signalChainIsLoading) override;
-
-	/** Sets range for all ADC channels */
-	void setAdcInputRange(AdcInputRange range);
 
 	/** Start data acquisition thread */
 	void startAcquisition() override;
@@ -79,31 +78,52 @@ public:
 	/** Gets channel type array */
 	Array<DataSourceType> getChannelTypes() {return channelTypes;}
 
-	/** Returns gain of each channel */
-	float getChannelGain(int chan);
+	/** Sets range for ADC channel */
+	void setAdcInputRange(AdcInputRange range, int channel);
 
-	/** Returns channel name */
-	String getName() { return "ADC"; }
+	/** Returns input range of a particular channel */
+	AdcInputRange getAdcInputRange(int channel);
 
-	/** Channel scaling */
-	float bitVolts;
+	/** Returns gain of a particular channel (depends on ADC input range) */
+	float getChannelGain(int channel);
 
-	/** Sample number */
-	int64 timestamp;
+	/** Sets threshold for ADC channel */
+	void setAdcThresholdLevel(AdcThresholdLevel level, int channel);
 
-	/** Holds incoming samples*/
-	DataBuffer* sampleBuffer;
+	/** Returns threshold level of a particular channel */
+	AdcThresholdLevel getAdcThresholdLevel(int channel);
 
-	/** Pointer to DAC control */
-	OneBoxDAC* dac;
+	/** Sets waveplayer trigger state for a particular channel */
+	void setTriggersWaveplayer(bool shouldTrigger, int channel);
+
+	/** Returns waveplayer trigger state of a particular channel */
+	bool getTriggersWaveplayer(int channel);
 
 	/** Pointer to OneBox UI*/
 	OneBoxInterface* ui;
 
 private:
 
+	/** Sample number for acquisition */
+	int64 sample_number;
+
+	/** Holds incoming samples*/
+	DataBuffer* sampleBuffer;
+
 	/** Stores channel types (ADC or DAC) */
 	Array<DataSourceType> channelTypes;
+
+	/** Stores channel gains */
+	Array<float> bitVolts;
+
+	/** Stores channel input range */
+	Array<AdcInputRange> inputRanges;
+
+	/** Stores channel trigger thresholds */
+	Array<AdcThresholdLevel> thresholdLevels;
+
+	/** Stores WaveplayerTrigger state */
+	Array<bool> waveplayerTrigger;
 
 	/** Neuropixels API error code*/
 	Neuropixels::NP_ErrorCode errorCode;

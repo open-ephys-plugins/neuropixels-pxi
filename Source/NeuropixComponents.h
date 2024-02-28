@@ -148,9 +148,14 @@ enum class FirmwareType {
 };
 
 enum class AdcInputRange {
-	PLUSMINUS2PT5V = 0,
-	PLUSMINUS5V = 1,
-	PLUSMINUS10V = 2
+	PLUSMINUS2PT5V = 1,
+	PLUSMINUS5V = 2,
+	PLUSMINUS10V = 3
+};
+
+enum class AdcThresholdLevel {
+	ONE_VOLT = 1,
+	THREE_VOLTS = 2
 };
 
 struct ProbeMetadata {

@@ -26,16 +26,10 @@
 #include "WavePlayer.h"
 #include "DataPlayer.h"
 
-AdcChannelButton::AdcChannelButton(int channel_) : channel(channel_), selected(false)
+AdcChannelButton::AdcChannelButton(int channel_) : 
+	channel(channel_)
 {
 	status = AdcChannelStatus::AVAILABLE;
-
-	inputRange = PLUS_MINUS_FIVE_V;
-	threshold = ONE_V;
-	triggerWavePlayer = NO;
-	mapToOutput = NO_DAC;
-	inputSharedBy = NO_ADC;
-
 }
 
 
@@ -45,10 +39,11 @@ void AdcChannelButton::setSelectedState(bool state)
 	repaint();
 }
 
-void AdcChannelButton::setStatus(AdcChannelStatus status_, AvailableAdcs sharedChannel)
+void AdcChannelButton::setStatus(AdcChannelStatus status_, 
+	int sharedChannel)
 {
 	status = status_;
-	inputSharedBy = sharedChannel;
+	mapToOutput = sharedChannel;
 }
 
 void AdcChannelButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
@@ -72,7 +67,7 @@ void AdcChannelButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonD
 	if (status == AdcChannelStatus::AVAILABLE)
 	{
 		baseColour = Colours::mediumspringgreen;
-		statusText = "AVAILABLE";
+		statusText = "ENABLED";
 	}
 		
 	else if (status == AdcChannelStatus::IN_USE)
@@ -103,7 +98,6 @@ OneBoxInterface::OneBoxInterface(DataSource* dataSource_,
 {
 	adc = (OneBoxADC*) dataSource_;
 	adc->ui = this;
-	dac = adc->dac;
 
 	type = SettingsInterface::ONEBOX_SETTINGS_INTERFACE;
 
@@ -126,18 +120,18 @@ OneBoxInterface::OneBoxInterface(DataSource* dataSource_,
 	rangeSelector = new ComboBox();
 	rangeSelector->setBounds(300, 250, 120, 20);
 	rangeSelector->addListener(this);
-	rangeSelector->addItem("+/- 2.5 V", 1);
-	rangeSelector->addItem("+/- 5 V", 2);
-	rangeSelector->addItem("+/- 10 V", 3);
-	rangeSelector->setSelectedId(2, dontSendNotification);
+	rangeSelector->addItem("+/- 2.5 V", (int) AdcInputRange::PLUSMINUS2PT5V);
+	rangeSelector->addItem("+/- 5 V", (int)AdcInputRange::PLUSMINUS5V);
+	rangeSelector->addItem("+/- 10 V", (int)AdcInputRange::PLUSMINUS10V);
+	rangeSelector->setSelectedId((int)AdcInputRange::PLUSMINUS5V, dontSendNotification);
 	addAndMakeVisible(rangeSelector);
 
 	thresholdSelector = new ComboBox();
 	thresholdSelector->setBounds(300, 300, 120, 20);
 	thresholdSelector->addListener(this);
-	thresholdSelector->addItem("1 V", 1);
-	thresholdSelector->addItem("3 V", 2);
-	thresholdSelector->setSelectedId(1, dontSendNotification);
+	thresholdSelector->addItem("1 V", (int)AdcThresholdLevel::ONE_VOLT);
+	thresholdSelector->addItem("3 V", (int)AdcThresholdLevel::THREE_VOLTS);
+	thresholdSelector->setSelectedId((int)AdcThresholdLevel::ONE_VOLT, dontSendNotification);
 	addAndMakeVisible(thresholdSelector);
 
 	triggerSelector = new ComboBox();
@@ -170,12 +164,12 @@ OneBoxInterface::~OneBoxInterface() {}
 
 void OneBoxInterface::startAcquisition()
 {
-
+	rangeSelector->setEnabled(false);
 }
 
 void OneBoxInterface::stopAcquisition()
 {
-
+	rangeSelector->setEnabled(true);
 }
 
 void OneBoxInterface::setChannelType(int chan, DataSourceType type)
@@ -191,31 +185,35 @@ void OneBoxInterface::comboBoxChanged(ComboBox* comboBox)
 	{
 		// change range
 		// update bitVolts values
-		selectedChannel->inputRange = comboBox->getSelectedId();
+		adc->setAdcInputRange((AdcInputRange) comboBox->getSelectedId(),
+			selectedChannel->getChannelIndex());
+
+		CoreServices::updateSignalChain((GenericEditor*) editor);
 	}
 	else if (comboBox == thresholdSelector)
 	{
 		// change threshold
-		selectedChannel->threshold = comboBox->getSelectedId();
+		adc->setAdcThresholdLevel((AdcThresholdLevel)comboBox->getSelectedId(),
+			selectedChannel->getChannelIndex());
 
 	}
 	else if (comboBox == triggerSelector)
 	{
-
+		// set trigger
 		for (auto channel : channels)
 		{
-			channel->triggerWavePlayer = 1;
+			adc->setTriggersWaveplayer(false,
+				channel->getChannelIndex());
 		}
 
-		selectedChannel->triggerWavePlayer = comboBox->getSelectedId();
-
-		// set trigger
+		adc->setTriggersWaveplayer((bool) comboBox->getSelectedId() - 1,
+			selectedChannel->getChannelIndex());
 
 	}
 	else if (comboBox == mappingSelector)
 	{
 
-		if (selectedChannel->mapToOutput > 1)
+		/*if (selectedChannel->mapToOutput > 1)
 		{
 			adc->setChannelType(selectedChannel->mapToOutput,
 				DataSourceType::ADC);
@@ -225,7 +223,7 @@ void OneBoxInterface::comboBoxChanged(ComboBox* comboBox)
 
 		if (selectedChannel->mapToOutput > -1)
 			adc->setChannelType(selectedChannel->mapToOutput,
-				DataSourceType::DAC);
+				DataSourceType::DAC);*/
 
 		//updateAvailableChannels();
 	}
@@ -240,9 +238,9 @@ void OneBoxInterface::buttonClicked(Button* button)
 			channel->setSelectedState(true);
 			selectedChannel = channel;
 
-			rangeSelector->setSelectedId(channel->inputRange);
-			thresholdSelector->setSelectedId(channel->threshold);
-			triggerSelector->setSelectedId(channel->triggerWavePlayer);
+			rangeSelector->setSelectedId((int) adc->getAdcInputRange(selectedChannel->getChannelIndex()));
+			thresholdSelector->setSelectedId((int)adc->getAdcThresholdLevel(selectedChannel->getChannelIndex()));
+			triggerSelector->setSelectedId((int)adc->getTriggersWaveplayer(selectedChannel->getChannelIndex()) + 1);
 		}
 		else {
 			channel->setSelectedState(false);
@@ -251,7 +249,7 @@ void OneBoxInterface::buttonClicked(Button* button)
 		channel->repaint();
 	}
 	
-	updateAvailableChannels();
+	//updateAvailableChannels();
 
 	repaint();
 
@@ -259,29 +257,29 @@ void OneBoxInterface::buttonClicked(Button* button)
 
 void OneBoxInterface::updateAvailableChannels()
 {
-	mappingSelector->clear();
-	mappingSelector->addItem("-", 1);
+	//mappingSelector->clear();
+	//mappingSelector->addItem("-", 1);
 
-	Array<DataSourceType> channelTypes = adc->getChannelTypes();
+	//Array<DataSourceType> channelTypes = adc->getChannelTypes();
 
 	//std::cout << "OCCUPIED: " << std::endl;
 
-	for (int i = 0; i < channelTypes.size(); i++)
-	{
+	//for (int i = 0; i < channelTypes.size(); i++)
+	//{
 		//std::cout << "ADC " << i << " : " << channels[i]->mapToOutput << std::endl;
 
-		if (selectedChannel->channel != i &&
-			channelTypes[i] == DataSourceType::ADC)
-		{
-			mappingSelector->addItem("DAC" + String(i), i + 2);
+		//if (selectedChannel->channel != i &&
+		//	channelTypes[i] == DataSourceType::ADC)
+		//{
+		//	mappingSelector->addItem("DAC" + String(i), i + 2);
 			//std::cout << "   added." << std::endl;
-		}
-	}
+		//}
+	//}
 
-	mappingSelector->setSelectedId(selectedChannel->mapToOutput, 
-		dontSendNotification);
+	//mappingSelector->setSelectedId(selectedChannel->mapToOutput, 
+	//	dontSendNotification);
 
-	dataPlayer->setAvailableChans(channelTypes);
+	//dataPlayer->setAvailableChans(channelTypes);
 
 }
 
@@ -289,11 +287,37 @@ void OneBoxInterface::updateAvailableChannels()
 void OneBoxInterface::saveParameters(XmlElement* xml)
 {
 
+	for (auto channel : channels)
+	{
+		XmlElement* xmlNode = xml->createNewChildElement("ADC_CHANNEL");
+
+		xmlNode->setAttribute("index", channel->getChannelIndex());
+		xmlNode->setAttribute("input_range", (int) adc->getAdcInputRange(channel->getChannelIndex()));
+		xmlNode->setAttribute("threshold_level", (int) adc->getAdcThresholdLevel(channel->getChannelIndex()));
+		xmlNode->setAttribute("triggers_waveplayer", adc->getTriggersWaveplayer(channel->getChannelIndex()));
+		//xmlNode->setAttribute("map_to_output", channel->mapToOutput);
+	
+	}
+
 }
 
 void OneBoxInterface::loadParameters(XmlElement* xml)
 {
+	forEachXmlChildElement(*xml, xmlNode)
+	{
+		if (xmlNode->hasTagName("ADC_CHANNEL"))
+		{
+			int index = xmlNode->getIntAttribute("index", 0);
+			int input_range = xmlNode->getIntAttribute("input_range", (int)AdcInputRange::PLUSMINUS5V);
+			int threshold_level = xmlNode->getIntAttribute("threshold_level", (int)AdcThresholdLevel::ONE_VOLT);
+			bool triggers_waveplayer = xmlNode->getBoolAttribute("triggers_waveplayer", false); \
 
+				adc->setAdcInputRange((AdcInputRange)input_range, index);
+			adc->setAdcThresholdLevel((AdcThresholdLevel)threshold_level, index);
+			adc->setTriggersWaveplayer(triggers_waveplayer, index);
+
+		}
+	}
 }
 
 void OneBoxInterface::paint(Graphics& g)

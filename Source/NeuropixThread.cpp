@@ -275,6 +275,9 @@ NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 
 	}
 
+	if (type == ONEBOX)
+		baseStationAvailable = true;
+
 	updateStreamInfo();
 
 }
@@ -1073,16 +1076,31 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 			
 		} // end channel loop
 
-		EventChannel::Settings settings{
-			EventChannel::Type::TTL,
-			"Neuropixels PXI Sync",
-			"Status of SMA sync line on PXI card",
-			"neuropixels.sync",
-			currentStream,
-			1
-		};
+		if (info.type != stream_type::ADC)
+		{
+			EventChannel::Settings settings{
+				EventChannel::Type::TTL,
+				"Neuropixels PXI Sync",
+				"Status of SMA sync line on PXI card",
+				"neuropixels.sync",
+				currentStream,
+				1
+			};
 
-		eventChannels->add(new EventChannel(settings));
+			eventChannels->add(new EventChannel(settings));
+		}
+		else {
+			EventChannel::Settings settings{
+				EventChannel::Type::TTL,
+				"OneBox ADC Digital Lines",
+				"Status of digital inputs on OneBox ADC",
+				"onebox.sync",
+				currentStream,
+				13
+			};
+
+			eventChannels->add(new EventChannel(settings));
+		}
 
 		dataStreams->add(new DataStream(*currentStream)); // copy existing stream
 

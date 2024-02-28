@@ -94,7 +94,7 @@ public:
 private:
 
 	Neuropixels::NP_ErrorCode errorCode;
-	Basestation* bs;
+	const int slot;
 
 };
 

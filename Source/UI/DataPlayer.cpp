@@ -76,7 +76,7 @@ DataPlayer::DataPlayer(OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* onebox
 	playerIndex->setSelectedId(1, dontSendNotification);
 	addAndMakeVisible(playerIndex);
 
-	availableProbes = dac->bs->getProbes();
+	availableProbes = adc_->basestation->getProbes();
 
 	probeSelector = new ComboBox();
 	probeSelector->setBounds(leftMargin, 40, 110, 20);

@@ -23,10 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "OneBoxDAC.h"
 
-#include "OneBoxADC.h"
-
 #define MAXLEN 50
-
 
 OneBoxDAC::OneBoxDAC(Basestation* bs_) : 
 	DataSource(bs_), slot(bs_->slot)
@@ -36,7 +33,6 @@ OneBoxDAC::OneBoxDAC(Basestation* bs_) :
 
 	channel_count = 0;
 	sample_rate = 30000.0f;
-
 
 }
 
@@ -110,12 +106,5 @@ void OneBoxDAC::enableOutput(int chan)
 	errorCode = Neuropixels::DAC_enableOutput(slot, chan, true);
 
 	LOGC("Enabling DAC ", chan);
-
-}
-
-
-void OneBoxDAC::run()
-{
-
 
 }

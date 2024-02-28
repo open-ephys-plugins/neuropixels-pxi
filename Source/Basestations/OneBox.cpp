@@ -99,6 +99,8 @@ OneBox::OneBox(NeuropixThread* neuropixThread, int slot_number) : Basestation(ne
 
 OneBox::~OneBox()
 {
+
+
 	/* As of API 3.31, closing a v3 basestation does not turn off the SMA output */
 	setSyncAsInput();
 	close();
@@ -218,8 +220,6 @@ bool OneBox::open()
 		adcSource = new OneBoxADC(this);
 		dacSource = new OneBoxDAC(this);
 
-		adcSource->dac = dacSource;
-		dacSource->adc = adcSource;
 	}
 
 	syncFrequencies.add(1);
@@ -230,9 +230,9 @@ bool OneBox::open()
 
 Array<DataSource*> OneBox::getAdditionalDataSources()
 {
+
 	Array<DataSource*> sources;
 	sources.add((DataSource*) adcSource);
-	//sources.add((DataSource*) dacSource);
 
 	return sources;
 }
@@ -263,18 +263,21 @@ void OneBox::initialize(bool signalChainIsLoading)
 
 void OneBox::close()
 {
+	LOGD("Closing OneBox on slot: ", slot);
 	for (auto probe : probes)
 	{
 		errorCode = Neuropixels::closeProbe(slot, probe->headstage->port, probe->dock);
 	}
 
+	LOGD("OneBox -- closeBS: ", slot);
 	errorCode = Neuropixels::closeBS(slot);
+
 	LOGD("Closed basestation on slot: ", slot, " w/ error code: ", errorCode);
 }
 
 void OneBox::setSyncAsInput()
 {
-
+	LOGD("OneBox::setSyncAsInput()");
 	LOGD("Setting sync as input...");
 
 	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, false);
