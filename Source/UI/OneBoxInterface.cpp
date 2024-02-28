@@ -299,6 +299,8 @@ void OneBoxInterface::saveParameters(XmlElement* xml)
 	
 	}
 
+	wavePlayer->saveCustomParameters(xml);
+
 }
 
 void OneBoxInterface::loadParameters(XmlElement* xml)
@@ -318,6 +320,8 @@ void OneBoxInterface::loadParameters(XmlElement* xml)
 
 		}
 	}
+
+	wavePlayer->loadCustomParameters(xml);
 
 	buttonClicked(channels[0]);
 }

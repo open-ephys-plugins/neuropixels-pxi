@@ -47,15 +47,21 @@ void WavePlayerBackground::updateCurrentWaveform(Pattern* pattern)
 	float lastSample = pattern->samples[0];
 	float lastIndex = 0;
 
-	currentWaveform.lineTo(0, 1 - lastSample / pattern->maxVoltage);
+	float maxVoltage = pattern->maxVoltage;
+
+	if (maxVoltage == 0.0f)
+	{
+		maxVoltage = 5.0f;
+	}
+
+	currentWaveform.lineTo(0, 1 - lastSample / maxVoltage);
 
 	for (int i = 0; i < pattern->samples.size(); i++)
 	{
-
 		if (pattern->samples[i] != lastSample)
 		{
-			currentWaveform.lineTo(float(i) / numSamples, 1 - lastSample / pattern->maxVoltage);
-			currentWaveform.lineTo(float(i) / numSamples, 1 - pattern->samples[i] / pattern->maxVoltage);
+			currentWaveform.lineTo(float(i) / numSamples, 1 - lastSample / maxVoltage);
+			currentWaveform.lineTo(float(i) / numSamples, 1 - pattern->samples[i] / maxVoltage);
 			lastSample = pattern->samples[i];
 			lastIndex = i;
 		}
@@ -143,11 +149,6 @@ WavePlayer::~WavePlayer()
 void WavePlayer::resized()
 {
 	background->setBounds(0, 0, getWidth(), getHeight());
-}
-
-void WavePlayer::timerCallback()
-{
-
 }
 
 float WavePlayer::getSampleRate()
@@ -363,7 +364,6 @@ void WavePlayer::buttonClicked(Button* button)
 
 void WavePlayer::saveCustomParameters(XmlElement* xml)
 {
-	//xml->setAttribute("productName", processor->getProductName());
 
 	for (auto pattern : availablePatterns)
 	{
@@ -413,9 +413,6 @@ void WavePlayer::saveCustomParameters(XmlElement* xml)
 
 void WavePlayer::loadCustomParameters(XmlElement* xml)
 {
-	//String productName = xml->getStringAttribute("productName", "NIDAQmx");
-	//if (!thread->swapConnection(productName));
-	//draw();
 
 	availablePatterns.clear();
 
