@@ -69,7 +69,7 @@ void CustomTabComponent::currentTabChanged(int newCurrentTabIndex, const String&
 
 
 NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* editor_, NeuropixThread* thread_) : 
-    processor(processor_),
+   Visualizer(processor_),
     editor(editor_),
     thread(thread_)
 
@@ -198,7 +198,7 @@ void NeuropixCanvas::refreshState()
     resized();
 }
 
-void NeuropixCanvas::update()
+void NeuropixCanvas::updateSettings()
 {
     for (int i = 0; i < settingsInterfaces.size(); i++)
         settingsInterfaces[i]->updateInfoString();

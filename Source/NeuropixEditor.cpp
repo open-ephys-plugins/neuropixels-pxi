@@ -540,7 +540,7 @@ void NeuropixEditor::collapsedStateChanged()
 void NeuropixEditor::update()
 {
 	if (canvas != nullptr)
-		canvas->update();
+		canvas->updateSettings();
 }
 
 void NeuropixEditor::comboBoxChanged(ComboBox* comboBox)

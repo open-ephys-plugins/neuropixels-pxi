@@ -21,7 +21,7 @@
 
 */
 
-#include <VisualizerEditorHeaders.h>
+#include <VisualizerWindowHeaders.h>
 
 #include "NeuropixComponents.h"
 #include "UI/SettingsInterface.h"
@@ -71,7 +71,7 @@ public:
 	void paint(Graphics& g);
 
 	/** Renders the Visualizer on each animation callback cycle */
-	void refresh();
+	void refresh() override;
 
 	/** Starts animation (not needed for this component) */
 	void beginAnimation() override { }
@@ -80,11 +80,11 @@ public:
 	void endAnimation() override { }
 
 	/** Called when the Visualizer's tab becomes visible after being hidden */
-	void refreshState();
+	void refreshState() override;
 
 	/** Called when the Visualizer is first created, and optionally when
 		the parameters of the underlying processor are changed */
-	void update();
+	void updateSettings() override;
 
 	/** Sets which interface is active */
 	void setSelectedInterface(DataSource* d);
@@ -124,8 +124,6 @@ public:
 
 	NeuropixEditor* editor;
 	NeuropixThread* thread;
-
-	GenericProcessor* processor;
 
 private:
 

@@ -31,7 +31,6 @@
 #include "ColourScheme.h"
 
 class ColorSelector;
-class Annotation;
 class ProbeBrowser;
 
 enum VisualizationMode {
@@ -42,6 +41,23 @@ enum VisualizationMode {
 	ACTIVITY_VIEW
 };
 
+class Annotation
+{
+public:
+	Annotation(String text, Array<int> channels, Colour c);
+	~Annotation();
+
+	Array<int> electrodes;
+	String text;
+
+	float currentYLoc;
+
+	bool isMouseOver;
+	bool isSelected;
+
+	Colour colour;
+
+};
 
 /** 
 
@@ -219,24 +235,6 @@ public:
 	}
 };
 
-
-class Annotation
-{
-public:
-	Annotation(String text, Array<int> channels, Colour c);
-	~Annotation();
-
-	Array<int> electrodes;
-	String text;
-
-	float currentYLoc;
-
-	bool isMouseOver;
-	bool isSelected;
-
-	Colour colour;
-
-};
 
 class ColorSelector : public Component, public Button::Listener
 {
