@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 using namespace Plugin;
-#define NUM_PLUGINS 1
+#define NUM_PLUGINS 2
 
 extern "C" EXPORT void getLibInfo(Plugin::LibraryInfo* info)
 {
@@ -54,11 +54,11 @@ extern "C" EXPORT int getPluginInfo(int index, Plugin::PluginInfo* info)
 		info->dataThread.name = "Neuropix-PXI";
 		info->dataThread.creator = &createDataThread<PXIThread>;
 		break;
-	// case 1:
-	// 	info->type = Plugin::Type::DATA_THREAD;
-	// 	info->dataThread.name = "OneBox";
-	// 	info->dataThread.creator = &createDataThread<OneBoxThread>;
-	// 	break;
+	case 1:
+		info->type = Plugin::Type::DATA_THREAD;
+		info->dataThread.name = "OneBox";
+		info->dataThread.creator = &createDataThread<OneBoxThread>;
+		break;
 	default:
 		return -1;
 		break;
