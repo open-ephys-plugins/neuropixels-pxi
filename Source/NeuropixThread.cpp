@@ -250,6 +250,15 @@ NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 	int probeIndex = 0;
 	int streamIndex = 0;
 
+	if (type == ONEBOX && basestations.size() > 0)
+	{
+		if (basestations[0]->type != BasestationType::SIMULATED)
+		{
+			baseStationAvailable = true;
+		}
+	}
+		
+
 	for (auto probe : getProbes())
 	{
 		baseStationAvailable = true;
@@ -274,9 +283,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 		probeIndex++;
 
 	}
-
-	if (type == ONEBOX)
-		baseStationAvailable = true;
 
 	updateStreamInfo();
 

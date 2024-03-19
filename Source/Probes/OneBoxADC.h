@@ -72,11 +72,14 @@ public:
 	/** Read packets and add to buffer */
 	void run() override; // acquire data
 
-	/** Set channel type to ADC or DAC */
-	void setChannelType(int chan, DataSourceType type);
+	/** Map an ADC to a DAC, or turn it  */
+	void setAsOutput(int selected, int channel);
 
-	/** Gets channel type array */
-	Array<DataSourceType> getChannelTypes() {return channelTypes;}
+	/** Returns the connected DAC channel, or -1 if channel is an ADC */
+	int getOutputChannel(int channel);
+
+	/** Gets names of available channels */
+	Array<int> getAvailableChannels(int sourceChannel);
 
 	/** Sets input range for ADC channels */
 	void setAdcInputRange(AdcInputRange range);
@@ -110,8 +113,11 @@ private:
 	/** Holds incoming samples*/
 	DataBuffer* sampleBuffer;
 
-	/** Stores channel types (ADC or DAC) */
-	Array<DataSourceType> channelTypes;
+	/** Stores output mapping */
+	Array<int> outputChannel;
+
+	/** Stores whether channel is ADC or DAC */
+	Array<bool> isOutput;
 
 	/** Stores channel gains */
 	float bitVolts;

@@ -156,7 +156,7 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 
 			if (outputChan > -1)
 			{
-				adc->setChannelType(outputChan, DataSourceType::ADC);
+				//adc->setChannelType(outputChan, DataSourceType::ADC);
 				//onebox->enableInput(outputChan);
 			}
 				
@@ -172,12 +172,12 @@ void DataPlayer::comboBoxChanged(ComboBox* comboBox)
 
 			if (outputChan > -1)
 			{
-				adc->setChannelType(outputChan, DataSourceType::ADC);
+				//adc->setChannelType(outputChan, DataSourceType::ADC);
 				//onebox->enableInput(outputChan);
 			}
 				
 			outputChan = comboBox->getSelectedId() - 2;
-			adc->setChannelType(outputChan, DataSourceType::DAC);
+			//adc->setChannelType(outputChan, DataSourceType::DAC);
 			//onebox->disableInput(outputChan);
 
 			//std::cout << "New output: " << outputChan << std::endl;

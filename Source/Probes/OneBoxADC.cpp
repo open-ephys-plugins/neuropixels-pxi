@@ -32,7 +32,7 @@ OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 	ui = nullptr;
 
 	channel_count = NUM_ADCS;
-	sample_rate = 10100.0f;
+	sample_rate = 9300.0f;
 
 	sourceType = DataSourceType::ADC;
 	status = SourceStatus::CONNECTED;
@@ -43,7 +43,8 @@ OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 
 	for (int i = 0; i < channel_count; i++)
 	{
-		channelTypes.add(DataSourceType::ADC);
+		outputChannel.add(-1);
+		isOutput.add(false);
 		
 		Neuropixels::DAC_enableOutput(basestation->slot, i, false);
 		thresholdLevels.add(AdcThresholdLevel::ONE_VOLT);
@@ -59,31 +60,7 @@ void OneBoxADC::initialize(bool signalChainIsLoading)
 
 }
 
-void OneBoxADC::setChannelType(int chan, DataSourceType type)
-{
 
-	if (chan >= channel_count)
-		return;
-
-	String channelTypeString;
-
-	switch (type)
-	{
-	case DataSourceType::ADC:
-		channelTypeString = "ADC";
-		break;
-	case DataSourceType::DAC:
-		channelTypeString = "DAC";
-		break;
-	default:
-		channelTypeString = "NONE";
-	}
-
-	LOGD("Setting channel ", chan, " to ", channelTypeString);
-
-	channelTypes.set(chan, type);
-
-}
 
 void OneBoxADC::startAcquisition()
 {
@@ -97,6 +74,48 @@ void OneBoxADC::startAcquisition()
 void OneBoxADC::stopAcquisition()
 {
 	stopThread(1000);
+}
+
+void OneBoxADC::setAsOutput(int selectedOutput, int channel)
+{
+
+	if (channel < 0 || channel >= channel_count)
+		return;
+
+	if (outputChannel[channel] != -1)
+	{
+		isOutput.set(outputChannel[channel], false);
+	}
+
+	isOutput.set(selectedOutput, true);
+	outputChannel.set(channel, selectedOutput);
+
+	
+	// TODO: actually set the output
+
+}
+
+int OneBoxADC::getOutputChannel(int channel)
+{
+	if (channel < 0 || channel >= channel_count)
+		return false;
+
+	return outputChannel[channel];
+}
+
+Array<int> OneBoxADC::getAvailableChannels(int sourceChannel)
+{
+	Array<int> availableChannels;
+
+	for (int i = 0; i < channel_count; i++)
+	{
+		if (!isOutput[i] && i != sourceChannel)
+		{
+			availableChannels.add(i);
+		}
+	}
+
+	return availableChannels;
 }
 
 void OneBoxADC::setAdcInputRange(AdcInputRange range)
@@ -188,6 +207,8 @@ void OneBoxADC::setTriggersWaveplayer(bool shouldTrigger, int channel)
 
 	waveplayerTrigger.set(channel, shouldTrigger);
 
+	LOGD("Setting channel ", channel, " to trigger waveplayer: ", shouldTrigger);
+
 	// configure trigger
 }
 
@@ -216,7 +237,7 @@ void OneBoxADC::run()
 		errorCode = Neuropixels::ADC_readPackets(basestation->slot, 
 			&packetInfo[0],
 			&data[0], 
-			12,
+			NUM_ADCS,
 			count,
 			&count);
 
