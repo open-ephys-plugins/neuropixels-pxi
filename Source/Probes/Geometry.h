@@ -88,6 +88,11 @@ public:
 		Array<EmissionSiteMetadata>& esm,
 		ProbeMetadata& pm);
 
+	/** Neuropixels PH2C
+	*/
+	static void PH2C(Array<ElectrodeMetadata>& em,
+		ProbeMetadata& pm);
+
 };
 
 #endif //__GEOMETRY_H_2C4C2D67__

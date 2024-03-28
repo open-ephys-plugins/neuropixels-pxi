@@ -28,6 +28,8 @@ bool Geometry::forPartNumber(String PN,
 	ProbeMetadata& pm)
 {
 
+	LOGC("Validating part number: ", PN);
+
 	bool found_valid_part_number = true;
 
 	if (PN.equalsIgnoreCase("NP1010")
@@ -91,6 +93,9 @@ bool Geometry::forPartNumber(String PN,
 
 	else if (PN.equalsIgnoreCase("NP1110"))
 		UHD(true, 8, 6, em, pm); // UHD2 - switchable, 8 cols, 6 um spacing
+
+	else if (PN.equalsIgnoreCase("NP2020"))
+		PH2C(em, pm);
 
 	else
 		found_valid_part_number = false;
@@ -845,5 +850,210 @@ void Geometry::OPTO(Array<ElectrodeMetadata>& electrodeMetadata,
 			emissionSiteMetadata.add(metadata);
 		}
 
+	}
+}
+
+void Geometry::PH2C(Array<ElectrodeMetadata>& electrodeMetadata,
+	ProbeMetadata& probeMetadata)
+{
+
+	int shank_count = 4;
+
+	probeMetadata.type = ProbeType::PH2C;
+	probeMetadata.name = " Neuropixels 2.0 Ph2C - Passive";
+
+
+	Path path;
+	path.startNewSubPath(27, 31);
+	path.lineTo(27, 514);
+	path.lineTo(27 + 5, 522);
+	path.lineTo(27 + 10, 514);
+	path.lineTo(27 + 10, 31);
+	path.closeSubPath();
+
+	probeMetadata.shank_count = shank_count;
+	probeMetadata.electrodes_per_shank = 1280;
+	probeMetadata.rows_per_shank = 1280 / 2;
+	probeMetadata.columns_per_shank = 2;
+	probeMetadata.shankOutline = path;
+	probeMetadata.num_adcs = 96;
+
+	probeMetadata.availableBanks =
+		{   Bank::A,
+			Bank::B,
+			Bank::C,
+			Bank::D,
+			Bank::OFF //disconnected
+		};
+
+	for (int i = 0; i < probeMetadata.electrodes_per_shank * probeMetadata.shank_count; i++)
+	{
+		ElectrodeMetadata metadata;
+
+		metadata.global_index = i;
+
+		metadata.shank = i / probeMetadata.electrodes_per_shank;
+		metadata.shank_local_index = i % probeMetadata.electrodes_per_shank;
+
+		metadata.xpos = i % 2 * 32.0f + 8.0f;
+		metadata.ypos = (metadata.shank_local_index - (metadata.shank_local_index % 2)) * 7.5f;
+		metadata.site_width = 12;
+
+		metadata.column_index = i % 2;
+		metadata.row_index = metadata.shank_local_index / 2;
+
+		metadata.isSelected = false;
+
+		if (i < 384 * 4)
+		{
+			metadata.status = ElectrodeStatus::CONNECTED;
+		}
+		else {
+			metadata.status = ElectrodeStatus::DISCONNECTED;
+		}
+
+		if (metadata.shank_local_index < 384)
+			metadata.bank = Bank::A;
+		else if (metadata.shank_local_index >= 384 &&
+			metadata.shank_local_index < 768)
+			metadata.bank = Bank::B;
+		else if (metadata.shank_local_index >= 768 &&
+			metadata.shank_local_index < 1152)
+			metadata.bank = Bank::C;
+		else
+			metadata.bank = Bank::D;
+
+		int block = metadata.shank_local_index % 384 / 48 + 1;
+		int block_index = metadata.shank_local_index % 48;
+
+		if (metadata.shank == 0)
+		{
+			switch (block)
+			{
+				case 1:
+					metadata.channel = block_index + 48 * 0; // 1-48 (Bank 0-3)
+					break;
+				case 2:
+					metadata.channel = block_index + 48 * 2; // 96-144 (Bank 0-3)
+					break;
+				case 3:
+					metadata.channel = block_index + 48 * 4; // 192-223 (Bank 0-3)
+					break;
+				case 4:
+					metadata.channel = block_index + 48 * 6; // 288-336 (Bank 0-2)
+					break;
+				case 5:
+					metadata.channel = block_index + 48 * 5; // 240-288 (Bank 0-2)
+					break;
+				case 6:
+					metadata.channel = block_index + 48 * 7; // 336-384 (Bank 0-2)
+					break;
+				case 7:
+					metadata.channel = block_index + 48 * 1; // 48-96 (Bank 0-2)
+					break;
+				case 8:
+					metadata.channel = block_index + 48 * 3; // 144-192 (Bank 0-2)
+					break;
+				default:
+					metadata.channel = -1;
+			}
+		} else if (metadata.shank == 1)
+		{
+			switch (block)
+			{
+			case 1:
+				metadata.channel = block_index + 48 * 1; // 48-96 (Bank 0-3)
+				break;
+			case 2:
+				metadata.channel = block_index + 48 * 3; // 144-192 (Bank 0-3)
+				break;
+			case 3:
+				metadata.channel = block_index + 48 * 5; // 240-27
+				break;
+			case 4:
+				metadata.channel = block_index + 48 * 7;
+				break;
+			case 5:
+				metadata.channel = block_index + 48 * 4;
+				break;
+			case 6:
+				metadata.channel = block_index + 48 * 6;
+				break;
+			case 7:
+				metadata.channel = block_index + 48 * 0;
+				break;
+			case 8:
+				metadata.channel = block_index + 48 * 2;
+				break;
+			default:
+				metadata.channel = -1;
+			}
+		} if (metadata.shank == 2)
+		{
+			switch (block)
+			{
+			case 1:
+				metadata.channel = block_index + 48 * 4;
+				break;
+			case 2:
+				metadata.channel = block_index + 48 * 6;
+				break;
+			case 3:
+				metadata.channel = block_index + 48 * 0;
+				break;
+			case 4:
+				metadata.channel = block_index + 48 * 2;
+				break;
+			case 5:
+				metadata.channel = block_index + 48 * 1;
+				break;
+			case 6:
+				metadata.channel = block_index + 48 * 3;
+				break;
+			case 7:
+				metadata.channel = block_index + 48 * 5;
+				break;
+			case 8:
+				metadata.channel = block_index + 48 * 7;
+				break;
+			default:
+				metadata.channel = -1;
+			}
+		} if (metadata.shank == 3)
+		{
+			switch (block)
+			{
+			case 1:
+				metadata.channel = block_index + 48 * 5;
+				break;
+			case 2:
+				metadata.channel = block_index + 48 * 7;
+				break;
+			case 3:
+				metadata.channel = block_index + 48 * 1;
+				break;
+			case 4:
+				metadata.channel = block_index + 48 * 3;
+				break;
+			case 5:
+				metadata.channel = block_index + 48 * 0;
+				break;
+			case 6:
+				metadata.channel = block_index + 48 * 2;
+				break;
+			case 7:
+				metadata.channel = block_index + 48 * 4;
+				break;
+			case 8:
+				metadata.channel = block_index + 48 * 6;
+				break;
+			default:
+				metadata.channel = -1;
+			}
+		}
+
+		metadata.type = ElectrodeType::ELECTRODE; // disable internal reference
+
+		electrodeMetadata.add(metadata);
 	}
 }

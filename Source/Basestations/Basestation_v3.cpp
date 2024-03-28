@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
 #include "../Headstages/Headstage_Custom384.h"
+#include "../Headstages/Headstage_Ph2C.h"
 
 #define MAXLEN 50
 
@@ -128,6 +129,11 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 		{
 			LOGC("      Found 2.0 dual-dock headstage on port: ", port);
 			headstage = new Headstage2(basestation, port);
+		}
+		else if (hsPartNumber == "NPM_HS_32") //Ph2C headstage
+		{
+			LOGC("      Found 2.0 Phase 2C dual-dock headstage on port: ", port);
+			headstage = new Headstage_Ph2C(basestation, port);
 		}
 		else
 		{
