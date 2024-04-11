@@ -90,7 +90,7 @@ enum class ProbeType {
 	NP2_1,
 	NP2_4,
 	OPTO,
-	PH2C
+	QuadBase
 };
 
 enum class SourceStatus {

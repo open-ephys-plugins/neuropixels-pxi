@@ -32,16 +32,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
 
-	Acquires data from a Neuropixels Ph2C probe,
+	Acquires data from a Neuropixels QuadBase probe,
 	using IMEC's v3 API.
 
 */
-class Neuropixels_Ph2C : public Probe
+class Neuropixels_QuadBase : public Probe
 {
 public:
 
 	/** Constructor */
-	Neuropixels_Ph2C(Basestation*, 
+	Neuropixels_QuadBase(Basestation*, 
 		Headstage*, 
 		Flex*,
 		int dock);

@@ -95,7 +95,7 @@ bool Geometry::forPartNumber(String PN,
 		UHD(true, 8, 6, em, pm); // UHD2 - switchable, 8 cols, 6 um spacing
 
 	else if (PN.equalsIgnoreCase("NP2020"))
-		PH2C(em, pm);
+		QuadBase(em, pm);
 
 	else
 		found_valid_part_number = false;
@@ -853,14 +853,14 @@ void Geometry::OPTO(Array<ElectrodeMetadata>& electrodeMetadata,
 	}
 }
 
-void Geometry::PH2C(Array<ElectrodeMetadata>& electrodeMetadata,
+void Geometry::QuadBase(Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
 
 	int shank_count = 4;
 
-	probeMetadata.type = ProbeType::PH2C;
-	probeMetadata.name = " Neuropixels 2.0 Ph2C - Passive";
+	probeMetadata.type = ProbeType::QuadBase;
+	probeMetadata.name = " Neuropixels 2.0 QuadBase - Passive";
 
 
 	Path path;

@@ -88,9 +88,9 @@ public:
 		Array<EmissionSiteMetadata>& esm,
 		ProbeMetadata& pm);
 
-	/** Neuropixels PH2C
+	/** Neuropixels QuadBase
 	*/
-	static void PH2C(Array<ElectrodeMetadata>& em,
+	static void QuadBase(Array<ElectrodeMetadata>& em,
 		ProbeMetadata& pm);
 
 };

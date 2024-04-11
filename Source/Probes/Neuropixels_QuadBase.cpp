@@ -21,14 +21,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include "Neuropixels_Ph2C.h"
+#include "Neuropixels_QuadBase.h"
 #include "Geometry.h"
 
 #include "../NeuropixThread.h"
 
 #define MAXLEN 50
 
-void Neuropixels_Ph2C::getInfo()
+void Neuropixels_QuadBase::getInfo()
 {
 	errorCode = Neuropixels::readProbeSN(basestation->slot, headstage->port, dock, &info.serial_number);
 
@@ -41,7 +41,7 @@ void Neuropixels_Ph2C::getInfo()
 	info.part_number = String(pn);
 }
 
-Neuropixels_Ph2C::Neuropixels_Ph2C(Basestation* bs, Headstage* hs, Flex* fl, int dock) : Probe(bs, hs, fl, dock)
+Neuropixels_QuadBase::Neuropixels_QuadBase(Basestation* bs, Headstage* hs, Flex* fl, int dock) : Probe(bs, hs, fl, dock)
 {
 	getInfo();
 
@@ -138,7 +138,7 @@ Neuropixels_Ph2C::Neuropixels_Ph2C(Basestation* bs, Headstage* hs, Flex* fl, int
 
 }
 
-bool Neuropixels_Ph2C::open()
+bool Neuropixels_QuadBase::open()
 {
 	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
 	LOGC("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
@@ -153,7 +153,7 @@ bool Neuropixels_Ph2C::open()
 
 }
 
-bool Neuropixels_Ph2C::close()
+bool Neuropixels_QuadBase::close()
 {
 	errorCode = Neuropixels::closeProbe(basestation->slot, headstage->port, dock);
 	LOGD("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
@@ -161,7 +161,7 @@ bool Neuropixels_Ph2C::close()
 	return errorCode == Neuropixels::SUCCESS;
 }
 
-void Neuropixels_Ph2C::initialize(bool signalChainIsLoading)
+void Neuropixels_QuadBase::initialize(bool signalChainIsLoading)
 {
 	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
 	LOGD("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
@@ -169,7 +169,7 @@ void Neuropixels_Ph2C::initialize(bool signalChainIsLoading)
 }
 
 
-void Neuropixels_Ph2C::calibrate()
+void Neuropixels_QuadBase::calibrate()
 {
 	File baseDirectory = File::getSpecialLocation(File::currentExecutableFile).getParentDirectory();
 	File calibrationDirectory = baseDirectory.getChildFile("CalibrationInfo");
@@ -221,7 +221,7 @@ void Neuropixels_Ph2C::calibrate()
 
 }
 
-void Neuropixels_Ph2C::selectElectrodes()
+void Neuropixels_QuadBase::selectElectrodes()
 {
 
 	Neuropixels::NP_ErrorCode ec;
@@ -245,7 +245,7 @@ void Neuropixels_Ph2C::selectElectrodes()
 
 }
 
-Array<int> Neuropixels_Ph2C::selectElectrodeConfiguration(String config)
+Array<int> Neuropixels_QuadBase::selectElectrodeConfiguration(String config)
 {
 	Array<int> selection;
 
@@ -549,18 +549,18 @@ Array<int> Neuropixels_Ph2C::selectElectrodeConfiguration(String config)
 }
 
 
-void Neuropixels_Ph2C::setApFilterState()
+void Neuropixels_QuadBase::setApFilterState()
 {
 	// no filter cut available
 }
 
-void Neuropixels_Ph2C::setAllGains()
+void Neuropixels_QuadBase::setAllGains()
 {
 	// no gain available
 }
 
 
-void Neuropixels_Ph2C::setAllReferences()
+void Neuropixels_QuadBase::setAllReferences()
 {
 
 	Neuropixels::channelreference_t refId;
@@ -609,13 +609,13 @@ void Neuropixels_Ph2C::setAllReferences()
 
 }
 
-void Neuropixels_Ph2C::writeConfiguration()
+void Neuropixels_QuadBase::writeConfiguration()
 {
 
 	errorCode = Neuropixels::writeProbeConfiguration(basestation->slot, headstage->port, dock, false);
 }
 
-void Neuropixels_Ph2C::startAcquisition()
+void Neuropixels_QuadBase::startAcquisition()
 {
 	ap_timestamp = 0;
 	apBuffer->clear();
@@ -631,13 +631,13 @@ void Neuropixels_Ph2C::startAcquisition()
 	startThread();
 }
 
-void Neuropixels_Ph2C::stopAcquisition()
+void Neuropixels_QuadBase::stopAcquisition()
 {
 	LOGC("Probe stopping thread.");
 	signalThreadShouldExit();
 }
 
-void Neuropixels_Ph2C::run()
+void Neuropixels_QuadBase::run()
 {
 
 	while (!threadShouldExit())
@@ -751,7 +751,7 @@ void Neuropixels_Ph2C::run()
 
 }
 
-bool Neuropixels_Ph2C::runBist(BIST bistType)
+bool Neuropixels_QuadBase::runBist(BIST bistType)
 {
 
 	close();

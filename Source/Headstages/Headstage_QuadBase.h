@@ -29,10 +29,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../NeuropixComponents.h"
 
 
-class Headstage_Ph2C : public Headstage
+class Headstage_QuadBase : public Headstage
 {
 public:
-	Headstage_Ph2C::Headstage_Ph2C(Basestation*, int port);
+	Headstage_QuadBase::Headstage_QuadBase(Basestation*, int port);
 	void getInfo() override;
 	bool hasTestModule() override { return false; }
 	void runTestModule() override {}
@@ -40,10 +40,10 @@ public:
 	Neuropixels::NP_ErrorCode errorCode;
 };
 
-class Flex_Ph2C : public Flex
+class Flex_QuadBase : public Flex
 {
 public:
-	Flex_Ph2C::Flex_Ph2C(Headstage*, int dock);
+	Flex_QuadBase::Flex_QuadBase(Headstage*, int dock);
 	void getInfo() override;
 
 	Neuropixels::NP_ErrorCode errorCode;

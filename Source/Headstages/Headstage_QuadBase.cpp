@@ -21,12 +21,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include "Headstage_Ph2C.h"
-#include "../Probes/Neuropixels_Ph2C.h"
+#include "Headstage_QuadBase.h"
+#include "../Probes/Neuropixels_QuadBase.h"
 
 #define MAXLEN 50
 
-void Headstage_Ph2C::getInfo()
+void Headstage_QuadBase::getInfo()
 {
 
 	int version_major;
@@ -46,7 +46,7 @@ void Headstage_Ph2C::getInfo()
 }
 
 
-void Flex_Ph2C::getInfo()
+void Flex_QuadBase::getInfo()
 {
 
 	int version_major;
@@ -72,7 +72,7 @@ void Flex_Ph2C::getInfo()
 }
 
 
-Headstage_Ph2C::Headstage_Ph2C(Basestation* bs_, int port) : Headstage(bs_, port)
+Headstage_QuadBase::Headstage_QuadBase(Basestation* bs_, int port) : Headstage(bs_, port)
 {
 	getInfo();
 
@@ -88,8 +88,8 @@ Headstage_Ph2C::Headstage_Ph2C(Basestation* bs_, int port) : Headstage(bs_, port
 
 		if (flexDetected)
 		{
-			flexCables.add(new Flex_Ph2C(this, dock));
-			Neuropixels_Ph2C* probe = new Neuropixels_Ph2C(basestation, this, flexCables.getLast(), dock);
+			flexCables.add(new Flex_QuadBase(this, dock));
+			Neuropixels_QuadBase* probe = new Neuropixels_QuadBase(basestation, this, flexCables.getLast(), dock);
 
 			if (probe->isValid)
 			{
@@ -111,7 +111,7 @@ Headstage_Ph2C::Headstage_Ph2C(Basestation* bs_, int port) : Headstage(bs_, port
 	
 }
 
-Flex_Ph2C::Flex_Ph2C(Headstage* hs_, int dock) : Flex(hs_, dock)
+Flex_QuadBase::Flex_QuadBase(Headstage* hs_, int dock) : Flex(hs_, dock)
 {
 	getInfo();
 

@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
 #include "../Headstages/Headstage_Custom384.h"
-#include "../Headstages/Headstage_Ph2C.h"
+#include "../Headstages/Headstage_QuadBase.h"
 
 #define MAXLEN 50
 
@@ -130,10 +130,10 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 			LOGC("      Found 2.0 dual-dock headstage on port: ", port);
 			headstage = new Headstage2(basestation, port);
 		}
-		else if (hsPartNumber == "NPM_HS_32") //Ph2C headstage
+		else if (hsPartNumber == "NPM_HS_32") //QuadBase headstage
 		{
 			LOGC("      Found 2.0 Phase 2C dual-dock headstage on port: ", port);
-			headstage = new Headstage_Ph2C(basestation, port);
+			headstage = new Headstage_QuadBase(basestation, port);
 		}
 		else
 		{
