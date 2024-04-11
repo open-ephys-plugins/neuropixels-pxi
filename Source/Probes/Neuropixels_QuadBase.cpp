@@ -90,10 +90,8 @@ Neuropixels_QuadBase::Neuropixels_QuadBase(Basestation* bs, Headstage* hs, Flex*
 		}
 		else {
 			settings.availableReferences.add("Ext");
-			settings.availableReferences.add("1: Tip");
-			settings.availableReferences.add("2: Tip");
-			settings.availableReferences.add("3: Tip");
-			settings.availableReferences.add("4: Tip");
+			settings.availableReferences.add("Tip");
+			settings.availableReferences.add("Ground");
 
 			settings.availableElectrodeConfigurations.add("Shank 1 Bank A");
 			settings.availableElectrodeConfigurations.add("Shank 1 Bank B");
@@ -120,11 +118,6 @@ Neuropixels_QuadBase::Neuropixels_QuadBase(Basestation* bs, Headstage* hs, Flex*
 			settings.availableElectrodeConfigurations.add("All Shanks 961-1056");
 			settings.availableElectrodeConfigurations.add("All Shanks 1057-1152");
 			settings.availableElectrodeConfigurations.add("All Shanks 1153-1248");
-		}
-
-		if (info.part_number.equalsIgnoreCase("NP2013"))
-		{
-			settings.availableReferences.add("Ground");
 		}
 
 		open();

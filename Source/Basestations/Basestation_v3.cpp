@@ -104,7 +104,7 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 
 		String hsPartNumber = String(pn);
 
-		LOGC("Got HS part #: ", hsPartNumber);
+		LOGC("Port ", port, " HS part #: ", hsPartNumber);
 
 		if (hsPartNumber == "NP2_HS_30" || hsPartNumber == "OPTO_HS_00") // 1.0 headstage, only one dock
 		{
