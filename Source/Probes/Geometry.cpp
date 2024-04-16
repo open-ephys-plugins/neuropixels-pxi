@@ -62,7 +62,8 @@ bool Geometry::forPartNumber(String PN,
 	else if (PN.equalsIgnoreCase("PRB2_1_2_0640_0") 
 		|| PN.equalsIgnoreCase("PRB2_1_4_0480_1") 
 		|| PN.equalsIgnoreCase("NP2000")
-		|| PN.equalsIgnoreCase("NP2003"))
+		|| PN.equalsIgnoreCase("NP2003")
+		|| PN.equalsIgnoreCase("NP2004"))
 		NP2(1, em, pm); // single shank
 
 	else if (PN.equalsIgnoreCase("PRB2_4_2_0640_0") 
