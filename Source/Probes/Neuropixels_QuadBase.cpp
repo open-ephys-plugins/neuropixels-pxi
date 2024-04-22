@@ -770,7 +770,7 @@ void AcquisitionThread::run()
 		}
 
 
-		//buffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, packet_count);
+		buffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, packet_count);
 
 		if (!passedOneSecond)
 		{
