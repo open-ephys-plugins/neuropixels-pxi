@@ -610,28 +610,91 @@ void Neuropixels_QuadBase::writeConfiguration()
 
 void Neuropixels_QuadBase::startAcquisition()
 {
-	ap_timestamp = 0;
-	apBuffer->clear();
+	if (acquisitionThreads.size() == 0)
+	{
+		for (int shank = 0; shank < 4; shank++)
+		{
+			
+			std::cout << quadBaseBuffers[shank] << std::endl;
+			quadBaseBuffers[shank]->clear();
+
+			acquisitionThreads.add(
+				new AcquisitionThread(basestation->slot,
+					headstage->port,
+					dock,
+					shank, 
+					quadBaseBuffers[shank], 
+					this));
+		}
+	
+	}
 
 	apView->reset();
 
-	last_npx_timestamp = 0;
-	passedOneSecond = false;
+	for (int shank = 0; shank < 4; shank++)
+	{
+		jassert(quadBaseBuffers[shank]->getNumSamples() == 0);
 
-	SKIP = sendSync ? 384 * 4 + 1 : 384 * 4;
-
-	LOGD("  Starting thread.");
-	startThread();
+		acquisitionThreads[shank]->startThread();
+	}
 }
 
 void Neuropixels_QuadBase::stopAcquisition()
 {
 	LOGC("Probe stopping thread.");
-	signalThreadShouldExit();
+
+	for (int shank = 0; shank < 4; shank++)
+	{
+		acquisitionThreads[shank]->signalThreadShouldExit();
+	}
+
 }
 
-void Neuropixels_QuadBase::run()
+AcquisitionThread::AcquisitionThread(
+	int slot_,
+	int port_,
+	int dock_,
+	int shank_, 
+	DataBuffer* buffer_, 
+	Probe* probe_) : 
+	Thread("AcquisitionThread" + String(shank)), 
+	slot(slot_),
+	port(port_),
+	dock(dock_),
+	shank(shank_), 
+	buffer(buffer_),
+	probe(probe_),
+	ap_sample_rate(30000.0f),
+	ap_timestamp(0),
+	last_npx_timestamp(0),
+	sendSync(false),
+	passedOneSecond(false),
+	eventCode(0)
 {
+	if (shank == 0)
+		stream_source = Neuropixels::streamsource_t::SourceAP;
+	else if (shank == 1)
+		stream_source = Neuropixels::streamsource_t::SourceLFP;
+	else if (shank == 2)
+		stream_source = Neuropixels::streamsource_t::SourceSt2;
+	else if (shank == 3)
+		stream_source = Neuropixels::streamsource_t::SourceSt3;
+
+	std::cout << "AcquisitionThread: " << buffer << std::endl;
+}
+
+void AcquisitionThread::run()
+{
+
+	//apView->reset();
+
+	ap_timestamp = 0;
+	last_npx_timestamp = 0;
+	passedOneSecond = false;
+
+	SKIP = probe->sendSync ? 385 : 384;
+
+	LOGD("  Starting thread for shank ", shank);
 
 	while (!threadShouldExit())
 	{
@@ -639,81 +702,75 @@ void Neuropixels_QuadBase::run()
 
 		int packet_count = MAXPACKETS;
 
-		for (int base = 0; base < 4; base++) {
+		errorCode = Neuropixels::readPackets(
+			slot,
+			port,
+			dock,
+			stream_source,
+			&packetInfo[0],
+			&data[0],
+			channel_count,
+			packet_count,
+			&packet_count);
 
-			int count = MAXPACKETS;
-
-			errorCode = Neuropixels::readPackets(
-				basestation->slot,
-				headstage->port,
-				dock,
-				static_cast<Neuropixels::streamsource_t>(base),
-				&packetInfo[0],
-				&data[0],
-				channel_count,
-				packet_count,
-				&packet_count);
-
-			if (errorCode == Neuropixels::SUCCESS && packet_count > 0)
+		if (errorCode == Neuropixels::SUCCESS && packet_count > 0)
+		{
+			for (int packetNum = 0; packetNum < packet_count; packetNum++)
 			{
-				for (int packetNum = 0; packetNum < packet_count; packetNum++)
+
+				eventCode = packetInfo[packetNum].Status >> 6;
+
+				if (invertSyncLine)
+					eventCode = ~eventCode;
+
+				uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
+
+				uint32_t timestamp_jump = npx_timestamp - last_npx_timestamp;
+
+				if (timestamp_jump > MAX_ALLOWABLE_TIMESTAMP_JUMP)
 				{
-					if (base == 0)
+					if (passedOneSecond && timestamp_jump < MAX_HEADSTAGE_CLK_SAMPLE)
 					{
-						eventCode = packetInfo[packetNum].Status >> 6;
+						String msg = "NPX TIMESTAMP JUMP: " + String(timestamp_jump) +
+							", expected 3 or 4...Possible data loss on slot " +
+							String(slot) + ", probe " + String(port) +
+							" at sample number " + String(ap_timestamp);
 
-						if (invertSyncLine)
-							eventCode = ~eventCode;
+						LOGC(msg);
 
-						uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
-
-						uint32_t timestamp_jump = npx_timestamp - last_npx_timestamp;
-
-						if (timestamp_jump > MAX_ALLOWABLE_TIMESTAMP_JUMP)
-						{
-							if (passedOneSecond && timestamp_jump < MAX_HEADSTAGE_CLK_SAMPLE)
-							{
-								String msg = "NPX TIMESTAMP JUMP: " + String(timestamp_jump) +
-									", expected 3 or 4...Possible data loss on slot " +
-									String(basestation->slot_c) + ", probe " + String(headstage->port_c) +
-									" at sample number " + String(ap_timestamp);
-
-								LOGC(msg);
-
-								basestation->neuropixThread->sendBroadcastMessage(msg);
-							}
-						}
-
-						last_npx_timestamp = npx_timestamp;
-
-						if (sendSync)
-							apSamples[4 * channel_count + SKIP * packetNum] = (float)eventCode;
-
+						probe->basestation->neuropixThread->sendBroadcastMessage(msg);
 					}
+				}
 
-					for (int j = base * 384; j < (base + 1) * channel_count; j++)
-					{
-						apSamples[j + packetNum * SKIP] =
-							float(data[packetNum * channel_count + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
+				last_npx_timestamp = npx_timestamp;
 
-						apView->addSample(apSamples[j + packetNum * SKIP], j);
+				if (sendSync)
+				{
+					apSamples[4 * channel_count + SKIP * packetNum] = (float)eventCode;
+				}
 
-					}
+				for (int j = 0; j < channel_count; j++)
+				{
+					apSamples[j + packetNum * SKIP] =
+						float(data[packetNum * channel_count + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
 
-					ap_timestamps[packetNum] = ap_timestamp++;
-					event_codes[packetNum] = eventCode;
+					//probe->apView->addSample(apSamples[j + packetNum * SKIP], j);
 
 				}
 
-			}
-			else if (errorCode != Neuropixels::SUCCESS)
-			{
-				LOGD("readPackets error code: ", errorCode, " for Basestation ", int(basestation->slot), ", probe ", int(headstage->port));
+				ap_timestamps[packetNum] = ap_timestamp++;
+				event_codes[packetNum] = eventCode;
+
 			}
 
 		}
+		else if (errorCode != Neuropixels::SUCCESS)
+		{
+			std::cout << "readPackets error code: " << errorCode << " for Basestation " << slot << ", probe " << port << std::endl;
+		}
 
-		apBuffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, packet_count);
+
+		//buffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, packet_count);
 
 		if (!passedOneSecond)
 		{
@@ -725,14 +782,15 @@ void Neuropixels_QuadBase::run()
 		int headroom;
 
 		Neuropixels::getPacketFifoStatus(
-			basestation->slot,
-			headstage->port,
+			slot,
+			port,
 			dock,
 			static_cast<Neuropixels::streamsource_t>(0),
 			&packetsAvailable,
 			&headroom);
 
-		fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
+		if (shank == 0)
+			probe->fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
 
 		if (packetsAvailable < MAXPACKETS)
 		{
@@ -741,8 +799,8 @@ void Neuropixels_QuadBase::run()
 			std::this_thread::sleep_for(std::chrono::microseconds(uSecToWait));
 		}
 	}
-
 }
+
 
 bool Neuropixels_QuadBase::runBist(BIST bistType)
 {

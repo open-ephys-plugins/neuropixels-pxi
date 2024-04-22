@@ -103,9 +103,25 @@ ProbeBrowser::ProbeBrowser(NeuropixInterface* parent_) : parent(parent_)
     disconnectedColours[Bank::NONE] = Colour(0, 0, 0);
     disconnectedColours[Bank::OFF] = Colour(0, 0, 0);
     disconnectedColours[Bank::A] = Colour(180, 180, 180);
+    disconnectedColours[Bank::A1] = Colour(180, 180, 180);
+    disconnectedColours[Bank::A1] = Colour(180, 180, 180);
+    disconnectedColours[Bank::A1] = Colour(180, 180, 180);
+    disconnectedColours[Bank::A1] = Colour(180, 180, 180);
     disconnectedColours[Bank::B] = Colour(160, 160, 160);
+    disconnectedColours[Bank::B1] = Colour(160, 160, 160);
+    disconnectedColours[Bank::B2] = Colour(160, 160, 160);
+    disconnectedColours[Bank::B3] = Colour(160, 160, 160);
+    disconnectedColours[Bank::B4] = Colour(160, 160, 160);
     disconnectedColours[Bank::C] = Colour(140, 140, 140);
+    disconnectedColours[Bank::C1] = Colour(140, 140, 140);
+    disconnectedColours[Bank::C2] = Colour(140, 140, 140);
+    disconnectedColours[Bank::C3] = Colour(140, 140, 140);
+    disconnectedColours[Bank::C4] = Colour(140, 140, 140);
     disconnectedColours[Bank::D] = Colour(120, 120, 120);
+    disconnectedColours[Bank::D1] = Colour(120, 120, 120);
+    disconnectedColours[Bank::D2] = Colour(120, 120, 120);
+    disconnectedColours[Bank::D3] = Colour(120, 120, 120);
+    disconnectedColours[Bank::D4] = Colour(120, 120, 120);
     disconnectedColours[Bank::E] = Colour(180, 180, 180);
     disconnectedColours[Bank::F] = Colour(160, 160, 160);
     disconnectedColours[Bank::G] = Colour(140, 140, 140);
@@ -326,14 +342,62 @@ String ProbeBrowser::getElectrodeInfoString(int index)
     case Bank::A:
         a += "A";
         break;
+    case Bank::A1:
+        a += "A1";
+        break;
+    case Bank::A2:
+        a += "A2";
+        break;
+    case Bank::A3:
+        a += "A3";
+        break;
+    case Bank::A4:
+        a += "A4";
+        break;
     case Bank::B:
         a += "B";
         break;
+    case Bank::B1:
+        a += "B1";
+		break;
+    case Bank::B2:
+	    a += "B2";
+	    break;
+    case Bank::B3:
+        a += "B3";
+        break;
+    case Bank::B4:
+        a += "B4";
+		break;
     case Bank::C:
         a += "C";
         break;
+    case Bank::C1:
+        a += "C1";
+        break;
+    case Bank::C2:
+        a += "C2";
+        break;
+    case Bank::C3:
+        a += "C3";
+        break;
+    case Bank::C4:
+        a += "C4";
+        break;
     case Bank::D:
         a += "D";
+        break;
+    case Bank::D1:
+        a += "D1";
+        break;
+    case Bank::D2:
+        a += "D2";
+        break;
+    case Bank::D3:
+        a += "D3";
+        break;
+    case Bank::D4:
+        a += "D4";
         break;
     case Bank::E:
         a += "E";

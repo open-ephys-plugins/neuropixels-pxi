@@ -1137,19 +1137,35 @@ void NeuropixInterface::selectElectrodes(Array<int> electrodes)
 
         for (int j = 0; j < electrodeMetadata.size(); j++)
         {
-            if (electrodeMetadata[j].channel == channel)
+            if (probe->type != ProbeType::QUAD_BASE)
             {
-                if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
+                if (electrodeMetadata[j].channel == channel)
                 {
-                    electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
-                }
+                    if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
+                    {
+                        electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
+                    }
 
-                else
-                {
-                    electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
+                    else
+                    {
+                        electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
+                    }
                 }
-
             }
+            else {
+                if (electrodeMetadata[j].channel == channel && electrodeMetadata[j].shank == shank)
+                {
+                    if (electrodeMetadata[j].bank == bank)
+                    {
+						electrodeMetadata.getReference(j).status = ElectrodeStatus::CONNECTED;
+					}
+                    else
+                    {
+						electrodeMetadata.getReference(j).status = ElectrodeStatus::DISCONNECTED;
+					}
+				}
+            }
+            
         }
     }
 

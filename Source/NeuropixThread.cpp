@@ -336,45 +336,77 @@ void NeuropixThread::updateStreamInfo()
 
 		if (source->sourceType == DataSourceType::PROBE)
 		{
-			StreamInfo apInfo;
 
 			Probe* probe = (Probe*) source;
 
-			apInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
-			apInfo.sample_rate = probe->ap_sample_rate;
-			apInfo.probe = probe;
-			apInfo.probe_index = probe_index++;
-
-			if (probe->generatesLfpData())
-				apInfo.type = AP_BAND;
-			else
-				apInfo.type = BROAD_BAND;
-
-			apInfo.sendSyncAsContinuousChannel = probe->sendSync;
-
-			streamInfo.add(apInfo);
-
-			sourceBuffers.add(new DataBuffer(apInfo.num_channels, 460800));  // AP band buffer
-			probe->apBuffer = sourceBuffers.getLast();
-
-			if (probe->generatesLfpData())
+			if (probe->type != ProbeType::QUAD_BASE)
 			{
+				StreamInfo apInfo;
 
-				StreamInfo lfpInfo;
-				lfpInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
-				lfpInfo.sample_rate = probe->lfp_sample_rate;
-				lfpInfo.type = LFP_BAND;
-				lfpInfo.probe = probe;
-				lfpInfo.sendSyncAsContinuousChannel = probe->sendSync;
+				apInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
+				apInfo.sample_rate = probe->ap_sample_rate;
+				apInfo.probe = probe;
+				apInfo.probe_index = probe_index++;
 
-				sourceBuffers.add(new DataBuffer(lfpInfo.num_channels, 38400));  // LFP band buffer
-				probe->lfpBuffer = sourceBuffers.getLast();
+				if (probe->generatesLfpData())
+					apInfo.type = AP_BAND;
+				else
+					apInfo.type = BROAD_BAND;
 
-				streamInfo.add(lfpInfo);
+				apInfo.sendSyncAsContinuousChannel = probe->sendSync;
+
+				streamInfo.add(apInfo);
+
+				sourceBuffers.add(new DataBuffer(apInfo.num_channels, 460800));  // AP band buffer
+				probe->apBuffer = sourceBuffers.getLast();
+
+				if (probe->generatesLfpData())
+				{
+
+					StreamInfo lfpInfo;
+					lfpInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
+					lfpInfo.sample_rate = probe->lfp_sample_rate;
+					lfpInfo.type = LFP_BAND;
+					lfpInfo.probe = probe;
+					lfpInfo.sendSyncAsContinuousChannel = probe->sendSync;
+
+					sourceBuffers.add(new DataBuffer(lfpInfo.num_channels, 38400));  // LFP band buffer
+					probe->lfpBuffer = sourceBuffers.getLast();
+
+					streamInfo.add(lfpInfo);
+				}
+
+				LOGD("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") CH=", apInfo.num_channels, " SR=", apInfo.sample_rate, " Hz");
 			}
+			else {
 
-			LOGD("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") CH=", apInfo.num_channels, " SR=", apInfo.sample_rate, " Hz");
-		}
+				for (int shank = 0; shank < 4; shank++)
+				{
+					StreamInfo apInfo;
+
+					apInfo.num_channels = probe->sendSync ? 385 : 384;
+					apInfo.sample_rate = probe->ap_sample_rate;
+					apInfo.probe = probe;
+					apInfo.probe_index = probe_index;
+					apInfo.type = QUAD_BASE;
+					apInfo.shank = shank;
+
+					apInfo.sendSyncAsContinuousChannel = probe->sendSync;
+
+					streamInfo.add(apInfo);
+
+					sourceBuffers.add(new DataBuffer(apInfo.num_channels, 460800));  // AP band buffer
+					probe->quadBaseBuffers.add(sourceBuffers.getLast());
+
+					std::cout << probe->quadBaseBuffers[shank] << std::endl;
+
+					LOGD("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") SHANK=", shank +1," CH = ", 384, " SR = ", apInfo.sample_rate, " Hz");
+
+				}
+
+				probe_index++;
+			}
+		}	
 		else {
 
 			if (true)
@@ -899,6 +931,19 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 				description = "Neuropixels LFP band data stream";
 				identifier = "neuropixels.data.lfp";
+			}
+
+			else if (info.type == stream_type::QUAD_BASE)
+			{
+				lastName = generateProbeName(info.probe_index, info.probe->namingScheme);
+
+				if (info.probe->namingScheme != ProbeNameConfig::STREAM_INDICES)
+					streamName = lastName + "-" + String(info.shank + 1);
+				else
+					streamName = String(info.probe->streamIndex);
+
+				description = "Neuropixels Quad Base data stream";
+				identifier = "neuropixels.data.quad_base";
 			}
 
 			DataStream::Settings settings

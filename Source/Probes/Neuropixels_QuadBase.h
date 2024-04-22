@@ -30,6 +30,58 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # define MAXPACKETS 64 * 12 * 4
 
+class AcquisitionThread : public Thread
+{
+public:
+	AcquisitionThread(int slot,
+		int port,
+		int dock,
+		int shank,
+		DataBuffer* buffer, 
+		Probe* probe);
+
+	/** Acquires data from the probe */
+	void run() override; // acquire data
+
+private:
+
+	Neuropixels::NP_ErrorCode errorCode;
+
+	int SKIP;
+
+	float apSamples[(384 * 4 + 1) * MAXPACKETS];
+	int64 ap_timestamps[MAXPACKETS];
+	uint64 event_codes[MAXPACKETS];
+
+	float ap_sample_rate;
+	int64 ap_timestamp;
+
+	float ap_offsets[384][100];
+	float lfp_offsets[384][100];
+
+	double timestamp_s[12 * MAXPACKETS];
+
+	uint32_t last_npx_timestamp;
+	bool passedOneSecond;
+	bool sendSync;
+
+	int16_t data[MAXPACKETS * 384];
+	uint64 eventCode;
+
+	Neuropixels::streamsource_t source = Neuropixels::SourceAP;
+
+	Neuropixels::PacketInfo packetInfo[MAXPACKETS];
+
+	Neuropixels::streamsource_t stream_source;
+	int shank;
+	int slot;
+	int port;
+	int dock;
+	DataBuffer* buffer;
+	Probe* probe;
+	bool invertSyncLine = false;
+};
+
 /**
 
 	Acquires data from a Neuropixels QuadBase probe,
@@ -94,24 +146,15 @@ public:
 	/** Signals that this probe DOES NOT have AP filter switch*/
 	bool hasApFilterSwitch() { return false; }
 
-	/** Acquires data from the probe */
-	void run() override; // acquire data
+	/** Acquisition happens in sub-threads -- this one is not used */
+	void run() override { } // not used
 
 private:
 
 	Neuropixels::NP_ErrorCode errorCode;
 
-	int SKIP;
+	OwnedArray<AcquisitionThread> acquisitionThreads;
 
-	float apSamples[(384 * 4 + 1) * MAXPACKETS];
-	int64 ap_timestamps[MAXPACKETS];
-	uint64 event_codes[MAXPACKETS];
-
-	int16_t data[MAXPACKETS * 384];
-
-	Neuropixels::streamsource_t source = Neuropixels::SourceAP;
-
-	Neuropixels::PacketInfo packetInfo[MAXPACKETS];
 
 };
 

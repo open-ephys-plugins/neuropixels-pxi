@@ -90,7 +90,7 @@ enum class ProbeType {
 	NP2_1,
 	NP2_4,
 	OPTO,
-	QuadBase
+	QUAD_BASE
 };
 
 enum class SourceStatus {
@@ -117,6 +117,22 @@ enum class Bank {
 	K = 10,
 	L = 11,
 	M = 12,
+	A1 = 13, // used for quad base
+	A2 = 14,
+	A3 = 15,
+	A4 = 16,
+	B1 = 17,
+	B2 = 18,
+	B3 = 19,
+	B4 = 20,
+	C1 = 21,
+	C2 = 22,
+	C3 = 23,
+	C4 = 24,
+	D1 = 25,
+	D2 = 26,
+	D3 = 27,
+	D4 = 28,
 	OFF = 255 //used in v1 API
 };
 
@@ -423,6 +439,9 @@ public:
 	
 	/** Separate buffer for LFP data */
 	DataBuffer* lfpBuffer;
+
+	/** Additional buffers for quad base probe */
+	Array<DataBuffer*> quadBaseBuffers;
 
 	float ap_sample_rate;
 	float lfp_sample_rate;

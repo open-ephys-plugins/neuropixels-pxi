@@ -860,7 +860,7 @@ void Geometry::QuadBase(Array<ElectrodeMetadata>& electrodeMetadata,
 
 	int shank_count = 4;
 
-	probeMetadata.type = ProbeType::QuadBase;
+	probeMetadata.type = ProbeType::QUAD_BASE;
 	probeMetadata.name = " Neuropixels 2.0 QuadBase";
 
 
@@ -884,6 +884,18 @@ void Geometry::QuadBase(Array<ElectrodeMetadata>& electrodeMetadata,
 			Bank::B,
 			Bank::C,
 			Bank::D,
+			Bank::A2,
+			Bank::B2,
+			Bank::C2,
+			Bank::D2,
+			Bank::A3,
+			Bank::B3,
+			Bank::C3,
+			Bank::D3,
+			Bank::A4,
+			Bank::B4,
+			Bank::C4,
+			Bank::D4,
 			Bank::OFF //disconnected
 		};
 
@@ -905,7 +917,7 @@ void Geometry::QuadBase(Array<ElectrodeMetadata>& electrodeMetadata,
 
 		metadata.isSelected = false;
 
-		if (i < 384 * 4)
+		if (metadata.shank_local_index < 384)
 		{
 			metadata.status = ElectrodeStatus::CONNECTED;
 		}
@@ -914,144 +926,84 @@ void Geometry::QuadBase(Array<ElectrodeMetadata>& electrodeMetadata,
 		}
 
 		if (metadata.shank_local_index < 384)
-			metadata.bank = Bank::A;
-		else if (metadata.shank_local_index >= 384 &&
-			metadata.shank_local_index < 768)
-			metadata.bank = Bank::B;
-		else if (metadata.shank_local_index >= 768 &&
-			metadata.shank_local_index < 1152)
-			metadata.bank = Bank::C;
-		else
-			metadata.bank = Bank::D;
-
-		int block = metadata.shank_local_index % 384 / 48 + 1;
-		int block_index = metadata.shank_local_index % 48;
-
-		if (metadata.shank == 0)
 		{
-			switch (block)
+			if (metadata.shank == 0)
 			{
-				case 1:
-					metadata.channel = block_index + 48 * 0; // 1-48 (Bank 0-3)
-					break;
-				case 2:
-					metadata.channel = block_index + 48 * 2; // 96-144 (Bank 0-3)
-					break;
-				case 3:
-					metadata.channel = block_index + 48 * 4; // 192-223 (Bank 0-3)
-					break;
-				case 4:
-					metadata.channel = block_index + 48 * 6; // 288-336 (Bank 0-2)
-					break;
-				case 5:
-					metadata.channel = block_index + 48 * 5; // 240-288 (Bank 0-2)
-					break;
-				case 6:
-					metadata.channel = block_index + 48 * 7; // 336-384 (Bank 0-2)
-					break;
-				case 7:
-					metadata.channel = block_index + 48 * 1; // 48-96 (Bank 0-2)
-					break;
-				case 8:
-					metadata.channel = block_index + 48 * 3; // 144-192 (Bank 0-2)
-					break;
-				default:
-					metadata.channel = -1;
+				metadata.bank = Bank::A;
 			}
-		} else if (metadata.shank == 1)
-		{
-			switch (block)
+			else if (metadata.shank == 1)
 			{
-			case 1:
-				metadata.channel = block_index + 48 * 1; // 48-96 (Bank 0-3)
-				break;
-			case 2:
-				metadata.channel = block_index + 48 * 3; // 144-192 (Bank 0-3)
-				break;
-			case 3:
-				metadata.channel = block_index + 48 * 5; // 240-27
-				break;
-			case 4:
-				metadata.channel = block_index + 48 * 7;
-				break;
-			case 5:
-				metadata.channel = block_index + 48 * 4;
-				break;
-			case 6:
-				metadata.channel = block_index + 48 * 6;
-				break;
-			case 7:
-				metadata.channel = block_index + 48 * 0;
-				break;
-			case 8:
-				metadata.channel = block_index + 48 * 2;
-				break;
-			default:
-				metadata.channel = -1;
+				metadata.bank = Bank::A;
 			}
-		} if (metadata.shank == 2)
-		{
-			switch (block)
+			else if (metadata.shank == 2)
 			{
-			case 1:
-				metadata.channel = block_index + 48 * 4;
-				break;
-			case 2:
-				metadata.channel = block_index + 48 * 6;
-				break;
-			case 3:
-				metadata.channel = block_index + 48 * 0;
-				break;
-			case 4:
-				metadata.channel = block_index + 48 * 2;
-				break;
-			case 5:
-				metadata.channel = block_index + 48 * 1;
-				break;
-			case 6:
-				metadata.channel = block_index + 48 * 3;
-				break;
-			case 7:
-				metadata.channel = block_index + 48 * 5;
-				break;
-			case 8:
-				metadata.channel = block_index + 48 * 7;
-				break;
-			default:
-				metadata.channel = -1;
+				metadata.bank = Bank::A;
 			}
-		} if (metadata.shank == 3)
-		{
-			switch (block)
+			else if (metadata.shank == 3)
 			{
-			case 1:
-				metadata.channel = block_index + 48 * 5;
-				break;
-			case 2:
-				metadata.channel = block_index + 48 * 7;
-				break;
-			case 3:
-				metadata.channel = block_index + 48 * 1;
-				break;
-			case 4:
-				metadata.channel = block_index + 48 * 3;
-				break;
-			case 5:
-				metadata.channel = block_index + 48 * 0;
-				break;
-			case 6:
-				metadata.channel = block_index + 48 * 2;
-				break;
-			case 7:
-				metadata.channel = block_index + 48 * 4;
-				break;
-			case 8:
-				metadata.channel = block_index + 48 * 6;
-				break;
-			default:
-				metadata.channel = -1;
+				metadata.bank = Bank::A;
 			}
 		}
+		else if (metadata.shank_local_index >= 384 &&
+			metadata.shank_local_index < 768)
+		{
+			if (metadata.shank == 0)
+			{
+				metadata.bank = Bank::B;
+			}
+			else if (metadata.shank == 1)
+			{
+				metadata.bank = Bank::B;
+			}
+			else if (metadata.shank == 2)
+			{
+				metadata.bank = Bank::B;
+			}
+			else if (metadata.shank == 3)
+			{
+				metadata.bank = Bank::B;
+			}
+		}
+		else if (metadata.shank_local_index >= 768 &&
+			metadata.shank_local_index < 1152)
+		{
+			if (metadata.shank == 0)
+			{
+				metadata.bank = Bank::C;
+			}
+			else if (metadata.shank == 1)
+			{
+				metadata.bank = Bank::C;
+			}
+			else if (metadata.shank == 2)
+			{
+				metadata.bank = Bank::C;
+			}
+			else if (metadata.shank == 3)
+			{
+				metadata.bank = Bank::C;
+			}
+		}
+		else {
+			if (metadata.shank == 0)
+			{
+				metadata.bank = Bank::D;
+			}
+			else if (metadata.shank == 1)
+			{
+				metadata.bank = Bank::D;
+			}
+			else if (metadata.shank == 2)
+			{
+				metadata.bank = Bank::D;
+			}
+			else if (metadata.shank == 3)
+			{
+				metadata.bank = Bank::D;
+			}
+		}
+
+		metadata.channel = metadata.shank_local_index % 384;
 
 		metadata.type = ElectrodeType::ELECTRODE; // disable internal reference
 
