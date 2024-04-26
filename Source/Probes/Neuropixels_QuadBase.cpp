@@ -49,6 +49,8 @@ Neuropixels_QuadBase::Neuropixels_QuadBase(Basestation* bs, Headstage* hs, Flex*
 
 	customName.probeSpecific = String(info.serial_number);
 
+	acquisitionThreads.clear();
+
 	LOGC("Trying to open probe, slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
 
 	if (Geometry::forPartNumber(info.part_number, electrodeMetadata, probeMetadata))
@@ -615,7 +617,6 @@ void Neuropixels_QuadBase::startAcquisition()
 		for (int shank = 0; shank < 4; shank++)
 		{
 			
-			std::cout << quadBaseBuffers[shank] << std::endl;
 			quadBaseBuffers[shank]->clear();
 
 			acquisitionThreads.add(
@@ -680,7 +681,6 @@ AcquisitionThread::AcquisitionThread(
 	else if (shank == 3)
 		stream_source = Neuropixels::streamsource_t::SourceSt3;
 
-	std::cout << "AcquisitionThread: " << buffer << std::endl;
 }
 
 void AcquisitionThread::run()
@@ -768,7 +768,6 @@ void AcquisitionThread::run()
 		{
 			std::cout << "readPackets error code: " << errorCode << " for Basestation " << slot << ", probe " << port << std::endl;
 		}
-
 
 		buffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, packet_count);
 

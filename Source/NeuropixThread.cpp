@@ -380,6 +380,8 @@ void NeuropixThread::updateStreamInfo()
 			}
 			else {
 
+				probe->quadBaseBuffers.clear();
+
 				for (int shank = 0; shank < 4; shank++)
 				{
 					StreamInfo apInfo;
@@ -396,9 +398,8 @@ void NeuropixThread::updateStreamInfo()
 					streamInfo.add(apInfo);
 
 					sourceBuffers.add(new DataBuffer(apInfo.num_channels, 460800));  // AP band buffer
+					
 					probe->quadBaseBuffers.add(sourceBuffers.getLast());
-
-					std::cout << probe->quadBaseBuffers[shank] << std::endl;
 
 					LOGD("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") SHANK=", shank +1," CH = ", 384, " SR = ", apInfo.sample_rate, " Hz");
 
