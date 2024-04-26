@@ -67,60 +67,32 @@ Neuropixels_QuadBase::Neuropixels_QuadBase(Basestation* bs, Headstage* hs, Flex*
 		settings.referenceIndex = 0;
 		settings.apFilterState = false;
 
-		channel_count = 384 * 4;
+		channel_count = 384;
 		lfp_sample_rate = 2500.0f; // not used
 		ap_sample_rate = 30000.0f;
 
-		for (int i = 0; i < channel_count; i++)
+		for (int shank = 0; shank < 4; shank++)
 		{
-			settings.selectedBank.add(Bank::A);
-			settings.selectedChannel.add(electrodeMetadata[i].channel);
-			settings.selectedShank.add(0);
-			settings.selectedElectrode.add(electrodeMetadata[i].global_index);
+			for (int i = 0; i < channel_count; i++)
+			{
+				settings.selectedBank.add(Bank::A);
+				settings.selectedChannel.add(electrodeMetadata[i].channel);
+				settings.selectedShank.add(shank);
+				settings.selectedElectrode.add(electrodeMetadata[i].global_index);
 
+			}
 		}
+		
+		settings.availableReferences.add("Ext");
+		settings.availableReferences.add("Tip");
+		settings.availableReferences.add("Ground");
 
-		if (probeMetadata.shank_count == 1)
-		{
-			settings.availableReferences.add("Ext");
-			settings.availableReferences.add("Tip");
-			
-			settings.availableElectrodeConfigurations.add("Bank A");
-			settings.availableElectrodeConfigurations.add("Bank B");
-			settings.availableElectrodeConfigurations.add("Bank C");
-			settings.availableElectrodeConfigurations.add("Bank D");
-		}
-		else {
-			settings.availableReferences.add("Ext");
-			settings.availableReferences.add("Tip");
-			settings.availableReferences.add("Ground");
-
-			settings.availableElectrodeConfigurations.add("Shank 1 Bank A");
-			settings.availableElectrodeConfigurations.add("Shank 1 Bank B");
-			settings.availableElectrodeConfigurations.add("Shank 1 Bank C");
-			settings.availableElectrodeConfigurations.add("Shank 2 Bank A");
-			settings.availableElectrodeConfigurations.add("Shank 2 Bank B");
-			settings.availableElectrodeConfigurations.add("Shank 2 Bank C");
-			settings.availableElectrodeConfigurations.add("Shank 3 Bank A");
-			settings.availableElectrodeConfigurations.add("Shank 3 Bank B");
-			settings.availableElectrodeConfigurations.add("Shank 3 Bank C");
-			settings.availableElectrodeConfigurations.add("Shank 4 Bank A");
-			settings.availableElectrodeConfigurations.add("Shank 4 Bank B");
-			settings.availableElectrodeConfigurations.add("Shank 4 Bank C");
-			settings.availableElectrodeConfigurations.add("All Shanks 1-96");
-			settings.availableElectrodeConfigurations.add("All Shanks 97-192");
-			settings.availableElectrodeConfigurations.add("All Shanks 193-288");
-			settings.availableElectrodeConfigurations.add("All Shanks 289-384");
-			settings.availableElectrodeConfigurations.add("All Shanks 385-480");
-			settings.availableElectrodeConfigurations.add("All Shanks 481-576");
-			settings.availableElectrodeConfigurations.add("All Shanks 577-672");
-			settings.availableElectrodeConfigurations.add("All Shanks 673-768");
-			settings.availableElectrodeConfigurations.add("All Shanks 769-864");
-			settings.availableElectrodeConfigurations.add("All Shanks 865-960");
-			settings.availableElectrodeConfigurations.add("All Shanks 961-1056");
-			settings.availableElectrodeConfigurations.add("All Shanks 1057-1152");
-			settings.availableElectrodeConfigurations.add("All Shanks 1153-1248");
-		}
+		settings.availableElectrodeConfigurations.add("Bank A");
+		settings.availableElectrodeConfigurations.add("Bank B");
+		settings.availableElectrodeConfigurations.add("Bank C");
+		settings.availableElectrodeConfigurations.add("Bank D");
+		settings.availableElectrodeConfigurations.add("Single column");
+		settings.availableElectrodeConfigurations.add("Tetrodes");
 
 		open();
 	}
@@ -242,303 +214,74 @@ void Neuropixels_QuadBase::selectElectrodes()
 
 Array<int> Neuropixels_QuadBase::selectElectrodeConfiguration(String config)
 {
+
 	Array<int> selection;
 
 	if (config.equalsIgnoreCase("Bank A"))
 	{
-		for (int i = 0; i < 384; i++)
-			selection.add(i);
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = 0; i < 384; i++)
+				selection.add(i + 1280 * shank);
+		}
 	}
 	else if (config.equalsIgnoreCase("Bank B"))
 	{
-		for (int i = 384; i < 768; i++)
-			selection.add(i);
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = 384; i < 768; i++)
+				selection.add(i + 1280 * shank);
+		}
 	}
 	else if (config.equalsIgnoreCase("Bank C"))
 	{
-
-		for (int i = 768; i < 1152; i++)
-			selection.add(i);
-
+		for (int shank = 0; shank < 4; shank++)
+		{
+			for (int i = 768; i < 1152; i++)
+				selection.add(i + 1280 * shank);
+		}
 	}
+
 	else if (config.equalsIgnoreCase("Bank D"))
 	{
-
-		for (int i = 896; i < 1280; i++)
-			selection.add(i);
-
-	}
-	else if (config.equalsIgnoreCase("Shank 1 Bank A"))
-	{
-		for (int i = 0; i < 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 1 Bank B"))
-	{
-		for (int i = 384; i < 768; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 1 Bank C"))
-	{
-		for (int i = 768; i < 1152; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 2 Bank A"))
-	{
-		int startElectrode = 1280;
-
-		for (int i = startElectrode; i < startElectrode + 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 2 Bank B"))
-	{
-		int startElectrode = 1280 + 384;
-
-		for (int i = startElectrode; i < startElectrode + 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 2 Bank C"))
-	{
-		int startElectrode = 1280 + 384 * 2;
-
-		for (int i = startElectrode; i < startElectrode + 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 3 Bank A"))
-	{
-		int startElectrode = 1280 * 2;
-
-		for (int i = startElectrode; i < startElectrode + 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 3 Bank B"))
-	{
-		int startElectrode = 1280 * 2 + 384;
-
-		for (int i = startElectrode; i < startElectrode + 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 3 Bank C"))
-	{
-		int startElectrode = 1280 * 2 + 384 * 2;
-
-		for (int i = startElectrode; i < startElectrode + 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 4 Bank A"))
-	{
-		int startElectrode = 1280 * 3;
-
-		for (int i = startElectrode; i < startElectrode + 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 4 Bank B"))
-	{
-		int startElectrode = 1280 * 3 + 384;
-
-		for (int i = startElectrode; i < startElectrode + 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("Shank 4 Bank C"))
-	{
-		int startElectrode = 1280 * 3 + 384 * 2;
-
-		for (int i = startElectrode; i < startElectrode + 384; i++)
-		{
-			selection.add(i);
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 1-96"))
-	{
-
-		int startElectrode = 0;
-
 		for (int shank = 0; shank < 4; shank++)
 		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
+			for (int i = 896; i < 1280; i++)
+				selection.add(i + 1280 * shank);
 		}
 	}
-	else if (config.equalsIgnoreCase("All Shanks 97-192"))
+
+	else if (config.equalsIgnoreCase("Single Column"))
 	{
-
-		int startElectrode = 96;
-
 		for (int shank = 0; shank < 4; shank++)
 		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
+			for (int i = 0; i < 384; i += 2)
+				selection.add(i + 1280 * shank);
+
+			for (int i = 385; i < 768; i += 2)
+				selection.add(i + 1280 * shank);
 		}
+		
 	}
-	else if (config.equalsIgnoreCase("All Shanks 193-288"))
+	else if (config.equalsIgnoreCase("Tetrodes"))
 	{
-
-		int startElectrode = 192;
-
 		for (int shank = 0; shank < 4; shank++)
 		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
+			for (int i = 0; i < 384; i += 8)
 			{
-				selection.add(i);
+				for (int j = 0; j < 4; j++)
+					selection.add(i + j + 1280 * shank);
+			}
+
+			for (int i = 388; i < 768; i += 8)
+			{
+				for (int j = 0; j < 4; j++)
+					selection.add(i + j + 1280 * shank);
 			}
 		}
+	
 	}
-	else if (config.equalsIgnoreCase("All Shanks 289-384"))
-	{
 
-		int startElectrode = 288;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 385-480"))
-	{
-
-		int startElectrode = 384;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 481-576"))
-	{
-
-		int startElectrode = 480;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 577-672"))
-	{
-
-		int startElectrode = 576;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 673-768"))
-	{
-
-		int startElectrode = 672;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 769-864"))
-	{
-
-		int startElectrode = 768;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 865-960"))
-	{
-
-		int startElectrode = 864;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 961-1056"))
-	{
-
-		int startElectrode = 960;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 1057-1152"))
-	{
-
-		int startElectrode = 1056;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
-	else if (config.equalsIgnoreCase("All Shanks 1153-1248"))
-	{
-
-		int startElectrode = 1152;
-
-		for (int shank = 0; shank < 4; shank++)
-		{
-			for (int i = startElectrode + 1280 * shank; i < startElectrode + 96 + 1280 * shank; i++)
-			{
-				selection.add(i);
-			}
-		}
-	}
 
 	return selection;
 }
@@ -560,7 +303,6 @@ void Neuropixels_QuadBase::setAllReferences()
 
 	Neuropixels::channelreference_t refId;
 	int refElectrodeBank = 0;
-	int shank = 0;
 
 	switch (settings.referenceIndex)
 	{
@@ -569,36 +311,27 @@ void Neuropixels_QuadBase::setAllReferences()
 		break;
 	case 1:
 		refId = Neuropixels::TIP_REF;
-		shank = 0;
 		break;
 	case 2:
-		refId = Neuropixels::TIP_REF;
-		shank = 1;
+		refId = Neuropixels::GND_REF;
 		break;
-	case 3:
-		refId = Neuropixels::TIP_REF;
-		shank = 2;
-		break;
-	case 4:
-		refId = Neuropixels::TIP_REF;
-		shank = 3;
-		break;
-	case 5:
-		refId = Neuropixels::INT_REF;
-		break;
-
+	
 	default:
 		refId = Neuropixels::EXT_REF;
 	}
 
-	for (int channel = 0; channel < channel_count; channel++)
-		Neuropixels::setReference(basestation->slot, 
-									headstage->port, 
-									dock,
-									channel,
-									shank, 
-									refId, 
-									refElectrodeBank);
+	for (int shank = 0; shank < 4; shank++)
+	{
+		for (int channel = 0; channel < channel_count; channel++)
+			Neuropixels::setReference(basestation->slot,
+				headstage->port,
+				dock,
+				channel,
+				shank,
+				refId,
+				refElectrodeBank);
+	}
+	
 
 	LOGD("Updated reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", refId);
 

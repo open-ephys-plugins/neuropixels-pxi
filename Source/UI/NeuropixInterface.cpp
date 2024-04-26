@@ -1153,6 +1153,7 @@ void NeuropixInterface::selectElectrodes(Array<int> electrodes)
                 }
             }
             else {
+
                 if (electrodeMetadata[j].channel == channel && electrodeMetadata[j].shank == shank)
                 {
                     if (electrodeMetadata[j].bank == bank)
@@ -1583,6 +1584,9 @@ ProbeSettings NeuropixInterface::getProbeSettings()
     else
         p.referenceIndex = -1;
 
+    LOGD("Getting probe settings");
+    int numElectrodes = 0;
+
     for (auto electrode : electrodeMetadata)
     {
         if (electrode.status == ElectrodeStatus::CONNECTED)
@@ -1591,10 +1595,12 @@ ProbeSettings NeuropixInterface::getProbeSettings()
             p.selectedBank.add(electrode.bank);
             p.selectedShank.add(electrode.shank);
             p.selectedElectrode.add(electrode.global_index);
+            numElectrodes++;
 
            // std::cout << electrode.channel << " : " << electrode.global_index << std::endl;
         }
     }
+    LOGD("Found ", numElectrodes, " connected electrodes.");
     
     p.probe = probe;
     p.probeType = probe->type;
@@ -1702,7 +1708,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
             String chString = String(bank);
 
-            if (probe->type == ProbeType::NP2_4)
+            if (probe->type == ProbeType::NP2_4 || probe->type == ProbeType::QUAD_BASE)
                 chString += ":" + String(shank);
 
             channelNode->setAttribute("CH" + String(channel), chString);
