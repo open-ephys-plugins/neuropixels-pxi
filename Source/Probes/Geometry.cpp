@@ -686,14 +686,16 @@ void Geometry::UHD(bool switchable,
 	float siteSpacing, Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
-	// need to implement switchable case
-	probeMetadata.type = ProbeType::UHD1;
+	
 
 	if (switchable)
 	{
 		probeMetadata.name = "Neuropixels Ultra (Switchable)";
+		probeMetadata.type = ProbeType::UHD2;
 	}
 	else {
+
+		probeMetadata.type = ProbeType::UHD1;
 
 		if (numColumns == 8 && siteSpacing == 6.0f)
 			probeMetadata.name = "Neuropixels Ultra (Phase 1)";

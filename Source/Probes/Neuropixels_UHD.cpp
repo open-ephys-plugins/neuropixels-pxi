@@ -66,11 +66,14 @@ Neuropixels_UHD::Neuropixels_UHD(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 		ap_sample_rate = 30000.0f;
 
 		for (int i = 0; i < 16; i++)
-			settings.availableElectrodeConfigurations.add("Bank: " + String(i));
-		settings.availableElectrodeConfigurations.add("Tip Half");
-		settings.availableElectrodeConfigurations.add("Base Half");
+			settings.availableElectrodeConfigurations.add("8 x 48: Bank " + String(i));
+		settings.availableElectrodeConfigurations.add("1 x 384: Tip Half");
+		settings.availableElectrodeConfigurations.add("1 x 384: Base Half");
+		settings.availableElectrodeConfigurations.add("2 x 192");
+		settings.availableElectrodeConfigurations.add("4 x 96");
+		settings.availableElectrodeConfigurations.add("2 x 2 x 96");
 
-		settings.electrodeConfigurationIndex = 1;
+		settings.electrodeConfigurationIndex = 1; // 8 x 48: Bank 0
 
 		for (int i = 0; i < channel_count; i++)
 		{
@@ -249,19 +252,19 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration(String electrodeConfigu
 	*           --------24 GROUPS------|-------24 GROUPS-------
 	*/
 
-	int banksPerProbe		= 16;
-	int groupsPerBank		= 24;
-	int groupsPerBankColumn	= 6;
-	int electrodesPerGroup	= 16;
+	int banksPerProbe = 16;
+	int groupsPerBank = 24;
+	int groupsPerBankColumn = 6;
+	int electrodesPerGroup = 16;
 
-    Neuropixels::NP_ErrorCode ec;
+	Neuropixels::NP_ErrorCode ec;
 
 	int index = settings.availableElectrodeConfigurations.indexOf(electrodeConfiguration);
 
 	if (index == -1)
 		return returnValue;
 
-	if (index < banksPerProbe)
+	if (index < banksPerProbe || index > 17)
 	{
 		LOGC("Selecting column pattern: ALL");
 		// select columnar configuration
@@ -284,10 +287,10 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration(String electrodeConfigu
 
 		);
 	}
-	
+
 	// Select all groups in a particular bank
-    if (index < banksPerProbe)
-    {
+	if (index < banksPerProbe)
+	{
 		LOGC("Selecting bank: ", index);
 
 		// Select all groups at this bank index
@@ -300,7 +303,134 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration(String electrodeConfigu
 				index);				// bank index
 
 		return returnValue;
-    }
+	}
+	else if (index == 17) // 2 x 192
+	{
+		LOGC("Selecting 2 x 192 configuration");
+
+		// Select G2, G6, G10, G14, G18, G22 from bank 0
+		for (int group = 2; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				0);				// bank index
+
+		// Select G0, G4, G8, G12, G16, G20 from bank 1
+		for (int group = 0; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				1);				// bank index
+
+		// Select G3, G7, G11, G15, G19, G23 from bank 2
+		for (int group = 0; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				2);				// bank index
+
+		// Select G1, G5, G9, G13, G17, G21 from bank 3
+		for (int group = 0; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				3);				// bank index
+
+		return returnValue;
+
+	}
+	else if (index == 18) // 4 x 96
+	{
+		// Select G2, G6, G10, G14, G18, G22 from bank 0
+		for (int group = 2; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				0);				// bank index
+
+		// Select G3, G7, G11, G15, G19, G23 from bank 0
+		for (int group = 0; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				0);				// bank index
+
+		// Select G0, G4, G8, G12, G16, G20 from bank 1
+		for (int group = 0; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				1);				// bank index
+
+		// Select G1, G5, G9, G13, G17, G21 from bank 1
+		for (int group = 0; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				1);				// bank index
+
+		return returnValue;
+
+	}
+	else if (index == 19) // 2 x 2 x 96
+	{
+		// Select G2, G6, G10, G14, G18, G22 from bank 1
+		for (int group = 2; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				1);				// bank index
+
+		// Select G3, G7, G11, G15, G19, G23 from bank 1
+		for (int group = 0; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				1);				// bank index
+
+		// Select G0, G4, G8, G12, G16, G20 from bank 0
+		for (int group = 0; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				0);				// bank index
+
+		// Select G1, G5, G9, G13, G17, G21 from bank 0
+		for (int group = 0; group < groupsPerBank; group += 4)
+			ec = Neuropixels::selectElectrodeGroup(
+				basestation->slot,	// slot
+				headstage->port,	// port
+				dock,				// dock
+				group,				// group number
+				0);				// bank index
+
+		return returnValue;
+
+	}
+	
+	// This code is only reached for 1 x 384 configurations!!
 
 	// Select a subset of groups in multiple banks to span half of the probe
 	//   0 = Select groups from middle to tip of probe (Banks 0-7)

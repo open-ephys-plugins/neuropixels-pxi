@@ -153,7 +153,7 @@ public:
 
     static void parseValues(Array<int> values, ProbeType probeType, ProbeSettings& settings)
     {
-        if (probeType == ProbeType::NP1 || probeType == ProbeType::NHP10)
+        if (probeType == ProbeType::NP1 || probeType == ProbeType::NHP10 || probeType == ProbeType::NHP45)
         {
             // 0 = 1.0 probe
            // channel ID
@@ -175,6 +175,33 @@ public:
                 break;
             case 2:
                 bank = Bank::C;
+                break;
+            case 3:
+                bank = Bank::D;
+                break;
+            case 4:
+                bank = Bank::E;
+                break;
+            case 5:
+                bank = Bank::F;
+                break;
+            case 6:
+                bank = Bank::G;
+                break;
+            case 7:
+                bank = Bank::H;
+                break;
+            case 8:
+                bank = Bank::I;
+                break;
+            case 9:
+                bank = Bank::J;
+                break;
+            case 10:
+                bank = Bank::K;
+                break;
+            case 11:
+                bank = Bank::L;
                 break;
             default:
                 bank = Bank::A;
