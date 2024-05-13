@@ -102,6 +102,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         electrodeConfigurationComboBox->addItem("Select a preset...", 1);
         electrodeConfigurationComboBox->setItemEnabled(1, false);
         electrodeConfigurationComboBox->addSeparator();
+
+        LOGC("FOUND ", probe->settings.availableElectrodeConfigurations.size(), " electrode configurations");   
         
         for (int i = 0; i < probe->settings.availableElectrodeConfigurations.size(); i++)
         {

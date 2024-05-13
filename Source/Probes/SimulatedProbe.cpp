@@ -85,6 +85,7 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 		type == ProbeType::NHP25 ||
 		type == ProbeType::NHP45 ||
 		type == ProbeType::UHD1 ||
+		type == ProbeType::UHD2 ||
 		type == ProbeType::NHP1)
 	{
 		settings.availableApGains.add(50.0f);
@@ -105,31 +106,47 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 		settings.availableLfpGains.add(2000.0f);
 		settings.availableLfpGains.add(3000.0f);
 
-		if (type != ProbeType::UHD1 && type != ProbeType::NHP1)
+		std::cout << "Probe Type: " << (int) type << std::endl;
+
+		if (type == ProbeType::UHD2)
 		{
-			settings.availableElectrodeConfigurations.add("Bank A");
-			settings.availableElectrodeConfigurations.add("Bank B");
-			settings.availableElectrodeConfigurations.add("Bank C");
+			for (int i = 0; i < 16; i++)
+				settings.availableElectrodeConfigurations.add("8 x 48: Bank " + String(i));
+			settings.availableElectrodeConfigurations.add("1 x 384: Tip Half");
+			settings.availableElectrodeConfigurations.add("1 x 384: Base Half");
+			settings.availableElectrodeConfigurations.add("2 x 192");
+			settings.availableElectrodeConfigurations.add("4 x 96");
+			settings.availableElectrodeConfigurations.add("2 x 2 x 96");
 
-			if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
+			LOGC("ADDING ELECTRODE CONFIGS");
+		}
+		else {
+			if (type != ProbeType::UHD1 && type != ProbeType::NHP1)
 			{
-				settings.availableElectrodeConfigurations.add("Bank D");
-				settings.availableElectrodeConfigurations.add("Bank E");
-				settings.availableElectrodeConfigurations.add("Bank F");
-				settings.availableElectrodeConfigurations.add("Bank G");
+				settings.availableElectrodeConfigurations.add("Bank A");
+				settings.availableElectrodeConfigurations.add("Bank B");
+				settings.availableElectrodeConfigurations.add("Bank C");
 
-				if (type == ProbeType::NHP45)
+				if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
 				{
-					settings.availableElectrodeConfigurations.add("Bank H");
-					settings.availableElectrodeConfigurations.add("Bank I");
-					settings.availableElectrodeConfigurations.add("Bank J");
-					settings.availableElectrodeConfigurations.add("Bank K");
-					settings.availableElectrodeConfigurations.add("Bank L");
-				}
-			}
+					settings.availableElectrodeConfigurations.add("Bank D");
+					settings.availableElectrodeConfigurations.add("Bank E");
+					settings.availableElectrodeConfigurations.add("Bank F");
+					settings.availableElectrodeConfigurations.add("Bank G");
 
-			settings.availableElectrodeConfigurations.add("Single Column");
-			settings.availableElectrodeConfigurations.add("Tetrodes");
+					if (type == ProbeType::NHP45)
+					{
+						settings.availableElectrodeConfigurations.add("Bank H");
+						settings.availableElectrodeConfigurations.add("Bank I");
+						settings.availableElectrodeConfigurations.add("Bank J");
+						settings.availableElectrodeConfigurations.add("Bank K");
+						settings.availableElectrodeConfigurations.add("Bank L");
+					}
+				}
+
+				settings.availableElectrodeConfigurations.add("Single Column");
+				settings.availableElectrodeConfigurations.add("Tetrodes");
+			}
 		}
 
 		settings.apGainIndex = 3;
@@ -138,9 +155,6 @@ SimulatedProbe::SimulatedProbe(Basestation* bs,
 
 		settings.availableReferences.add("Ext");
 		settings.availableReferences.add("Tip");
-		//settings.availableReferences.add("192");
-		//settings.availableReferences.add("576");
-		//settings.availableReferences.add("960");
 
 	}
 	else {
