@@ -556,7 +556,7 @@ String NeuropixThread::getProbeInfoString()
 	output.setProperty(Identifier("probes"), probes);
 
 	MemoryOutputStream f;
-	output.writeAsJSON(f, 0, true, 4);
+	output.writeAsJSON(f, JSON::FormatOptions{}.withIndentLevel(0).withSpacing(JSON::Spacing::singleLine).withMaxDecimalPlaces(4));
 
 	return f.toString();
 

@@ -78,7 +78,7 @@ public:
 
         FileOutputStream f(file);
 
-        output.writeAsJSON(f, 4, false, 4);
+        output.writeAsJSON(f, JSON::FormatOptions{}.withIndentLevel(4).withSpacing(JSON::Spacing::multiLine).withMaxDecimalPlaces(4));
 
         return true;
 
