@@ -332,13 +332,13 @@ void Basestation_v3::setSyncAsInput()
 
 	LOGD("Setting sync as input...");
 
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, false);
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXISYNC, false);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
 		LOGC("Failed to set sync on SMA output on slot: ", slot);
 	}
 	
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, false);
+	/*errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, false);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
 		LOGC("Failed to set sync on SMA input on slot: ", slot);
@@ -358,11 +358,11 @@ void Basestation_v3::setSyncAsInput()
 	}
 	*/
 		
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXISYNC, true);
+	/*errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXISYNC, true);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
 		LOGD("Failed to set sync on SMA input on slot: ", slot);
-	}
+	}*/
 
 	if (invertOutput)
 	{
@@ -414,7 +414,7 @@ void Basestation_v3::setSyncAsOutput(int freqIndex)
 
 	LOGD("Setting sync as output...");
 
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true);
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SyncClk, true);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
 		LOGC("Failed to set sync on SMA output on slot: ", slot);
