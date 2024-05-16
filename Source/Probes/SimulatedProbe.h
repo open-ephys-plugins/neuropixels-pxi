@@ -113,6 +113,9 @@ public:
 	/** Acquires data from the probe */
 	void run() override;
 
+	/** Creates arrays of selected electrodes for each available config */
+	void createElectrodeConfigurationsUHD();
+
 	bool apFilterSwitch;
 
 	SimulatedData simulatedData;
@@ -125,6 +128,10 @@ public:
 	uint64 event_codes[12 * MAXPACKETS];
 	int64 lfp_timestamps[MAXPACKETS];
 	uint64 lfp_event_codes[MAXPACKETS];
+
+	Array<String> availableElectrodeConfigurationsUHD;
+
+	OwnedArray<Array<int>> electrodeConfigurationsUHD;
 
 };
 
