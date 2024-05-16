@@ -74,7 +74,7 @@ void Initializer::run()
 
 			Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo(list[i].ID, &list[i]);
 
-			LOGD("Slot ID: ", slotID, "Platform ID : ", list[i].platformid);
+			LOGD("Slot ID: ", slotID, ", Platform ID : ", list[i].platformid);
 
 			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
 			{
@@ -635,13 +635,24 @@ String NeuropixThread::getApiVersion()
 void NeuropixThread::setMainSync(int slotIndex)
 {
 	if (foundInputSource() && slotIndex > -1)
+	{
+		for (auto basestation : basestations)
+			basestation->setSyncAsPassive();
+
 		basestations[slotIndex]->setSyncAsInput();
+	}
+	
 }
 
 void NeuropixThread::setSyncOutput(int slotIndex)
 {
-	if (basestations.size() && slotIndex > -1)
+	if (foundInputSource() && slotIndex > -1)
+	{
+		for (auto basestation : basestations)
+			basestation->setSyncAsPassive();
+
 		basestations[slotIndex]->setSyncAsOutput(0);
+	}
 }
 
 Array<int> NeuropixThread::getSyncFrequencies()
@@ -1109,8 +1120,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 				float depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
 					+ shank * 10000.0f
-					+ float(ch % 2)
-					+ 0.0001f * ch; // each channel must have a unique depth value
+					+ info.probe->electrodeMetadata[selectedElectrode].column_index * 0.0001f;
 
 				continuousChannels->getLast()->position.y = depth;
 

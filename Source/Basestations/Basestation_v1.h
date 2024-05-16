@@ -93,6 +93,9 @@ public:
 	/** Set basestation SMA connector as output (and set frequency)*/
 	void setSyncAsOutput(int freqIndex) override;
 
+	/** Set basestation SMA connector to inherit from PXI backplane */
+	void setSyncAsPassive() override { }
+
 	/** Returns an array of available frequencies when SMA is in "output" mode */
 	Array<int> getSyncFrequencies() override;
 

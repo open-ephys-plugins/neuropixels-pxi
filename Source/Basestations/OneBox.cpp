@@ -357,6 +357,11 @@ void OneBox::setSyncAsOutput(int freqIndex)
 
 }
 
+void OneBox::setSyncAsPassive()
+{
+
+}
+
 int OneBox::getProbeCount()
 {
 	return probes.size();

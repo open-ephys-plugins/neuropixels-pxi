@@ -98,6 +98,9 @@ public:
 	/** Set basestation SMA connector as output (and set frequency)*/
 	void setSyncAsOutput(int freqIndex) override;
 
+	/** Set basestation SMA connector to passively inherit signal from backplane */
+	void setSyncAsPassive() override;
+
 	/** Starts probe data streaming */
 	void startAcquisition() override;
 

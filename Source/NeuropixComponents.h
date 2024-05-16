@@ -614,6 +614,9 @@ public:
 	/** Sets the sync channel as an "output" (and specifies the frequency index) */
 	virtual void setSyncAsOutput(int freqIndex) = 0;
 
+	/** Sets the sync channel to inherit from the PXI backplane */
+	virtual void setSyncAsPassive() = 0;
+
 	/** Returns an array of available sync frequencies for this basestation */
 	virtual Array<int> getSyncFrequencies() = 0;
 
