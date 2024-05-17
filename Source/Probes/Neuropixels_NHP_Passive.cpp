@@ -350,21 +350,21 @@ void Neuropixels_NHP_Passive::run()
 					for (int j = 0; j < 128; j++)
 					{
 
-						apSamples[j + i * SKIP + packetNum * 12 * SKIP] =
+						apSamples[j * (12 * count) + i + (packetNum * 12)] =
 							float(packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f
 							/ settings.availableApGains[settings.apGainIndex]
 							- ap_offsets[j][0]; // convert to microvolts
 
-						apView->addSample(apSamples[j + i * SKIP + packetNum * 12 * SKIP], j);
+						apView->addSample(apSamples[j * (12 * count) + i + (packetNum * 12)], j);
 
 						if (i == 0)
 						{
-							lfpSamples[j + packetNum * SKIP] =
+							lfpSamples[(j * count) + packetNum] =
 								float(packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f
 								/ settings.availableLfpGains[settings.lfpGainIndex]
 								- lfp_offsets[j][0]; // convert to microvolts
 
-							lfpView->addSample(lfpSamples[j + packetNum * SKIP], j);
+							lfpView->addSample(lfpSamples[(j * count) + packetNum], j);
 						}
 					}
 
@@ -372,7 +372,7 @@ void Neuropixels_NHP_Passive::run()
 					event_codes[i + packetNum * 12] = eventCode;
 
 					if (sendSync)
-						apSamples[128 + i * SKIP + packetNum * 12 * SKIP] = (float)eventCode;
+						apSamples[128 * (12 * count) + i + (packetNum * 12)] = (float)eventCode;
 
 				}
 
@@ -380,7 +380,7 @@ void Neuropixels_NHP_Passive::run()
 				lfp_event_codes[packetNum] = eventCode;
 
 				if (sendSync)
-					lfpSamples[128 + packetNum * SKIP] = (float)eventCode;
+					lfpSamples[(128 * count) + packetNum] = (float)eventCode;
 
 			}
 

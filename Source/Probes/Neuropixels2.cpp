@@ -685,10 +685,10 @@ void Neuropixels2::run()
 
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j + packetNum * SKIP] =
+					apSamples[(j * count) + packetNum] =
 						float(data[packetNum * 384 + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
 
-					apView->addSample(apSamples[j + packetNum * SKIP], j);
+					apView->addSample(apSamples[(j * count) + packetNum], j);
 
 				}
 
@@ -696,7 +696,7 @@ void Neuropixels2::run()
 				event_codes[packetNum] = eventCode;
 
 				if (sendSync)
-					apSamples[384 + SKIP * packetNum] = (float)eventCode;
+					apSamples[(384 * count) + packetNum] = (float)eventCode;
 
 			}
 

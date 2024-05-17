@@ -735,14 +735,14 @@ void SimulatedProbe::run()
 			{
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j + i * SKIP + packetNum * 12 * SKIP] = (simulatedData.ap_band[ap_timestamp % 3000] + float(j * 2) - ap_offsets[j][0]) 
+					apSamples[j * (12 * MAXPACKETS) + i + (packetNum * 12)] = (simulatedData.ap_band[ap_timestamp % 3000] + float(j * 2) - ap_offsets[j][0]) 
 						* (float((ap_timestamp + j * 78) % 60000) / 60000.0f);
-					apView->addSample(apSamples[j + i * SKIP + packetNum * 12 * SKIP], j);
+					apView->addSample(apSamples[j * (12 * MAXPACKETS) + i + (packetNum * 12)], j);
 					
 					if (i == 0)
 					{
-						lfpSamples[j + packetNum * SKIP] = simulatedData.lfp_band[lfp_timestamp % 250] * float(j % 24) / 24.0f - lfp_offsets[j][0];
-						lfpView->addSample(lfpSamples[j + packetNum * SKIP], j);
+						lfpSamples[(j * MAXPACKETS) + packetNum] = simulatedData.lfp_band[lfp_timestamp % 250] * float(j % 24) / 24.0f - lfp_offsets[j][0];
+						lfpView->addSample(lfpSamples[(j * MAXPACKETS) + packetNum], j);
 					}
 							
 				}
@@ -760,7 +760,7 @@ void SimulatedProbe::run()
 				event_codes[i + packetNum * 12] = eventCode;
 
 				if (sendSync)
-					apSamples[384 + i * SKIP + packetNum * 12 * SKIP] = (float)eventCode;
+					apSamples[384 * (12 * MAXPACKETS) + i + (packetNum * 12)] = (float)eventCode;
 
 			}
 
@@ -768,7 +768,7 @@ void SimulatedProbe::run()
 			lfp_event_codes[packetNum] = eventCode;
 
 			if (sendSync)
-				lfpSamples[384 + packetNum * SKIP] = (float)eventCode;
+				lfpSamples[(384 * MAXPACKETS) + packetNum] = (float)eventCode;
 		}
 
 		apBuffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, 12 * MAXPACKETS);
