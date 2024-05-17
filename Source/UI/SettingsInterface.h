@@ -46,38 +46,38 @@ public:
         { 
             viewport = std::make_unique<Viewport>();
             viewport->setViewedComponent((Component*)settingsInterface, false);
-            viewport->setScrollBarsShown(true, true, true, true);
+            viewport->setScrollBarsShown(true, true);
             viewport->setScrollBarThickness(12);
-
-            auto& horzScrollBar = viewport->getVerticalScrollBar();
-            horzScrollBar.setLookAndFeel(&lnf2);
-            horzScrollBar.setColour(ScrollBar::ColourIds::thumbColourId, Colour(50, 50, 50));
-            horzScrollBar.setColour(ScrollBar::ColourIds::trackColourId, Colours::darkgrey);
-
-            auto& vertScrollbar = viewport->getHorizontalScrollBar();
-            vertScrollbar.setLookAndFeel(&lnf2);
-            vertScrollbar.setColour(ScrollBar::ColourIds::thumbColourId, Colour(50, 50, 50));
-            vertScrollbar.setColour(ScrollBar::ColourIds::trackColourId, Colours::darkgrey);
 
             addAndMakeVisible(viewport.get());
         }
     
     ~CustomViewport() 
     {
-        viewport->getVerticalScrollBar().setLookAndFeel(nullptr);
-        viewport->getHorizontalScrollBar().setLookAndFeel(nullptr);
+
     }
     
     void resized() override
     {
         viewport->setBounds(getLocalBounds());
+
+        int contentWidth = 1000;
+        
+        if (getWidth() > 1012)
+            contentWidth = getWidth() - 12;
+            
+        viewport->getViewedComponent()->setSize(contentWidth, 820);
+    }
+
+    void paint(Graphics& g) override
+    {
+        g.fillAll(findColour(ThemeColors::componentBackground));
     }
 
     SettingsInterface* settingsInterface;
 
 private:
     std::unique_ptr<Viewport> viewport;
-    LookAndFeel_V2 lnf2;
 };
 
 /** 

@@ -30,6 +30,24 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 
 SettingsUpdater* SettingsUpdater::currentThread = nullptr;
 
+CustomTabButton::CustomTabButton(const String& name, TabbedComponent* parent, bool isTopLevel_) :
+    TabBarButton(name, parent->getTabbedButtonBar()), isTopLevel(isTopLevel_)
+{
+
+}
+
+void CustomTabButton::paintButton (Graphics& g,
+                                   bool isMouseOver,
+                                   bool isMouseDown)
+{
+    Colour tabColour = findColour (ThemeColors::componentBackground).darker(isTopLevel ? 0.2f : 0.0f);
+    getTabbedButtonBar().setTabBackgroundColour (getIndex(), tabColour);
+
+    getLookAndFeel().drawTabButton (*this, g, isMouseOver, isMouseDown);
+}
+
+
+
 CustomTabComponent::CustomTabComponent(NeuropixEditor* editor_, bool isTopLevel_) :
     TabbedComponent(TabbedButtonBar::TabsAtTop),
     editor(editor_),
@@ -39,8 +57,6 @@ CustomTabComponent::CustomTabComponent(NeuropixEditor* editor_, bool isTopLevel_
     setOutline(0);
     setIndent(0);
 }
-
-
 
 void CustomTabComponent::currentTabChanged(int newCurrentTabIndex, const String& newCurrentTabName)
 {
@@ -77,10 +93,10 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
     topLevelTabComponent = new CustomTabComponent(editor, true);
 
-    topLevelTabComponent->setColour(TabbedComponent::outlineColourId,
-        Colours::darkgrey);
-    topLevelTabComponent->setColour(TabbedComponent::backgroundColourId,
-        Colours::black.withAlpha(0.0f));
+    // topLevelTabComponent->setColour(TabbedComponent::outlineColourId,
+    //     Colours::darkgrey);
+    // topLevelTabComponent->setColour(TabbedComponent::backgroundColourId,
+    //     Colours::black.withAlpha(0.0f));
 	addAndMakeVisible(topLevelTabComponent);
 
     Array<Basestation*> availableBasestations = thread->getBasestations();
@@ -92,7 +108,7 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
         CustomTabComponent* basestationTab = new CustomTabComponent(editor, false);
         topLevelTabComponent->addTab(String(" Slot " + String(basestation->slot) + " "),
-            Colour(70,70,70),
+            findColour (ThemeColors::componentBackground).darker(0.2f),
             basestationTab, 
             true);
         
@@ -117,7 +133,7 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
                 settingsInterfaces.add((SettingsInterface*)neuropixInterface);
                 
                 basestationTab->addTab(" " + source->getName() + " ",
-                    Colours::darkgrey,
+                     findColour (ThemeColors::componentBackground),
                     neuropixInterface->viewport.get(), 
                     false);
 
@@ -132,7 +148,7 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
                 
                 //addChildComponent(oneBoxInterface->viewport.get());
                 basestationTab->addTab(" " + source->getName() + " ",
-                    Colours::darkgrey, 
+                    findColour (ThemeColors::componentBackground), 
                     oneBoxInterface->viewport.get(), 
                     false);
                 
@@ -154,7 +170,7 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
             BasestationInterface* basestationInterface = new BasestationInterface(basestation, thread, editor, this);
             settingsInterfaces.add(basestationInterface);
             basestationTab->addTab(" Firmware Update ",
-                Colours::darkgrey,
+                findColour (ThemeColors::componentBackground),
                 basestationInterface->viewport.get(),
                 false);
             topLevelTabIndex.add(topLevelTabNumber);

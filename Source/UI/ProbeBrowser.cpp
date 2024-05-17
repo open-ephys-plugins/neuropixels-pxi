@@ -319,7 +319,7 @@ String ProbeBrowser::getElectrodeInfoString(int index)
     a += "Electrode ";
     a += String(parent->electrodeMetadata[index].global_index + 1);
 
-    a += "\n\Bank ";
+    a += "\nBank ";
 
     switch (parent->electrodeMetadata[index].bank)
     {
@@ -533,8 +533,8 @@ void ProbeBrowser::mouseDrag(const MouseEvent& event)
         {
             zoomHeight = initialHeight - event.getDistanceFromDragStartY();
 
-            if (zoomHeight > lowerBound - zoomOffset - 18)
-                zoomHeight = lowerBound - zoomOffset - 18;
+            if (zoomHeight > lowerBound - zoomOffset - 15)
+                zoomHeight = lowerBound - zoomOffset - 15;
         }
         else if (isOverLowerBorder)
         {
@@ -694,7 +694,7 @@ void ProbeBrowser::paint(Graphics& g)
 
     // draw channel numbers
 
-    g.setColour(Colours::grey);
+    g.setColour(findColour(ThemeColors::defaultText));
     g.setFont(12);
 
     int ch = 0;
@@ -723,7 +723,7 @@ void ProbeBrowser::paint(Graphics& g)
         59 + shankOffset, TOP_BORDER - 6, 100, 12, Justification::left, false);
 
     // draw shank outline
-    g.setColour(Colours::lightgrey);
+    g.setColour(findColour(ThemeColors::outline).withAlpha(0.75f));
 
 
     for (int i = 0; i < parent->probeMetadata.shank_count; i++)
@@ -769,7 +769,7 @@ void ProbeBrowser::paint(Graphics& g)
 
             if (parent->electrodeMetadata[i].isSelected)
             {
-                g.setColour(Colours::white);
+                g.setColour(findColour(ThemeColors::componentBackground).contrasting());
                 g.fillRect(xLoc, yLoc, electrodeHeight, electrodeHeight);
             }
 
@@ -786,18 +786,18 @@ void ProbeBrowser::paint(Graphics& g)
 
     // draw borders around zoom area
 
-    g.setColour(Colours::darkgrey.withAlpha(0.7f));
-    g.fillRect(25, 0, 25 + shankOffset, lowerBound - zoomOffset - zoomHeight);
-    g.fillRect(25, lowerBound - zoomOffset, 25 + shankOffset, zoomOffset + 10);
+    // g.setColour(Colours::darkgrey.withAlpha(0.7f));
+    // g.fillRect(25, 0, 25 + shankOffset, lowerBound - zoomOffset - zoomHeight);
+    // g.fillRect(25, lowerBound - zoomOffset, 25 + shankOffset, zoomOffset + 10);
 
-    g.setColour(Colours::darkgrey);
-    g.fillRect(100, 0, 250 + shankOffset, 20);
-    g.fillRect(100, lowerBound + 14, 250 + shankOffset, 100);
+    // g.setColour(Colours::darkgrey);
+    // g.fillRect(100, 0, 250 + shankOffset, 20);
+    // g.fillRect(100, lowerBound + 14, 250 + shankOffset, 100);
 
     if (isOverZoomRegion)
-        g.setColour(Colour(25, 25, 25));
+        g.setColour(findColour(ThemeColors::outline));
     else
-        g.setColour(Colour(55, 55, 55));
+        g.setColour(findColour(ThemeColors::outline).withAlpha(0.5f));
 
     Path upperBorder;
     upperBorder.startNewSubPath(5, lowerBound - zoomOffset - zoomHeight);
@@ -830,7 +830,7 @@ void ProbeBrowser::paint(Graphics& g)
 
     if (isOverElectrode)
     {
-        g.setColour(Colour(55, 55, 55));
+        g.setColour(findColour(ThemeColors::defaultText).withAlpha(0.6f));
         g.setFont(15);
         g.drawMultiLineText(electrodeInfoString,
             250 + shankOffset + 45, 330, 250);
@@ -940,7 +940,7 @@ Colour ProbeBrowser::getElectrodeColour(int i)
                 String referenceDescription = parent->referenceComboBox->getText();
 
                 if (referenceDescription.contains("Ext"))
-                    return Colours::pink;
+                    return Colours::darksalmon;
                 else if (referenceDescription.contains("Tip"))
                     return Colours::orange;
                 else

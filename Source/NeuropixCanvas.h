@@ -31,6 +31,26 @@ class NeuropixEditor;
 
 class Probe;
 
+
+/** 
+
+	TabBarButton with custom appearance
+
+*/
+class CustomTabButton : public TabBarButton
+{
+public:
+
+	/** Constructor */
+	CustomTabButton(const String& name, TabbedComponent* parent, bool isTopLevel_);
+
+	/** Paints the button */
+	void paintButton(Graphics& g, bool isMouseOver, bool isMouseDown) override;
+
+private:
+	bool isTopLevel;
+};
+
 /** 
 	
 	Adds a callback when tab is changed
@@ -43,6 +63,12 @@ public:
 
 	/** Constructor */
 	CustomTabComponent(NeuropixEditor* editor_, bool isTopLevel_);
+
+	/** Create tab buttons*/
+    TabBarButton* createTabButton (const juce::String& name, int index) override
+    {
+        return new CustomTabButton (name, this, isTopLevel);
+    }
 
 	/**/
 	void currentTabChanged(int newCurrentTabIndex, const String& newCurrentTabName) override;

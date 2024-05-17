@@ -67,19 +67,18 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         int currentHeight = 55;
 
         electrodesLabel = new Label("ELECTRODES", "ELECTRODES");
-        electrodesLabel->setFont(Font("Small Text", 13, Font::plain));
+        electrodesLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
         electrodesLabel->setBounds(446, currentHeight - 20, 100, 20);
-        electrodesLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(electrodesLabel);
 
-        enableViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+        enableViewButton = new UtilityButton("VIEW", FontOptions("Inter", "Regular", 12.0f));
         enableViewButton->setRadius(3.0f);
         enableViewButton->setBounds(530, currentHeight + 2, 45, 18);
         enableViewButton->addListener(this);
         enableViewButton->setTooltip("View electrode enabled state");
         addAndMakeVisible(enableViewButton);
         
-        enableButton = new UtilityButton("ENABLE", Font("Small Text", 13, Font::plain));
+        enableButton = new UtilityButton("ENABLE", FontOptions("Inter", "Regular", 13.0f));
         enableButton->setRadius(3.0f);
         enableButton->setBounds(450, currentHeight, 65, 22);
         enableButton->addListener(this);
@@ -89,9 +88,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         currentHeight += 58;
 
         electrodePresetLabel = new Label("ELECTRODE PRESET", "ELECTRODE PRESET");
-        electrodePresetLabel->setFont(Font("Small Text", 13, Font::plain));
+        electrodePresetLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
         electrodePresetLabel->setBounds(446, currentHeight - 20, 150, 20);
-        electrodePresetLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(electrodePresetLabel);
 
         electrodeConfigurationComboBox = new ComboBox("electrodeConfigurationComboBox");
@@ -129,7 +127,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
             apGainComboBox->setSelectedId(probe->settings.apGainIndex + 1, dontSendNotification);
             addAndMakeVisible(apGainComboBox);
 
-            apGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+            apGainViewButton = new UtilityButton("VIEW", FontOptions("Inter", "Regular", 12.0f));
             apGainViewButton->setRadius(3.0f);
             apGainViewButton->setBounds(530, currentHeight + 2, 45, 18);
             apGainViewButton->addListener(this);
@@ -137,9 +135,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
             addAndMakeVisible(apGainViewButton);
 
             apGainLabel = new Label("AP GAIN", "AP GAIN");
-            apGainLabel->setFont(Font("Small Text", 13, Font::plain));
+            apGainLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
             apGainLabel->setBounds(446, currentHeight - 20, 100, 20);
-            apGainLabel->setColour(Label::textColourId, Colours::grey);
             addAndMakeVisible(apGainLabel);
 
             currentHeight += 55;
@@ -160,7 +157,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
             lfpGainComboBox->setSelectedId(probe->settings.lfpGainIndex + 1, dontSendNotification);
             addAndMakeVisible(lfpGainComboBox);
 
-            lfpGainViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+            lfpGainViewButton = new UtilityButton("VIEW", FontOptions("Inter", "Regular", 12.0f));
             lfpGainViewButton->setRadius(3.0f);
             lfpGainViewButton->setBounds(530, currentHeight + 2, 45, 18);
             lfpGainViewButton->addListener(this);
@@ -168,9 +165,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
             addAndMakeVisible(lfpGainViewButton);
 
             lfpGainLabel = new Label("LFP GAIN", "LFP GAIN");
-            lfpGainLabel->setFont(Font("Small Text", 13, Font::plain));
+            lfpGainLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
             lfpGainLabel->setBounds(446, currentHeight - 20, 100, 20);
-            lfpGainLabel->setColour(Label::textColourId, Colours::grey);
             addAndMakeVisible(lfpGainLabel);
 
             currentHeight += 55;
@@ -192,7 +188,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
             referenceComboBox->setSelectedId(probe->settings.referenceIndex + 1, dontSendNotification);
             addAndMakeVisible(referenceComboBox);
 
-            referenceViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+            referenceViewButton = new UtilityButton("VIEW", FontOptions("Inter", "Regular", 12.0f));
             referenceViewButton->setRadius(3.0f);
             referenceViewButton->setBounds(530, currentHeight + 2, 45, 18);
             referenceViewButton->addListener(this);
@@ -200,9 +196,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
             addAndMakeVisible(referenceViewButton);
 
             referenceLabel = new Label("REFERENCE", "REFERENCE");
-            referenceLabel->setFont(Font("Small Text", 13, Font::plain));
+            referenceLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
             referenceLabel->setBounds(446, currentHeight - 20, 100, 20);
-            referenceLabel->setColour(Label::textColourId, Colours::grey);
             addAndMakeVisible(referenceLabel);
 
             currentHeight += 55;
@@ -221,16 +216,15 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
             addAndMakeVisible(filterComboBox);
 
             filterLabel = new Label("FILTER", "AP FILTER CUT");
-            filterLabel->setFont(Font("Small Text", 13, Font::plain));
+            filterLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
             filterLabel->setBounds(446, currentHeight - 20, 200, 20);
-            filterLabel->setColour(Label::textColourId, Colours::grey);
             addAndMakeVisible(filterLabel);
 
         }
 
         currentHeight += 55;
 
-        activityViewButton = new UtilityButton("VIEW", Font("Small Text", 12, Font::plain));
+        activityViewButton = new UtilityButton("VIEW", FontOptions("Inter", "Regular", 12.0f));
         activityViewButton->setRadius(3.0f);
 
         activityViewButton->addListener(this);
@@ -254,9 +248,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         }
 
         activityViewLabel = new Label("PROBE SIGNAL", "PROBE SIGNAL");
-        activityViewLabel->setFont(Font("Small Text", 13, Font::plain));
+        activityViewLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
         activityViewLabel->setBounds(446, currentHeight - 20, 180, 20);
-        activityViewLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(activityViewLabel);
 
         currentHeight += 55;
@@ -264,9 +257,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         if (probe->info.part_number == "NP1300") // Neuropixels Opto
         {
             redEmissionSiteLabel = new Label("RED EMISSION SITE", "RED EMISSION SITE");
-            redEmissionSiteLabel->setFont(Font("Small Text", 13, Font::plain));
+            redEmissionSiteLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
             redEmissionSiteLabel->setBounds(446, currentHeight - 20, 180, 20);
-            redEmissionSiteLabel->setColour(Label::textColourId, Colours::red);
             addAndMakeVisible(redEmissionSiteLabel);
 
             redEmissionSiteComboBox = new ComboBox("Red Emission Site Combo Box");
@@ -283,9 +275,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
             currentHeight += 55;
 
             blueEmissionSiteLabel = new Label("BLUE EMISSION SITE", "BLUE EMISSION SITE");
-            blueEmissionSiteLabel->setFont(Font("Small Text", 13, Font::plain));
+            blueEmissionSiteLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
             blueEmissionSiteLabel->setBounds(446, currentHeight - 20, 180, 20);
-            blueEmissionSiteLabel->setColour(Label::textColourId, Colours::blue);
             addAndMakeVisible(blueEmissionSiteLabel);
 
             blueEmissionSiteComboBox = new ComboBox("Blue Emission Site Combo Box");
@@ -340,7 +331,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         bistComboBox->setSelectedId(1, dontSendNotification);
         addAndMakeVisible(bistComboBox);
 
-        bistButton = new UtilityButton("RUN", Font("Small Text", 12, Font::plain));
+        bistButton = new UtilityButton("RUN", FontOptions("Inter", "Regular", 12.0f));
         bistButton->setRadius(3.0f);
         bistButton->setBounds(880, 500, 50, 22);
         bistButton->addListener(this);
@@ -348,55 +339,54 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         addAndMakeVisible(bistButton);
 
         bistLabel = new Label("BIST", "Built-in self tests:");
-        bistLabel->setFont(Font("Small Text", 13, Font::plain));
+        bistLabel->setFont(FontOptions("Inter", "Regular", 15.0f));
         bistLabel->setBounds(650, 473, 200, 20);
-        bistLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(bistLabel);
 
         // COPY / PASTE / UPLOAD
-        copyButton = new UtilityButton("COPY", Font("Small Text", 12, Font::plain));
+        copyButton = new UtilityButton("COPY", FontOptions("Inter", "Regular", 12.0f));
         copyButton->setRadius(3.0f);
         copyButton->setBounds(45, 637, 60, 22);
         copyButton->addListener(this);
         copyButton->setTooltip("Copy probe settings");
         addAndMakeVisible(copyButton);
 
-        pasteButton = new UtilityButton("PASTE", Font("Small Text", 12, Font::plain));
+        pasteButton = new UtilityButton("PASTE", FontOptions("Inter", "Regular", 12.0f));
         pasteButton->setRadius(3.0f);
         pasteButton->setBounds(115, 637, 60, 22);
         pasteButton->addListener(this);
         pasteButton->setTooltip("Paste probe settings");
         addAndMakeVisible(pasteButton);
 
-        applyToAllButton = new UtilityButton("APPLY TO ALL", Font("Small Text", 12, Font::plain));
+        applyToAllButton = new UtilityButton("APPLY TO ALL", FontOptions("Inter", "Regular", 12.0f));
         applyToAllButton->setRadius(3.0f);
         applyToAllButton->setBounds(185, 637, 120, 22);
         applyToAllButton->addListener(this);
         applyToAllButton->setTooltip("Apply this probe's settings to all others");
         addAndMakeVisible(applyToAllButton);
 
-        saveImroButton = new UtilityButton("SAVE TO IMRO", Font("Small Text", 12, Font::plain));
+        saveImroButton = new UtilityButton("SAVE TO IMRO", FontOptions("Inter", "Regular", 12.0f));
         saveImroButton->setRadius(3.0f);
         saveImroButton->setBounds(45, 672, 120, 22);
         saveImroButton->addListener(this);
         saveImroButton->setTooltip("Save settings map to .imro file");
         addAndMakeVisible(saveImroButton);
 
-        loadImroButton = new UtilityButton("LOAD FROM IMRO", Font("Small Text", 12, Font::plain));
+        loadImroButton = new UtilityButton("LOAD FROM IMRO", FontOptions("Inter", "Regular", 12.0f));
         loadImroButton->setRadius(3.0f);
         loadImroButton->setBounds(175, 672, 130, 22);
         loadImroButton->addListener(this);
         loadImroButton->setTooltip("Load settings map from .imro file");
         addAndMakeVisible(loadImroButton);
 
-        saveJsonButton = new UtilityButton("SAVE TO JSON", Font("Small Text", 12, Font::plain));
+        saveJsonButton = new UtilityButton("SAVE TO JSON", FontOptions("Inter", "Regular", 12.0f));
         saveJsonButton->setRadius(3.0f);
         saveJsonButton->setBounds(45, 707, 120, 22);
         saveJsonButton->addListener(this);
         saveJsonButton->setTooltip("Save channel map to probeinterface .json file");
         addAndMakeVisible(saveJsonButton);
 
-        loadJsonButton = new UtilityButton("LOAD FROM JSON", Font("Small Text", 12, Font::plain));
+        loadJsonButton = new UtilityButton("LOAD FROM JSON", FontOptions("Inter", "Regular", 12.0f));
         loadJsonButton->setRadius(3.0f);
         loadJsonButton->setBounds(175, 707, 130, 22);
         loadJsonButton->addListener(this);
@@ -427,9 +417,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         addAndMakeVisible(loadImroComboBox);
    
         probeSettingsLabel = new Label("Settings", "Probe settings:");
-        probeSettingsLabel->setFont(Font("Small Text", 13, Font::plain));
+        probeSettingsLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
         probeSettingsLabel->setBounds(40, 610, 300, 20);
-        probeSettingsLabel->setColour(Label::textColourId, Colours::grey);
         addAndMakeVisible(probeSettingsLabel);
     }
     else {
@@ -442,7 +431,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         verticalOffset = 250;
 
     // FIRMWARE
-    firmwareToggleButton = new UtilityButton("UPDATE FIRMWARE...", Font("Small Text", 12, Font::plain));
+    firmwareToggleButton = new UtilityButton("UPDATE FIRMWARE...", FontOptions("Inter", "Regular", 12.0f));
     firmwareToggleButton->setRadius(3.0f);
     firmwareToggleButton->addListener(this);
     firmwareToggleButton->setBounds(650, verticalOffset, 150, 22);
@@ -459,7 +448,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     if (thread->type == PXI)
         addChildComponent(bscFirmwareComboBox);
 
-    bscFirmwareButton = new UtilityButton("UPLOAD", Font("Small Text", 12, Font::plain));
+    bscFirmwareButton = new UtilityButton("UPLOAD", FontOptions("Inter", "Regular", 12.0f));
     bscFirmwareButton->setRadius(3.0f);
     bscFirmwareButton->setBounds(930, verticalOffset + 70, 60, 22);
     bscFirmwareButton->addListener(this);
@@ -469,9 +458,8 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         addChildComponent(bscFirmwareButton);
 
     bscFirmwareLabel = new Label("BSC FIRMWARE", "1. Update basestation connect board firmware (QBSC_FPGA_B189.bin):");
-    bscFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
+    bscFirmwareLabel->setFont(FontOptions("Inter", "Medium", 15.0f));
     bscFirmwareLabel->setBounds(550, verticalOffset + 43, 500, 20);
-    bscFirmwareLabel->setColour(Label::textColourId, Colours::orange);
     
     if (thread->type == PXI)
         addChildComponent(bscFirmwareLabel);
@@ -484,7 +472,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     if (thread->type == PXI)
         addChildComponent(bsFirmwareComboBox);
 
-    bsFirmwareButton = new UtilityButton("UPLOAD", Font("Small Text", 12, Font::plain));
+    bsFirmwareButton = new UtilityButton("UPLOAD", FontOptions("Inter", "Regular", 12.0f));
     bsFirmwareButton->setRadius(3.0f);
     bsFirmwareButton->setBounds(930, verticalOffset + 140, 60, 22);
     bsFirmwareButton->addListener(this);
@@ -494,32 +482,30 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         addChildComponent(bsFirmwareButton);
 
     bsFirmwareLabel = new Label("BS FIRMWARE", "2. Update basestation firmware (BS_FPGA_B169.bin):");
-    bsFirmwareLabel->setFont(Font("Small Text", 13, Font::plain));
+    bsFirmwareLabel->setFont(FontOptions("Inter", "Medium", 15.0f));
     bsFirmwareLabel->setBounds(550, verticalOffset + 113, 500, 20);
-    bsFirmwareLabel->setColour(Label::textColourId, Colours::orange);
 
     if (thread->type == PXI)
         addChildComponent(bsFirmwareLabel);
 
     firmwareInstructionsLabel = new Label("FIRMWARE INSTRUCTIONS", "3. Power cycle computer and PXI chassis");
-    firmwareInstructionsLabel->setFont(Font("Small Text", 13, Font::plain));
+    firmwareInstructionsLabel->setFont(FontOptions("Inter", "Medium", 15.0f));
     firmwareInstructionsLabel->setBounds(550, verticalOffset + 183, 500, 20);
-    firmwareInstructionsLabel->setColour(Label::textColourId, Colours::orange);
 
     if (thread->type == PXI)
         addChildComponent(firmwareInstructionsLabel);
 
     // PROBE INFO 
     mainLabel = new Label("MAIN", "MAIN");
-    mainLabel->setFont(Font("Small Text", 40, Font::plain));
+    mainLabel->setFont(FontOptions("Fira Code", "SemiBold", 40.0f));
     mainLabel->setBounds(625, 20, 300, 45);
-    mainLabel->setColour(Label::textColourId, Colours::darkkhaki);
+    mainLabel->setColour(Label::textColourId, Colours::darkorange);
     addAndMakeVisible(mainLabel);
 
     nameLabel = new Label("MAIN", "NAME");
-    nameLabel->setFont(Font("Small Text", 20, Font::plain));
+    nameLabel->setFont(FontOptions("Fira Code", "Medium",  20.0f));
     nameLabel->setBounds(625, 70, 500, 45);
-    nameLabel->setColour(Label::textColourId, Colours::pink);
+    nameLabel->setColour(Label::textColourId, Colours::crimson);
     addAndMakeVisible(nameLabel);
 
     infoLabelView = new Viewport("INFO");
@@ -535,14 +521,13 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
 
     infoLabel = new Label("INFO", "INFO");
     infoLabelView->setViewedComponent(infoLabel, false);
-    infoLabel->setFont(Font("Fira Code", "Retina", 15));
+    infoLabel->setFont(FontOptions(15.0f));
     infoLabel->setBounds(0, 0, 750, 350);
     infoLabel->setJustificationType(Justification::topLeft);
-    infoLabel->setColour(Label::textColourId, Colours::lightgrey);
 
     
     // ANNOTATIONS
-    annotationButton = new UtilityButton("ADD", Font("Small Text", 12, Font::plain));
+    annotationButton = new UtilityButton("ADD", FontOptions("Inter", "Regular", 12.0f));
     annotationButton->setRadius(3.0f);
     annotationButton->setBounds(400, 680, 40, 18);
     annotationButton->addListener(this);
@@ -551,15 +536,13 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
    
     annotationLabel = new Label("ANNOTATION", "Custom annotation");
     annotationLabel->setBounds(396, 620, 200, 20);
-    annotationLabel->setColour(Label::textColourId, Colours::white);
     annotationLabel->setEditable(true);
     annotationLabel->addListener(this);
    // addAndMakeVisible(annotationLabel);
 
     annotationLabelLabel = new Label("ANNOTATION_LABEL", "ANNOTATION");
-    annotationLabelLabel->setFont(Font("Small Text", 13, Font::plain));
+    annotationLabelLabel->setFont(FontOptions("Inter", "Regular", 13.0f));
     annotationLabelLabel->setBounds(396, 600, 200, 20);
-    annotationLabelLabel->setColour(Label::textColourId, Colours::grey);
    // addAndMakeVisible(annotationLabelLabel);
 
     colorSelector = new ColorSelector(this);
@@ -1330,7 +1313,7 @@ void NeuropixInterface::paint(Graphics& g)
     {
         drawLegend(g);
 
-        g.setColour(Colour(60, 60, 60));
+        g.setColour(findColour(ThemeColors::componentParentBackground).withAlpha(0.5f));
         g.fillRoundedRectangle(30, 600, 290, 145, 8.0f);
     }
 
@@ -1339,7 +1322,7 @@ void NeuropixInterface::paint(Graphics& g)
 
 void NeuropixInterface::drawLegend(Graphics& g)
 {
-    g.setColour(Colour(55, 55, 55));
+    g.setColour(findColour(ThemeColors::defaultText).withAlpha(0.75f));
     g.setFont(15);
 
     int xOffset = 450;
