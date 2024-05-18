@@ -505,7 +505,7 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     nameLabel = new Label("MAIN", "NAME");
     nameLabel->setFont(FontOptions("Fira Code", "Medium",  20.0f));
     nameLabel->setBounds(625, 70, 500, 45);
-    nameLabel->setColour(Label::textColourId, Colours::crimson);
+    nameLabel->setColour(Label::textColourId, Colours::green);
     addAndMakeVisible(nameLabel);
 
     infoLabelView = new Viewport("INFO");
