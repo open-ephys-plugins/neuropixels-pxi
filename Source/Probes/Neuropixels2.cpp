@@ -120,7 +120,8 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 			settings.availableElectrodeConfigurations.add("All Shanks 1153-1248");
 		}
 
-		if (info.part_number.equalsIgnoreCase("NP2013"))
+		if (info.part_number.equalsIgnoreCase("NP2013") || // 4-shank, silicon cap
+			info.part_number.equalsIgnoreCase("NP2014"))   // 4-shank, metal cap
 		{
 			settings.availableReferences.add("Ground");
 		}
