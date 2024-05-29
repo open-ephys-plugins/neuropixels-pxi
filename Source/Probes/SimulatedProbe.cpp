@@ -670,91 +670,100 @@ Array<int> SimulatedProbe::selectElectrodeConfiguration(String config)
 			}
 		}
 	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 0"))
+
+	if (type == ProbeType::UHD2)
 	{
-		return *electrodeConfigurationsUHD[0];
+
+		Array<int>* electrodeConfig;
+
+		if (config.equalsIgnoreCase("8 x 48: Bank 0"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[0];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 1"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[1];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 2"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[2];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 3"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[3];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 4"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[4];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 5"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[5];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 6"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[6];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 7"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[7];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 8"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[8];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 9"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[9];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 10"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[10];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 11"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[11];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 12"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[12];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 13"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[13];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 14"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[14];
+		}
+		else if (config.equalsIgnoreCase("8 x 48: Bank 15"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[15];
+		}
+		else if (config.equalsIgnoreCase("1 x 384: Tip Half"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[16];
+		}
+		else if (config.equalsIgnoreCase("1 x 384: Base Half"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[17];
+		}
+		else if (config.equalsIgnoreCase("2 x 192"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[18];
+		}
+		else if (config.equalsIgnoreCase("4 x 96"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[19];
+		}
+		else if (config.equalsIgnoreCase("2 x 2 x 96"))
+		{
+			electrodeConfig = electrodeConfigurationsUHD[20];
+		}
+
+		return *electrodeConfig;
+		
 	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 1"))
-	{
-		return *electrodeConfigurationsUHD[1];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 2"))
-	{
-		return *electrodeConfigurationsUHD[2];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 3"))
-	{
-		return *electrodeConfigurationsUHD[3];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 4"))
-	{
-		return *electrodeConfigurationsUHD[4];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 5"))
-	{
-		return *electrodeConfigurationsUHD[5];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 6"))
-	{
-		return *electrodeConfigurationsUHD[6];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 7"))
-	{
-		return *electrodeConfigurationsUHD[7];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 8"))
-	{
-		return *electrodeConfigurationsUHD[8];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 9"))
-	{
-		return *electrodeConfigurationsUHD[9];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 10"))
-	{
-		return *electrodeConfigurationsUHD[10];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 11"))
-	{
-		return *electrodeConfigurationsUHD[11];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 12"))
-	{
-		return *electrodeConfigurationsUHD[12];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 13"))
-	{
-		return *electrodeConfigurationsUHD[13];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 14"))
-	{
-		return *electrodeConfigurationsUHD[14];
-	}
-	else if (config.equalsIgnoreCase("8 x 48: Bank 15"))
-	{
-		return *electrodeConfigurationsUHD[15];
-	}
-	else if (config.equalsIgnoreCase("1 x 384: Tip Half"))
-	{
-		return *electrodeConfigurationsUHD[16];
-	}
-	else if (config.equalsIgnoreCase("1 x 384: Base Half"))
-	{
-		return *electrodeConfigurationsUHD[17];
-	} 
-	else if (config.equalsIgnoreCase("2 x 192"))
-	{
-		return *electrodeConfigurationsUHD[18];
-	}
-	else if (config.equalsIgnoreCase("4 x 96"))
-	{
-		return *electrodeConfigurationsUHD[19];
-	}
-	else if (config.equalsIgnoreCase("2 x 2 x 96"))
-	{
-		return *electrodeConfigurationsUHD[20];
-	}
-	
 
 	return selection;
 }

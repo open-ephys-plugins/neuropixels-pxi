@@ -1127,6 +1127,8 @@ void NeuropixInterface::selectElectrodes(Array<int> electrodes)
     if (probe->type == ProbeType::UHD2)
     {
 
+        LOGD("UHD2 SELECTING ELECTRODES");
+
         for (int i = 0; i < electrodeMetadata.size(); i++)
         {
 			electrodeMetadata.getReference(i).status = ElectrodeStatus::DISCONNECTED;
@@ -1135,7 +1137,26 @@ void NeuropixInterface::selectElectrodes(Array<int> electrodes)
         for (int i = 0; i < electrodes.size(); i++)
         {
 			electrodeMetadata.getReference(electrodes[i]).status = ElectrodeStatus::CONNECTED;
+            //std::cout << "Electrode " << electrodes[i] << " selected, CH=" << electrodeMetadata.getReference(electrodes[i]).channel << std::endl;
 		}
+
+
+        probe->settings.selectedBank.clear();
+        probe->settings.selectedChannel.clear();
+        probe->settings.selectedElectrode.clear();
+        probe->settings.selectedShank.clear();
+
+        // update selection state
+        for (int i = 0; i < electrodeMetadata.size(); i++)
+        {
+            if (electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
+            {
+                probe->settings.selectedBank.add(electrodeMetadata[i].bank);
+                probe->settings.selectedChannel.add(electrodeMetadata[i].channel);
+                probe->settings.selectedElectrode.add(electrodeMetadata[i].global_index);
+                probe->settings.selectedShank.add(electrodeMetadata[i].shank);
+            }
+        }
     }
     else {
         for (int i = 0; i < electrodes.size(); i++)
@@ -1532,6 +1553,21 @@ bool NeuropixInterface::applyProbeSettings(ProbeSettings p, bool shouldUpdatePro
         Array<int> selection = probe->selectElectrodeConfiguration(electrodeConfigurationComboBox->getText());
 
         selectElectrodes(selection);
+
+        probe->settings.clearElectrodeSelection();
+
+        for (auto electrode : electrodeMetadata)
+        {
+            if (electrode.status == ElectrodeStatus::CONNECTED)
+            {
+                probe->settings.selectedChannel.add(electrode.channel);
+                probe->settings.selectedBank.add(electrode.bank);
+                probe->settings.selectedShank.add(electrode.shank);
+                probe->settings.selectedElectrode.add(electrode.global_index);
+
+                // std::cout << electrode.channel << " : " << electrode.global_index << std::endl;
+            }
+        }
     }
     else {
         // update selection state
@@ -1611,19 +1647,23 @@ ProbeSettings NeuropixInterface::getProbeSettings()
     LOGD("Getting probe settings");
     int numElectrodes = 0;
 
-    for (auto electrode : electrodeMetadata)
+    if (p.probeType != ProbeType::UHD2)
     {
-        if (electrode.status == ElectrodeStatus::CONNECTED)
+        for (auto electrode : electrodeMetadata)
         {
-            p.selectedChannel.add(electrode.channel);
-            p.selectedBank.add(electrode.bank);
-            p.selectedShank.add(electrode.shank);
-            p.selectedElectrode.add(electrode.global_index);
-            numElectrodes++;
+            if (electrode.status == ElectrodeStatus::CONNECTED)
+            {
+                p.selectedChannel.add(electrode.channel);
+                p.selectedBank.add(electrode.bank);
+                p.selectedShank.add(electrode.shank);
+                p.selectedElectrode.add(electrode.global_index);
+                numElectrodes++;
 
-           // std::cout << electrode.channel << " : " << electrode.global_index << std::endl;
+                // std::cout << electrode.channel << " : " << electrode.global_index << std::endl;
+            }
         }
     }
+    
     LOGD("Found ", numElectrodes, " connected electrodes.");
     
     p.probe = probe;

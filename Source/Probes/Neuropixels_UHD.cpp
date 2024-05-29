@@ -268,6 +268,11 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration(String electrodeConfigu
 	if (index == -1)
 		return defaultReturnValue;
 
+	settings.selectedElectrode.clear();
+
+	for (int i = 0; i < 384; i++)
+		settings.selectedElectrode.add(electrodeConfigurations[index]->getUnchecked(i));
+
 	if (index < banksPerProbe || index > 17)
 	{
 		LOGC("Selecting column pattern: ALL");

@@ -902,7 +902,11 @@ void Geometry::UHDActive(Array<ElectrodeMetadata>& electrodeMetadata,
 		metadata.ypos = (i - (i % numColumns)) * siteSpacing / numColumns;
 		metadata.site_width = siteSpacing - 1;
 
-		metadata.channel = channel_order[i];
+		metadata.channel = channel_order[(i / numColumns) * numColumns + metadata.column_index];
+
+		//if (i < 384)
+		//	std::cout << "Electrode: " << i << ", Channel: " << metadata.channel << std::endl;
+
 		metadata.bank = Bank::A;
 		if (i < 384)
 			metadata.status = ElectrodeStatus::CONNECTED;

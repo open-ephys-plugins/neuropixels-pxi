@@ -113,6 +113,10 @@ private:
 
 	Neuropixels::PacketInfo packetInfo[MAXPACKETS];
 
+	Array<String> availableReferences;
+
+	float bitScaling = 16384.0f;
+
 };
 
 

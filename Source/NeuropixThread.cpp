@@ -897,6 +897,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 	OwnedArray<DeviceInfo>* devices,
 	OwnedArray<ConfigurationObject>* configurationObjects)
 {
+	LOGD("NeuropixThread::updateSettings()");
 
 	if (sourceStreams.size() == 0) // initialize data streams
 	{
@@ -1109,18 +1110,45 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 			if (type == ContinuousChannel::Type::ELECTRODE)
 			{
-				int chIndex = info.probe->settings.selectedChannel.indexOf(ch);
+				float depth = 0.0f;
+				int chIndex = 0;
 
-				Array<Bank> availableBanks = info.probe->settings.availableBanks;
+				if (info.probe->type != ProbeType::UHD2)
+				{
+					chIndex = info.probe->settings.selectedChannel.indexOf(ch);
 
-				int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
+					Array<Bank> availableBanks = info.probe->settings.availableBanks;
 
-				int selectedElectrode = info.probe->settings.selectedElectrode[chIndex];
-				int shank = info.probe->settings.selectedShank[chIndex];
+					int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
 
-				float depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
-					+ shank * 10000.0f
-					+ info.probe->electrodeMetadata[selectedElectrode].column_index * 0.0001f;
+					int selectedElectrode = info.probe->settings.selectedElectrode[chIndex];
+					int shank = info.probe->settings.selectedShank[chIndex];
+
+					depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
+						+ shank * 10000.0f
+						+ info.probe->electrodeMetadata[selectedElectrode].xpos * 0.001f;
+				}
+				else {
+
+					for (int i = 0; i < info.probe->electrodeMetadata.size(); i++)
+					{
+						if (info.probe->electrodeMetadata[i].channel == ch && info.probe->electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
+						{
+							chIndex = i;
+							break;
+						}
+					}
+
+					depth = float(info.probe->electrodeMetadata[chIndex].ypos)
+						+ info.probe->electrodeMetadata[chIndex].xpos * 0.001f;
+
+					if (false)
+						std::cout << "Channel: " << ch << " chIndex: " << chIndex <<
+						" ypos: " << info.probe->electrodeMetadata[chIndex].ypos <<
+						" xpos: " << info.probe->electrodeMetadata[chIndex].xpos <<
+						" depth: " << depth << std::endl;
+
+				}
 
 				continuousChannels->getLast()->position.y = depth;
 
