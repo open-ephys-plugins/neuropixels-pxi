@@ -53,6 +53,7 @@ std::unique_ptr<GenericEditor> NeuropixThread::createEditor(SourceNode* sn)
 
 void Initializer::run()
 {
+	setProgress(-1); // endless moving progress bar
 
 	Neuropixels::scanBS();
 	Neuropixels::basestationID list[16];
@@ -64,6 +65,20 @@ void Initializer::run()
 
 	if (!FORCE_SIMULATION_MODE)
 	{
+		int countForType = 0;
+		for (int i = 0; i < count; i++)
+		{
+			Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo(list[i].ID, &list[i]);
+
+			if (list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
+				countForType++;
+			else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX)
+				countForType++;
+		}
+		
+		setStatusMessage("Found " + String(countForType) + " device" + (countForType == 1 ? "." : "s."));
+
+		int deviceNum = 0;
 
 		for (int i = 0; i < count; i++)
 		{
@@ -72,14 +87,13 @@ void Initializer::run()
 
 			bool foundSlot = Neuropixels::tryGetSlotID(&list[i], &slotID);
 
-			Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo(list[i].ID, &list[i]);
-
 			LOGD("Slot ID: ", slotID, "Platform ID : ", list[i].platformid);
 
 			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
 			{
-
+				deviceNum++;
 				LOGC("  Opening device on slot ", slotID);
+				setStatusMessage("Opening PXI device on slot " + String(slotID) + " (" + String(deviceNum) + "/" + String(countForType) + ")");
 
 				Basestation* bs = new Basestation_v3(neuropixThread, slotID);
 
@@ -109,17 +123,22 @@ void Initializer::run()
 					slotIDs.insert(insertionIndex, slotID);
 
 					LOGC("  Adding basestation");
+					setStatusMessage("Adding Basestation found on slot " + String(slotID));
 
 				}
 				else
 				{
 					LOGC("  Could not open basestation");
+					setStatusMessage("Could not open basestation");
 					delete bs;
 				}
 
 			}
 			else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX) {
 
+				deviceNum++;
+				setStatusMessage("Opening OneBox device on slot " + String(slotID) + " (" + String(deviceNum) + "/" + String(countForType) + ")");
+				
 				Basestation* bs = new OneBox(neuropixThread, list[i].ID);
 
 				if (bs->open())
@@ -242,8 +261,8 @@ NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 	Neuropixels::np_dbg_setlevel(0);
 
 	initializer = std::make_unique<Initializer>(this, basestations, type, api_v1, api_v3);
-
-	initializer->run();
+	initializer->setStatusMessage("Scanning for devices...");
+	initializer->runThread();
 
 	bool foundSync = false;
 
