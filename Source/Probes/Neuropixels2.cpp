@@ -121,6 +121,7 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 		}
 
 		if (info.part_number.equalsIgnoreCase("NP2013") ||
+			info.part_number.equalsIgnoreCase("NP2014") ||
 			info.part_number.equalsIgnoreCase("NP2003") ||
 			info.part_number.equalsIgnoreCase("NP2004"))
 		{
