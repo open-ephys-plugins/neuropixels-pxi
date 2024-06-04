@@ -204,9 +204,9 @@ NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 	type(type_),
 	baseStationAvailable(false),
 	probesInitialized(false),
-	initializationComplete(false)
+	initializationComplete(false),
+	configurationComplete(false)
 {
-
 	defaultSyncFrequencies.add(1);
 	defaultSyncFrequencies.add(10);
 
@@ -423,6 +423,7 @@ void NeuropixThread::updateProbeSettingsQueue(ProbeSettings settings)
 
 void NeuropixThread::applyProbeSettingsQueue()
 {
+	configurationComplete = false;
 
 	for (auto settings : probeSettingsUpdateQueue)
 	{
@@ -456,12 +457,19 @@ void NeuropixThread::applyProbeSettingsQueue()
 	}
 
 	probeSettingsUpdateQueue.clear();
+
+	configurationComplete = true;
 }
 
 void NeuropixThread::initialize(bool signalChainIsLoading)
 {
 	editor->initialize(signalChainIsLoading);
 
+}
+
+bool NeuropixThread::isReady()
+{
+	return initializationComplete && configurationComplete;
 }
 
 void NeuropixThread::initializeBasestations(bool signalChainIsLoading)

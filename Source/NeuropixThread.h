@@ -135,6 +135,9 @@ public:
 	/** Called by ProcessorGraph to inform the thread whether the signal chain is loading */
 	void initialize(bool signalChainIsLoading) override;
 
+	/** Called by ProcessorGraph to ensure the DataThread is ready for acquisition */
+	bool isReady() override;
+
 	/** Prepares probes for data acquisition*/
 	void initializeBasestations(bool signalChainIsLoading);
 
@@ -262,6 +265,7 @@ private:
 	bool autoRestart;
 
 	bool initializationComplete;
+	bool configurationComplete;
 
 	long int counter;
 
