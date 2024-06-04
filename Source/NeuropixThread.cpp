@@ -197,10 +197,34 @@ void Initializer::run()
 
 	}
 
-	if (basestations.size() == 0) // no basestations at all
+}
+
+NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
+	DataThread(sn),
+	type(type_),
+	baseStationAvailable(false),
+	probesInitialized(false),
+	initializationComplete(false)
+{
+
+	defaultSyncFrequencies.add(1);
+	defaultSyncFrequencies.add(10);
+
+	api_v1.isActive = false;
+	api_v3.isActive = true;
+
+	LOGC("Scanning for devices...");
+
+	LOGD("Setting debug level to 0");
+	Neuropixels::np_dbg_setlevel(0);
+
+	initializer = std::make_unique<Initializer>(this, basestations, type, api_v1, api_v3);
+	initializer->setStatusMessage("Scanning for devices...");
+	initializer->runThread();
+
+	// If no basestations were found, ask user if they want to run in simulation mode
+	if (basestations.size() == 0)
 	{
-
-
 		bool response = true;
 
 		if (!FORCE_SIMULATION_MODE)
@@ -227,42 +251,17 @@ void Initializer::run()
 		{
 			if (type == PXI)
 			{
-				basestations.add(new SimulatedBasestation(neuropixThread, type, 2));
+				basestations.add(new SimulatedBasestation(this, type, 2));
 				basestations.getLast()->open(); // detects # of probes
 			}
 			else if (type == ONEBOX)
 			{
-				basestations.add(new SimulatedBasestation(neuropixThread, type, 16));
+				basestations.add(new SimulatedBasestation(this, type, 16));
 				basestations.getLast()->open(); // detects # of probes
 			}
 		}
 
 	}
-
-}
-
-NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
-	DataThread(sn),
-	type(type_),
-	baseStationAvailable(false),
-	probesInitialized(false),
-	initializationComplete(false)
-{
-
-	defaultSyncFrequencies.add(1);
-	defaultSyncFrequencies.add(10);
-
-	api_v1.isActive = false;
-	api_v3.isActive = true;
-
-	LOGC("Scanning for devices...");
-
-	LOGD("Setting debug level to 0");
-	Neuropixels::np_dbg_setlevel(0);
-
-	initializer = std::make_unique<Initializer>(this, basestations, type, api_v1, api_v3);
-	initializer->setStatusMessage("Scanning for devices...");
-	initializer->runThread();
 
 	bool foundSync = false;
 
@@ -1163,7 +1162,7 @@ void NeuropixThread::setAutoRestart(bool restart)
 }
 
 
-void NeuropixThread::handleBroadcastMessage(String msg)
+void NeuropixThread::handleBroadcastMessage(const String& msg, const int64 messageTimeMillis)
 {
 	// Available commands:
 	//
@@ -1252,7 +1251,7 @@ void NeuropixThread::handleBroadcastMessage(String msg)
 
 }
 
-String NeuropixThread::handleConfigMessage(String msg)
+String NeuropixThread::handleConfigMessage(const String& msg)
 {
 	// Available commands:
 	// NP SELECT <bs> <port> <dock> <electrode> <electrode> <electrode> ...

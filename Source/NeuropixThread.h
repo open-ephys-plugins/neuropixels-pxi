@@ -234,10 +234,10 @@ public:
 	String getApiVersion();
 
 	/** Responds to broadcast messages sent during acquisition */
-	void handleBroadcastMessage(String msg) override;
+	void handleBroadcastMessage (const String& msg, const int64 messageTimeMillis) override;
 
 	/** Responds to config messages sent while acquisition is not active*/
-	String handleConfigMessage(String msg) override;
+	String handleConfigMessage (const String& msg) override;
 
 	/** Returns the custom name for a given probe serial number, if it exists*/
 	String getCustomProbeName(String serialNumber);
