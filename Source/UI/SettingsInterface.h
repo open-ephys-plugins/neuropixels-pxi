@@ -71,7 +71,7 @@ public:
 
     void paint(Graphics& g) override
     {
-        g.fillAll(findColour(ThemeColors::componentBackground));
+        g.fillAll(findColour(ThemeColours::componentBackground));
     }
 
     SettingsInterface* settingsInterface;

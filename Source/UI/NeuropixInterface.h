@@ -30,7 +30,7 @@
 #include "../NeuropixComponents.h"
 #include "ColourScheme.h"
 
-class ColorSelector;
+class AnnotationColourSelector;
 class ProbeBrowser;
 
 enum VisualizationMode {
@@ -199,7 +199,7 @@ private:
 	ScopedPointer<UtilityButton> loadJsonButton;
 	ScopedPointer<UtilityButton> saveJsonButton;
 
-	ScopedPointer<ColorSelector> colorSelector;
+	ScopedPointer<AnnotationColourSelector> annotationColourSelector;
 
 	ScopedPointer<ProbeBrowser> probeBrowser;
 
@@ -236,14 +236,14 @@ public:
 };
 
 
-class ColorSelector : public Component, public Button::Listener
+class AnnotationColourSelector : public Component, public Button::Listener
 {
 public:
-	ColorSelector(NeuropixInterface* np);
-	~ColorSelector();
+	AnnotationColourSelector(NeuropixInterface* np);
+	~AnnotationColourSelector();
 
-	Array<Colour> standardColors;
-	Array<Colour> hoverColors;
+	Array<Colour> standardColours;
+	Array<Colour> hoverColours;
 	StringArray strings;
 
 	OwnedArray<ShapeButton> buttons;

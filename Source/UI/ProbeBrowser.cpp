@@ -694,7 +694,7 @@ void ProbeBrowser::paint(Graphics& g)
 
     // draw channel numbers
 
-    g.setColour(findColour(ThemeColors::defaultText));
+    g.setColour(findColour(ThemeColours::defaultText));
     g.setFont(12);
 
     int ch = 0;
@@ -723,7 +723,7 @@ void ProbeBrowser::paint(Graphics& g)
         59 + shankOffset, TOP_BORDER - 6, 100, 12, Justification::left, false);
 
     // draw shank outline
-    g.setColour(findColour(ThemeColors::outline).withAlpha(0.75f));
+    g.setColour(findColour(ThemeColours::outline).withAlpha(0.75f));
 
 
     for (int i = 0; i < parent->probeMetadata.shank_count; i++)
@@ -769,7 +769,7 @@ void ProbeBrowser::paint(Graphics& g)
 
             if (parent->electrodeMetadata[i].isSelected)
             {
-                g.setColour(findColour(ThemeColors::componentBackground).contrasting());
+                g.setColour(findColour(ThemeColours::componentBackground).contrasting());
                 g.fillRect(xLoc, yLoc, electrodeHeight, electrodeHeight);
             }
 
@@ -795,9 +795,9 @@ void ProbeBrowser::paint(Graphics& g)
     // g.fillRect(100, lowerBound + 14, 250 + shankOffset, 100);
 
     if (isOverZoomRegion)
-        g.setColour(findColour(ThemeColors::outline));
+        g.setColour(findColour(ThemeColours::outline));
     else
-        g.setColour(findColour(ThemeColors::outline).withAlpha(0.5f));
+        g.setColour(findColour(ThemeColours::outline).withAlpha(0.5f));
 
     Path upperBorder;
     upperBorder.startNewSubPath(5, lowerBound - zoomOffset - zoomHeight);
@@ -830,7 +830,7 @@ void ProbeBrowser::paint(Graphics& g)
 
     if (isOverElectrode)
     {
-        g.setColour(findColour(ThemeColors::defaultText).withAlpha(0.6f));
+        g.setColour(findColour(ThemeColours::defaultText).withAlpha(0.6f));
         g.setFont(15);
         g.drawMultiLineText(electrodeInfoString,
             250 + shankOffset + 45, 330, 250);

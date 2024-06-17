@@ -128,7 +128,7 @@ void SelectionButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDo
     else
         triangle.addTriangle(width / 2, padding, width / 2, height - padding, width - padding, height / 2);
     
-    g.setColour(findColour(ThemeColors::defaultText));
+    g.setColour(findColour(ThemeColours::defaultText));
     g.fillPath(triangle);
 }
 
@@ -239,7 +239,7 @@ ProbeNameConfig::ProbeNameConfig(Basestation* bs_, NeuropixThread* thread_)
 
 void ProbeNameConfig::paint(Graphics& g)
 {
-    g.fillAll(findColour(ThemeColors::widgetBackground));
+    g.fillAll(findColour(ThemeColours::widgetBackground));
 }
 
 void ProbeNameConfig::update()
@@ -258,7 +258,7 @@ void ProbeNameConfig::update()
         if (namingScheme == PORT_SPECIFIC_NAMING)
         {
             label->setEditable(true);
-            label->setColour(Label::outlineColourId, findColour(ThemeColors::outline));
+            label->setColour(Label::outlineColourId, findColour(ThemeColours::outline));
             label->setText(basestation->getCustomPortName(label->port, label->dock), dontSendNotification);
 
             if (label->probe != nullptr)
@@ -289,7 +289,7 @@ void ProbeNameConfig::update()
                 else if (namingScheme == PROBE_SPECIFIC_NAMING)
                 {
                     label->setText(label->customProbe, dontSendNotification);
-                    label->setColour(Label::outlineColourId, findColour(ThemeColors::outline));
+                    label->setColour(Label::outlineColourId, findColour(ThemeColours::outline));
                     label->setEditable(true);
                     label->probe->displayName = label->customProbe;
                 }

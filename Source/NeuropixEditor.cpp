@@ -42,7 +42,7 @@ void SlotButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 	if (isMouseOver && isEnabled)
 		g.setColour(Colours::yellow);
 	else
-		g.setColour(findColour(ThemeColors::defaultText));
+		g.setColour(findColour(ThemeColours::defaultText));
 
 	g.drawText(String(slot), 0, 0, getWidth(), getHeight(), Justification::centred);
 }
@@ -99,10 +99,10 @@ void EditorBackground::paint(Graphics& g)
 	{
 		for (int i = 0; i < numBasestations; i++)
 		{
-			g.setColour(findColour(ThemeColors::outline));
+			g.setColour(findColour(ThemeColours::outline));
 			g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 1);
 
-			g.setColour(findColour(ThemeColors::defaultText));
+			g.setColour(findColour(ThemeColours::defaultText));
 			g.setFont(10);
 			g.drawText("SLOT", 90 * i + 72, 15, 50, 12, Justification::centredLeft);
 
@@ -127,7 +127,7 @@ void EditorBackground::paint(Graphics& g)
 			g.drawText(String("WITH FREQ"), 90 * (numBasestations)+32, 79, 100, 10, Justification::centredLeft);
 	}
 	else {
-		g.setColour(findColour(ThemeColors::defaultText));
+		g.setColour(findColour(ThemeColours::defaultText));
 		g.setFont(15);
 		if (type == PXI)
 		{
@@ -171,9 +171,9 @@ void FifoMonitor::setFillPercentage(float fill_)
 
 void FifoMonitor::paint(Graphics& g)
 {
-	g.setColour(findColour(ThemeColors::outline));
+	g.setColour(findColour(ThemeColours::outline));
 	g.fillRoundedRectangle(0, 0, this->getWidth(), this->getHeight(), 4);
-	g.setColour(findColour(ThemeColors::widgetBackground));
+	g.setColour(findColour(ThemeColours::widgetBackground));
 	g.fillRoundedRectangle(1, 1, this->getWidth()-2, this->getHeight()-2, 2);
 	
 	g.setColour(Colours::yellow);
@@ -208,9 +208,9 @@ void SourceButton::setSelectedState(bool state)
 void SourceButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 {
 	if (isMouseOver && connected)
-		g.setColour(findColour(ThemeColors::highlightedFill));
+		g.setColour(findColour(ThemeColours::highlightedFill));
 	else
-		g.setColour(findColour(ThemeColors::outline).withAlpha(0.75f));
+		g.setColour(findColour(ThemeColours::outline).withAlpha(0.75f));
 
 	g.fillEllipse(0, 0, 15, 15);
 
@@ -229,7 +229,7 @@ void SourceButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 		baseColour = Colours::blue;
 	}
 	else {
-		baseColour = findColour(ThemeColors::defaultFill);
+		baseColour = findColour(ThemeColours::defaultFill);
 	}
 
 	if (status == SourceStatus::CONNECTED)
@@ -265,7 +265,7 @@ void SourceButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 		}
 	}
 	else {
-		g.setColour(findColour(ThemeColors::widgetBackground));
+		g.setColour(findColour(ThemeColours::widgetBackground));
 	}
 		
 	g.fillEllipse(2, 2, 11, 11);

@@ -545,9 +545,9 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
     annotationLabelLabel->setBounds(396, 600, 200, 20);
    // addAndMakeVisible(annotationLabelLabel);
 
-    colorSelector = new ColorSelector(this);
-    colorSelector->setBounds(400, 650, 250, 20);
-   // addAndMakeVisible(colorSelector);
+    annotationColourSelector = new AnnotationColourSelector(this);
+    annotationColourSelector->setBounds(400, 650, 250, 20);
+   // addAndMakeVisible(annotationColourSelector);
 
     updateInfoString();
 
@@ -629,7 +629,7 @@ void NeuropixInterface::labelTextChanged(Label* label)
 {
     if (label == annotationLabel)
     {
-        colorSelector->updateCurrentString(label->getText());
+        annotationColourSelector->updateCurrentString(label->getText());
     }
 }
 
@@ -872,7 +872,7 @@ void NeuropixInterface::buttonClicked(Button* button)
         Array<int> a = getSelectedElectrodes();
 
         if (a.size() > 0)
-            annotations.add(Annotation(s, a, colorSelector->getCurrentColour()));
+            annotations.add(Annotation(s, a, annotationColourSelector->getCurrentColour()));
 
         repaint();
     }
@@ -1313,7 +1313,7 @@ void NeuropixInterface::paint(Graphics& g)
     {
         drawLegend(g);
 
-        g.setColour(findColour(ThemeColors::componentParentBackground).withAlpha(0.5f));
+        g.setColour(findColour(ThemeColours::componentParentBackground).withAlpha(0.5f));
         g.fillRoundedRectangle(30, 600, 290, 145, 8.0f);
     }
 
@@ -1322,7 +1322,7 @@ void NeuropixInterface::paint(Graphics& g)
 
 void NeuropixInterface::drawLegend(Graphics& g)
 {
-    g.setColour(findColour(ThemeColors::defaultText).withAlpha(0.75f));
+    g.setColour(findColour(ThemeColours::defaultText).withAlpha(0.75f));
     g.setFont(15);
 
     int xOffset = 450;
@@ -1972,7 +1972,7 @@ Annotation::~Annotation()
 
 // ---------------------------------------
 
-ColorSelector::ColorSelector(NeuropixInterface* np)
+AnnotationColourSelector::AnnotationColourSelector(NeuropixInterface* np)
 {
     npi = np;
     Path p;
@@ -1980,14 +1980,14 @@ ColorSelector::ColorSelector(NeuropixInterface* np)
 
     for (int i = 0; i < 6; i++)
     {
-        standardColors.add(Colour(245, 245, 245 - 40 * i));
-        hoverColors.add(Colour(215, 215, 215 - 40 * i));
+        standardColours.add(Colour(245, 245, 245 - 40 * i));
+        hoverColours.add(Colour(215, 215, 215 - 40 * i));
     }
 
 
     for (int i = 0; i < 6; i++)
     {
-        buttons.add(new ShapeButton(String(i), standardColors[i], hoverColors[i], hoverColors[i]));
+        buttons.add(new ShapeButton(String(i), standardColours[i], hoverColours[i], hoverColours[i]));
         buttons[i]->setShape(p, true, true, false);
         buttons[i]->setBounds(18 * i, 0, 15, 15);
         buttons[i]->addListener(this);
@@ -1996,31 +1996,31 @@ ColorSelector::ColorSelector(NeuropixInterface* np)
         strings.add("Annotation " + String(i + 1));
     }
 
-    npi->setAnnotationLabel(strings[0], standardColors[0]);
+    npi->setAnnotationLabel(strings[0], standardColours[0]);
 
     activeButton = 0;
 
 }
 
-ColorSelector::~ColorSelector()
+AnnotationColourSelector::~AnnotationColourSelector()
 {
 
 
 }
 
-void ColorSelector::buttonClicked(Button* b)
+void AnnotationColourSelector::buttonClicked(Button* b)
 {
     activeButton = buttons.indexOf((ShapeButton*)b);
 
-    npi->setAnnotationLabel(strings[activeButton], standardColors[activeButton]);
+    npi->setAnnotationLabel(strings[activeButton], standardColours[activeButton]);
 }
 
-void ColorSelector::updateCurrentString(String s)
+void AnnotationColourSelector::updateCurrentString(String s)
 {
     strings.set(activeButton, s);
 }
 
-Colour ColorSelector::getCurrentColour()
+Colour AnnotationColourSelector::getCurrentColour()
 {
-    return standardColors[activeButton];
+    return standardColours[activeButton];
 }
