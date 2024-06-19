@@ -161,7 +161,7 @@ void Neuropixels_QuadBase::calibrate()
 			message += "The GUI will proceed without calibration.";
 			message += "The plugin must be deleted and re-inserted once calibration files have been added";
 
-			//AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
+			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
 
 			calibrationWarningShown = true;
 		}
@@ -433,7 +433,7 @@ void AcquisitionThread::run()
 	{
 		int channel_count = 384;
 
-		int packet_count = MAXPACKETS;
+		int count = MAXPACKETS;
 
 		errorCode = Neuropixels::readPackets(
 			slot,
@@ -443,12 +443,12 @@ void AcquisitionThread::run()
 			&packetInfo[0],
 			&data[0],
 			channel_count,
-			packet_count,
-			&packet_count);
+			count,
+			&count);
 
-		if (errorCode == Neuropixels::SUCCESS && packet_count > 0)
+		if (errorCode == Neuropixels::SUCCESS && count > 0)
 		{
-			for (int packetNum = 0; packetNum < packet_count; packetNum++)
+			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
 
 				eventCode = packetInfo[packetNum].Status >> 6;
@@ -477,18 +477,18 @@ void AcquisitionThread::run()
 
 				last_npx_timestamp = npx_timestamp;
 
-				if (sendSync)
-				{
-					apSamples[4 * channel_count + SKIP * packetNum] = (float)eventCode;
-				}
-
 				for (int j = 0; j < channel_count; j++)
 				{
-					apSamples[j + packetNum * SKIP] =
+					apSamples[packetNum + count * j] =
 						float(data[packetNum * channel_count + j]) * 1.0f / 4096.0f * 1000000.0f / 80.0f; // convert to microvolts
 
 					//probe->apView->addSample(apSamples[j + packetNum * SKIP], j);
 
+				}
+
+				if (sendSync)
+				{
+					apSamples[packetNum + count * 384] = (float)eventCode;
 				}
 
 				ap_timestamps[packetNum] = ap_timestamp++;
@@ -502,7 +502,7 @@ void AcquisitionThread::run()
 			std::cout << "readPackets error code: " << errorCode << " for Basestation " << slot << ", probe " << port << std::endl;
 		}
 
-		buffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, packet_count);
+		buffer->addToBuffer(apSamples, ap_timestamps, timestamp_s, event_codes, count);
 
 		if (!passedOneSecond)
 		{

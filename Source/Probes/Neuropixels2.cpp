@@ -694,7 +694,7 @@ void Neuropixels2::run()
 
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[j + packetNum * SKIP] =
+					apSamples[j * count + packetNum] =
 						float(data[packetNum * 384 + j]) * 1.0f / bitScaling * 1000000.0f / 80.0f; // convert to microvolts
 
 					apView->addSample(apSamples[(j * count) + packetNum], j);
