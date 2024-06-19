@@ -35,7 +35,7 @@
 #include <vector>
 
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
-#define FORCE_SIMULATION_MODE true
+#define FORCE_SIMULATION_MODE false
 
 DataThread* NeuropixThread::createDataThread(SourceNode *sn, DeviceType type)
 {
@@ -1127,25 +1127,33 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 					depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
 						+ shank * 10000.0f
 						+ info.probe->electrodeMetadata[selectedElectrode].xpos * 0.001f;
+
+					if (false)
+						std::cout << "Channel: " << ch << " chIndex: " << chIndex <<
+						" ypos: " << info.probe->electrodeMetadata[selectedElectrode].ypos <<
+						" xpos: " << info.probe->electrodeMetadata[selectedElectrode].xpos <<
+						" depth: " << depth << std::endl;
 				}
 				else {
 
-					for (int i = 0; i < info.probe->electrodeMetadata.size(); i++)
+					int electrodeIndex = 0;
+
+					for (int i = 0; i < info.probe->settings.selectedElectrode.size(); i++)
 					{
-						if (info.probe->electrodeMetadata[i].channel == ch && info.probe->electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
+						if (info.probe->settings.selectedChannel[i] == ch)
 						{
-							chIndex = i;
+							electrodeIndex = info.probe->settings.selectedElectrode[i];
 							break;
 						}
 					}
 
-					depth = float(info.probe->electrodeMetadata[chIndex].ypos)
-						+ info.probe->electrodeMetadata[chIndex].xpos * 0.001f;
+					depth = float(info.probe->electrodeMetadata[electrodeIndex].ypos)
+						+ info.probe->electrodeMetadata[electrodeIndex].xpos * 0.001f;
 
 					if (false)
-						std::cout << "Channel: " << ch << " chIndex: " << chIndex <<
-						" ypos: " << info.probe->electrodeMetadata[chIndex].ypos <<
-						" xpos: " << info.probe->electrodeMetadata[chIndex].xpos <<
+						std::cout << "Channel: " << ch << " electrodeIndex: " << electrodeIndex <<
+						" ypos: " << info.probe->electrodeMetadata[electrodeIndex].ypos <<
+						" xpos: " << info.probe->electrodeMetadata[electrodeIndex].xpos <<
 						" depth: " << depth << std::endl;
 
 				}

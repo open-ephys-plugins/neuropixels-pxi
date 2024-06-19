@@ -760,6 +760,9 @@ Array<int> SimulatedProbe::selectElectrodeConfiguration(String config)
 		{
 			electrodeConfig = electrodeConfigurationsUHD[20];
 		}
+		else {
+			electrodeConfig = electrodeConfigurationsUHD[0]; // Default to Bank 0
+		}
 
 		return *electrodeConfig;
 		
