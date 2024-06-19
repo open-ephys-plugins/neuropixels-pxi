@@ -151,7 +151,6 @@ private:
 
 	// LABELS
 	ScopedPointer<Viewport> infoLabelView;
-	ScopedPointer<Label> mainLabel;
 	ScopedPointer<Label> nameLabel;
 	ScopedPointer<Label> infoLabel;
 	ScopedPointer<Label> lfpGainLabel;

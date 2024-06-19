@@ -496,26 +496,13 @@ NeuropixInterface::NeuropixInterface(DataSource* p,
         addChildComponent(firmwareInstructionsLabel);
 
     // PROBE INFO 
-    mainLabel = new Label("MAIN", "MAIN");
-    mainLabel->setFont(FontOptions("Fira Code", "SemiBold", 40.0f));
-    mainLabel->setBounds(625, 20, 300, 45);
-    mainLabel->setColour(Label::textColourId, Colours::darkorange);
-    addAndMakeVisible(mainLabel);
-
     nameLabel = new Label("MAIN", "NAME");
-    nameLabel->setFont(FontOptions("Fira Code", "Medium",  20.0f));
-    nameLabel->setBounds(625, 70, 500, 45);
-    nameLabel->setColour(Label::textColourId, Colours::green);
+    nameLabel->setFont(FontOptions("Fira Code", "Medium",  30.0f));
+    nameLabel->setBounds(625, 40, 500, 45);
     addAndMakeVisible(nameLabel);
 
     infoLabelView = new Viewport("INFO");
-    if (probe != nullptr)
-    {
-        infoLabelView->setBounds(625, 128, 750, 400);
-    }
-    else {
-        infoLabelView->setBounds(625, 80, 750, 150);
-    }
+    infoLabelView->setBounds(625, 98, 750, 400);
     
     addAndMakeVisible(infoLabelView);
 
@@ -561,26 +548,32 @@ NeuropixInterface::~NeuropixInterface()
 void NeuropixInterface::updateInfoString()
 {
 
-    String mainString, nameString, infoString;
+    String nameString, infoString;
 
     if (probe == nullptr)
-        mainString += "Slot ";
-
-    mainString += String(basestation->slot);
-
-    if (probe != nullptr)
     {
-        
-        mainString += ":";
-        mainString += String(probe->headstage->port);
+        nameString += "Slot ";
+        nameString += String(basestation->slot);
+    }
+    else {
+
+        nameString = probe->displayName;
+
+        infoString += "Probe Type: " + probe->name;
+        infoString += "\nPart Number: " + probe->info.part_number;
+        infoString += "\nS/N: " + String(probe->info.serial_number);
+        infoString += "\n";
+
+        infoString += "\nSlot: " + String(basestation->slot);
+        infoString += "\nPort: " + String(probe->headstage->port);
 
         if (probe->type == ProbeType::NP2_1 || probe->type == ProbeType::NP2_4)
         {
-            mainString += ":";
-            mainString += String(probe->dock);
+            infoString += "\nDock: " + String(probe->dock);
         }
 
-        nameString = probe->name + "\n(" + probe->displayName + ")";
+        infoString += "\n";
+        infoString += "\n";
     }
 
     infoString += "API version: ";
@@ -611,17 +604,10 @@ void NeuropixInterface::updateInfoString()
         infoString += "Flex: " + probe->flex->info.part_number;
         infoString += "\n";
         infoString += "\n";
-
-        infoString += "Probe: ";
-        infoString += "\n S/N: " + String(probe->info.serial_number);
-        infoString += "\n Part number: " + probe->info.part_number;
-        infoString += "\n";
-
     }
     
     infoLabel->setText(infoString, dontSendNotification);
     nameLabel->setText(nameString, dontSendNotification);
-    mainLabel->setText(mainString, dontSendNotification);
 
 }
 

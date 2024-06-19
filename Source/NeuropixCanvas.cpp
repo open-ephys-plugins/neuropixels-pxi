@@ -92,11 +92,6 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 {
 
     topLevelTabComponent = new CustomTabComponent(editor, true);
-
-    // topLevelTabComponent->setColour(TabbedComponent::outlineColourId,
-    //     Colours::darkgrey);
-    // topLevelTabComponent->setColour(TabbedComponent::backgroundColourId,
-    //     Colours::black.withAlpha(0.0f));
 	addAndMakeVisible(topLevelTabComponent);
 
     Array<Basestation*> availableBasestations = thread->getBasestations();
@@ -108,7 +103,7 @@ NeuropixCanvas::NeuropixCanvas(GenericProcessor* processor_, NeuropixEditor* edi
 
         CustomTabComponent* basestationTab = new CustomTabComponent(editor, false);
         topLevelTabComponent->addTab(String(" Slot " + String(basestation->slot) + " "),
-            findColour (ThemeColours::componentBackground).darker(0.2f),
+            findColour (ThemeColours::componentBackground),
             basestationTab, 
             true);
         
