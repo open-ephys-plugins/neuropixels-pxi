@@ -24,13 +24,14 @@
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
 
-#include "Basestations/Basestation_v1.h"
-#include "Basestations/Basestation_v3.h"
+#include "Basestations/PxiBasestation.h"
 #include "Basestations/OneBox.h"
 #include "Basestations/SimulatedBasestation.h"
 #include "Probes/OneBoxADC.h"
 
 #include "UI/NeuropixInterface.h"
+
+#include <Windows.h>
 
 #include <vector>
 
@@ -95,9 +96,9 @@ void Initializer::run()
 			{
 				deviceNum++;
 				LOGC("  Opening device on slot ", slotID);
-				setStatusMessage("Opening PXI device on slot " + String(slotID) + " (" + String(deviceNum) + "/" + String(countForType) + ")");
+				setStatusMessage("Opening basestation on PXI slot " + String(slotID) + " (" + String(deviceNum) + "/" + String(countForType) + ")");
 
-				Basestation* bs = new Basestation_v3(neuropixThread, slotID);
+				Basestation* bs = new PxiBasestation(neuropixThread, slotID);
 
 				if (bs->open()) //returns true if Basestation firmware >= 2.0
 				{
@@ -125,7 +126,7 @@ void Initializer::run()
 					slotIDs.insert(insertionIndex, slotID);
 
 					LOGC("  Adding basestation");
-					setStatusMessage("Adding Basestation found on slot " + String(slotID));
+					setStatusMessage("Adding basestation found on PXI slot " + String(slotID));
 
 				}
 				else
@@ -160,43 +161,6 @@ void Initializer::run()
 			}
 		}
 
-
-		if (basestations.size() == 0 && type == PXI) // no basestations with API version match
-		{
-			LOGD("Checking for V1 basestations...");
-
-			uint32_t availableslotmask;
-
-			std::vector<int> slotsToCheck;
-			np::scanPXI(&availableslotmask);
-
-			for (int slot = 0; slot < 32; slot++)
-			{
-				if ((availableslotmask >> slot) & 1)
-				{
-
-				    LOGD("  Found V1 Basestation");
-
-					Basestation* bs = new Basestation_v1(neuropixThread, slot);
-
-					if (bs->open()) // detects # of probes; returns true if API version matches
-					{
-						api_v1.isActive = true;
-						api_v3.isActive = false;
-						basestations.add(bs);
-					}
-					else {
-						delete bs;
-					}
-
-				}
-			}
-		}
-		else
-		{
-			LOGD("Found ", basestations.size(), " V3 basestation", basestations.size() > 1 ? "s" : "");
-		}
-
 	}
 
 }
@@ -212,7 +176,6 @@ NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 	defaultSyncFrequencies.add(1);
 	defaultSyncFrequencies.add(10);
 
-	api_v1.isActive = false;
 	api_v3.isActive = true;
 
 	LOGC("Scanning for devices...");
@@ -220,7 +183,7 @@ NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 	LOGD("Setting debug level to 0");
 	Neuropixels::np_dbg_setlevel(0);
 
-	initializer = std::make_unique<Initializer>(this, basestations, type, api_v1, api_v3);
+	initializer = std::make_unique<Initializer>(this, basestations, type, api_v3);
 	initializer->setStatusMessage("Scanning for devices...");
 	initializer->runThread();
 
@@ -527,15 +490,8 @@ void NeuropixThread::initializeBasestations(bool signalChainIsLoading)
 		basestation->initialize(signalChainIsLoading); // prepares probes for acquisition; may be slow
 	}
 
-	if (api_v1.isActive)
-	{
-		np::setParameter(np::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
-		np::setParameter(np::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
-	}
-	else {
-		Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
-		Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
-	}
+	Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
+	Neuropixels::setParameter(Neuropixels::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
 
 	initializationComplete = true;
 	
@@ -566,14 +522,14 @@ Array<OneBox*> NeuropixThread::getOneBoxes()
 	return bs;
 }
 
-Array<Basestation_v3*> NeuropixThread::getOptoBasestations()
+Array<Basestation*> NeuropixThread::getOptoBasestations()
 {
-	Array<Basestation_v3*> bs;
+	Array<Basestation*> bs;
 
 	for (auto bs_ : basestations)
 	{
 		if (bs_->type == BasestationType::OPTO)
-			bs.add((Basestation_v3*) bs_);
+			bs.add((Basestation*) bs_);
 	}
 
 	return bs;
@@ -654,10 +610,7 @@ Array<DataSource*> NeuropixThread::getDataSources()
 
 String NeuropixThread::getApiVersion()
 {
-	if (api_v1.isActive)
-		return api_v1.info.version;
-	else
-		return api_v3.info.version;
+	return api_v3.info.version;
 }
 
 void NeuropixThread::setMainSync(int slotIndex)
@@ -716,10 +669,7 @@ XmlElement NeuropixThread::getInfoXml()
 
 	XmlElement* api_info = new XmlElement("API");
 
-	if (api_v1.isActive)
-		api_info->setAttribute("version", api_v1.info.version);
-	else
-		api_info->setAttribute("version", api_v3.info.version);
+	api_info->setAttribute("version", api_v3.info.version);
 
 	neuropix_info.addChildElement(api_info);
 
@@ -763,10 +713,7 @@ String NeuropixThread::getInfoString()
 	String infoString;
 
 	infoString += "API Version: ";
-	if (api_v1.isActive)
-		infoString += api_v1.info.version;
-	else
-		infoString += api_v3.info.version;
+	infoString += api_v3.info.version;
 	infoString += "\n";
 	infoString += "\n";
 	infoString += "\n";
@@ -832,7 +779,7 @@ String NeuropixThread::getInfoString()
 /** Initializes data transfer.*/
 bool NeuropixThread::startAcquisition()
 {
-	startTimer(100);
+	startTimer(10);
 	
     return true;
 }
@@ -855,7 +802,7 @@ void NeuropixThread::timerCallback()
 		basestations[i]->startAcquisition();
 	}
 
-	startThread();
+	//startThread();
 
     stopTimer();
 
@@ -1552,10 +1499,3 @@ void NeuropixThread::setCustomProbeName(String serialNumber, String customName)
 	customProbeNames[serialNumber] = customName;
 }
 
-bool NeuropixThread::updateBuffer()
-{
-
-	Sleep(500);
-
-    return true;
-}

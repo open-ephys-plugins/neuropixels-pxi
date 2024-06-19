@@ -28,8 +28,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "OneBox.h"
-#include "../Probes/Neuropixels1_v3.h"
-#include "../Headstages/Headstage1_v3.h"
+#include "../Probes/Neuropixels1.h"
+#include "../Headstages/Headstage1.h"
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
 #include "../Headstages/Headstage_Custom384.h"
@@ -157,7 +157,7 @@ bool OneBox::open()
 				if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
 				{
 					LOGD("      Found 1.0 single-dock headstage on port: ", port);
-					headstage = new Headstage1_v3(this, port);
+					headstage = new Headstage1(this, port);
 					if (headstage->testModule != nullptr)
 					{
 						headstage = nullptr;

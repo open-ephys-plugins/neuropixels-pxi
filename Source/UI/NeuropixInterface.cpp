@@ -28,7 +28,7 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "../NeuropixEditor.h"
 #include "../NeuropixCanvas.h"
 
-#include "../Basestations/Basestation_v3.h"
+#include "../Basestations/PxiBasestation.h"
 
 #include "../Formats/IMRO.h"
 #include "../Formats/ProbeInterfaceJson.h"
@@ -1077,7 +1077,7 @@ void NeuropixInterface::setEmissionSite(String wavelength, int site)
     if (probe->basestation->type == BasestationType::OPTO)
     {
 
-        Basestation_v3* optoBs = (Basestation_v3*)probe->basestation;
+        PxiBasestation* optoBs = (PxiBasestation*) probe->basestation;
 
         optoBs->selectEmissionSite(probe->headstage->port,
             probe->dock,

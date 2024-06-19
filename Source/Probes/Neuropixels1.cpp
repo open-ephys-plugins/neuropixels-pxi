@@ -21,13 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include "Neuropixels1_v3.h"
+#include "Neuropixels1.h"
 #include "Geometry.h"
 #include "../NeuropixThread.h"
 
 #define MAXLEN 50
 
-void Neuropixels1_v3::getInfo()
+void Neuropixels1::getInfo()
 {
 	errorCode = Neuropixels::readProbeSN(basestation->slot, headstage->port, dock, &info.serial_number);
 
@@ -37,7 +37,7 @@ void Neuropixels1_v3::getInfo()
 	info.part_number = String(pn);
 }
 
-Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
+Neuropixels1::Neuropixels1(Basestation* bs, Headstage* hs, Flex* fl) : Probe(bs, hs, fl, 1)
 {
 	getInfo();
 
@@ -113,7 +113,7 @@ Neuropixels1_v3::Neuropixels1_v3(Basestation* bs, Headstage* hs, Flex* fl) : Pro
 
 }
 
-bool Neuropixels1_v3::open()
+bool Neuropixels1::open()
 {
 	LOGC("Opening probe...");
 	errorCode = Neuropixels::openProbe(basestation->slot, headstage->port, dock);
@@ -132,7 +132,7 @@ bool Neuropixels1_v3::open()
 
 }
 
-bool Neuropixels1_v3::close()
+bool Neuropixels1::close()
 {
 	errorCode = Neuropixels::closeProbe(basestation->slot, headstage->port, dock);
 	LOGD("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
@@ -140,7 +140,7 @@ bool Neuropixels1_v3::close()
 	return errorCode == Neuropixels::SUCCESS;
 }
 
-void Neuropixels1_v3::initialize(bool signalChainIsLoading)
+void Neuropixels1::initialize(bool signalChainIsLoading)
 {
 
 	errorCode = Neuropixels::init(basestation->slot, headstage->port, dock);
@@ -155,7 +155,7 @@ void Neuropixels1_v3::initialize(bool signalChainIsLoading)
 }
 
 
-void Neuropixels1_v3::calibrate()
+void Neuropixels1::calibrate()
 {
 
 	LOGD("Calibrating probe...");
@@ -212,7 +212,7 @@ void Neuropixels1_v3::calibrate()
 
 }
 
-void Neuropixels1_v3::printSettings()
+void Neuropixels1::printSettings()
 {
 	int apGainIndex;
 	int lfpGainIndex;
@@ -227,7 +227,7 @@ void Neuropixels1_v3::printSettings()
 		" REF=", settings.availableReferences[settings.referenceIndex]);
 }
 
-void Neuropixels1_v3::selectElectrodes()
+void Neuropixels1::selectElectrodes()
 {
 
 	Neuropixels::NP_ErrorCode ec;
@@ -252,7 +252,7 @@ void Neuropixels1_v3::selectElectrodes()
 
 }
 
-Array<int> Neuropixels1_v3::selectElectrodeConfiguration(String config)
+Array<int> Neuropixels1::selectElectrodeConfiguration(String config)
 {
 	Array<int> selection;
 
@@ -300,7 +300,7 @@ Array<int> Neuropixels1_v3::selectElectrodeConfiguration(String config)
 }
 
 
-void Neuropixels1_v3::setApFilterState()
+void Neuropixels1::setApFilterState()
 {
 
 	for (int channel = 0; channel < 384; channel++)
@@ -312,7 +312,7 @@ void Neuropixels1_v3::setApFilterState()
 	
 }
 
-void Neuropixels1_v3::setAllGains()
+void Neuropixels1::setAllGains()
 {
 
 	LOGDD("Setting gain AP=", settings.apGainIndex, " LFP=", settings.lfpGainIndex);
@@ -328,7 +328,7 @@ void Neuropixels1_v3::setAllGains()
 }
 
 
-void Neuropixels1_v3::setAllReferences()
+void Neuropixels1::setAllReferences()
 {
 
 	Neuropixels::channelreference_t refId;
@@ -362,7 +362,7 @@ void Neuropixels1_v3::setAllReferences()
 
 }
 
-void Neuropixels1_v3::writeConfiguration()
+void Neuropixels1::writeConfiguration()
 {
 
 	if (basestation->isBusy())
@@ -382,7 +382,7 @@ void Neuropixels1_v3::writeConfiguration()
 
 }
 
-void Neuropixels1_v3::startAcquisition()
+void Neuropixels1::startAcquisition()
 {
 	ap_timestamp = 0;
 	lfp_timestamp = 0;
@@ -403,13 +403,13 @@ void Neuropixels1_v3::startAcquisition()
 
 }
 
-void Neuropixels1_v3::stopAcquisition()
+void Neuropixels1::stopAcquisition()
 {
 	LOGC("Probe stopping thread.");
 	signalThreadShouldExit();
 }
 
-void Neuropixels1_v3::run()
+void Neuropixels1::run()
 {
 
 	while (!threadShouldExit())
@@ -540,7 +540,7 @@ void Neuropixels1_v3::run()
 
 }
 
-bool Neuropixels1_v3::runBist(BIST bistType)
+bool Neuropixels1::runBist(BIST bistType)
 {
 
 	close();
@@ -593,7 +593,7 @@ bool Neuropixels1_v3::runBist(BIST bistType)
 	{
 		int errors;
 		Neuropixels::bistStartPRBS(slot, port);
-		Sleep(200);
+        std::this_thread::sleep_for (std::chrono::milliseconds (200));
 		Neuropixels::bistStopPRBS(slot, port, &errors);
 
 		if (errors == 0)

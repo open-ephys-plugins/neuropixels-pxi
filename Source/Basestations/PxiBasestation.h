@@ -21,56 +21,84 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#ifndef __NEUROPIXBASESTATIONV1_H_2C4C2D67__
-#define __NEUROPIXBASESTATIONV1_H_2C4C2D67__
+#ifndef __NEUROPIXBASESTATIONV3_H_2C4C2D67__
+#define __NEUROPIXBASESTATIONV3_H_2C4C2D67__
 
-#include "../API/v1/NeuropixAPI.h"
 #include "../NeuropixComponents.h"
 
 # define SAMPLECOUNT 64
 
-/*
-*
+/* 
+* 
 	Thread for arming basestation immediately after acquisition
 	ends. This takes a few seconds, so we should do it in a thread
 	so acquisition stops promptly.
 
 */
-class ArmBasestationV1 : public Thread
+
+class PxiBasestation;
+
+class PortChecker : public ThreadPoolJob
 {
 public:
-	ArmBasestationV1(unsigned char slot_) :
-		Thread("Arm Basestation in Slot " + String(int(slot)))
+
+	PortChecker(int slot_, int port_, Basestation* basestation_) :
+		ThreadPoolJob("Port checker for " + String(slot_) + ":" + String(port_))
+		, slot(slot_), port(port_), basestation(basestation_), headstage(nullptr) { }
+
+	~PortChecker() {
+		signalJobShouldExit();
+	}
+
+	JobStatus runJob();
+
+	Headstage* headstage;
+
+private:
+
+	int slot;
+	int port;
+	Basestation* basestation;
+};
+
+class ArmBasestation : public Thread
+{
+public:
+	ArmBasestation(int slot_) : 
+		Thread("Arm Basestation in Slot " + String(slot))
 		, slot(slot_) { }
 
-	~ArmBasestationV1() { }
-
+	~ArmBasestation() { 
+		stopThread(2000);
+	}
+	
 	void run()
 	{
-		LOGC("Arming PXI slot ", int(slot), "...");
-		np::arm(slot);
+		LOGC("Arming PXI slot ", slot, "...");
+		Neuropixels::arm(slot);
 		LOGC("Arming complete.");
 	}
 
 private:
 
-	unsigned char slot;
+	int slot;
 };
 
 /*
 
 	Standard Neuropixels PXI basestation
-	running v1 firmware.
+	running v3 firmware.
 
 */
-class Basestation_v1 : public Basestation
+class PxiBasestation : public Basestation
+
 {
 public:
 	/** Constructor */
-	Basestation_v1(NeuropixThread*, int slot);
+	PxiBasestation(NeuropixThread*, int slot);
 
 	/** Destructor */
-	~Basestation_v1();
+	~PxiBasestation();
 
 	/** Opens connection to the basestation */
 	bool open() override;
@@ -93,8 +121,8 @@ public:
 	/** Set basestation SMA connector as output (and set frequency)*/
 	void setSyncAsOutput(int freqIndex) override;
 
-	/** Set basestation SMA connector to inherit from PXI backplane */
-	void setSyncAsPassive() override { }
+	/** Set basestation SMA connector to inherit signal from PXI backplane */
+	void setSyncAsPassive() override;
 
 	/** Returns an array of available frequencies when SMA is in "output" mode */
 	Array<int> getSyncFrequencies() override;
@@ -108,34 +136,40 @@ public:
 	/** Returns the fraction of the basestation FIFO that is filled */
 	float getFillPercentage() override;
 
+	/** Activates a probe emission site (only works for Opto probes) */
+	void selectEmissionSite(int port, int dock, String wavelength, int site);
+
+	/** Returns true if the arm basestation thread is running */
 	bool isBusy() override;
 
+	/** Waits for the arm basestation thread to exit */
 	void waitForThreadToExit() override;
 
 private:
-	np::bistElectrodeStats stats[960];
 
-	np::NP_ErrorCode errorCode;
+	void print_switchmatrix();
 
-	std::unique_ptr<ArmBasestationV1> armBasestation;
+	std::unique_ptr<ArmBasestation> armBasestation;
+
+	Neuropixels::NP_ErrorCode errorCode;
+
+	bool invertOutput;
 
 };
 
-class BasestationConnectBoard_v1 : public BasestationConnectBoard
+class BasestationConnectBoard_v3 : public BasestationConnectBoard
 {
 public:
 
 	/** Constructor */
-	BasestationConnectBoard_v1(Basestation*);
+	BasestationConnectBoard_v3(Basestation*);
 
 	/** Returns part number, firmware version, etc.*/
 	void getInfo() override;
 
 private:
-	np::NP_ErrorCode errorCode;
+	Neuropixels::NP_ErrorCode errorCode;
 };
 
 
-
-
-#endif  // __NEUROPIXBASESTATIONV1_H_2C4C2D67__
+#endif  // __NEUROPIXBASESTATIONV3_H_2C4C2D67__

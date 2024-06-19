@@ -25,14 +25,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define __NEUROPIXHS1V3_H_2C4C2D67__
 
 
-#include "../API/v3/NeuropixAPI.h"
 #include "../NeuropixComponents.h"
 
 
-class Headstage1_v3 : public Headstage
+class Headstage1 : public Headstage
 {
 public:
-	Headstage1_v3::Headstage1_v3(Basestation*, int port);
+	Headstage1::Headstage1(Basestation*, int port);
 	void getInfo() override;
 	bool hasTestModule() override;
 	void runTestModule() override;
@@ -40,10 +39,10 @@ public:
 	Neuropixels::NP_ErrorCode errorCode;
 };
 
-class Flex1_v3 : public Flex
+class Flex1 : public Flex
 {
 public:
-	Flex1_v3::Flex1_v3(Headstage*);
+	Flex1::Flex1(Headstage*);
 	void getInfo() override;
 
 	Neuropixels::NP_ErrorCode errorCode;

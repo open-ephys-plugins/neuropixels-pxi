@@ -28,8 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 
-#include "API/v1/NeuropixAPI.h"
-#include "API/v3/NeuropixAPI.h"
+#include "API/NeuropixAPI.h"
 
 #include "UI/ActivityView.h"
 #include "UI/ProbeNameConfig.h"
@@ -71,8 +70,7 @@ enum class DataSourceType {
 };
 
 enum class BasestationType {
-	V1,
-	V3,
+	PXI,
 	OPTO,
 	ONEBOX,
 	SIMULATED
@@ -256,28 +254,6 @@ public:
 	ComponentInfo info;
 
 	virtual void getInfo() = 0;
-};
-
-/** Holds info about APIv1, as well as a boolean value to indicate whether or not it is being used*/
-class NeuropixAPIv1 : public NeuropixComponent
-{
-public:
-	NeuropixAPIv1::NeuropixAPIv1()
-	{
-		getInfo();
-		isActive = false;
-	}
-
-	void getInfo() override {
-
-		unsigned char version_major;
-		unsigned char version_minor;
-		np::getAPIVersion(&version_major, &version_minor);
-
-		info.version = String(version_major) + "." + String(version_minor);
-	}
-
-	bool isActive;
 };
 
 /** Holds info about APIv3, as well as a boolean value to indicate whether or not it is being used*/
@@ -570,7 +546,7 @@ public:
 
 };
 
-/** Represents a PXI basestation card */
+/** Represents a data acquisition device */
 class Basestation : public NeuropixComponent
 {
 public:

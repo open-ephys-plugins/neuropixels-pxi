@@ -261,13 +261,13 @@ void SimulatedProbe::initialize(bool signalChainIsLoading)
 {
 
 	LOGD("Initializing probe...");
-	Sleep(1000);
+    std::this_thread::sleep_for (std::chrono::milliseconds (1000));
 
 }
 
 void SimulatedProbe::calibrate()
 {
-	Sleep(1);
+    std::this_thread::sleep_for (std::chrono::milliseconds (1));
 	LOGC("Calibrating simulated probe.");
 }
 
@@ -791,7 +791,7 @@ void SimulatedProbe::setAllReferences()
 
 void SimulatedProbe::writeConfiguration()
 {
-	Sleep(500);
+    std::this_thread::sleep_for (std::chrono::milliseconds (500));
 
 	LOGC("Wrote configuration for simulated probe.");
 	

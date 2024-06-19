@@ -51,14 +51,8 @@ target_include_directories(${PLUGIN_NAME} PUBLIC ${GUI_BASE_DIR}/JuceLibraryCode
 set(GUI_BIN_DIR ${GUI_BASE_DIR}/Build/${CONFIGURATION_FOLDER})
 
 if (NOT CMAKE_LIBRARY_ARCHITECTURE)
-	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(CMAKE_LIBRARY_ARCHITECTURE "x64")
-		set(NEUROPIX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/API/v1/lib64/NeuropixAPI_x64_1_20.lib)
-		set(NEUROPIX2_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/API/v3/lib64/NeuropixAPI_x64_3_67.lib)
-	else()
-		set(CMAKE_LIBRARY_ARCHITECTURE "x86")
-		set(NEUROPIX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/neuropix-api/lib32/NeuropixAPI_x86_1_20.lib)
-	endif()
+	set(CMAKE_LIBRARY_ARCHITECTURE "x64")
+	set(NEUROPIX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/API/lib64/NeuropixAPI_x64_3_67.lib)
 endif()
 
 #Libraries and compiler options
@@ -99,16 +93,7 @@ if (MSVC)
 	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Resources/ DESTINATION ${GUI_BIN_DIR}/shared FILES_MATCHING PATTERN "*.dll") 
 endif()
 
-set(NEUROPIX_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/neuropix-api)
+set(NEUROPIX_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/API)
 target_include_directories(${PLUGIN_NAME} PRIVATE ${NEUROPIX_INCLUDE_DIR})
 target_link_libraries(${PLUGIN_NAME} ${NEUROPIX_LINK_DIR})
-target_link_libraries(${PLUGIN_NAME} ${NEUROPIX2_LINK_DIR})
 
-#additional libraries, if needed
-#find_package(LIBNAME)
-#or
-#find_library(LIBNAME_LIBRARIES NAMES libname)
-#find_path(LIBNAME_INCLUDE_DIRS includefile.h)
-#
-#target_link_libraries(${PLUGIN_NAME} ${LIBNAME_LIBRARIES})
-#target_include_directories(${PLUGIN_NAME} PRIVATE ${LIBNAME_INCLUDE_DIRS})

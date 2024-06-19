@@ -24,8 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __NEUROPIXHS2_H_2C4C2D67__
 #define __NEUROPIXHS2_H_2C4C2D67__
 
-
-#include "../API/v3/NeuropixAPI.h"
 #include "../NeuropixComponents.h"
 
 

@@ -26,8 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../NeuropixComponents.h"
 
-#include "../API/v3/NeuropixAPI.h"
-
 #define MAXPACKETS 64
 
 /** 
@@ -37,12 +35,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-class Neuropixels1_v3 : public Probe
+class Neuropixels1 : public Probe
 {
 public:
 
 	/** Constructor */
-	Neuropixels1_v3(Basestation*, 
+	Neuropixels1(Basestation*, 
 		Headstage*, 
 		Flex*);
 

@@ -587,7 +587,7 @@ bool Neuropixels_QuadBase::runBist(BIST bistType)
 	{
 		int errors;
 		Neuropixels::bistStartPRBS(slot, port);
-		Sleep(200);
+        std::this_thread::sleep_for (std::chrono::milliseconds (200));
 		Neuropixels::bistStopPRBS(slot, port, &errors);
 
 		if (errors == 0)

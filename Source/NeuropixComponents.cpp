@@ -183,18 +183,12 @@ void FirmwareUpdater::run()
 	if (firmwareType == FirmwareType::BSC_FIRMWARE)
 	{
 
-		if (basestation->type == BasestationType::V1)
-		{
-			np::qbsc_update(basestation->slot_c,
-				firmwareFilePath.getCharPointer(),
-				firmwareUpdateCallback);
-		}
-		else if (basestation->type == BasestationType::SIMULATED)
+		if (basestation->type == BasestationType::SIMULATED)
 		{
 			for (int i = 0; i < 20; i++)
 			{
 				setProgress(0.05 * i);
-				Sleep(100);
+                std::this_thread::sleep_for (std::chrono::milliseconds (100));
 			}
 		}
 		else {
@@ -207,18 +201,12 @@ void FirmwareUpdater::run()
 		
 	else { // BS_FIRMWARE
 
-		if (basestation->type == BasestationType::V1)
-		{
-			np::bs_update(basestation->slot_c,
-				firmwareFilePath.getCharPointer(),
-				firmwareUpdateCallback);
-		}
-		else if (basestation->type == BasestationType::SIMULATED)
+		if (basestation->type == BasestationType::SIMULATED)
 		{
 			for (int i = 0; i < 20; i++)
 			{
 				setProgress(0.05 * i);
-				Sleep(100);
+                std::this_thread::sleep_for (std::chrono::milliseconds (100));
 			}
 		}
 		else {

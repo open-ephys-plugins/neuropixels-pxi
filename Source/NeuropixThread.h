@@ -31,14 +31,19 @@
 
 #include "NeuropixComponents.h"
 
-#define PLUGIN_VERSION "0.6.5"
+#define PLUGIN_VERSION "1.0.0-dev"
+
+#define MINSTREAMBUFFERSIZE (1024*32)
+#define MAXSTREAMBUFFERSIZE (1024*1024*32)
+#define MINSTREAMBUFFERCOUNT (2)
+#define MAXSTREAMBUFFERCOUNT (1024)
 
 class SourceNode;
 class NeuropixThread;
 class NeuropixEditor;
 class OneBoxADC;
 class OneBox;
-class Basestation_v3;
+class Basestation;
 
 typedef enum {
 	AP_BAND,
@@ -72,13 +77,11 @@ public:
 	Initializer(NeuropixThread* neuropixThread_, 
 		  OwnedArray<Basestation>& basestations_, 
 		  DeviceType type_,
-		  NeuropixAPIv1& api_v1_, 
 		  NeuropixAPIv3& api_v3_)
-		: ThreadWithProgressWindow("Initializing Neuropixels Devices", true, false),
+		: ThreadWithProgressWindow("Scanning for connected Neuropixels devices", true, false),
 	      neuropixThread(neuropixThread_),
 		  basestations(basestations_),
 		  type(type_),
-		  api_v1(api_v1_),
 		  api_v3(api_v3_) { }
 
 	~Initializer() { }
@@ -89,7 +92,6 @@ private:
 
 	NeuropixThread* neuropixThread;
 	OwnedArray<Basestation>& basestations;
-	NeuropixAPIv1& api_v1;
 	NeuropixAPIv3& api_v3;
 	DeviceType type;
 
@@ -122,8 +124,8 @@ public:
 	/** Creates the custom editor */
 	std::unique_ptr<GenericEditor> createEditor(SourceNode* sn);
 
-	/** Just checks whether recording is active -- data is acquired by the individual Probe objects*/
-	bool updateBuffer();
+	/** Not used -- data is acquired by the individual Probe objects*/
+	bool updateBuffer() { return true;  }
 
 	/** Returns true if the data source is connected, false otherwise.*/
 	bool foundInputSource();
@@ -194,7 +196,7 @@ public:
 	Array<OneBox*> getOneBoxes();
 
 	/** Returns pointers to opto-compatible basestations */
-	Array<Basestation_v3*> getOptoBasestations();
+	Array<Basestation*> getOptoBasestations();
 
 	/** Returns pointers to active probes */
 	Array<Probe*> getProbes();
@@ -288,13 +290,11 @@ private:
 
 	Array<float> fillPercentage;
 	
-
 	OwnedArray<Basestation> basestations;
 	OwnedArray<DataStream> sourceStreams;
 
 	std::unique_ptr<Initializer> initializer;
 
-	NeuropixAPIv1 api_v1;
 	NeuropixAPIv3 api_v3;
 
 	NeuropixEditor* editor;

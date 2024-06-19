@@ -21,15 +21,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include "Headstage1_v3.h"
-#include "../Probes/Neuropixels1_v3.h"
+#include "Headstage1.h"
+#include "../Probes/Neuropixels1.h"
 #include "../Probes/NeuropixelsOpto.h"
 #include "../Probes/Neuropixels_UHD.h"
 #include "../Probes/Neuropixels_NHP_Active.h"
 
 #define MAXLEN 50
 
-void Headstage1_v3::getInfo()
+void Headstage1::getInfo()
 {
 
 	int version_major;
@@ -49,7 +49,7 @@ void Headstage1_v3::getInfo()
 }
 
 
-void Flex1_v3::getInfo()
+void Flex1::getInfo()
 {
 
 	int version_major;
@@ -75,7 +75,7 @@ void Flex1_v3::getInfo()
 }
 
 
-Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
+Headstage1::Headstage1(Basestation* bs_, int port) : Headstage(bs_, port)
 {
 
 	getInfo();
@@ -91,7 +91,7 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 	}
 	else
 	{
-		flexCables.add(new Flex1_v3(this));
+		flexCables.add(new Flex1(this));
 
 		char partNumber[MAXLEN];
 
@@ -126,7 +126,7 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 			probes.add(new Neuropixels_NHP_Active(basestation, this, flexCables[0]));
 		}
 		else {
-			probes.add(new Neuropixels1_v3(basestation, this, flexCables[0]));
+			probes.add(new Neuropixels1(basestation, this, flexCables[0]));
 		}
 		
 		if (probes[0]->isValid)
@@ -144,20 +144,20 @@ Headstage1_v3::Headstage1_v3(Basestation* bs_, int port) : Headstage(bs_, port)
 
 }
 
-bool Headstage1_v3::hasTestModule()
+bool Headstage1::hasTestModule()
 {
 	int vmajor;
 	int vminor;
 	return Neuropixels::HST_GetVersion(basestation->slot, port, &vmajor, &vminor) == Neuropixels::SUCCESS;
 }
 
-void Headstage1_v3::runTestModule()
+void Headstage1::runTestModule()
 {
 	testModule->runAll();
 	testModule->showResults();
 }
 
-Flex1_v3::Flex1_v3(Headstage* hs_) : Flex(hs_, 1)
+Flex1::Flex1(Headstage* hs_) : Flex(hs_, 1)
 {
 	getInfo();
 

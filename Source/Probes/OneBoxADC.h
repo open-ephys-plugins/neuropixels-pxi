@@ -26,8 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../NeuropixComponents.h"
 
-#include "../API/v3/NeuropixAPI.h"
-
 # define SAMPLECOUNT 64
 # define NUM_ADCS 12
 
