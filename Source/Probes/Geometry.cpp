@@ -59,18 +59,22 @@ bool Geometry::forPartNumber(String PN,
 	else if (PN.equalsIgnoreCase("NP1200") || PN.equalsIgnoreCase("NP1210"))
 		NHP1(em, pm);
 
-	else if (PN.equalsIgnoreCase("PRB2_1_2_0640_0") 
-		|| PN.equalsIgnoreCase("PRB2_1_4_0480_1") 
-		|| PN.equalsIgnoreCase("NP2000")
-		|| PN.equalsIgnoreCase("NP2003")
+	else if (PN.equalsIgnoreCase("PRB2_1_2_0640_0")
+		|| PN.equalsIgnoreCase("PRB2_1_4_0480_1")
+		|| PN.equalsIgnoreCase("NP2000"))
+		NP2(1, 14, em, pm); // single shank, 14-bit ADC
+
+	else if (PN.equalsIgnoreCase("NP2003")
 		|| PN.equalsIgnoreCase("NP2004"))
-		NP2(1, em, pm); // single shank
+		NP2(1, 12, em, pm); // single shank, 12-bit ADC
 
 	else if (PN.equalsIgnoreCase("PRB2_4_2_0640_0") 
-		|| PN.equalsIgnoreCase("NP2010")
-		|| PN.equalsIgnoreCase("NP2013")
+		|| PN.equalsIgnoreCase("NP2010"))
+		NP2(4, 14, em, pm); // multi-shank, 14-bit ADC
+
+	else if (PN.equalsIgnoreCase("NP2013")
 		|| PN.equalsIgnoreCase("NP2014"))
-		NP2(4, em, pm); // multi-shank
+		NP2(4, 12, em, pm); // multi-shank, 12-bit ADC
 
 	else if (PN.equalsIgnoreCase("PRB_1_4_0480_1")
 		|| PN.equalsIgnoreCase("PRB_1_4_0480_1_C")
@@ -153,6 +157,7 @@ void Geometry::NP1(Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
 	probeMetadata.num_adcs = 32;
+	probeMetadata.adc_bits = 10;
 
 	probeMetadata.availableBanks = 
 	{	Bank::A,
@@ -210,7 +215,7 @@ void Geometry::NP1(Array<ElectrodeMetadata>& electrodeMetadata,
 }
 
 
-void Geometry::NP2(int shank_count,
+void Geometry::NP2(int shank_count, int adc_bits,
 	Array<ElectrodeMetadata>& electrodeMetadata,
 	ProbeMetadata& probeMetadata)
 {
@@ -225,6 +230,8 @@ void Geometry::NP2(int shank_count,
 		probeMetadata.type = ProbeType::NP2_4;
 		probeMetadata.name = "Neuropixels 2.0 - Multishank";
 	}
+
+	probeMetadata.adc_bits = adc_bits;
 		
 
 	Path path;
@@ -524,6 +531,7 @@ void Geometry::NHP1(Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
 	probeMetadata.num_adcs = 32;
+	probeMetadata.adc_bits = 10;
 
 	probeMetadata.availableBanks =
 		{ Bank::A
@@ -612,6 +620,7 @@ void Geometry::NHP2(int length,
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
 	probeMetadata.num_adcs = 32;
+	probeMetadata.adc_bits = 10;
 
 	probeMetadata.availableBanks = { 
 		Bank::A,
@@ -717,6 +726,7 @@ void Geometry::UHDPassive(int numColumns,
 	probeMetadata.columns_per_shank = numColumns;
 	probeMetadata.shankOutline = path;
 	probeMetadata.num_adcs = 32;
+	probeMetadata.adc_bits = 10;
 
 	probeMetadata.availableBanks =
 		{ Bank::A
@@ -774,6 +784,7 @@ void Geometry::UHDActive(Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.columns_per_shank = numColumns;
 	probeMetadata.shankOutline = path;
 	probeMetadata.num_adcs = 32;
+	probeMetadata.adc_bits = 10;
 
 	int siteSpacing = 6;
 
@@ -946,6 +957,7 @@ void Geometry::OPTO(Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
 	probeMetadata.num_adcs = 32;
+	probeMetadata.adc_bits = 10;
 
 	probeMetadata.availableBanks =
 	{ Bank::A,
@@ -1047,6 +1059,7 @@ void Geometry::QuadBase(Array<ElectrodeMetadata>& electrodeMetadata,
 	probeMetadata.columns_per_shank = 2;
 	probeMetadata.shankOutline = path;
 	probeMetadata.num_adcs = 96;
+	probeMetadata.adc_bits = 12;
 
 	probeMetadata.availableBanks =
 		{   Bank::A,

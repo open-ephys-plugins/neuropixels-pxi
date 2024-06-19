@@ -67,6 +67,8 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 		lfp_sample_rate = 2500.0f; // not used
 		ap_sample_rate = 30000.0f;
 
+		bitScaling = pow(2, probeMetadata.adc_bits);
+
 		for (int i = 0; i < channel_count; i++)
 		{
 			settings.selectedBank.add(Bank::A);
@@ -126,8 +128,6 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 			info.part_number.equalsIgnoreCase("NP2004"))
 		{
 			availableReferences.add("Ground");
-
-			bitScaling = 4096;
 		}	
 
 		settings.availableReferences = availableReferences;

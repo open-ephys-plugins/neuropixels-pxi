@@ -35,7 +35,7 @@
 #include <vector>
 
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
-#define FORCE_SIMULATION_MODE false
+#define FORCE_SIMULATION_MODE true
 
 DataThread* NeuropixThread::createDataThread(SourceNode *sn, DeviceType type)
 {

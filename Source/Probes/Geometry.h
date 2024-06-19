@@ -67,7 +67,8 @@ public:
 	*
 		Available with 1 shank or 4 shanks
 	*/
-	static void NP2(int shank_count, Array<ElectrodeMetadata>& em,
+	static void NP2(int shank_count, int adc_bits,
+		Array<ElectrodeMetadata>& em,
 		ProbeMetadata& pm);
 
 	/** Neuropixels UHD Passive

@@ -179,6 +179,7 @@ struct ProbeMetadata {
 	int shank_count;
 	int electrodes_per_shank;
 	int num_adcs;
+	int adc_bits;
 	Path shankOutline;
 	int columns_per_shank;
 	int rows_per_shank;
