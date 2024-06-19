@@ -1,23 +1,23 @@
 /*
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This file is part of the Open Ephys GUI
-Copyright (C) 2018 Allen Institute for Brain Science and Open Ephys
+    This file is part of the Open Ephys GUI
+    Copyright (C) 2024 Open Ephys
 
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
@@ -25,86 +25,75 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MAXLEN 50
 
-OneBoxDAC::OneBoxDAC(Basestation* bs_) : 
-	DataSource(bs_), slot(bs_->slot)
+OneBoxDAC::OneBoxDAC (Basestation* bs_) : DataSource (bs_),
+                                          slot (bs_->slot)
 {
+    sourceType = DataSourceType::DAC;
 
-	sourceType = DataSourceType::DAC;
-
-	channel_count = 0;
-	sample_rate = 30000.0f;
-
+    channel_count = 0;
+    sample_rate = 30000.0f;
 }
 
-void OneBoxDAC::initialize(bool signalChainIsLoading)
+void OneBoxDAC::initialize (bool signalChainIsLoading)
 {
+    errorCode = Neuropixels::waveplayer_setSampleFrequency (slot,
+                                                            30000.0f);
 
-	errorCode = Neuropixels::waveplayer_setSampleFrequency(slot, 
-		30000.0f);
-
-	LOGD("waveplayer_setSampleFrequency error code: ", errorCode);
-
+    LOGD ("waveplayer_setSampleFrequency error code: ", errorCode);
 }
 
-void OneBoxDAC::setWaveform(Array<float> samples)
+void OneBoxDAC::setWaveform (Array<float> samples)
 {
+    Array<int16_t> samples_t;
 
-	Array<int16_t> samples_t;
+    for (auto sample : samples)
+        samples_t.add (int (sample / 5.0f * 65535));
 
-	for (auto sample : samples)
-		samples_t.add(int(sample / 5.0f * 65535));
+    errorCode = Neuropixels::waveplayer_writeBuffer (slot, samples_t.getRawDataPointer(), samples_t.size());
 
-	errorCode = Neuropixels::waveplayer_writeBuffer(slot, samples_t.getRawDataPointer(), samples_t.size());
+    LOGC ("waveplayer_writeBuffer error code: ", errorCode);
 
-	LOGC("waveplayer_writeBuffer error code: ", errorCode);
+    errorCode = Neuropixels::waveplayer_arm (slot, true);
 
-	errorCode = Neuropixels::waveplayer_arm(slot, true);
-
-	LOGC("waveplayer_arm error code: ", errorCode);
-
+    LOGC ("waveplayer_arm error code: ", errorCode);
 }
 
 void OneBoxDAC::playWaveform()
 {
-	errorCode = Neuropixels::setSWTriggerEx(slot, Neuropixels::swtrigger2);
+    errorCode = Neuropixels::setSWTriggerEx (slot, Neuropixels::swtrigger2);
 
-	LOGD("setSWTriggerEx error code: ", errorCode);
+    LOGD ("setSWTriggerEx error code: ", errorCode);
 }
 
 void OneBoxDAC::stopWaveform()
 {
-	LOGD("Stop waveform not implemented.");
+    LOGD ("Stop waveform not implemented.");
 }
 
-
-
-void OneBoxDAC::configureDataPlayer(int DACChannel, int portID, int dockID, int channelnr, int sourceType)
+void OneBoxDAC::configureDataPlayer (int DACChannel, int portID, int dockID, int channelnr, int sourceType)
 {
-	Neuropixels::streamsource_t sourcetype = Neuropixels::SourceAP;
+    Neuropixels::streamsource_t sourcetype = Neuropixels::SourceAP;
 
-	if (sourceType == 1)
-		sourceType = Neuropixels::SourceAP;
-	else
-		sourceType = Neuropixels::SourceLFP;
+    if (sourceType == 1)
+        sourceType = Neuropixels::SourceAP;
+    else
+        sourceType = Neuropixels::SourceLFP;
 
-	errorCode = Neuropixels::DAC_setProbeSniffer(slot, DACChannel, portID, dockID, channelnr, sourcetype);
+    errorCode = Neuropixels::DAC_setProbeSniffer (slot, DACChannel, portID, dockID, channelnr, sourcetype);
 
-	LOGC("DAC_setProbeSniffer error code: ", errorCode);
-
+    LOGC ("DAC_setProbeSniffer error code: ", errorCode);
 }
 
-void OneBoxDAC::disableOutput(int chan)
+void OneBoxDAC::disableOutput (int chan)
 {
-	errorCode = Neuropixels::DAC_enableOutput(slot, chan, false);
+    errorCode = Neuropixels::DAC_enableOutput (slot, chan, false);
 
-	LOGC("Disabling DAC ", chan);
-
+    LOGC ("Disabling DAC ", chan);
 }
 
-void OneBoxDAC::enableOutput(int chan)
+void OneBoxDAC::enableOutput (int chan)
 {
-	errorCode = Neuropixels::DAC_enableOutput(slot, chan, true);
+    errorCode = Neuropixels::DAC_enableOutput (slot, chan, true);
 
-	LOGC("Enabling DAC ", chan);
-
+    LOGC ("Enabling DAC ", chan);
 }

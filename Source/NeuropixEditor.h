@@ -2,7 +2,7 @@
     ------------------------------------------------------------------
 
     This file is part of the Open Ephys GUI
-    Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+    Copyright (C) 2024 Open Ephys
 
     ------------------------------------------------------------------
 
@@ -24,8 +24,8 @@
 #ifndef __NEUROPIXEDITOR_H_2AD3C591__
 #define __NEUROPIXEDITOR_H_2AD3C591__
 
-#include <VisualizerEditorHeaders.h>
 #include "UI\ProbeNameConfig.h"
+#include <VisualizerEditorHeaders.h>
 
 #include "NeuropixComponents.h"
 
@@ -46,30 +46,27 @@ class NeuropixThread;
 class SlotButton : public Button, public ComponentListener
 {
 public:
+    /** Constructor */
+    SlotButton (Basestation* bs, NeuropixThread* thread);
 
-	/** Constructor */
-	SlotButton(Basestation* bs, NeuropixThread* thread);
+    /** Destructor */
+    ~SlotButton() {}
 
-	/** Destructor */
-	~SlotButton() {}
-
-	bool isEnabled;
+    bool isEnabled;
 
 private:
+    Basestation* basestation;
+    NeuropixThread* thread;
+    int slot;
 
-	Basestation* basestation;
-	NeuropixThread* thread;
-	int slot;
+    /** Draws the slot number */
+    void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown);
 
-	/** Draws the slot number */
-	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
+    /** Opens the configuration window */
+    void mouseUp (const MouseEvent& event);
 
-	/** Opens the configuration window */
-	void mouseUp(const MouseEvent& event);
-
-	/** Called when the configuration window is closed */
-	void componentBeingDeleted(Component& component);
-
+    /** Called when the configuration window is closed */
+    void componentBeingDeleted (Component& component);
 };
 
 /** 
@@ -80,39 +77,36 @@ private:
 class EditorBackground : public Component, public ComponentListener
 {
 public:
+    /** Constructor */
+    EditorBackground (NeuropixThread* t, bool freqSelectEnabled);
 
-	/** Constructor */
-	EditorBackground(NeuropixThread* t, bool freqSelectEnabled);
+    /** Toggles the frequency select option */
+    void setFreqSelectAvailable (bool available);
 
-	/** Toggles the frequency select option */
-	void setFreqSelectAvailable(bool available);
+    /* A map from slot number label to its bounds in the editor */
+    std::vector<std::unique_ptr<SlotButton>> slotButtons;
 
-	/* A map from slot number label to its bounds in the editor */
-	std::vector<std::unique_ptr<SlotButton>> slotButtons;
+    /** Pointer to the probe naming popup */
+    std::unique_ptr<ProbeNameConfig> probeNamingPopup;
 
-	/** Pointer to the probe naming popup */
-	std::unique_ptr<ProbeNameConfig> probeNamingPopup;
-
-	/** Disables/enables slot buttons during/after acquisition*/
-	void setEnabled(bool isEnabled)
-	{
-		for (int i = 0; i < slotButtons.size(); i++)
-			slotButtons[i]->isEnabled = isEnabled;
-	}
+    /** Disables/enables slot buttons during/after acquisition*/
+    void setEnabled (bool isEnabled)
+    {
+        for (int i = 0; i < slotButtons.size(); i++)
+            slotButtons[i]->isEnabled = isEnabled;
+    }
 
 private:
+    /** Draws the background */
+    void paint (Graphics& g);
 
-	/** Draws the background */
-	void paint(Graphics& g);
+    int numBasestations;
+    bool freqSelectEnabled;
 
-	int numBasestations;
-	bool freqSelectEnabled;
+    /* An array of Basestation objections, one for each basestation detected */
+    Array<Basestation*> basestations;
 
-	/* An array of Basestation objections, one for each basestation detected */
-	Array<Basestation*> basestations;
-
-	DeviceType type;
-
+    DeviceType type;
 };
 
 /** 
@@ -123,36 +117,34 @@ private:
 class SourceButton : public ToggleButton, public Timer
 {
 public:
+    /** Constructor */
+    SourceButton (int id, DataSource* probe, Basestation* basestation = nullptr);
 
-	/** Constructor */
-	SourceButton(int id, DataSource* probe, Basestation* basestation = nullptr);
+    /** Toggles the button selected state */
+    void setSelectedState (bool);
 
-	/** Toggles the button selected state */
-	void setSelectedState(bool);
+    /** Sets the status (CONNECTED, CONNECTING, etc.) */
+    void setSourceStatus (SourceStatus status);
 
-	/** Sets the status (CONNECTED, CONNECTING, etc.) */
-	void setSourceStatus(SourceStatus status);
+    /** Returns the status of the associated source */
+    SourceStatus getSourceStatus();
 
-	/** Returns the status of the associated source */
-	SourceStatus getSourceStatus();
+    /** Checks whether the status has changed */
+    void timerCallback();
 
-	/** Checks whether the status has changed */
-	void timerCallback();
+    DataSource* dataSource;
+    Basestation* basestation;
+    bool connected;
 
-	DataSource* dataSource;
-	Basestation* basestation;
-	bool connected;
-
-	int id;
+    int id;
 
 private:
+    /** Draws the button */
+    void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown);
 
-	/** Draws the button */
-	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
-
-	SourceStatus status;
-	DataSourceType sourceType;
-	bool selected;
+    SourceStatus status;
+    DataSourceType sourceType;
+    bool selected;
 };
 
 /** 
@@ -163,28 +155,27 @@ private:
 class FifoMonitor : public Component, public Timer
 {
 public:
+    /** Constructor */
+    FifoMonitor (int id, Basestation* basestation);
 
-	/** Constructor */
-	FifoMonitor(int id, Basestation* basestation);
+    /** Sets the slot ID for this monitor */
+    void setSlot (unsigned char);
 
-	/** Sets the slot ID for this monitor */
-	void setSlot(unsigned char);
+    /** Sets the fill percentage to display */
+    void setFillPercentage (float percentage);
 
-	/** Sets the fill percentage to display */
-	void setFillPercentage(float percentage);
+    /** Calls repaint() */
+    void timerCallback();
 
-	/** Calls repaint() */
-	void timerCallback();
+    unsigned char slot;
 
-	unsigned char slot;
 private:
+    /** Renders the monitor */
+    void paint (Graphics& g);
 
-	/** Renders the monitor */
-	void paint(Graphics& g);
-
-	float fillPercentage;
-	Basestation* basestation;
-	int id;
+    float fillPercentage;
+    Basestation* basestation;
+    int id;
 };
 
 /** 
@@ -196,24 +187,22 @@ private:
 class BackgroundLoader : public Thread
 {
 public:
+    /** Constructor */
+    BackgroundLoader (NeuropixThread* t, NeuropixEditor* e);
 
-	/** Constructor */
-	BackgroundLoader(NeuropixThread* t, NeuropixEditor* e);
+    /** Destructor */
+    ~BackgroundLoader();
 
-	/** Destructor */
-	~BackgroundLoader();
+    /** Runs the thread */
+    void run();
 
-	/** Runs the thread */
-	void run();
-
-	bool signalChainIsLoading;
+    bool signalChainIsLoading;
 
 private:
-	NeuropixThread* thread;
-	NeuropixEditor* editor;
+    NeuropixThread* thread;
+    NeuropixEditor* editor;
 
-	bool isInitialized;
-
+    bool isInitialized;
 };
 
 /**
@@ -223,79 +212,76 @@ User interface for the Neuropixels source module.
 @see SourceNode
 
 */
-class NeuropixEditor : public VisualizerEditor, 
-					   public ComboBox::Listener, 
-					   public Button::Listener
+class NeuropixEditor : public VisualizerEditor,
+                       public ComboBox::Listener,
+                       public Button::Listener
 {
 public:
+    /** Constructor */
+    NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* thread);
 
-	/** Constructor */
-	NeuropixEditor(GenericProcessor* parentNode, NeuropixThread* thread);
+    /** Destructor */
+    virtual ~NeuropixEditor() {}
 
-	/** Destructor */
-	virtual ~NeuropixEditor() { }
+    /** Called when editor is collapsed */
+    void collapsedStateChanged() override;
 
-	/** Called when editor is collapsed */
-	void collapsedStateChanged() override;
+    /** Respond to combo box changes*/
+    void comboBoxChanged (ComboBox*);
 
-	/** Respond to combo box changes*/
-	void comboBoxChanged(ComboBox*);
+    /** Respond to button presses */
+    void buttonClicked (Button* button) override;
 
-	/** Respond to button presses */
-	void buttonClicked(Button* button) override;
+    /** Save editor parameters (e.g. sync settings)*/
+    void saveVisualizerEditorParameters (XmlElement*) override;
 
-	/** Save editor parameters (e.g. sync settings)*/
-	void saveVisualizerEditorParameters(XmlElement*) override;
+    /** Load editor parameters (e.g. sync settings)*/
+    void loadVisualizerEditorParameters (XmlElement*) override;
 
-	/** Load editor parameters (e.g. sync settings)*/
-	void loadVisualizerEditorParameters(XmlElement*) override;
+    /** Called just prior to the start of acquisition, to allow custom commands. */
+    void startAcquisition() override;
 
-	/** Called just prior to the start of acquisition, to allow custom commands. */
-	void startAcquisition() override;
+    /** Called after the end of acquisition, to allow custom commands .*/
+    void stopAcquisition() override;
 
-	/** Called after the end of acquisition, to allow custom commands .*/
-	void stopAcquisition() override;
+    /** Creates the Neuropixels settings interface*/
+    Visualizer* createNewCanvas (void);
 
-	/** Creates the Neuropixels settings interface*/
-	Visualizer* createNewCanvas(void);
+    /** Initializes the probes in a background thread */
+    void initialize (bool signalChainIsLoading);
 
-	/** Initializes the probes in a background thread */
-	void initialize(bool signalChainIsLoading);
+    /** Update settings */
+    void update();
 
-	/** Update settings */
-	void update();
+    /** Select a data source button */
+    void selectSource (DataSource* source);
 
-	/** Select a data source button */
-	void selectSource(DataSource* source);
+    void checkCanvas() { checkForCanvas(); };
 
-	void checkCanvas() { checkForCanvas(); };
+    OwnedArray<SourceButton> sourceButtons;
 
-	OwnedArray<SourceButton> sourceButtons;
-
-	ScopedPointer<BackgroundLoader> uiLoader;
+    ScopedPointer<BackgroundLoader> uiLoader;
 
 private:
+    OwnedArray<UtilityButton> directoryButtons;
+    OwnedArray<FifoMonitor> fifoMonitors;
 
-	OwnedArray<UtilityButton> directoryButtons;
-	OwnedArray<FifoMonitor> fifoMonitors;
+    ScopedPointer<ComboBox> mainSyncSelector;
+    ScopedPointer<ComboBox> inputOutputSyncSelector;
+    ScopedPointer<ComboBox> syncFrequencySelector;
 
-	ScopedPointer<ComboBox> mainSyncSelector;
-	ScopedPointer<ComboBox> inputOutputSyncSelector;
-	ScopedPointer<ComboBox> syncFrequencySelector;
+    Array<File> savingDirectories;
+    Array<int> slotNamingSchemes;
 
-	Array<File> savingDirectories;
-	Array<int> slotNamingSchemes;
+    ScopedPointer<EditorBackground> background;
 
-	ScopedPointer<EditorBackground> background;
+    ScopedPointer<UtilityButton> addSyncChannelButton;
 
-	ScopedPointer<UtilityButton> addSyncChannelButton;
+    Viewport* viewport;
+    NeuropixCanvas* canvas;
+    NeuropixThread* thread;
 
-	Viewport* viewport;
-	NeuropixCanvas* canvas;
-	NeuropixThread* thread;
-
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuropixEditor);
-
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NeuropixEditor);
 };
 
-#endif  // __NEUROPIXEDITOR_H_2AD3C591__
+#endif // __NEUROPIXEDITOR_H_2AD3C591__

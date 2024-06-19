@@ -1,3 +1,26 @@
+/*
+    ------------------------------------------------------------------
+
+    This file is part of the Open Ephys GUI
+    Copyright (C) 2024 Open Ephys
+
+    ------------------------------------------------------------------
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #ifndef __IMRO_H__
 #define __IMRO_H_
 
@@ -6,116 +29,108 @@
 class IMRO
 {
 public:
-
-	static bool writeSettingsToImro(File& file, ProbeSettings& settings)
-	{
-
+    static bool writeSettingsToImro (File& file, ProbeSettings& settings)
+    {
         if (file.existsAsFile())
         {
-			file.deleteFile();
-		}
+            file.deleteFile();
+        }
 
         const Result result = file.create();
 
-        if (!result.wasOk())
+        if (! result.wasOk())
         {
-            LOGC("Could not create file: ", file.getFullPathName());
+            LOGC ("Could not create file: ", file.getFullPathName());
         }
 
-        if (settings.probeType == ProbeType::NP1 || 
-            settings.probeType == ProbeType::NHP10 ||
-            settings.probeType == ProbeType::NHP25 || 
-            settings.probeType == ProbeType::NHP45 ||
-            settings.probeType == ProbeType::UHD1)
+        if (settings.probeType == ProbeType::NP1 || settings.probeType == ProbeType::NHP10 || settings.probeType == ProbeType::NHP25 || settings.probeType == ProbeType::NHP45 || settings.probeType == ProbeType::UHD1)
         {
-            file.appendText("(0,384)");
+            file.appendText ("(0,384)");
         }
         else if (settings.probeType == ProbeType::NP2_1)
         {
-            file.appendText("(21,384)");
+            file.appendText ("(21,384)");
         }
         else if (settings.probeType == ProbeType::NP2_4)
         {
-            file.appendText("(24,384)");
+            file.appendText ("(24,384)");
         }
         else if (settings.probeType == ProbeType::NHP1)
         {
-            file.appendText("(0,128)");
+            file.appendText ("(0,128)");
         }
-            
-        else {
+
+        else
+        {
             return false;
         }
 
         for (int i = 0; i < settings.selectedChannel.size(); i++)
         {
-            String channelInfo = "(" + String(settings.selectedChannel[i]); // channel
+            String channelInfo = "(" + String (settings.selectedChannel[i]); // channel
 
             if (settings.probeType == ProbeType::NP2_4)
-                channelInfo += " " + String(settings.selectedShank[i]); // shank
+                channelInfo += " " + String (settings.selectedShank[i]); // shank
 
             if (settings.probeType == ProbeType::NP2_1)
-                channelInfo += " " + String(pow(2,int(settings.selectedBank[i]))); // bank
+                channelInfo += " " + String (pow (2, int (settings.selectedBank[i]))); // bank
             else
-                channelInfo += " " + String(int(settings.selectedBank[i]));
+                channelInfo += " " + String (int (settings.selectedBank[i]));
 
-            channelInfo += " " + String(settings.referenceIndex); // reference
+            channelInfo += " " + String (settings.referenceIndex); // reference
 
-            if (settings.probeType == ProbeType::NP2_1 ||
-                settings.probeType == ProbeType::NP2_4)
+            if (settings.probeType == ProbeType::NP2_1 || settings.probeType == ProbeType::NP2_4)
             {
-                channelInfo += " " + String(settings.selectedElectrode[i]); // electrode
+                channelInfo += " " + String (settings.selectedElectrode[i]); // electrode
             }
-                
-            else {
-                channelInfo += " " + String(int(settings.availableApGains[settings.apGainIndex]));
-                channelInfo += " " + String(int(settings.availableLfpGains[settings.lfpGainIndex]));
-                channelInfo += " " + String(int(settings.apFilterState));
+
+            else
+            {
+                channelInfo += " " + String (int (settings.availableApGains[settings.apGainIndex]));
+                channelInfo += " " + String (int (settings.availableLfpGains[settings.lfpGainIndex]));
+                channelInfo += " " + String (int (settings.apFilterState));
             }
 
             channelInfo += ")";
-            
-            file.appendText(channelInfo);
+
+            file.appendText (channelInfo);
         }
 
         return true;
-        
+    }
 
-	}
-
-	static bool readSettingsFromImro(File& file, ProbeSettings& settings)
-	{
-
+    static bool readSettingsFromImro (File& file, ProbeSettings& settings)
+    {
         String imro = file.loadFileAsString();
 
         bool foundHeader = false;
         int lastOpeningParen = 0;
 
-        LOGD("Length: ", imro.length());
+        LOGD ("Length: ", imro.length());
 
         for (int i = 0; i < imro.length(); i++)
         {
-            if (imro.substring(i, i + 1) == "(")
+            if (imro.substring (i, i + 1) == "(")
             {
                 lastOpeningParen = i;
             }
 
-            else if (imro.substring(i, i + 1) == ")")
+            else if (imro.substring (i, i + 1) == ")")
             {
                 //std::cout << imro.substring(lastOpeningParen + 1, i) << std::endl;
 
-                if (!foundHeader)
+                if (! foundHeader)
                 {
-                    String substring = imro.substring(lastOpeningParen + 1, i);
-                    int commaLoc = substring.indexOf(",");
+                    String substring = imro.substring (lastOpeningParen + 1, i);
+                    int commaLoc = substring.indexOf (",");
 
-                    int value = substring.substring(0, commaLoc).getIntValue();
+                    int value = substring.substring (0, commaLoc).getIntValue();
 
                     std::cout << value << std::endl;
 
                     if (value == 0)
                     {
-                        if (!(settings.probeType == ProbeType::NP1) && !(settings.probeType == ProbeType::NHP10))
+                        if (! (settings.probeType == ProbeType::NP1) && ! (settings.probeType == ProbeType::NHP10))
                             settings.probeType == ProbeType::NP1;
                     }
                     else if (value == 21)
@@ -127,99 +142,97 @@ public:
 
                     foundHeader = true;
                 }
-                else {
-                    StringArray strvals = StringArray::fromTokens(imro.substring(lastOpeningParen+1, i), " ");
+                else
+                {
+                    StringArray strvals = StringArray::fromTokens (imro.substring (lastOpeningParen + 1, i), " ");
 
                     Array<int> values;
 
                     for (int j = 0; j < strvals.size(); j++)
                     {
                         // std::cout << strvals[j] << " ";
-                        values.add(strvals[j].getIntValue());
+                        values.add (strvals[j].getIntValue());
                     }
 
                     // std::cout << std::endl;
 
-                    parseValues(values, settings.probeType, settings);
+                    parseValues (values, settings.probeType, settings);
                 }
             }
-
         }
 
         return true;
+    }
 
-	}
-
-
-    static void parseValues(Array<int> values, ProbeType probeType, ProbeSettings& settings)
+    static void parseValues (Array<int> values, ProbeType probeType, ProbeSettings& settings)
     {
         if (probeType == ProbeType::NP1 || probeType == ProbeType::NHP10 || probeType == ProbeType::NHP45)
         {
             // 0 = 1.0 probe
-           // channel ID
-           // bank number
-           // reference ID (0=ext, 1=tip, [2..4] = on-shank-ref)
-           // AP band gain (e.g. 500)
-           // LFP band gain (e.g. 250)
-           // AP highpass applied (1 = on)
+            // channel ID
+            // bank number
+            // reference ID (0=ext, 1=tip, [2..4] = on-shank-ref)
+            // AP band gain (e.g. 500)
+            // LFP band gain (e.g. 250)
+            // AP highpass applied (1 = on)
 
             Bank bank;
 
             switch (values[1])
             {
-            case 0:
-                bank = Bank::A;
-                break;
-            case 1:
-                bank = Bank::B;
-                break;
-            case 2:
-                bank = Bank::C;
-                break;
-            case 3:
-                bank = Bank::D;
-                break;
-            case 4:
-                bank = Bank::E;
-                break;
-            case 5:
-                bank = Bank::F;
-                break;
-            case 6:
-                bank = Bank::G;
-                break;
-            case 7:
-                bank = Bank::H;
-                break;
-            case 8:
-                bank = Bank::I;
-                break;
-            case 9:
-                bank = Bank::J;
-                break;
-            case 10:
-                bank = Bank::K;
-                break;
-            case 11:
-                bank = Bank::L;
-                break;
-            default:
-                bank = Bank::A;
+                case 0:
+                    bank = Bank::A;
+                    break;
+                case 1:
+                    bank = Bank::B;
+                    break;
+                case 2:
+                    bank = Bank::C;
+                    break;
+                case 3:
+                    bank = Bank::D;
+                    break;
+                case 4:
+                    bank = Bank::E;
+                    break;
+                case 5:
+                    bank = Bank::F;
+                    break;
+                case 6:
+                    bank = Bank::G;
+                    break;
+                case 7:
+                    bank = Bank::H;
+                    break;
+                case 8:
+                    bank = Bank::I;
+                    break;
+                case 9:
+                    bank = Bank::J;
+                    break;
+                case 10:
+                    bank = Bank::K;
+                    break;
+                case 11:
+                    bank = Bank::L;
+                    break;
+                default:
+                    bank = Bank::A;
             }
 
-            settings.selectedChannel.add(values[0]);
-            settings.selectedBank.add(bank);
+            settings.selectedChannel.add (values[0]);
+            settings.selectedBank.add (bank);
             settings.referenceIndex = values[2];
-            settings.apGainIndex = getIndexFromGain(values[3]);
-            settings.lfpGainIndex = getIndexFromGain(values[4]);
-            settings.apFilterState = bool(values[5]);
+            settings.apGainIndex = getIndexFromGain (values[3]);
+            settings.lfpGainIndex = getIndexFromGain (values[4]);
+            settings.apFilterState = bool (values[5]);
 
-          // std::cout << values[0] << " "
-           //     << values[1] << " "
+            // std::cout << values[0] << " "
+            //     << values[1] << " "
             //    << values[2] << " "
             //    << values[3] << " "
             //    << values[4] << " "
-             //   << values[5] << std::endl;
+            //   << values[5] << std::endl;
         }
         else if (probeType == ProbeType::NP2_1)
         {
@@ -229,35 +242,33 @@ public:
             // reference ID (0=ext, 1=tip, [2..5] = on-shank ref)
             // electrode ID [0,1279]
 
-            settings.selectedChannel.add(values[0]);
+            settings.selectedChannel.add (values[0]);
 
             Bank bank;
 
             switch (values[1])
             {
-            case 1:
-                bank = Bank::A;
-                break;
-            case 2:
-                bank = Bank::B;
-                break;
-            case 4:
-                bank = Bank::C;
-                break;
-            case 8:
-                bank = Bank::D;
-                break;
-            default:
-                bank = Bank::A;
+                case 1:
+                    bank = Bank::A;
+                    break;
+                case 2:
+                    bank = Bank::B;
+                    break;
+                case 4:
+                    bank = Bank::C;
+                    break;
+                case 8:
+                    bank = Bank::D;
+                    break;
+                default:
+                    bank = Bank::A;
             }
-            settings.selectedBank.add(bank);
+            settings.selectedBank.add (bank);
             settings.referenceIndex = values[2];
-            settings.selectedElectrode.add(values[3]);
-
+            settings.selectedElectrode.add (values[3]);
         }
         else if (probeType == ProbeType::NP2_4)
         {
-
             // 24 = 4-shank 2.0
             // channel ID
             // shank ID
@@ -269,66 +280,62 @@ public:
 
             switch (values[2])
             {
-            case 0:
-                bank = Bank::A;
-                break;
-            case 1:
-                bank = Bank::B;
-                break;
-            case 2:
-                bank = Bank::C;
-                break;
-            case 3:
-                bank = Bank::D;
-                break;
-            default:
-                bank = Bank::A;
+                case 0:
+                    bank = Bank::A;
+                    break;
+                case 1:
+                    bank = Bank::B;
+                    break;
+                case 2:
+                    bank = Bank::C;
+                    break;
+                case 3:
+                    bank = Bank::D;
+                    break;
+                default:
+                    bank = Bank::A;
             }
 
-            settings.selectedChannel.add(values[0]);
-            settings.selectedShank.add(values[1]);
-            settings.selectedBank.add(bank);
+            settings.selectedChannel.add (values[0]);
+            settings.selectedShank.add (values[1]);
+            settings.selectedBank.add (bank);
             settings.referenceIndex = values[3];
-            settings.selectedElectrode.add(values[4]);
-
-            
+            settings.selectedElectrode.add (values[4]);
         }
     }
 
-    static int getIndexFromGain(int value)
+    static int getIndexFromGain (int value)
     {
         switch (value)
         {
-        case 50:
-            return 0;
-            break;
-        case 125:
-            return 1;
-            break;
-        case 250:
-            return 2;
-            break;
-        case 500:
-            return 3;
-            break;
-        case 1000:
-            return 4;
-            break;
-        case 1500:
-            return 5;
-            break;
-        case 2000:
-            return 6;
-            break;
-        case 30000:
-            return 7;
-            break;
-        default:
-            return 3;
+            case 50:
+                return 0;
+                break;
+            case 125:
+                return 1;
+                break;
+            case 250:
+                return 2;
+                break;
+            case 500:
+                return 3;
+                break;
+            case 1000:
+                return 4;
+                break;
+            case 1500:
+                return 5;
+                break;
+            case 2000:
+                return 6;
+                break;
+            case 30000:
+                return 7;
+                break;
+            default:
+                return 3;
         }
     }
-
-
 };
 
 #endif

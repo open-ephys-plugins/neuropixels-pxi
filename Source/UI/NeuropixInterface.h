@@ -2,7 +2,7 @@
     ------------------------------------------------------------------
 
     This file is part of the Open Ephys GUI
-    Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+    Copyright (C) 2024 Open Ephys
 
     ------------------------------------------------------------------
 
@@ -26,37 +26,37 @@
 
 #include <VisualizerEditorHeaders.h>
 
-#include "SettingsInterface.h"
 #include "../NeuropixComponents.h"
 #include "ColourScheme.h"
+#include "SettingsInterface.h"
 
 class AnnotationColourSelector;
 class ProbeBrowser;
 
-enum VisualizationMode {
-	ENABLE_VIEW,
-	AP_GAIN_VIEW,
-	LFP_GAIN_VIEW,
-	REFERENCE_VIEW,
-	ACTIVITY_VIEW
+enum VisualizationMode
+{
+    ENABLE_VIEW,
+    AP_GAIN_VIEW,
+    LFP_GAIN_VIEW,
+    REFERENCE_VIEW,
+    ACTIVITY_VIEW
 };
 
 class Annotation
 {
 public:
-	Annotation(String text, Array<int> channels, Colour c);
-	~Annotation();
+    Annotation (String text, Array<int> channels, Colour c);
+    ~Annotation();
 
-	Array<int> electrodes;
-	String text;
+    Array<int> electrodes;
+    String text;
 
-	float currentYLoc;
+    float currentYLoc;
 
-	bool isMouseOver;
-	bool isSelected;
+    bool isMouseOver;
+    bool isSelected;
 
-	Colour colour;
-
+    Colour colour;
 };
 
 /** 
@@ -64,159 +64,155 @@ public:
 	Extended graphical interface for updating probe settings
 
 */
-class NeuropixInterface : public SettingsInterface, 
-	public Button::Listener, 
-	public ComboBox::Listener, 
-	public Label::Listener
+class NeuropixInterface : public SettingsInterface,
+                          public Button::Listener,
+                          public ComboBox::Listener,
+                          public Label::Listener
 {
 public:
+    friend class ProbeBrowser;
 
-	friend class ProbeBrowser;
+    /** Constructor */
+    NeuropixInterface (DataSource* probe, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas, Basestation* basestation = nullptr);
 
-	/** Constructor */
-	NeuropixInterface(DataSource* probe, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas, Basestation* basestation = nullptr);
+    /** Destructor */
+    ~NeuropixInterface();
 
-	/** Destructor */
-	~NeuropixInterface();
+    /** Draws the legend */
+    void paint (Graphics& g);
 
-	/** Draws the legend */
-	void paint(Graphics& g);
+    /** Listener methods*/
+    void buttonClicked (Button*);
+    void comboBoxChanged (ComboBox*);
+    void labelTextChanged (Label* l);
 
-	/** Listener methods*/
-	void buttonClicked(Button*);
-	void comboBoxChanged(ComboBox*);
-	void labelTextChanged(Label* l);
+    /** Disables buttons and starts animation if necessary */
+    void startAcquisition();
 
-	/** Disables buttons and starts animation if necessary */
-	void startAcquisition();
+    /** Enables buttons and start animation if necessary */
+    void stopAcquisition();
 
-	/** Enables buttons and start animation if necessary */
-	void stopAcquisition();
+    /** Settings-related functions*/
+    bool applyProbeSettings (ProbeSettings, bool shouldUpdateProbe = true);
+    ProbeSettings getProbeSettings();
+    void updateProbeSettingsInBackground();
 
-	/** Settings-related functions*/
-	bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true);
-	ProbeSettings getProbeSettings();
-	void updateProbeSettingsInBackground();
+    /** Save parameters to XML */
+    void saveParameters (XmlElement* xml);
 
-	/** Save parameters to XML */
-	void saveParameters(XmlElement* xml);
+    /** Load parameters from XML */
+    void loadParameters (XmlElement* xml);
 
-	/** Load parameters from XML */
-	void loadParameters(XmlElement* xml);
+    /** Updates the annotation label */
+    void setAnnotationLabel (String, Colour);
 
-	/** Updates the annotation label */
-	void setAnnotationLabel(String, Colour);
+    /** Updates the info string on the right-hand side of the component */
+    void updateInfoString();
 
-	/** Updates the info string on the right-hand side of the component */
-	void updateInfoString();
+    /** Set parameters */
+    void setApGain (int index);
+    void setLfpGain (int index);
+    void setReference (int index);
+    void setApFilterState (bool state);
+    void setEmissionSite (String wavelength, int site);
+    void selectElectrodes (Array<int> electrodes);
 
-	/** Set parameters */
-	void setApGain(int index);
-	void setLfpGain(int index);
-	void setReference(int index);
-	void setApFilterState(bool state);
-	void setEmissionSite(String wavelength, int site);
-	void selectElectrodes(Array<int> electrodes);
+    Probe* probe;
 
-	Probe* probe;
-
-	Basestation* basestation;
+    Basestation* basestation;
 
 private:
+    Array<ElectrodeMetadata> electrodeMetadata;
+    ProbeMetadata probeMetadata;
 
-	Array<ElectrodeMetadata> electrodeMetadata;
-	ProbeMetadata probeMetadata;
+    XmlElement neuropix_info;
 
-	XmlElement neuropix_info;
+    bool acquisitionIsActive = false;
 
-	bool acquisitionIsActive = false;
+    // Combo box - probe-specific settings
+    ScopedPointer<ComboBox> electrodeConfigurationComboBox;
+    ScopedPointer<ComboBox> lfpGainComboBox;
+    ScopedPointer<ComboBox> apGainComboBox;
+    ScopedPointer<ComboBox> referenceComboBox;
+    ScopedPointer<ComboBox> filterComboBox;
+    ScopedPointer<ComboBox> activityViewComboBox;
+    ScopedPointer<ComboBox> redEmissionSiteComboBox;
+    ScopedPointer<ComboBox> blueEmissionSiteComboBox;
 
-	// Combo box - probe-specific settings
-	ScopedPointer<ComboBox> electrodeConfigurationComboBox;
-	ScopedPointer<ComboBox> lfpGainComboBox;
-	ScopedPointer<ComboBox> apGainComboBox;
-	ScopedPointer<ComboBox> referenceComboBox;
-	ScopedPointer<ComboBox> filterComboBox;
-	ScopedPointer<ComboBox> activityViewComboBox;
-	ScopedPointer<ComboBox> redEmissionSiteComboBox;
-	ScopedPointer<ComboBox> blueEmissionSiteComboBox;
+    // Combo box - basestation settings
+    ScopedPointer<ComboBox> bistComboBox;
+    ScopedPointer<ComboBox> bscFirmwareComboBox;
+    ScopedPointer<ComboBox> bsFirmwareComboBox;
 
-	// Combo box - basestation settings
-	ScopedPointer<ComboBox> bistComboBox;
-	ScopedPointer<ComboBox> bscFirmwareComboBox;
-	ScopedPointer<ComboBox> bsFirmwareComboBox;
+    // Combo box - probe settings
+    ScopedPointer<ComboBox> loadImroComboBox;
 
-	// Combo box - probe settings
-	ScopedPointer<ComboBox> loadImroComboBox;
+    // LABELS
+    ScopedPointer<Viewport> infoLabelView;
+    ScopedPointer<Label> nameLabel;
+    ScopedPointer<Label> infoLabel;
+    ScopedPointer<Label> lfpGainLabel;
+    ScopedPointer<Label> apGainLabel;
+    ScopedPointer<Label> electrodesLabel;
+    ScopedPointer<Label> electrodePresetLabel;
+    ScopedPointer<Label> referenceLabel;
+    ScopedPointer<Label> filterLabel;
+    ScopedPointer<Label> bankViewLabel;
+    ScopedPointer<Label> activityViewLabel;
+    ScopedPointer<Label> redEmissionSiteLabel;
+    ScopedPointer<Label> blueEmissionSiteLabel;
 
-	// LABELS
-	ScopedPointer<Viewport> infoLabelView;
-	ScopedPointer<Label> nameLabel;
-	ScopedPointer<Label> infoLabel;
-	ScopedPointer<Label> lfpGainLabel;
-	ScopedPointer<Label> apGainLabel;
-	ScopedPointer<Label> electrodesLabel;
-	ScopedPointer<Label> electrodePresetLabel;
-	ScopedPointer<Label> referenceLabel;
-	ScopedPointer<Label> filterLabel;
-	ScopedPointer<Label> bankViewLabel;
-	ScopedPointer<Label> activityViewLabel;
-	ScopedPointer<Label> redEmissionSiteLabel;
-	ScopedPointer<Label> blueEmissionSiteLabel;
-	
-	ScopedPointer<Label> bistLabel;
-	ScopedPointer<Label> bscFirmwareLabel;
-	ScopedPointer<Label> bsFirmwareLabel;
-	ScopedPointer<Label> firmwareInstructionsLabel;
+    ScopedPointer<Label> bistLabel;
+    ScopedPointer<Label> bscFirmwareLabel;
+    ScopedPointer<Label> bsFirmwareLabel;
+    ScopedPointer<Label> firmwareInstructionsLabel;
 
-	ScopedPointer<Label> probeSettingsLabel;
+    ScopedPointer<Label> probeSettingsLabel;
 
-	ScopedPointer<Label> annotationLabelLabel;
-	ScopedPointer<Label> annotationLabel;
+    ScopedPointer<Label> annotationLabelLabel;
+    ScopedPointer<Label> annotationLabel;
 
-	// BUTTONS
-	ScopedPointer<UtilityButton> enableButton;
+    // BUTTONS
+    ScopedPointer<UtilityButton> enableButton;
 
-	ScopedPointer<UtilityButton> enableViewButton;
-	ScopedPointer<UtilityButton> lfpGainViewButton;
-	ScopedPointer<UtilityButton> apGainViewButton;
-	ScopedPointer<UtilityButton> referenceViewButton;
-	ScopedPointer<UtilityButton> bankViewButton;
-	ScopedPointer<UtilityButton> activityViewButton;
+    ScopedPointer<UtilityButton> enableViewButton;
+    ScopedPointer<UtilityButton> lfpGainViewButton;
+    ScopedPointer<UtilityButton> apGainViewButton;
+    ScopedPointer<UtilityButton> referenceViewButton;
+    ScopedPointer<UtilityButton> bankViewButton;
+    ScopedPointer<UtilityButton> activityViewButton;
 
-	ScopedPointer<UtilityButton> annotationButton;
-	ScopedPointer<UtilityButton> bistButton;
-	ScopedPointer<UtilityButton> bsFirmwareButton;
-	ScopedPointer<UtilityButton> bscFirmwareButton;
-	ScopedPointer<UtilityButton> firmwareToggleButton;
+    ScopedPointer<UtilityButton> annotationButton;
+    ScopedPointer<UtilityButton> bistButton;
+    ScopedPointer<UtilityButton> bsFirmwareButton;
+    ScopedPointer<UtilityButton> bscFirmwareButton;
+    ScopedPointer<UtilityButton> firmwareToggleButton;
 
-	ScopedPointer<UtilityButton> copyButton;
-	ScopedPointer<UtilityButton> pasteButton;
-	ScopedPointer<UtilityButton> applyToAllButton;
-	ScopedPointer<UtilityButton> loadImroButton;
-	ScopedPointer<UtilityButton> saveImroButton;
-	ScopedPointer<UtilityButton> loadJsonButton;
-	ScopedPointer<UtilityButton> saveJsonButton;
+    ScopedPointer<UtilityButton> copyButton;
+    ScopedPointer<UtilityButton> pasteButton;
+    ScopedPointer<UtilityButton> applyToAllButton;
+    ScopedPointer<UtilityButton> loadImroButton;
+    ScopedPointer<UtilityButton> saveImroButton;
+    ScopedPointer<UtilityButton> loadJsonButton;
+    ScopedPointer<UtilityButton> saveJsonButton;
 
-	ScopedPointer<AnnotationColourSelector> annotationColourSelector;
+    ScopedPointer<AnnotationColourSelector> annotationColourSelector;
 
-	ScopedPointer<ProbeBrowser> probeBrowser;
+    ScopedPointer<ProbeBrowser> probeBrowser;
 
-	VisualizationMode mode;
+    VisualizationMode mode;
 
-	void drawLegend(Graphics& g);
-	void drawAnnotations(Graphics& g);
+    void drawLegend (Graphics& g);
+    void drawAnnotations (Graphics& g);
 
-	Array<Annotation> annotations;
+    Array<Annotation> annotations;
 
-	Array<int> getSelectedElectrodes();
+    Array<int> getSelectedElectrodes();
 
-	Array<BIST> availableBists;
-	Array<String> imroFiles;
-	Array<bool> imroLoadedFromFolder;
-
+    Array<BIST> availableBists;
+    Array<String> imroFiles;
+    Array<bool> imroLoadedFromFolder;
 };
-
 
 /**
 
@@ -226,37 +222,34 @@ private:
 class BasestationInterface : public NeuropixInterface
 {
 public:
-
-	/** Constructor */
-	BasestationInterface(Basestation* basestation_, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas)
-		: NeuropixInterface(nullptr, thread, editor, canvas, basestation_)
-	{
-	}
+    /** Constructor */
+    BasestationInterface (Basestation* basestation_, NeuropixThread* thread, NeuropixEditor* editor, NeuropixCanvas* canvas)
+        : NeuropixInterface (nullptr, thread, editor, canvas, basestation_)
+    {
+    }
 };
-
 
 class AnnotationColourSelector : public Component, public Button::Listener
 {
 public:
-	AnnotationColourSelector(NeuropixInterface* np);
-	~AnnotationColourSelector();
+    AnnotationColourSelector (NeuropixInterface* np);
+    ~AnnotationColourSelector();
 
-	Array<Colour> standardColours;
-	Array<Colour> hoverColours;
-	StringArray strings;
+    Array<Colour> standardColours;
+    Array<Colour> hoverColours;
+    StringArray strings;
 
-	OwnedArray<ShapeButton> buttons;
+    OwnedArray<ShapeButton> buttons;
 
-	void buttonClicked(Button* button);
+    void buttonClicked (Button* button);
 
-	void updateCurrentString(String s);
+    void updateCurrentString (String s);
 
-	Colour getCurrentColour();
+    Colour getCurrentColour();
 
-	NeuropixInterface* npi;
+    NeuropixInterface* npi;
 
-	int activeButton;
-
+    int activeButton;
 };
 
 #endif //__NEUROPIXINTERFACE_H_2C4C2D67__

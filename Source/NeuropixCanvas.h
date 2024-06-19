@@ -2,7 +2,7 @@
     ------------------------------------------------------------------
 
     This file is part of the Open Ephys GUI
-    Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+    Copyright (C) 2024 Open Ephys
 
     ------------------------------------------------------------------
 
@@ -31,7 +31,6 @@ class NeuropixEditor;
 
 class Probe;
 
-
 /** 
 
 	TabBarButton with custom appearance
@@ -40,15 +39,14 @@ class Probe;
 class CustomTabButton : public TabBarButton
 {
 public:
+    /** Constructor */
+    CustomTabButton (const String& name, TabbedComponent* parent, bool isTopLevel_);
 
-	/** Constructor */
-	CustomTabButton(const String& name, TabbedComponent* parent, bool isTopLevel_);
-
-	/** Paints the button */
-	void paintButton(Graphics& g, bool isMouseOver, bool isMouseDown) override;
+    /** Paints the button */
+    void paintButton (Graphics& g, bool isMouseOver, bool isMouseDown) override;
 
 private:
-	bool isTopLevel;
+    bool isTopLevel;
 };
 
 /** 
@@ -60,22 +58,21 @@ private:
 class CustomTabComponent : public TabbedComponent
 {
 public:
+    /** Constructor */
+    CustomTabComponent (NeuropixEditor* editor_, bool isTopLevel_);
 
-	/** Constructor */
-	CustomTabComponent(NeuropixEditor* editor_, bool isTopLevel_);
-
-	/** Create tab buttons*/
+    /** Create tab buttons*/
     TabBarButton* createTabButton (const juce::String& name, int index) override
     {
         return new CustomTabButton (name, this, isTopLevel);
     }
 
-	/**/
-	void currentTabChanged(int newCurrentTabIndex, const String& newCurrentTabName) override;
+    /**/
+    void currentTabChanged (int newCurrentTabIndex, const String& newCurrentTabName) override;
 
 private:
-	NeuropixEditor* editor;
-	bool isTopLevel;
+    NeuropixEditor* editor;
+    bool isTopLevel;
 };
 
 /** 
@@ -86,87 +83,83 @@ private:
 class NeuropixCanvas : public Visualizer
 {
 public:
+    /** Constructor */
+    NeuropixCanvas (GenericProcessor*, NeuropixEditor*, NeuropixThread*);
 
-	/** Constructor */
-	NeuropixCanvas(GenericProcessor*, NeuropixEditor*, NeuropixThread*);
+    /** Destructor */
+    ~NeuropixCanvas();
 
-	/** Destructor */
-	~NeuropixCanvas();
+    /** Fills background */
+    void paint (Graphics& g);
 
-	/** Fills background */
-	void paint(Graphics& g);
+    /** Renders the Visualizer on each animation callback cycle */
+    void refresh() override;
 
-	/** Renders the Visualizer on each animation callback cycle */
-	void refresh() override;
+    /** Starts animation (not needed for this component) */
+    void beginAnimation() override {}
 
-	/** Starts animation (not needed for this component) */
-	void beginAnimation() override { }
+    /** Stops animation (not needed for this component) */
+    void endAnimation() override {}
 
-	/** Stops animation (not needed for this component) */
-	void endAnimation() override { }
+    /** Called when the Visualizer's tab becomes visible after being hidden */
+    void refreshState() override;
 
-	/** Called when the Visualizer's tab becomes visible after being hidden */
-	void refreshState() override;
-
-	/** Called when the Visualizer is first created, and optionally when
+    /** Called when the Visualizer is first created, and optionally when
 		the parameters of the underlying processor are changed */
-	void updateSettings() override;
+    void updateSettings() override;
 
-	/** Sets which interface is active */
-	void setSelectedInterface(DataSource* d);
+    /** Sets which interface is active */
+    void setSelectedInterface (DataSource* d);
 
-	/** Set which basestation interface is active */
-	void setSelectedBasestation(Basestation* b);
+    /** Set which basestation interface is active */
+    void setSelectedBasestation (Basestation* b);
 
-	/** Starts animation of sub-interfaces */
-	void startAcquisition();
+    /** Starts animation of sub-interfaces */
+    void startAcquisition();
 
-	/** Stops animation of sub-interfaces */
-	void stopAcquisition();
+    /** Stops animation of sub-interfaces */
+    void stopAcquisition();
 
-	/** Stores probe settings (for copying) */
-	void storeProbeSettings(ProbeSettings p);
+    /** Stores probe settings (for copying) */
+    void storeProbeSettings (ProbeSettings p);
 
-	/** Gets the most recent probe settings (for copying) */
-	ProbeSettings getProbeSettings();
+    /** Gets the most recent probe settings (for copying) */
+    ProbeSettings getProbeSettings();
 
-	/** Applies settings to all probes */
-	void applyParametersToAllProbes(ProbeSettings p);
+    /** Applies settings to all probes */
+    void applyParametersToAllProbes (ProbeSettings p);
 
-	/** Saves custom UI settings */
-	void saveCustomParametersToXml(XmlElement* xml) override;
+    /** Saves custom UI settings */
+    void saveCustomParametersToXml (XmlElement* xml) override;
 
-	/** Loads custom UI settings*/
-	void loadCustomParametersFromXml(XmlElement* xml) override;
+    /** Loads custom UI settings*/
+    void loadCustomParametersFromXml (XmlElement* xml) override;
 
-	/** Sets bounds of sub-components*/
-	void resized();
+    /** Sets bounds of sub-components*/
+    void resized();
 
-	ProbeSettings savedSettings;
+    ProbeSettings savedSettings;
 
-	OwnedArray<SettingsInterface> settingsInterfaces;
-	Array<DataSource*> dataSources;
-	Array<Basestation*> basestations;
+    OwnedArray<SettingsInterface> settingsInterfaces;
+    Array<DataSource*> dataSources;
+    Array<Basestation*> basestations;
 
-	NeuropixEditor* editor;
-	NeuropixThread* thread;
+    NeuropixEditor* editor;
+    NeuropixThread* thread;
 
 private:
+    ScopedPointer<CustomTabComponent> topLevelTabComponent;
+    Array<CustomTabComponent*> basestationTabs;
 
-	ScopedPointer<CustomTabComponent> topLevelTabComponent;
-	Array<CustomTabComponent*> basestationTabs;
-
-	Array<int> topLevelTabIndex;
-	Array<int> basestationTabIndex;
-
+    Array<int> topLevelTabIndex;
+    Array<int> basestationTabIndex;
 };
 
 class SettingsUpdater : public ThreadWithProgressWindow
 {
 public:
-
     /** Constructor */
-    SettingsUpdater(NeuropixCanvas* canvas, ProbeSettings p);
+    SettingsUpdater (NeuropixCanvas* canvas, ProbeSettings p);
 
     /** Destructor */
     ~SettingsUpdater() {}
@@ -175,7 +168,7 @@ public:
     void run() override;
 
     /** Callback to update progress bar*/
-	/*
+    /*
     static int settingsUpdateCallback(size_t count)
     {
         currentThread->setProgress(float(count) / float(numProbesToUpdate));
@@ -188,6 +181,6 @@ public:
     int numProbesToUpdate;
 
 private:
-	NeuropixCanvas* canvas;
-	ProbeSettings settings;
+    NeuropixCanvas* canvas;
+    ProbeSettings settings;
 };

@@ -2,7 +2,7 @@
     ------------------------------------------------------------------
 
     This file is part of the Open Ephys GUI
-    Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+    Copyright (C) 2024 Open Ephys
 
     ------------------------------------------------------------------
 
@@ -41,37 +41,35 @@ class SettingsInterface;
 class CustomViewport : public Component
 {
 public:
-    CustomViewport(SettingsInterface* settingsInterface_) :
-        settingsInterface(settingsInterface_) 
-        { 
-            viewport = std::make_unique<Viewport>();
-            viewport->setViewedComponent((Component*)settingsInterface, false);
-            viewport->setScrollBarsShown(true, true);
-            viewport->setScrollBarThickness(12);
-
-            addAndMakeVisible(viewport.get());
-        }
-    
-    ~CustomViewport() 
+    CustomViewport (SettingsInterface* settingsInterface_) : settingsInterface (settingsInterface_)
     {
+        viewport = std::make_unique<Viewport>();
+        viewport->setViewedComponent ((Component*) settingsInterface, false);
+        viewport->setScrollBarsShown (true, true);
+        viewport->setScrollBarThickness (12);
 
+        addAndMakeVisible (viewport.get());
     }
-    
+
+    ~CustomViewport()
+    {
+    }
+
     void resized() override
     {
-        viewport->setBounds(getLocalBounds());
+        viewport->setBounds (getLocalBounds());
 
         int contentWidth = 1000;
-        
+
         if (getWidth() > 1012)
             contentWidth = getWidth() - 12;
-            
-        viewport->getViewedComponent()->setSize(contentWidth, 820);
+
+        viewport->getViewedComponent()->setSize (contentWidth, 820);
     }
 
-    void paint(Graphics& g) override
+    void paint (Graphics& g) override
     {
-        g.fillAll(findColour(ThemeColours::componentBackground));
+        g.fillAll (findColour (ThemeColours::componentBackground));
     }
 
     SettingsInterface* settingsInterface;
@@ -88,7 +86,6 @@ private:
 class SettingsInterface : public Component
 {
 public:
-
     /** Settings interface type*/
     enum Type
     {
@@ -99,39 +96,38 @@ public:
     };
 
     /** Constructor */
-    SettingsInterface(DataSource* dataSource_, 
-        NeuropixThread* thread_, 
-        NeuropixEditor* editor_, 
-        NeuropixCanvas* canvas_)
+    SettingsInterface (DataSource* dataSource_,
+                       NeuropixThread* thread_,
+                       NeuropixEditor* editor_,
+                       NeuropixCanvas* canvas_)
     {
         dataSource = dataSource_;
         editor = editor_;
         canvas = canvas_;
         thread = thread_;
-        
-        setBounds(0, 0, 1000, 820);
 
-        viewport = new CustomViewport(this);
-        
+        setBounds (0, 0, 1000, 820);
+
+        viewport = new CustomViewport (this);
     }
-    
+
     /** Destructor */
-	~SettingsInterface() {}
+    ~SettingsInterface() {}
 
     /** Called when acquisition begins */
-	virtual void startAcquisition() = 0;
+    virtual void startAcquisition() = 0;
 
     /** Called when acquisition ends */
-	virtual void stopAcquisition() = 0;
+    virtual void stopAcquisition() = 0;
 
     /** Applies settings to the probe associated with this interface */
-	virtual bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) = 0;
+    virtual bool applyProbeSettings (ProbeSettings, bool shouldUpdateProbe = true) = 0;
 
     /** Saves settings */
-	virtual void saveParameters(XmlElement* xml) = 0;
+    virtual void saveParameters (XmlElement* xml) = 0;
 
-	/** Loads settings */
-	virtual void loadParameters(XmlElement* xml) = 0;
+    /** Loads settings */
+    virtual void loadParameters (XmlElement* xml) = 0;
 
     /** Updates the string with info about the underlying data source*/
     virtual void updateInfoString() = 0;
@@ -146,11 +142,9 @@ public:
     DataSource* dataSource;
 
 protected:
-
-	NeuropixThread* thread;
-	NeuropixEditor* editor;
-	NeuropixCanvas* canvas;
-
+    NeuropixThread* thread;
+    NeuropixEditor* editor;
+    NeuropixCanvas* canvas;
 };
 
 #endif //__SETTINGSINTERFACE_H_2C4C2D67__
