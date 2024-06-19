@@ -67,6 +67,8 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 		lfp_sample_rate = 2500.0f; // not used
 		ap_sample_rate = 30000.0f;
 
+		bitScaling = pow(2, probeMetadata.adc_bits);
+
 		for (int i = 0; i < channel_count; i++)
 		{
 			settings.selectedBank.add(Bank::A);
@@ -78,8 +80,8 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 
 		if (probeMetadata.shank_count == 1)
 		{
-			settings.availableReferences.add("Ext");
-			settings.availableReferences.add("Tip");
+			availableReferences.add("Ext");
+			availableReferences.add("Tip");
 			
 			settings.availableElectrodeConfigurations.add("Bank A");
 			settings.availableElectrodeConfigurations.add("Bank B");
@@ -87,11 +89,11 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 			settings.availableElectrodeConfigurations.add("Bank D");
 		}
 		else {
-			settings.availableReferences.add("Ext");
-			settings.availableReferences.add("1: Tip");
-			settings.availableReferences.add("2: Tip");
-			settings.availableReferences.add("3: Tip");
-			settings.availableReferences.add("4: Tip");
+			availableReferences.add("Ext");
+			availableReferences.add("1: Tip");
+			availableReferences.add("2: Tip");
+			availableReferences.add("3: Tip");
+			availableReferences.add("4: Tip");
 
 			settings.availableElectrodeConfigurations.add("Shank 1 Bank A");
 			settings.availableElectrodeConfigurations.add("Shank 1 Bank B");
@@ -120,10 +122,15 @@ Neuropixels2::Neuropixels2(Basestation* bs, Headstage* hs, Flex* fl, int dock) :
 			settings.availableElectrodeConfigurations.add("All Shanks 1153-1248");
 		}
 
-		if (info.part_number.equalsIgnoreCase("NP2013"))
+		if (info.part_number.equalsIgnoreCase("NP2013") ||
+			info.part_number.equalsIgnoreCase("NP2014") ||
+			info.part_number.equalsIgnoreCase("NP2003") ||
+			info.part_number.equalsIgnoreCase("NP2004"))
 		{
-			settings.availableReferences.add("Ground");
-		}
+			availableReferences.add("Ground");
+		}	
+
+		settings.availableReferences = availableReferences;
 
 		open();
 	}
@@ -564,34 +571,36 @@ void Neuropixels2::setAllReferences()
 	int refElectrodeBank = 0;
 	int shank = 0;
 
-	switch (settings.referenceIndex)
-	{
-	case 0:
+	String selectedRef = availableReferences[settings.referenceIndex];
+
+	if (selectedRef.equalsIgnoreCase("Ext"))
 		refId = Neuropixels::EXT_REF;
-		break;
-	case 1:
+	else if (selectedRef.equalsIgnoreCase("Tip"))
+		refId = Neuropixels::TIP_REF;
+	else if (selectedRef.equalsIgnoreCase("Ground"))
+		refId = Neuropixels::GND_REF;
+	else if (selectedRef.equalsIgnoreCase("1: Tip"))
+	{
 		refId = Neuropixels::TIP_REF;
 		shank = 0;
-		break;
-	case 2:
+	}
+	else if (selectedRef.equalsIgnoreCase("2: Tip"))
+	{
 		refId = Neuropixels::TIP_REF;
 		shank = 1;
-		break;
-	case 3:
+	}
+	else if (selectedRef.equalsIgnoreCase("3: Tip"))
+	{
 		refId = Neuropixels::TIP_REF;
 		shank = 2;
-		break;
-	case 4:
+	}
+	else if (selectedRef.equalsIgnoreCase("4: Tip"))
+	{
 		refId = Neuropixels::TIP_REF;
 		shank = 3;
-		break;
-	case 5:
-		refId = Neuropixels::GND_REF;
-		break;
-
-	default:
-		refId = Neuropixels::EXT_REF;
 	}
+
+	LOGC("Setting reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", refId);
 
 	for (int channel = 0; channel < channel_count; channel++)
 		Neuropixels::setReference(basestation->slot, 
@@ -685,8 +694,8 @@ void Neuropixels2::run()
 
 				for (int j = 0; j < 384; j++)
 				{
-					apSamples[(j * count) + packetNum] =
-						float(data[packetNum * 384 + j]) * 1.0f / 16384.0f * 1000000.0f / 80.0f; // convert to microvolts
+					apSamples[j + packetNum * SKIP] =
+						float(data[packetNum * 384 + j]) * 1.0f / bitScaling * 1000000.0f / 80.0f; // convert to microvolts
 
 					apView->addSample(apSamples[(j * count) + packetNum], j);
 

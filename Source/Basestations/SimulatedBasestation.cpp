@@ -210,6 +210,12 @@ void SimulatedBasestation::setSyncAsOutput(int freqIndex)
 
 }
 
+
+void SimulatedBasestation::setSyncAsPassive()
+{
+
+}
+
 int SimulatedBasestation::getProbeCount()
 {
 	return probes.size();

@@ -45,6 +45,7 @@ extern "C" EXPORT void getLibInfo(Plugin::LibraryInfo* info)
 	info->numPlugins = NUM_PLUGINS;
 }
 
+
 extern "C" EXPORT int getPluginInfo(int index, Plugin::PluginInfo* info)
 {
 	switch (index)

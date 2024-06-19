@@ -32,70 +32,39 @@ OneBoxADC::OneBoxADC(Basestation* bs) : DataSource(bs)
 	ui = nullptr;
 
 	channel_count = NUM_ADCS;
-	sample_rate = 30300.0f;
-
-	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
+	sample_rate = 9300.0f;
 
 	sourceType = DataSourceType::ADC;
 	status = SourceStatus::CONNECTED;
 
-	for (int i = 0; i < channel_count; i++)
-		channelTypes.add(DataSourceType::ADC);
-
+	Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_5V);
 	bitVolts = 5.0f / float(pow(2, 15));
+	inputRange = AdcInputRange::PLUSMINUS5V;
+
+	for (int i = 0; i < channel_count; i++)
+	{
+		outputChannel.add(-1);
+		isOutput.add(false);
+		
+		Neuropixels::DAC_enableOutput(basestation->slot, i, false);
+		thresholdLevels.add(AdcThresholdLevel::ONE_VOLT);
+		waveplayerTrigger.add(false);
+	}
 
 }
 
 
 void OneBoxADC::initialize(bool signalChainIsLoading)
 {
-
-	if (open())
-	{
-
-		setAdcInputRange(AdcInputRange::PLUSMINUS5V);
-
-		timestamp = 0;
-
-		for (int i = 0; i < 12; i++)
-		{
-			Neuropixels::DAC_enableOutput(basestation->slot, i, false);
-			Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_5V);
-		}
-			
-	}
+	LOGD("Initializing OneBoxADC");
 
 }
 
-void OneBoxADC::setChannelType(int chan, DataSourceType type)
-{
 
-	if (chan >= channel_count)
-		return;
-
-	String channelTypeString;
-
-	switch (type)
-	{
-	case DataSourceType::ADC:
-		channelTypeString = "ADC";
-		break;
-	case DataSourceType::DAC:
-		channelTypeString = "DAC";
-		break;
-	default:
-		channelTypeString = "NONE";
-	}
-
-	LOGD("Setting channel ", chan, " to ", channelTypeString);
-
-	channelTypes.set(chan, type);
-
-}
 
 void OneBoxADC::startAcquisition()
 {
-	timestamp = 0;
+	sample_number = 0;
 	apBuffer->clear();
 
 	LOGD("  Starting thread.");
@@ -107,42 +76,155 @@ void OneBoxADC::stopAcquisition()
 	stopThread(1000);
 }
 
+void OneBoxADC::setAsOutput(int selectedOutput, int channel)
+{
+
+	if (channel < 0 || channel >= channel_count)
+		return;
+
+	if (outputChannel[channel] != -1)
+	{
+		isOutput.set(outputChannel[channel], false);
+	}
+
+	isOutput.set(selectedOutput, true);
+	outputChannel.set(channel, selectedOutput);
+
+	
+	// TODO: actually set the output
+
+}
+
+int OneBoxADC::getOutputChannel(int channel)
+{
+	if (channel < 0 || channel >= channel_count)
+		return false;
+
+	return outputChannel[channel];
+}
+
+Array<int> OneBoxADC::getAvailableChannels(int sourceChannel)
+{
+	Array<int> availableChannels;
+
+	for (int i = 0; i < channel_count; i++)
+	{
+		if (!isOutput[i] && i != sourceChannel)
+		{
+			availableChannels.add(i);
+		}
+	}
+
+	return availableChannels;
+}
+
 void OneBoxADC::setAdcInputRange(AdcInputRange range)
 {
+
+
 	switch (range)
 	{
 	case AdcInputRange::PLUSMINUS2PT5V:
 		Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_2_5V);
-		bitVolts = 2.5f / float(pow(2, 15));
+		bitVolts =  2.5f / float(pow(2, 15));
+		inputRange = AdcInputRange::PLUSMINUS2PT5V;
 		break;
 
 	case AdcInputRange::PLUSMINUS5V:
 		Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_5V);
 		bitVolts = 5.0f / float(pow(2, 15));
+		inputRange = AdcInputRange::PLUSMINUS5V;
 		break;
 
 	case AdcInputRange::PLUSMINUS10V:
 		Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_10V);
 		bitVolts = 10.0f / float(pow(2, 15));
+		inputRange = AdcInputRange::PLUSMINUS10V;
 		break;
 
 	default:
 		Neuropixels::ADC_setVoltageRange(basestation->slot, Neuropixels::ADC_RANGE_5V);
 		bitVolts = 5.0f / float(pow(2, 15));
+		inputRange = AdcInputRange::PLUSMINUS5V;
 		break;
 
 	}
 }
 
-float OneBoxADC::getChannelGain(int chan)
+AdcInputRange OneBoxADC::getAdcInputRange()
 {
+	return inputRange;
+}
+
+float OneBoxADC::getChannelGain(int channel)
+{
+	if (channel < 0 || channel >= channel_count)
+		return -1;
+
+
 	return bitVolts;
+}
+
+void OneBoxADC::setAdcThresholdLevel(AdcThresholdLevel level, int channel)
+{
+	if (channel < 0 || channel >= channel_count)
+		return;
+
+	switch (level)
+	{ 
+	case AdcThresholdLevel::ONE_VOLT:
+		Neuropixels::ADC_setComparatorThreshold(basestation->slot, 
+			channel, 0.5f, 1.0f);
+		thresholdLevels.set(channel, AdcThresholdLevel::ONE_VOLT);
+		break;
+	case AdcThresholdLevel::THREE_VOLTS:
+		Neuropixels::ADC_setComparatorThreshold(basestation->slot, 
+						channel, 1.5f, 3.0f);
+		thresholdLevels.set(channel, AdcThresholdLevel::THREE_VOLTS);
+		break;
+	default:
+		Neuropixels::ADC_setComparatorThreshold(basestation->slot, 
+						channel, 0.5f, 1.0f);
+		thresholdLevels.set(channel, AdcThresholdLevel::ONE_VOLT);
+	}
+
+}
+
+
+AdcThresholdLevel OneBoxADC::getAdcThresholdLevel(int channel)
+{
+	if (channel < 0 || channel >= channel_count)
+		return AdcThresholdLevel::ONE_VOLT;
+
+	return thresholdLevels[channel];
+}
+
+
+void OneBoxADC::setTriggersWaveplayer(bool shouldTrigger, int channel)
+{
+	if (channel < 0 || channel >= channel_count)
+		return;
+
+	waveplayerTrigger.set(channel, shouldTrigger);
+
+	LOGD("Setting channel ", channel, " to trigger waveplayer: ", shouldTrigger);
+
+	// configure trigger
+}
+
+
+bool OneBoxADC::getTriggersWaveplayer(int channel)
+{
+	if (channel < 0 || channel >= channel_count)
+		return false;
+
+	return waveplayerTrigger[channel];
 }
 
 void OneBoxADC::run()
 {
 
-	int16_t data[SAMPLECOUNT * 12];
+	int16_t data[SAMPLECOUNT * NUM_ADCS];
 
 	double ts_s;
 
@@ -155,31 +237,36 @@ void OneBoxADC::run()
 		errorCode = Neuropixels::ADC_readPackets(basestation->slot, 
 			&packetInfo[0],
 			&data[0], 
-			12,
+			NUM_ADCS,
 			count,
 			&count);
 
 		if (errorCode == Neuropixels::SUCCESS && count > 0)
 		{
-			float adcSamples[12];
+			float adcSamples[NUM_ADCS];
 
 			for (int packetNum = 0; packetNum < count; packetNum++)
 			{
 
 				uint64 eventCode = packetInfo[packetNum].Status >> 6; 
+				uint32_t adcThresholdStates;
 
 				uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
 
-				for (int j = 0; j < 12; j++)
+				for (int j = 0; j < NUM_ADCS; j++)
 				{
 					
-					adcSamples[j] = float(data[packetNum * 12 + j]) * bitVolts; // convert to volts
+					adcSamples[j] = float(data[packetNum * NUM_ADCS + j]) * bitVolts; // convert to volts
 
 				}
 
-				timestamp += 1;
+				Neuropixels::ADC_readComparators(basestation->slot, &adcThresholdStates);
 
-				apBuffer->addToBuffer(adcSamples, &timestamp, &ts_s, &eventCode, 1);
+				//eventCode = eventCode | (adcThresholdStates << 1);
+
+				sample_number += 1;
+
+				apBuffer->addToBuffer(adcSamples, &sample_number, &ts_s, &eventCode, 1);
 
 				/*if (ap_timestamp % 30000 == 0)
 				{

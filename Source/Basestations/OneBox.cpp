@@ -99,6 +99,8 @@ OneBox::OneBox(NeuropixThread* neuropixThread, int slot_number) : Basestation(ne
 
 OneBox::~OneBox()
 {
+
+
 	/* As of API 3.31, closing a v3 basestation does not turn off the SMA output */
 	setSyncAsInput();
 	close();
@@ -218,8 +220,6 @@ bool OneBox::open()
 		adcSource = new OneBoxADC(this);
 		dacSource = new OneBoxDAC(this);
 
-		adcSource->dac = dacSource;
-		dacSource->adc = adcSource;
 	}
 
 	syncFrequencies.add(1);
@@ -230,9 +230,9 @@ bool OneBox::open()
 
 Array<DataSource*> OneBox::getAdditionalDataSources()
 {
+
 	Array<DataSource*> sources;
 	sources.add((DataSource*) adcSource);
-	//sources.add((DataSource*) dacSource);
 
 	return sources;
 }
@@ -263,18 +263,20 @@ void OneBox::initialize(bool signalChainIsLoading)
 
 void OneBox::close()
 {
+	LOGD("Closing OneBox on slot: ", slot);
 	for (auto probe : probes)
 	{
 		errorCode = Neuropixels::closeProbe(slot, probe->headstage->port, probe->dock);
 	}
 
 	errorCode = Neuropixels::closeBS(slot);
-	LOGD("Closed basestation on slot: ", slot, " w/ error code: ", errorCode);
+
+	LOGD("Closed OneBox on slot: ", slot, " w/ error code: ", errorCode);
 }
 
 void OneBox::setSyncAsInput()
 {
-
+	LOGD("OneBox::setSyncAsInput()");
 	LOGD("Setting sync as input...");
 
 	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, false);
@@ -289,6 +291,7 @@ void OneBox::setSyncAsInput()
 		LOGC("Failed to set sync on SMA input on slot: ", slot);
 	}
 
+	/*
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
@@ -301,6 +304,7 @@ void OneBox::setSyncAsInput()
 	{
 		LOGC("Failed to set slot ", slot, "SMA as sync source!");
 	}
+	*/
 
 	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA1, true);
 	if (errorCode != Neuropixels::SUCCESS)
@@ -317,7 +321,7 @@ Array<int> OneBox::getSyncFrequencies()
 
 void OneBox::setSyncAsOutput(int freqIndex)
 {
-
+	/*
 	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
 	if (errorCode != Neuropixels::SUCCESS)
 	{
@@ -341,6 +345,7 @@ void OneBox::setSyncAsOutput(int freqIndex)
 		LOGC("Failed to set slot ", slot, " sync frequency to ", freq, " Hz!");
 		return;
 	}
+	*/
 
 	LOGD("Setting sync as output...");
 
@@ -349,6 +354,11 @@ void OneBox::setSyncAsOutput(int freqIndex)
 	{
 		LOGC("Failed to set sync on SMA output on slot: ", slot);
 	}
+
+}
+
+void OneBox::setSyncAsPassive()
+{
 
 }
 

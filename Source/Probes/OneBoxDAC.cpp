@@ -22,108 +22,61 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "OneBoxDAC.h"
-#include "Geometry.h"
-
-#include "OneBoxADC.h"
 
 #define MAXLEN 50
 
-void OneBoxDAC::getInfo()
-{
-	//errorCode = Neuropixels::readProbeSN(basestation->slot, headstage->port, dock, &info.serial_number);
-
-	//char pn[MAXLEN];
-	//errorCode = Neuropixels::readProbePN(basestation->slot_c, headstage->port_c, dock, pn, MAXLEN);
-
-	//info.part_number = String(pn);
-}
-
-OneBoxDAC::OneBoxDAC(Basestation* bs_) : DataSource(bs), bs(bs_)
+OneBoxDAC::OneBoxDAC(Basestation* bs_) : 
+	DataSource(bs_), slot(bs_->slot)
 {
 
-	getInfo();
-
-	//setStatus(ProbeStatus::ADC);
+	sourceType = DataSourceType::DAC;
 
 	channel_count = 0;
 	sample_rate = 30000.0f;
 
-	errorCode = Neuropixels::NP_ErrorCode::SUCCESS;
-
-	sourceType = DataSourceType::DAC;
-	status = SourceStatus::CONNECTED;
-
-	errorCode = Neuropixels::waveplayer_setSampleFrequency(bs->slot, 30000.0f);
-
-}
-
-bool OneBoxDAC::open()
-{
-	return true;
-
-}
-
-bool OneBoxDAC::close()
-{
-	return true;
 }
 
 void OneBoxDAC::initialize(bool signalChainIsLoading)
 {
 
-	if (open())
-	{
+	errorCode = Neuropixels::waveplayer_setSampleFrequency(slot, 
+		30000.0f);
 
-		//setAdcInputRange(AdcInputRange::PLUSMINUS5V);
+	LOGD("waveplayer_setSampleFrequency error code: ", errorCode);
 
-		timestamp = 0;
-	}
-
-}
-
-void OneBoxDAC::startAcquisition()
-{
-	
-}
-
-void OneBoxDAC::stopAcquisition()
-{
-	//stopThread(1000);
-}
-
-void OneBoxDAC::playWaveform()
-{
-	errorCode = Neuropixels::setSWTriggerEx(bs->slot, Neuropixels::swtrigger2);
-
-	std::cout << "setSWTriggerEx error code: " << errorCode << std::endl;
-}
-
-void OneBoxDAC::stopWaveform()
-{
-	//errorCode = Neuropixels::setSWTriggerEx(bs->slot, Neuropixels::swtrigger2);
-
-	//std::cout << "setSWTriggerEx error code: " << errorCode << std::endl;
-	std::cout << "NOT IMPLEMENTED." << std::endl;
 }
 
 void OneBoxDAC::setWaveform(Array<float> samples)
 {
-	
+
 	Array<int16_t> samples_t;
 
 	for (auto sample : samples)
 		samples_t.add(int(sample / 5.0f * 65535));
 
-	errorCode = Neuropixels::waveplayer_writeBuffer(bs->slot, samples_t.getRawDataPointer(), samples_t.size());
+	errorCode = Neuropixels::waveplayer_writeBuffer(slot, samples_t.getRawDataPointer(), samples_t.size());
 
-	std::cout << "waveplayer_writeBuffer error code: " << errorCode << std::endl;
+	LOGC("waveplayer_writeBuffer error code: ", errorCode);
 
-	errorCode = Neuropixels::waveplayer_arm(bs->slot, true);
+	errorCode = Neuropixels::waveplayer_arm(slot, true);
 
-	std::cout << "waveplayer_arm error code: " << errorCode << std::endl;
-
+	LOGC("waveplayer_arm error code: ", errorCode);
 
 }
+
+void OneBoxDAC::playWaveform()
+{
+	errorCode = Neuropixels::setSWTriggerEx(slot, Neuropixels::swtrigger2);
+
+	LOGD("setSWTriggerEx error code: ", errorCode);
+}
+
+void OneBoxDAC::stopWaveform()
+{
+	LOGD("Stop waveform not implemented.");
+}
+
+
 
 void OneBoxDAC::configureDataPlayer(int DACChannel, int portID, int dockID, int channelnr, int sourceType)
 {
@@ -134,15 +87,15 @@ void OneBoxDAC::configureDataPlayer(int DACChannel, int portID, int dockID, int 
 	else
 		sourceType = Neuropixels::SourceLFP;
 
-	errorCode = Neuropixels::DAC_setProbeSniffer(bs->slot, DACChannel, portID, dockID, channelnr, sourcetype);
+	errorCode = Neuropixels::DAC_setProbeSniffer(slot, DACChannel, portID, dockID, channelnr, sourcetype);
 
-	std::cout << "DAC_setProbeSniffer error code: " << errorCode << std::endl;
+	LOGC("DAC_setProbeSniffer error code: ", errorCode);
 
 }
 
 void OneBoxDAC::disableOutput(int chan)
 {
-	errorCode = Neuropixels::DAC_enableOutput(bs->slot, chan, false);
+	errorCode = Neuropixels::DAC_enableOutput(slot, chan, false);
 
 	LOGC("Disabling DAC ", chan);
 
@@ -150,15 +103,8 @@ void OneBoxDAC::disableOutput(int chan)
 
 void OneBoxDAC::enableOutput(int chan)
 {
-	errorCode = Neuropixels::DAC_enableOutput(bs->slot, chan, true);
+	errorCode = Neuropixels::DAC_enableOutput(slot, chan, true);
 
 	LOGC("Enabling DAC ", chan);
-
-}
-
-
-void OneBoxDAC::run()
-{
-
 
 }

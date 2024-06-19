@@ -67,25 +67,39 @@ public:
 	*
 		Available with 1 shank or 4 shanks
 	*/
-	static void NP2(int shank_count, Array<ElectrodeMetadata>& em,
+	static void NP2(int shank_count, int adc_bits,
+		Array<ElectrodeMetadata>& em,
 		ProbeMetadata& pm);
 
-	/** Neuropixels UHD
+	/** Neuropixels UHD Passive
 	*
-		Available switchable or unswitchable
+		Fixed site layout
 
-		Site spacing: 6 um, 
+		Site spacing: 6 um, 4.5 um or 3 um
 	*/
-	static void UHD(bool switchable, 
-		int numColumns, 
+	static void UHDPassive(int numColumns, 
 		float siteSpacing, 
 		Array<ElectrodeMetadata>& em,
+		ProbeMetadata& pm);
+
+	/** Neuropixels UHD Active
+	*
+		Switchable site layout
+
+		Site spacing: 6 um
+	*/
+	static void UHDActive(Array<ElectrodeMetadata>& em,
 		ProbeMetadata& pm);
 
 	/** Neuropixels Opto
 	*/
 	static void OPTO(Array<ElectrodeMetadata>& em, 
 		Array<EmissionSiteMetadata>& esm,
+		ProbeMetadata& pm);
+
+	/** Neuropixels QuadBase
+	*/
+	static void QuadBase(Array<ElectrodeMetadata>& em,
 		ProbeMetadata& pm);
 
 };

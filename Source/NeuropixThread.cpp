@@ -87,7 +87,9 @@ void Initializer::run()
 
 			bool foundSlot = Neuropixels::tryGetSlotID(&list[i], &slotID);
 
-			LOGD("Slot ID: ", slotID, "Platform ID : ", list[i].platformid);
+			Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo(list[i].ID, &list[i]);
+
+			LOGD("Slot ID: ", slotID, ", Platform ID : ", list[i].platformid);
 
 			if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
 			{
@@ -268,6 +270,15 @@ NeuropixThread::NeuropixThread(SourceNode* sn, DeviceType type_) :
 	int probeIndex = 0;
 	int streamIndex = 0;
 
+	if (type == ONEBOX && basestations.size() > 0)
+	{
+		if (basestations[0]->type != BasestationType::SIMULATED)
+		{
+			baseStationAvailable = true;
+		}
+	}
+		
+
 	for (auto probe : getProbes())
 	{
 		baseStationAvailable = true;
@@ -345,45 +356,78 @@ void NeuropixThread::updateStreamInfo()
 
 		if (source->sourceType == DataSourceType::PROBE)
 		{
-			StreamInfo apInfo;
 
 			Probe* probe = (Probe*) source;
 
-			apInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
-			apInfo.sample_rate = probe->ap_sample_rate;
-			apInfo.probe = probe;
-			apInfo.probe_index = probe_index++;
-
-			if (probe->generatesLfpData())
-				apInfo.type = AP_BAND;
-			else
-				apInfo.type = BROAD_BAND;
-
-			apInfo.sendSyncAsContinuousChannel = probe->sendSync;
-
-			streamInfo.add(apInfo);
-
-			sourceBuffers.add(new DataBuffer(apInfo.num_channels, 460800));  // AP band buffer
-			probe->apBuffer = sourceBuffers.getLast();
-
-			if (probe->generatesLfpData())
+			if (probe->type != ProbeType::QUAD_BASE)
 			{
+				StreamInfo apInfo;
 
-				StreamInfo lfpInfo;
-				lfpInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
-				lfpInfo.sample_rate = probe->lfp_sample_rate;
-				lfpInfo.type = LFP_BAND;
-				lfpInfo.probe = probe;
-				lfpInfo.sendSyncAsContinuousChannel = probe->sendSync;
+				apInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
+				apInfo.sample_rate = probe->ap_sample_rate;
+				apInfo.probe = probe;
+				apInfo.probe_index = probe_index++;
 
-				sourceBuffers.add(new DataBuffer(lfpInfo.num_channels, 38400));  // LFP band buffer
-				probe->lfpBuffer = sourceBuffers.getLast();
+				if (probe->generatesLfpData())
+					apInfo.type = AP_BAND;
+				else
+					apInfo.type = BROAD_BAND;
 
-				streamInfo.add(lfpInfo);
+				apInfo.sendSyncAsContinuousChannel = probe->sendSync;
+
+				streamInfo.add(apInfo);
+
+				sourceBuffers.add(new DataBuffer(apInfo.num_channels, 460800));  // AP band buffer
+				probe->apBuffer = sourceBuffers.getLast();
+
+				if (probe->generatesLfpData())
+				{
+
+					StreamInfo lfpInfo;
+					lfpInfo.num_channels = probe->sendSync ? probe->channel_count + 1 : probe->channel_count;
+					lfpInfo.sample_rate = probe->lfp_sample_rate;
+					lfpInfo.type = LFP_BAND;
+					lfpInfo.probe = probe;
+					lfpInfo.sendSyncAsContinuousChannel = probe->sendSync;
+
+					sourceBuffers.add(new DataBuffer(lfpInfo.num_channels, 38400));  // LFP band buffer
+					probe->lfpBuffer = sourceBuffers.getLast();
+
+					streamInfo.add(lfpInfo);
+				}
+
+				LOGD("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") CH=", apInfo.num_channels, " SR=", apInfo.sample_rate, " Hz");
 			}
+			else {
 
-			LOGD("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") CH=", apInfo.num_channels, " SR=", apInfo.sample_rate, " Hz");
-		}
+				probe->quadBaseBuffers.clear();
+
+				for (int shank = 0; shank < 4; shank++)
+				{
+					StreamInfo apInfo;
+
+					apInfo.num_channels = probe->sendSync ? 385 : 384;
+					apInfo.sample_rate = probe->ap_sample_rate;
+					apInfo.probe = probe;
+					apInfo.probe_index = probe_index;
+					apInfo.type = QUAD_BASE;
+					apInfo.shank = shank;
+
+					apInfo.sendSyncAsContinuousChannel = probe->sendSync;
+
+					streamInfo.add(apInfo);
+
+					sourceBuffers.add(new DataBuffer(apInfo.num_channels, 460800));  // AP band buffer
+					
+					probe->quadBaseBuffers.add(sourceBuffers.getLast());
+
+					LOGD("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") SHANK=", shank +1," CH = ", 384, " SR = ", apInfo.sample_rate, " Hz");
+
+				}
+
+				probe_index++;
+			}
+		}	
 		else {
 
 			if (true)
@@ -619,13 +663,24 @@ String NeuropixThread::getApiVersion()
 void NeuropixThread::setMainSync(int slotIndex)
 {
 	if (foundInputSource() && slotIndex > -1)
+	{
+		for (auto basestation : basestations)
+			basestation->setSyncAsPassive();
+
 		basestations[slotIndex]->setSyncAsInput();
+	}
+	
 }
 
 void NeuropixThread::setSyncOutput(int slotIndex)
 {
-	if (basestations.size() && slotIndex > -1)
+	if (foundInputSource() && slotIndex > -1)
+	{
+		for (auto basestation : basestations)
+			basestation->setSyncAsPassive();
+
 		basestations[slotIndex]->setSyncAsOutput(0);
+	}
 }
 
 Array<int> NeuropixThread::getSyncFrequencies()
@@ -870,6 +925,7 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 	OwnedArray<DeviceInfo>* devices,
 	OwnedArray<ConfigurationObject>* configurationObjects)
 {
+	LOGD("NeuropixThread::updateSettings()");
 
 	if (sourceStreams.size() == 0) // initialize data streams
 	{
@@ -916,6 +972,19 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 				description = "Neuropixels LFP band data stream";
 				identifier = "neuropixels.data.lfp";
+			}
+
+			else if (info.type == stream_type::QUAD_BASE)
+			{
+				lastName = generateProbeName(info.probe_index, info.probe->namingScheme);
+
+				if (info.probe->namingScheme != ProbeNameConfig::STREAM_INDICES)
+					streamName = lastName + "-" + String(info.shank + 1);
+				else
+					streamName = String(info.probe->streamIndex);
+
+				description = "Neuropixels Quad Base data stream";
+				identifier = "neuropixels.data.quad_base";
 			}
 
 			DataStream::Settings settings
@@ -1069,19 +1138,53 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 
 			if (type == ContinuousChannel::Type::ELECTRODE)
 			{
-				int chIndex = info.probe->settings.selectedChannel.indexOf(ch);
+				float depth = 0.0f;
+				int chIndex = 0;
 
-				Array<Bank> availableBanks = info.probe->settings.availableBanks;
+				if (info.probe->type != ProbeType::UHD2)
+				{
+					chIndex = info.probe->settings.selectedChannel.indexOf(ch);
 
-				int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
+					Array<Bank> availableBanks = info.probe->settings.availableBanks;
 
-				int selectedElectrode = info.probe->settings.selectedElectrode[chIndex];
-				int shank = info.probe->settings.selectedShank[chIndex];
+					int selectedBank = availableBanks.indexOf(info.probe->settings.selectedBank[chIndex]);
 
-				float depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
-					+ shank * 10000.0f
-					+ float(ch % 2)
-					+ 0.0001f * ch; // each channel must have a unique depth value
+					int selectedElectrode = info.probe->settings.selectedElectrode[chIndex];
+					int shank = info.probe->settings.selectedShank[chIndex];
+
+					depth = float(info.probe->electrodeMetadata[selectedElectrode].ypos)
+						+ shank * 10000.0f
+						+ info.probe->electrodeMetadata[selectedElectrode].xpos * 0.001f;
+
+					if (false)
+						std::cout << "Channel: " << ch << " chIndex: " << chIndex <<
+						" ypos: " << info.probe->electrodeMetadata[selectedElectrode].ypos <<
+						" xpos: " << info.probe->electrodeMetadata[selectedElectrode].xpos <<
+						" depth: " << depth << std::endl;
+				}
+				else {
+
+					int electrodeIndex = 0;
+
+					for (int i = 0; i < info.probe->settings.selectedElectrode.size(); i++)
+					{
+						if (info.probe->settings.selectedChannel[i] == ch)
+						{
+							electrodeIndex = info.probe->settings.selectedElectrode[i];
+							break;
+						}
+					}
+
+					depth = float(info.probe->electrodeMetadata[electrodeIndex].ypos)
+						+ info.probe->electrodeMetadata[electrodeIndex].xpos * 0.001f;
+
+					if (false)
+						std::cout << "Channel: " << ch << " electrodeIndex: " << electrodeIndex <<
+						" ypos: " << info.probe->electrodeMetadata[electrodeIndex].ypos <<
+						" xpos: " << info.probe->electrodeMetadata[electrodeIndex].xpos <<
+						" depth: " << depth << std::endl;
+
+				}
 
 				continuousChannels->getLast()->position.y = depth;
 
@@ -1099,16 +1202,31 @@ void NeuropixThread::updateSettings(OwnedArray<ContinuousChannel>* continuousCha
 			
 		} // end channel loop
 
-		EventChannel::Settings settings{
-			EventChannel::Type::TTL,
-			"Neuropixels PXI Sync",
-			"Status of SMA sync line on PXI card",
-			"neuropixels.sync",
-			currentStream,
-			1
-		};
+		if (info.type != stream_type::ADC)
+		{
+			EventChannel::Settings settings{
+				EventChannel::Type::TTL,
+				"Neuropixels PXI Sync",
+				"Status of SMA sync line on PXI card",
+				"neuropixels.sync",
+				currentStream,
+				1
+			};
 
-		eventChannels->add(new EventChannel(settings));
+			eventChannels->add(new EventChannel(settings));
+		}
+		else {
+			EventChannel::Settings settings{
+				EventChannel::Type::TTL,
+				"OneBox ADC Digital Lines",
+				"Status of digital inputs on OneBox ADC",
+				"onebox.sync",
+				currentStream,
+				13
+			};
+
+			eventChannels->add(new EventChannel(settings));
+		}
 
 		dataStreams->add(new DataStream(*currentStream)); // copy existing stream
 

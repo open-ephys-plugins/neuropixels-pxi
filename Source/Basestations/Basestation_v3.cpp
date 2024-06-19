@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
 #include "../Headstages/Headstage_Custom384.h"
+#include "../Headstages/Headstage_QuadBase.h"
 
 #define MAXLEN 50
 
@@ -103,7 +104,7 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 
 		String hsPartNumber = String(pn);
 
-		LOGC("Got HS part #: ", hsPartNumber);
+		LOGC("Port ", port, " HS part #: ", hsPartNumber);
 
 		if (hsPartNumber == "NP2_HS_30" || hsPartNumber == "OPTO_HS_00") // 1.0 headstage, only one dock
 		{
@@ -128,6 +129,11 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 		{
 			LOGC("      Found 2.0 dual-dock headstage on port: ", port);
 			headstage = new Headstage2(basestation, port);
+		}
+		else if (hsPartNumber == "NPM_HS_32") //QuadBase headstage
+		{
+			LOGC("      Found 2.0 Phase 2C dual-dock headstage on port: ", port);
+			headstage = new Headstage_QuadBase(basestation, port);
 		}
 		else
 		{
@@ -269,6 +275,9 @@ bool Basestation_v3::open()
 	syncFrequencies.add(1);
 	syncFrequencies.add(10);
 
+	//LOGC("Initial switchmatrix status:");
+	//print_switchmatrix();
+
 	return true;
 }
 
@@ -277,7 +286,6 @@ void Basestation_v3::initialize(bool signalChainIsLoading)
 
 	if (!probesInitialized)
 	{
-		//errorCode = Neuropixels::setTriggerInput(slot, Neuropixels::TRIGIN_SW);
 
 		for (auto probe : probes)
 		{
@@ -286,16 +294,69 @@ void Basestation_v3::initialize(bool signalChainIsLoading)
 
 		probesInitialized = true;
 	}
+	
+	
 
 	LOGC("Arming basestation");
-	Neuropixels::arm(slot); //armBasestation->startThread();
+	Neuropixels::arm(slot);
 	LOGC("Arming complete");
+}
+
+void Basestation_v3::print_switchmatrix()
+{
+	bool isConnected;
+
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXISYNC, &isConnected);
+	LOGC("Slot ", slot, " connection between StatusBit and PXISYNC: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, &isConnected);
+	LOGC("Slot ", slot, " connection between StatusBit and SMA: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, &isConnected);
+	LOGC("Slot ", slot, " connection between StatusBit and SyncClk: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_None, &isConnected);
+	LOGC("Slot ", slot, " connection between StatusBit and None: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_TimeStampClk, &isConnected);
+	LOGC("Slot ", slot, " connection between StatusBit and TimestampClk: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA1, &isConnected);
+	LOGC("Slot ", slot, " connection between StatusBit and SMA1: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SWTrigger1, &isConnected);
+	LOGC("Slot ", slot, " connection between StatusBit and SWTrigger1: ", isConnected);
+
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_PXISYNC, &isConnected);
+	LOGC("Slot ", slot, " connection between PXISYNC and PXISYNC: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SMA, &isConnected);
+	LOGC("Slot ", slot, " connection between PXISYNC and SMA: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SyncClk, &isConnected);
+	LOGC("Slot ", slot, " connection between PXISYNC and SyncClk: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_None, &isConnected);
+	LOGC("Slot ", slot, " connection between PXISYNC and None: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_TimeStampClk, &isConnected);
+	LOGC("Slot ", slot, " connection between PXISYNC and TimestampClk: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SMA1, &isConnected);
+	LOGC("Slot ", slot, " connection between PXISYNC and SMA1: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SWTrigger1, &isConnected);
+	LOGC("Slot ", slot, " connection between PXISYNC and SWTrigger1: ", isConnected);
+
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, &isConnected);
+	LOGC("Slot ", slot, " connection between SMA and PXISYNC: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SMA, &isConnected);
+	LOGC("Slot ", slot, " connection between SMA and SMA: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, &isConnected);
+	LOGC("Slot ", slot, " connection between SMA and SyncClk: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_None, &isConnected);
+	LOGC("Slot ", slot, " connection between SMA and None: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_TimeStampClk, &isConnected);
+	LOGC("Slot ", slot, " connection between SMA and TimestampClk: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SMA1, &isConnected);
+	LOGC("Slot ", slot, " connection between SMA and SMA1: ", isConnected);
+	Neuropixels::switchmatrix_get(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SWTrigger1, &isConnected);
+	LOGC("Slot ", slot, " connection between SMA and SWTrigger1: ", isConnected);
 }
 
 Basestation_v3::~Basestation_v3()
 {
 	/* As of API 3.31, closing a v3 basestation does not turn off the SMA output */
-	setSyncAsInput();
+	setSyncAsPassive();
+
 	close();
 	
 }
@@ -321,53 +382,49 @@ void Basestation_v3::waitForThreadToExit()
 	armBasestation->waitForThreadToExit(25000);
 }
 
+void Basestation_v3::setSyncAsPassive()
+{
+	LOGC("Setting slot ", slot, " sync as passive.");
+
+	errorCode = Neuropixels::switchmatrix_clear(slot, Neuropixels::SM_Output_StatusBit);
+	errorCode = Neuropixels::switchmatrix_clear(slot, Neuropixels::SM_Output_SMA);
+	errorCode = Neuropixels::switchmatrix_clear(slot, Neuropixels::SM_Output_PXISYNC);
+
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXISYNC, true);
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, true);
+
+	if (invertOutput)
+	{
+		for (auto probe : probes)
+		{
+			probe->invertSyncLine = true;
+		}
+	}
+
+	//print_switchmatrix();
+	
+}
+
+
+
 void Basestation_v3::setSyncAsInput()
 {
 
-	LOGD("Setting sync as input...");
+	LOGC("Setting slot ", slot, " sync as input.");
 
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, false);
+	errorCode = Neuropixels::switchmatrix_clear(slot, Neuropixels::SM_Output_StatusBit);
+	errorCode = Neuropixels::switchmatrix_clear(slot, Neuropixels::SM_Output_SMA);
+	errorCode = Neuropixels::switchmatrix_clear(slot, Neuropixels::SM_Output_PXISYNC);
+
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, true);
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SMA, true);
+
 	if (errorCode != Neuropixels::SUCCESS)
 	{
 		LOGC("Failed to set sync on SMA output on slot: ", slot);
 	}
-	
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, false);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGC("Failed to set sync on SMA input on slot: ", slot);
-	}
 
-	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGC("Failed to set slot", slot, "as sync master!");
-		return;
-	}
-
-	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, Neuropixels::SyncSource_SMA);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGC("Failed to set slot ", slot, "SMA as sync source!");
-	}
-		
-	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXISYNC, true);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGD("Failed to set sync on SMA input on slot: ", slot);
-	}
-
-	if (invertOutput)
-	{
-
-		LOGD("Sync as input: don't invert sync line.");
-
-		for (auto probe : probes)
-		{
-			probe->invertSyncLine = false;
-		}
-	}
-
+	//print_switchmatrix();
 
 }
 
@@ -379,52 +436,25 @@ Array<int> Basestation_v3::getSyncFrequencies()
 
 void Basestation_v3::setSyncAsOutput(int freqIndex)
 {
-	
-	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCMASTER, slot);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGC("Failed to set slot ",  slot, " as sync master!");
-		return;
-	} 
 
-	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCSOURCE, Neuropixels::SyncSource_Clock);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGC("Failed to set slot ", slot, " internal clock as sync source!");
-		return;
-	}
+	LOGC("Setting slot ", slot, " sync as output.");
 
-	int freq = syncFrequencies[freqIndex];
+	errorCode = Neuropixels::switchmatrix_clear(slot, Neuropixels::SM_Output_StatusBit);
+	errorCode = Neuropixels::switchmatrix_clear(slot, Neuropixels::SM_Output_SMA);
+	errorCode = Neuropixels::switchmatrix_clear(slot, Neuropixels::SM_Output_PXISYNC);
 
-	LOGD("Setting slot ", slot, " sync frequency to ", freq, " Hz...");
-	errorCode = Neuropixels::setParameter(Neuropixels::NP_PARAM_SYNCFREQUENCY_HZ, freq);
-	if (errorCode != Neuropixels::SUCCESS)
-	{
-		LOGC("Failed to set slot ", slot, " sync frequency to ", freq, " Hz!");
-		return;
-	}
-
-	LOGD("Setting sync as output...");
-
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, true);
+	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SyncClk, true);
 	errorCode = Neuropixels::switchmatrix_set(slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true);
+
+	errorCode = Neuropixels::setSyncClockFrequency(slot, syncFrequencies[freqIndex]);
+
 	if (errorCode != Neuropixels::SUCCESS)
 	{
 		LOGC("Failed to set sync on SMA output on slot: ", slot);
 	}
 
-
-	
-	
-	if (invertOutput)
-	{
-		LOGD("Sync as output: do invert sync line.");
-
-		for (auto probe : probes)
-		{
-			probe->invertSyncLine = true;
-		}
-	}
-
+	//print_switchmatrix();
 }
 
 int Basestation_v3::getProbeCount()

@@ -30,43 +30,71 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class OneBoxADC;
 
+/**
+
+	Data source for OneBox DAC channels
+
+	Each DAC line is shared with an ADC, and must be 
+	enabled in order to be used.
+
+*/
 class OneBoxDAC : public DataSource
 {
 public:
+
+	/** Constructor */
 	OneBoxDAC(Basestation*);
 
-	void getInfo() override;
-
-	bool open() override;
-	bool close() override;
-
-	void initialize(bool signalChainIsLoading) override;
-
-	void startAcquisition() override;
-	void stopAcquisition() override;
-
-	void run() override; // acquire data
-
-	void playWaveform();
-	void stopWaveform();
-
-	void setWaveform(Array<float> samples);
-
-	void configureDataPlayer(int DACChannel, int portID, int dockID, int channelnr, int sourceType);
-
-	void disableOutput(int chan);
-	void enableOutput(int chan);
-
+	/** Returns name of data source */
 	String getName() { return "DAC"; }
 
+	/** Return info about part numbers, etc. -- not used*/
+	void getInfo() override { }
+
+	/** Open connection to the DACs -- not used */
+	bool open() override { return true; }
+
+	/** Close connection to the DACs -- not used */
+	bool close() override { return true; }
+
+	/** Initialize DAC settings */
+	void initialize(bool signalChainIsLoading) override;
+
+	/** Called when acquisition starts -- not used */
+	void startAcquisition() override { }
+	
+	/** Called when acquisition stops -- not used */
+	void stopAcquisition() override { }
+
+	/** Adds data to buffer (not used) */
+	void run() override { }
+
+	/** Sets WavePlayer waveform */
+	void setWaveform(Array<float> samples);
+
+	/** Plays cued waveform */
+	void playWaveform();
+
+	/** Stops WavePlayer */
+	void stopWaveform();
+
+	/** Maps DataPlayer to a headstage channel */
+	void configureDataPlayer(int DACChannel, 
+							 int portID, 
+							 int dockID, 
+							 int channel, 
+							  int sourceType);
+
+	/** Enables DAC output channel */
+	void disableOutput(int chan);
+
+	/** Disables DAC output channel */
+	void enableOutput(int chan);
+
+private:
+
 	Neuropixels::NP_ErrorCode errorCode;
-
-	float bitVolts;
-
-	int64 timestamp;
-
-	OneBoxADC* adc;
-	Basestation* bs;
+	const int slot;
 
 };
 

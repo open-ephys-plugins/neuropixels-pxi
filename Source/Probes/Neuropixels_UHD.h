@@ -102,6 +102,9 @@ public:
 
 private:
 
+	/** Creates arrays of selected electrodes for each available config */
+	void createElectrodeConfigurations();
+
 	Neuropixels::electrodePacket packet[MAXPACKETS];
 	Neuropixels::NP_ErrorCode errorCode;
 
@@ -115,6 +118,10 @@ private:
 	uint64 event_codes[12 * MAXPACKETS];
 	int64 lfp_timestamps[MAXPACKETS];
 	uint64 lfp_event_codes[MAXPACKETS];
+
+	Array<String> availableElectrodeConfigurations;
+
+	OwnedArray<Array<int>> electrodeConfigurations;
 
 };
 

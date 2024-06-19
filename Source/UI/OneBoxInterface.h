@@ -43,73 +43,27 @@ class AdcChannelButton : public ToggleButton
 {
 public:
 
-    enum AdcInputRange {
-        PLUS_MINUS_TWO_PT_5_V = 1,
-        PLUS_MINUS_FIVE_V = 2,
-        PLUS_MINUS_TEN_V = 3
-    };
-
-    enum AdcThreshold {
-        ONE_V = 1,
-        THREE_V = 2
-    };
-
-    enum TriggerWavePlayer {
-        NO = 1,
-        YES = 2
-    };
-
-    enum AvailableDacs {
-        NO_DAC = 1,
-        DAC0 = 2,
-        DAC1 = 3,
-        DAC2 = 4,
-        DAC3 = 5,
-        DAC4 = 6,
-        DAC5 = 7,
-        DAC6 = 8,
-        DAC7 = 9,
-        DAC8 = 10,
-        DAC9 = 11,
-        DAC10 = 12,
-        DAC11 = 13
-    };
-
-    enum AvailableAdcs {
-        NO_ADC = 1,
-        ADC0 = 2,
-        ADC1 = 3,
-        ADC2 = 4,
-        ADC3 = 5,
-        ADC4 = 6,
-        ADC5 = 7,
-        ADC6 = 8,
-        ADC7 = 9,
-        ADC8 = 10,
-        ADC9 = 11,
-        ADC10 = 12,
-        ADC11 = 13
-    };
-
+    /** Constructor */
     AdcChannelButton(int channel);
 
+    /** Called when channel is selected */
     void setSelectedState(bool);
 
-    void setStatus(AdcChannelStatus status, AvailableAdcs sharedChannel = NO_ADC);
+    /** Sets whether the ADC is active*/
+    void setStatus(AdcChannelStatus status, int sharedChannel);
 
-    int inputRange;
-    int threshold;
-    int triggerWavePlayer;
-    int mapToOutput;
-    int inputSharedBy;
-    int channel;
+    /** Returns channel index*/
+    int getChannelIndex() { return channel; }
+    
 
 private:
     void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
     AdcChannelStatus status;
+    int channel;
+    int mapToOutput = -1;
 
-    bool selected;
+    bool selected = false;
 
 };
 

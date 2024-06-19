@@ -89,7 +89,8 @@ enum class ProbeType {
 	UHD2,
 	NP2_1,
 	NP2_4,
-	OPTO
+	OPTO,
+	QUAD_BASE
 };
 
 enum class SourceStatus {
@@ -116,6 +117,22 @@ enum class Bank {
 	K = 10,
 	L = 11,
 	M = 12,
+	A1 = 13, // used for quad base
+	A2 = 14,
+	A3 = 15,
+	A4 = 16,
+	B1 = 17,
+	B2 = 18,
+	B3 = 19,
+	B4 = 20,
+	C1 = 21,
+	C2 = 22,
+	C3 = 23,
+	C4 = 24,
+	D1 = 25,
+	D2 = 26,
+	D3 = 27,
+	D4 = 28,
 	OFF = 255 //used in v1 API
 };
 
@@ -148,15 +165,21 @@ enum class FirmwareType {
 };
 
 enum class AdcInputRange {
-	PLUSMINUS2PT5V = 0,
-	PLUSMINUS5V = 1,
-	PLUSMINUS10V = 2
+	PLUSMINUS2PT5V = 1,
+	PLUSMINUS5V = 2,
+	PLUSMINUS10V = 3
+};
+
+enum class AdcThresholdLevel {
+	ONE_VOLT = 1,
+	THREE_VOLTS = 2
 };
 
 struct ProbeMetadata {
 	int shank_count;
 	int electrodes_per_shank;
 	int num_adcs;
+	int adc_bits;
 	Path shankOutline;
 	int columns_per_shank;
 	int rows_per_shank;
@@ -418,6 +441,9 @@ public:
 	/** Separate buffer for LFP data */
 	DataBuffer* lfpBuffer;
 
+	/** Additional buffers for quad base probe */
+	Array<DataBuffer*> quadBaseBuffers;
+
 	float ap_sample_rate;
 	float lfp_sample_rate;
 
@@ -588,6 +614,9 @@ public:
 
 	/** Sets the sync channel as an "output" (and specifies the frequency index) */
 	virtual void setSyncAsOutput(int freqIndex) = 0;
+
+	/** Sets the sync channel to inherit from the PXI backplane */
+	virtual void setSyncAsPassive() = 0;
 
 	/** Returns an array of available sync frequencies for this basestation */
 	virtual Array<int> getSyncFrequencies() = 0;

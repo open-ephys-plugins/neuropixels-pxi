@@ -67,6 +67,9 @@ public:
 	/** Sets the SMA port to output mode */
 	void setSyncAsOutput(int freqIndex) override;
 
+	/** Sets the OneBox as passive input (does nothing) */
+	void setSyncAsPassive() override;
+
 	/** Returns the available sync frequencies*/
 	Array<int> getSyncFrequencies() override;
 

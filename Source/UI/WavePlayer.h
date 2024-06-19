@@ -42,47 +42,71 @@ class SinePatternGenerator;
 class CustomPatternGenerator;
 class AnalogPatternInfo;
 
+/** 
 
+	Draws WavePlayer background
+
+*/
 class WavePlayerBackground : public Component
 {
 public:
+	/** Constructor */
 	WavePlayerBackground();
 
+	/** Sets current waveform pattern */
 	void updateCurrentWaveform(Pattern* pattern);
 
 private:
+
+	/** Paint interface */
 	void paint(Graphics& g);
+
 	Path currentWaveform;
 	AffineTransform pathTransform;
 
 };
 
 	
+/**
 
+	Defines a waveform for OneBox DAC
+
+*/
 class WavePlayer : public Component, 
 				   public ComboBox::Listener, 
-				   public Button::Listener, 
-				   public Timer
+				   public Button::Listener
 {
 public:
+
+	/** Constructor */
 	WavePlayer(OneBoxDAC*);
+
+	/** Destructor */
 	virtual ~WavePlayer();
 
-	void timerCallback();
-
+	/** Button callback */
 	void buttonClicked(Button* button);
+
+	/** ComboBox callback */
 	void comboBoxChanged(ComboBox*);
 
+	/** Saves parameters to XML*/
 	void saveCustomParameters(XmlElement*);
+
+	/** Loads parameters from XML*/
 	void loadCustomParameters(XmlElement*);
+
+	/** Returns waveform sample rate*/
+	float getSampleRate();
+
+	/** Updates the waveform to be triggered */
+	void updateWaveform();
+
+	/** Resizes interface */
+	void resized();
 
 	OwnedArray<Pattern> availablePatterns;
 	Pattern* currentPattern;
-
-	float getSampleRate();
-	void updateWaveform();
-
-	void resized();
 
 private:
 
@@ -97,7 +121,6 @@ private:
 	ScopedPointer<WavePlayerBackground> background;
 
 	void selectPatternType(PatternType t);
-
 	void updatePatternSelector();
 	void initializePattern(Pattern* pattern);
 

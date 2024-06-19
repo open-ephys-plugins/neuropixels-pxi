@@ -44,6 +44,7 @@ typedef enum {
 	AP_BAND,
 	LFP_BAND,
 	BROAD_BAND,
+	QUAD_BASE,
 	ADC
 } stream_type;
 
@@ -52,6 +53,7 @@ struct StreamInfo {
 	int probe_index;
 	float sample_rate;
 	stream_type type;
+	int shank = -1;
 	bool sendSyncAsContinuousChannel;
 	Probe* probe;
 	OneBoxADC* adc;
