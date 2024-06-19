@@ -184,7 +184,7 @@ void Neuropixels1_v3::calibrate()
 			message += "The GUI will proceed without calibration.";
 			message += "The plugin must be deleted and re-inserted once calibration files have been added";
 
-			AlertWindow::showMessageBoxAsync(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
+			//AlertWindow::showMessageBoxAsync(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
 
 			calibrationWarningShown = true;
 		}

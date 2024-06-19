@@ -161,7 +161,7 @@ void Neuropixels_QuadBase::calibrate()
 			message += "The GUI will proceed without calibration.";
 			message += "The plugin must be deleted and re-inserted once calibration files have been added";
 
-			AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
+			//AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
 
 			calibrationWarningShown = true;
 		}
