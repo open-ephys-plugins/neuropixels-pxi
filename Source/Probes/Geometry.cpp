@@ -1042,7 +1042,7 @@ void Geometry::QuadBase(Array<ElectrodeMetadata>& electrodeMetadata,
 	int shank_count = 4;
 
 	probeMetadata.type = ProbeType::QUAD_BASE;
-	probeMetadata.name = " Neuropixels 2.0 QuadBase";
+	probeMetadata.name = "Neuropixels 2.0 Quad Base";
 
 
 	Path path;
