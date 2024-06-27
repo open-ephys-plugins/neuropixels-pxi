@@ -13,7 +13,7 @@ jobs:
         os: [windows-2019]
     
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: setup
       env: 
         repo: open-ephys-gui
@@ -33,7 +33,7 @@ jobs:
         cmake -G "Visual Studio 16 2019" -A x64 .. 
       shell: bash
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v2
     - name: build-plugin
       run: |
         cd Build
@@ -43,14 +43,14 @@ jobs:
 #    - name: test
 #      run: cd build && ctest
     - name: deploy
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/juce8'
       env:
         artifactoryApiKey: ${{ secrets.artifactoryApiKey }}
         build_dir: "Build/Release"
         package: NeuropixelsPXI-windows
       run: |
         plugin_api=$(grep -rnw ../../plugin-GUI/Source -e '#define PLUGIN_API_VER' | grep -Eo "[0-9]*" | tail -1)
-        tag=$(git describe --tags $(git rev-list --tags --max-count=1))
+        tag=$(grep -w Source/NeuropixThread.h -e '#define PLUGIN_VERSION' | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+)?")
         new_plugin_ver=$tag-API$plugin_api
         mkdir plugins
         cp $build_dir/*.dll plugins
