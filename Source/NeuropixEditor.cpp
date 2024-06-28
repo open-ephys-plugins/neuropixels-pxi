@@ -117,9 +117,9 @@ void EditorBackground::paint (Graphics& g)
 
         g.setFont (10);
         g.drawText (String ("MAIN SYNC SLOT"), 90 * (numBasestations) + 32, 13, 100, 10, Justification::centredLeft);
-        g.drawText (String ("CONFIG AS"), 90 * (numBasestations) + 32, 46, 100, 10, Justification::centredLeft);
+        g.drawText (String ("CONFIG AS"), 90 * (numBasestations) + 32, 48, 100, 10, Justification::centredLeft);
         if (freqSelectEnabled)
-            g.drawText (String ("WITH FREQ"), 90 * (numBasestations) + 32, 79, 100, 10, Justification::centredLeft);
+            g.drawText (String ("WITH FREQ"), 90 * (numBasestations) + 32, 82, 100, 10, Justification::centredLeft);
     }
     else
     {
@@ -460,7 +460,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
         fifoMonitors.add (f);
     }
 
-    mainSyncSelector = new ComboBox ("Basestation that acts as main synchronizer");
+    mainSyncSelector = std::make_unique<ComboBox> ("Basestation that acts as main synchronizer");
     mainSyncSelector->setBounds (90 * (basestations.size()) + 32, 39, 38, 20);
     for (int i = 0; i < basestations.size(); i++)
     {
@@ -468,40 +468,45 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     }
     mainSyncSelector->setSelectedItemIndex (0, dontSendNotification);
     mainSyncSelector->addListener (this);
-    addChildComponent (mainSyncSelector);
+    addChildComponent (mainSyncSelector.get());
 
-    inputOutputSyncSelector = new ComboBox ("Toggles the main synchronizer as input or output");
-    inputOutputSyncSelector->setBounds (90 * (basestations.size()) + 32, 72, 78, 20);
+    inputOutputSyncSelector = std::make_unique<ComboBox> ("Toggles the main synchronizer as input or output");
+    inputOutputSyncSelector->setBounds (90 * (basestations.size()) + 32, 74, 78, 20);
     inputOutputSyncSelector->addItem (String ("INPUT"), 1);
     inputOutputSyncSelector->addItem (String ("OUTPUT"), 2);
     inputOutputSyncSelector->setSelectedItemIndex (0, dontSendNotification);
     inputOutputSyncSelector->addListener (this);
-    addChildComponent (inputOutputSyncSelector);
+    addChildComponent (inputOutputSyncSelector.get());
 
     Array<int> syncFrequencies = t->getSyncFrequencies();
 
-    syncFrequencySelector = new ComboBox ("Select the sync frequency (if in output mode)");
-    syncFrequencySelector->setBounds (90 * (basestations.size()) + 32, 105, 70, 20);
-    for (int i = 0; i < syncFrequencies.size(); i++)
-    {
-        syncFrequencySelector->addItem (String (syncFrequencies[i]) + String (" Hz"), i + 1);
-    }
-    syncFrequencySelector->setSelectedItemIndex (0, dontSendNotification);
-    syncFrequencySelector->addListener (this);
-    addChildComponent (syncFrequencySelector);
+    // syncFrequencySelector = std::make_unique<ComboBox> ("Select the sync frequency (if in output mode)");
+    // syncFrequencySelector->setBounds (90 * (basestations.size()) + 32, 105, 70, 20);
+    // for (int i = 0; i < syncFrequencies.size(); i++)
+    // {
+    //     syncFrequencySelector->addItem (String (syncFrequencies[i]) + String (" Hz"), i + 1);
+    // }
+    // syncFrequencySelector->setSelectedItemIndex (0, dontSendNotification);
+    // syncFrequencySelector->addListener (this);
+    // addChildComponent (syncFrequencySelector.get());
 
-    background = new EditorBackground (t, false);
+    syncFrequencyLabel = std::make_unique<Label> ("Sync frequency label", String (syncFrequencies[0]) + " Hz");
+    syncFrequencyLabel->setBounds (90 * (basestations.size()) + 32, 105, 70, 20);
+    syncFrequencyLabel->setFont (FontOptions ("Inter", "Regular", 16.0f));
+    addChildComponent (syncFrequencyLabel.get());
+
+    background = std::make_unique<EditorBackground> (t, false);
     background->setBounds (0, 15, 500, 150);
-    addAndMakeVisible (background);
+    addAndMakeVisible (background.get());
     background->toBack();
     background->repaint();
 
-    addSyncChannelButton = new UtilityButton ("+", Font ("Small Text", 13, Font::plain));
+    addSyncChannelButton = std::make_unique<UtilityButton> ("+", Font ("Small Text", 13, Font::plain));
     addSyncChannelButton->setBounds (90 * basestations.size() + 78, 40, 20, 20);
     addSyncChannelButton->addListener (this);
     addSyncChannelButton->setTooltip ("Add sync channel to the continuous data stream.");
     addSyncChannelButton->setClickingTogglesState (true);
-    addChildComponent (addSyncChannelButton);
+    addChildComponent (addSyncChannelButton.get());
 
     if (basestations.size() > 0)
     {
@@ -515,13 +520,13 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
         desiredWidth = 250;
     }
 
-    uiLoader = new BackgroundLoader (t, this);
+    uiLoader = std::make_unique<BackgroundLoader> (t, this);
 }
 
 void NeuropixEditor::collapsedStateChanged()
 {
     if (inputOutputSyncSelector->getSelectedId() == 1)
-        syncFrequencySelector->setVisible (false);
+        syncFrequencyLabel->setVisible (false);
 }
 
 void NeuropixEditor::update()
@@ -534,38 +539,38 @@ void NeuropixEditor::comboBoxChanged (ComboBox* comboBox)
 {
     int slotIndex = mainSyncSelector->getSelectedId() - 1;
 
-    if (comboBox == mainSyncSelector)
+    if (comboBox == mainSyncSelector.get())
     {
         thread->setMainSync (slotIndex);
         inputOutputSyncSelector->setSelectedItemIndex (0, true);
-        syncFrequencySelector->setVisible (false);
+        syncFrequencyLabel->setVisible (false);
         background->setFreqSelectAvailable (false);
-        syncFrequencySelector->setSelectedItemIndex (0, true);
+        // syncFrequencySelector->setSelectedItemIndex (0, true);
     }
-    else if (comboBox == inputOutputSyncSelector)
+    else if (comboBox == inputOutputSyncSelector.get())
     {
         bool asOutput = inputOutputSyncSelector->getSelectedId() == 2;
 
         if (asOutput)
         {
             thread->setSyncOutput (slotIndex);
-            syncFrequencySelector->setVisible (true);
+            syncFrequencyLabel->setVisible (true);
             background->setFreqSelectAvailable (true);
         }
         else
         {
             thread->setMainSync (slotIndex);
-            syncFrequencySelector->setVisible (false);
+            syncFrequencyLabel->setVisible (false);
             background->setFreqSelectAvailable (false);
         }
 
-        syncFrequencySelector->setSelectedItemIndex (0, true);
+        // syncFrequencySelector->setSelectedItemIndex (0, true);
     }
-    else /* comboBox == freqSelectBox */
-    {
-        int freqIndex = syncFrequencySelector->getSelectedId() - 1;
-        thread->setSyncFrequency (slotIndex, freqIndex);
-    }
+    // else /* comboBox == freqSelectBox */
+    // {
+    //     int freqIndex = syncFrequencySelector->getSelectedId() - 1;
+    //     thread->setSyncFrequency (slotIndex, freqIndex);
+    // }
 
     background->repaint();
 }
@@ -632,7 +637,7 @@ void NeuropixEditor::buttonClicked (Button* button)
                 ub->setLabel (pathName.substring (0, 3));
             }
         }
-        else if (button == addSyncChannelButton)
+        else if (button == addSyncChannelButton.get())
         {
             thread->sendSyncAsContinuousChannel (addSyncChannelButton->getToggleState());
             CoreServices::updateSignalChain (this);
@@ -693,7 +698,7 @@ void NeuropixEditor::saveVisualizerEditorParameters (XmlElement* xml)
 
     xmlNode->setAttribute ("SyncDirection", inputOutputSyncSelector->getSelectedItemIndex());
 
-    xmlNode->setAttribute ("SyncFreq", syncFrequencySelector->getSelectedItemIndex());
+    xmlNode->setAttribute ("SyncFreq", 0);
 
     XmlElement* customNamesXml = xmlNode->createNewChildElement ("CUSTOM_PROBE_NAMES");
 
@@ -756,19 +761,19 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
             }
 
             int mainSyncSlotIndex = xmlNode->getIntAttribute ("MainSyncSlot", mainSyncSelector->getSelectedItemIndex());
-            int frequencyIndex = xmlNode->getIntAttribute ("SyncFreq", 0);
+            int frequencyIndex = 0;
 
             if (mainSyncSlotIndex >= thread->getBasestations().size())
                 mainSyncSlotIndex = 0;
 
             /*Configure main basestation */
             thread->setMainSync (mainSyncSlotIndex);
-            mainSyncSelector->setSelectedItemIndex (mainSyncSlotIndex, true);
-            syncFrequencySelector->setSelectedItemIndex (frequencyIndex, true);
+            mainSyncSelector->setSelectedItemIndex (mainSyncSlotIndex, dontSendNotification);
+            // syncFrequencySelector->setSelectedItemIndex (frequencyIndex, dontSendNotification);
 
             /* Add sync as continuous channel */
             bool addSyncAsContinuousChannel = xmlNode->getBoolAttribute ("SendSyncAsContinuous", false);
-            addSyncChannelButton->setToggleState (addSyncAsContinuousChannel, false);
+            addSyncChannelButton->setToggleState (addSyncAsContinuousChannel, dontSendNotification);
             thread->sendSyncAsContinuousChannel (addSyncAsContinuousChannel);
 
             /* Set SMA as input or output */
@@ -776,11 +781,11 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
 
             if (setAsOutput)
             {
-                inputOutputSyncSelector->setSelectedItemIndex (1, true);
+                inputOutputSyncSelector->setSelectedItemIndex (1, dontSendNotification);
                 thread->setSyncOutput (mainSyncSlotIndex);
-                syncFrequencySelector->setVisible (true);
+                syncFrequencyLabel->setVisible (true);
                 background->setFreqSelectAvailable (true);
-                syncFrequencySelector->setSelectedItemIndex (frequencyIndex, true);
+                // syncFrequencySelector->setSelectedItemIndex (frequencyIndex, dontSendNotification);
                 thread->setSyncFrequency (mainSyncSlotIndex, frequencyIndex);
             }
         }

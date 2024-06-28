@@ -260,22 +260,23 @@ public:
 
     OwnedArray<SourceButton> sourceButtons;
 
-    ScopedPointer<BackgroundLoader> uiLoader;
+    std::unique_ptr<BackgroundLoader> uiLoader;
 
 private:
     OwnedArray<UtilityButton> directoryButtons;
     OwnedArray<FifoMonitor> fifoMonitors;
 
-    ScopedPointer<ComboBox> mainSyncSelector;
-    ScopedPointer<ComboBox> inputOutputSyncSelector;
-    ScopedPointer<ComboBox> syncFrequencySelector;
+    std::unique_ptr<ComboBox> mainSyncSelector;
+    std::unique_ptr<ComboBox> inputOutputSyncSelector;
+    // std::unique_ptr<ComboBox> syncFrequencySelector;
+    std::unique_ptr<Label> syncFrequencyLabel;
 
     Array<File> savingDirectories;
     Array<int> slotNamingSchemes;
 
-    ScopedPointer<EditorBackground> background;
+    std::unique_ptr<EditorBackground> background;
 
-    ScopedPointer<UtilityButton> addSyncChannelButton;
+    std::unique_ptr<UtilityButton> addSyncChannelButton;
 
     Viewport* viewport;
     NeuropixCanvas* canvas;

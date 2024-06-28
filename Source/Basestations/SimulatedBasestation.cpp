@@ -183,7 +183,6 @@ bool SimulatedBasestation::open()
     LOGD (probes.size(), " total probes ");
 
     syncFrequencies.add (1);
-    syncFrequencies.add (10);
 
     return true;
 }

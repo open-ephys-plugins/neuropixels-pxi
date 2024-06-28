@@ -21,6 +21,7 @@
 
 */
 
+#include "OneBox.h"
 #include "../Headstages/Headstage1.h"
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
@@ -28,7 +29,6 @@
 #include "../Probes/Neuropixels1.h"
 #include "../Probes/OneBoxADC.h"
 #include "../Probes/OneBoxDAC.h"
-#include "OneBox.h"
 
 #define MAXLEN 50
 
@@ -206,7 +206,6 @@ bool OneBox::open()
     }
 
     syncFrequencies.add (1);
-    syncFrequencies.add (10);
 
     return true;
 }

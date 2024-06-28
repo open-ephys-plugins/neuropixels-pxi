@@ -165,7 +165,6 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
                                                                     configurationComplete (false)
 {
     defaultSyncFrequencies.add (1);
-    defaultSyncFrequencies.add (10);
 
     api_v3.isActive = true;
 

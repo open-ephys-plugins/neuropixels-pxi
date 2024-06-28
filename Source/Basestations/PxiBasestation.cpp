@@ -254,7 +254,6 @@ bool PxiBasestation::open()
     }
 
     syncFrequencies.add (1);
-    syncFrequencies.add (10);
 
     //LOGC("Initial switchmatrix status:");
     //print_switchmatrix();
