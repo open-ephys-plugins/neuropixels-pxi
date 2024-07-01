@@ -161,6 +161,7 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
                                                                     type (type_),
                                                                     baseStationAvailable (false),
                                                                     probesInitialized (false),
+                                                                    calibrationWarningShown (false),
                                                                     initializationComplete (false),
                                                                     configurationComplete (false)
 {
@@ -415,6 +416,9 @@ void NeuropixThread::applyProbeSettingsQueue()
         settings.probe->setStatus (SourceStatus::UPDATING);
     }
 
+    Array<Probe*> uncalibratedProbes;
+
+    // Apply settings to probes
     for (auto settings : probeSettingsUpdateQueue)
     {
         if (settings.probe->basestation->isBusy())
@@ -435,11 +439,37 @@ void NeuropixThread::applyProbeSettingsQueue()
 
             settings.probe->setStatus (SourceStatus::CONNECTED);
 
+            if (! settings.probe->isCalibrated)
+                uncalibratedProbes.add (settings.probe);
+
             LOGC ("Wrote configuration");
         }
     }
 
     probeSettingsUpdateQueue.clear();
+
+    // Show warning if any probes are uncalibrated
+    if (uncalibratedProbes.size() > 0 && ! calibrationWarningShown)
+    {
+        String message = "Missing calibration files for the following probe(s):\n\n";
+
+        for (auto probe : uncalibratedProbes)
+        {
+            message += String::fromUTF8 (" \xe2\x80\xa2 ") + probe->name + " (serial number: " + String (probe->info.serial_number) + ")\n";
+        }
+
+        message += "\nADC and Gain calibration files must be located in \"CalibrationInfo\\<serial_number>\" folder in the directory where the Open Ephys GUI was launched. ";
+        message += "The GUI will proceed without calibration. The plugin must be deleted and re-inserted once calibration files have been added";
+
+        // Show alert window on the message thread asynchronously
+        MessageManager::callAsync ([this, message]
+                                   { auto* alertWindow = new AlertWindow ("Calibration files not found", message, MessageBoxIconType::WarningIcon, sn->getEditor()->getTopLevelComponent());
+                                   alertWindow->addButton ("OK", 1, KeyPress (KeyPress::returnKey), KeyPress (KeyPress::escapeKey));
+                                   alertWindow->enterModalState (true, nullptr, true); });
+
+        uncalibratedProbes.clear();
+        calibrationWarningShown = true;
+    }
 
     configurationComplete = true;
 }

@@ -95,7 +95,7 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
     {
         CustomTabComponent* basestationTab = new CustomTabComponent (editor, false);
         topLevelTabComponent->addTab (String (" Slot " + String (basestation->slot) + " "),
-                                      findColour (ThemeColours::componentBackground),
+                                      findColour (ThemeColours::componentBackground).darker (0.2f),
                                       basestationTab,
                                       true);
 

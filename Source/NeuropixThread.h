@@ -261,6 +261,8 @@ private:
     bool internalTrigger;
     bool autoRestart;
 
+    bool calibrationWarningShown;
+
     bool initializationComplete;
     bool configurationComplete;
 

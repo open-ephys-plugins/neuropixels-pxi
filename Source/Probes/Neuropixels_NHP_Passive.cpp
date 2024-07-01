@@ -145,19 +145,7 @@ void Neuropixels_NHP_Passive::calibrate()
 
     if (! probeDirectory.exists())
     {
-        if (! calibrationWarningShown)
-        {
-            // show popup notification window
-            String message = "Missing calibration files for probe serial number " + String (info.serial_number);
-            message += ". ADC and Gain calibration files must be located in 'CalibrationInfo\\<serial_number>' folder in the directory where the Open Ephys GUI was launched.";
-            message += "The GUI will proceed without calibration.";
-            message += "The plugin must be deleted and re-inserted once calibration files have been added";
-
-            AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Calibration files missing", message, "OK");
-
-            calibrationWarningShown = true;
-        }
-
+        LOGD ("!!! Calibration files not found for probe serial number: ", info.serial_number);
         return;
     }
 
@@ -199,6 +187,8 @@ void Neuropixels_NHP_Passive::calibrate()
     {
         LOGD ("Successfully wrote probe config ");
     }
+
+    isCalibrated = true;
 }
 
 void Neuropixels_NHP_Passive::selectElectrodes()
