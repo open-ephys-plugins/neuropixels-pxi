@@ -112,6 +112,7 @@ private:
     Array<String> availableReferences;
 
     float bitScaling = 16384.0f;
+    float amplifierGain = 80.0f;
 };
 
 #endif // _NEUROPIX2_H_2C4C2D67__

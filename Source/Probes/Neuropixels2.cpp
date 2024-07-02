@@ -122,9 +122,13 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("All Shanks 1153-1248");
         }
 
-        if (info.part_number.equalsIgnoreCase ("NP2013") || info.part_number.equalsIgnoreCase ("NP2014") || info.part_number.equalsIgnoreCase ("NP2003") || info.part_number.equalsIgnoreCase ("NP2004"))
+        if (info.part_number.equalsIgnoreCase ("NP2013") || 
+            info.part_number.equalsIgnoreCase ("NP2014") || 
+            info.part_number.equalsIgnoreCase ("NP2003") || 
+            info.part_number.equalsIgnoreCase ("NP2004"))
         {
             availableReferences.add ("Ground");
+            amplifierGain = 100.0f;
         }
 
         settings.availableReferences = availableReferences;
@@ -655,7 +659,7 @@ void Neuropixels2::run()
                 for (int j = 0; j < 384; j++)
                 {
                     apSamples[j * count + packetNum] =
-                        float (data[packetNum * 384 + j]) * 1.0f / bitScaling * 1000000.0f / 80.0f; // convert to microvolts
+                        float (data[packetNum * 384 + j]) / bitScaling / amplifierGain * 1000000.0f; // convert to microvolts
 
                     apView->addSample (apSamples[(j * count) + packetNum], j);
                 }
