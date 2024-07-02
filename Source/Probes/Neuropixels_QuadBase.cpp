@@ -449,7 +449,7 @@ void AcquisitionThread::run()
                 for (int j = 0; j < channel_count; j++)
                 {
                     apSamples[packetNum + count * j] =
-                        float (data[packetNum * channel_count + j]) * 1.0f / 4096.0f * 1000000.0f / 80.0f; // convert to microvolts
+                        float (data[packetNum * channel_count + j]) / 4096.0f / 100.0f * 1000000.0f; // convert to microvolts
 
                     //probe->apView->addSample(apSamples[j + packetNum * SKIP], j);
                 }
