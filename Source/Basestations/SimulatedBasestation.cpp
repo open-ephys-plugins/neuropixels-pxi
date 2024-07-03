@@ -59,9 +59,7 @@ SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow (SimulatedBas
 
 void SimulatedBasestationConfigWindow::paint (Graphics& g)
 {
-    g.fillAll (findColour (ThemeColours::componentBackground));
-
-    g.setColour (findColour (ThemeColours::defaultText));
+    g.setColour (Colours::lightgrey);
 
     g.drawText ("PORT", 22, 22, 50, 25, Justification::centred);
     g.drawText ("PROBE TYPE", 62, 22, 200, 20, Justification::centred);

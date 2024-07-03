@@ -39,8 +39,7 @@ void CustomTabButton::paintButton (Graphics& g,
                                    bool isMouseOver,
                                    bool isMouseDown)
 {
-    Colour tabColour = findColour (ThemeColours::componentBackground).darker (isTopLevel ? 0.2f : 0.0f);
-    getTabbedButtonBar().setTabBackgroundColour (getIndex(), tabColour);
+    getTabbedButtonBar().setTabBackgroundColour (getIndex(), Colours::grey);
 
     getLookAndFeel().drawTabButton (*this, g, isMouseOver, isMouseDown);
 }
@@ -79,9 +78,8 @@ void CustomTabComponent::currentTabChanged (int newCurrentTabIndex, const String
     // std::cout << newCurrentTabIndex << ", " << newCurrentTabName << std::endl;
 }
 
-NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* editor_, NeuropixThread* thread_) : Visualizer (processor_),
-                                                                                                                  editor (editor_),
-                                                                                                                  thread (thread_)
+NeuropixCanvas::NeuropixCanvas (NeuropixEditor* editor_, NeuropixThread* thread_) : editor (editor_),
+                                                                                    thread (thread_)
 
 {
     topLevelTabComponent = new CustomTabComponent (editor, true);
@@ -95,7 +93,7 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
     {
         CustomTabComponent* basestationTab = new CustomTabComponent (editor, false);
         topLevelTabComponent->addTab (String (" Slot " + String (basestation->slot) + " "),
-                                      findColour (ThemeColours::componentBackground).darker (0.2f),
+                                      Colours::grey,
                                       basestationTab,
                                       true);
 
@@ -119,7 +117,7 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
                 settingsInterfaces.add ((SettingsInterface*) neuropixInterface);
 
                 basestationTab->addTab (" " + source->getName() + " ",
-                                        findColour (ThemeColours::componentBackground),
+                                        Colours::grey,
                                         neuropixInterface->viewport.get(),
                                         false);
 
@@ -133,7 +131,7 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
 
                 //addChildComponent(oneBoxInterface->viewport.get());
                 basestationTab->addTab (" " + source->getName() + " ",
-                                        findColour (ThemeColours::componentBackground),
+                                        Colours::grey,
                                         oneBoxInterface->viewport.get(),
                                         false);
 
@@ -154,7 +152,7 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
             BasestationInterface* basestationInterface = new BasestationInterface (basestation, thread, editor, this);
             settingsInterfaces.add (basestationInterface);
             basestationTab->addTab (" Firmware Update ",
-                                    findColour (ThemeColours::componentBackground),
+                                    Colours::grey,
                                     basestationInterface->viewport.get(),
                                     false);
             topLevelTabIndex.add (topLevelTabNumber);
@@ -196,7 +194,7 @@ void NeuropixCanvas::refreshState()
     resized();
 }
 
-void NeuropixCanvas::updateSettings()
+void NeuropixCanvas::update()
 {
     for (int i = 0; i < settingsInterfaces.size(); i++)
         settingsInterfaces[i]->updateInfoString();

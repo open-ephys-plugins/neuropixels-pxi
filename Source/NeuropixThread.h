@@ -133,9 +133,6 @@ public:
     /** Called by ProcessorGraph to inform the thread whether the signal chain is loading */
     void initialize (bool signalChainIsLoading) override;
 
-    /** Called by ProcessorGraph to ensure the DataThread is ready for acquisition */
-    bool isReady() override;
-
     /** Prepares probes for data acquisition*/
     void initializeBasestations (bool signalChainIsLoading);
 
@@ -235,10 +232,10 @@ public:
     String getApiVersion();
 
     /** Responds to broadcast messages sent during acquisition */
-    void handleBroadcastMessage (const String& msg, const int64 messageTimeMillis) override;
+    void handleBroadcastMessage (String msg) override;
 
     /** Responds to config messages sent while acquisition is not active*/
-    String handleConfigMessage (const String& msg) override;
+    String handleConfigMessage (String msg) override;
 
     /** Returns the custom name for a given probe serial number, if it exists*/
     String getCustomProbeName (String serialNumber);
@@ -293,6 +290,7 @@ private:
     NeuropixAPIv3 api_v3;
 
     NeuropixEditor* editor;
+    GenericProcessor* processor;
 };
 
 #endif // __NEUROPIXTHREAD_H_2C4CBD67__

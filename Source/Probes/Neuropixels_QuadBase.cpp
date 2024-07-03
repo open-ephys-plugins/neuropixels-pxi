@@ -451,15 +451,15 @@ void AcquisitionThread::run()
 
                 for (int j = 0; j < shank_channel_count; j++)
                 {
-                    apSamples[packetNum + count * j] =
+                    apSamples[j + packetNum * SKIP] =
                         float (data[packetNum * shank_channel_count + j]) / 4096.0f / 100.0f * 1000000.0f; // convert to microvolts
 
-                    apView->addSample (apSamples[packetNum + count * j], j + shank * 384);
+                    apView->addSample (apSamples[j + packetNum * SKIP], j + shank * 384);
                 }
 
                 if (sendSync)
                 {
-                    apSamples[packetNum + count * 384] = (float) eventCode;
+                    apSamples[384 + SKIP * packetNum] = (float) eventCode;
                 }
 
                 ap_timestamps[packetNum] = ap_timestamp++;

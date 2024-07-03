@@ -42,7 +42,7 @@ void SlotButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown)
     if (isMouseOver && isEnabled)
         g.setColour (Colours::yellow);
     else
-        g.setColour (findColour (ThemeColours::defaultText));
+        g.setColour (Colours::darkgrey);
 
     g.drawText (String (slot), 0, 0, getWidth(), getHeight(), Justification::centred);
 }
@@ -94,10 +94,10 @@ void EditorBackground::paint (Graphics& g)
     {
         for (int i = 0; i < numBasestations; i++)
         {
-            g.setColour (findColour (ThemeColours::outline));
+            g.setColour (Colours::lightgrey);
             g.drawRoundedRectangle (90 * i + 32, 13, 32, 98, 4, 1);
 
-            g.setColour (findColour (ThemeColours::defaultText));
+            g.setColour (Colours::darkgrey);
             g.setFont (10);
             g.drawText ("SLOT", 90 * i + 72, 15, 50, 12, Justification::centredLeft);
 
@@ -123,7 +123,7 @@ void EditorBackground::paint (Graphics& g)
     }
     else
     {
-        g.setColour (findColour (ThemeColours::defaultText));
+        g.setColour (Colours::darkgrey);
         g.setFont (15);
         if (type == PXI)
         {
@@ -165,10 +165,10 @@ void FifoMonitor::setFillPercentage (float fill_)
 
 void FifoMonitor::paint (Graphics& g)
 {
-    g.setColour (findColour (ThemeColours::outline));
+    g.setColour (Colours::grey);
     g.fillRoundedRectangle (0, 0, this->getWidth(), this->getHeight(), 4);
-    g.setColour (findColour (ThemeColours::widgetBackground));
-    g.fillRoundedRectangle (1, 1, this->getWidth() - 2, this->getHeight() - 2, 2);
+    g.setColour (Colours::lightslategrey);
+    g.fillRoundedRectangle (2, 2, this->getWidth() - 4, this->getHeight() - 4, 2);
 
     g.setColour (Colours::yellow);
     float barHeight = (this->getHeight() - 4) * fillPercentage;
@@ -205,9 +205,9 @@ void SourceButton::setSelectedState (bool state)
 void SourceButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown)
 {
     if (isMouseOver && connected)
-        g.setColour (findColour (ThemeColours::highlightedFill));
+        g.setColour (Colours::antiquewhite);
     else
-        g.setColour (findColour (ThemeColours::outline).withAlpha (0.75f));
+        g.setColour (Colours::darkgrey);
 
     g.fillEllipse (0, 0, 15, 15);
 
@@ -227,7 +227,7 @@ void SourceButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown
     }
     else
     {
-        baseColour = findColour (ThemeColours::defaultFill);
+        baseColour = Colours::grey;
     }
 
     if (status == SourceStatus::CONNECTED)
@@ -266,7 +266,7 @@ void SourceButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown
     }
     else
     {
-        g.setColour (findColour (ThemeColours::widgetBackground));
+        g.setColour (Colours::lightgrey);
     }
 
     g.fillEllipse (2, 2, 11, 11);
@@ -492,7 +492,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
 
     syncFrequencyLabel = std::make_unique<Label> ("Sync frequency label", String (syncFrequencies[0]) + " Hz");
     syncFrequencyLabel->setBounds (90 * (basestations.size()) + 32, 105, 70, 20);
-    syncFrequencyLabel->setFont (FontOptions ("Inter", "Regular", 16.0f));
+    syncFrequencyLabel->setFont (Font ("Inter", "Regular", 16.0f));
     addChildComponent (syncFrequencyLabel.get());
 
     background = std::make_unique<EditorBackground> (t, false);
@@ -532,7 +532,7 @@ void NeuropixEditor::collapsedStateChanged()
 void NeuropixEditor::update()
 {
     if (canvas != nullptr)
-        canvas->updateSettings();
+        canvas->update();
 }
 
 void NeuropixEditor::comboBoxChanged (ComboBox* comboBox)
@@ -794,8 +794,7 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
 
 Visualizer* NeuropixEditor::createNewCanvas (void)
 {
-    GenericProcessor* processor = (GenericProcessor*) getProcessor();
-    canvas = new NeuropixCanvas (processor, this, thread);
+    canvas = new NeuropixCanvas (this, thread);
 
     if (acquisitionIsActive)
     {

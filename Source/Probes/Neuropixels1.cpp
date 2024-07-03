@@ -419,21 +419,21 @@ void Neuropixels1::run()
 
                     for (int j = 0; j < 384; j++)
                     {
-                        apSamples[j * (12 * count) + i + (packetNum * 12)] =
+                        apSamples[j + i * SKIP + packetNum * 12 * SKIP] =
                             float (packet[packetNum].apData[i][j]) * 1.2f / 1024.0f * 1000000.0f
                                 / settings.availableApGains[settings.apGainIndex]
                             - ap_offsets[j][0]; // convert to microvolts
 
-                        apView->addSample (apSamples[j * (12 * count) + i + (packetNum * 12)], j);
+                        apView->addSample (apSamples[j + i * SKIP + packetNum * 12 * SKIP], j);
 
                         if (i == 0)
                         {
-                            lfpSamples[(j * count) + packetNum] =
+                            lfpSamples[j + packetNum * SKIP] =
                                 float (packet[packetNum].lfpData[j]) * 1.2f / 1024.0f * 1000000.0f
                                     / settings.availableLfpGains[settings.lfpGainIndex]
                                 - lfp_offsets[j][0]; // convert to microvolts
 
-                            lfpView->addSample (lfpSamples[(j * count) + packetNum], j);
+                            lfpView->addSample (lfpSamples[j + packetNum * SKIP], j);
                         }
                     }
 
@@ -441,14 +441,14 @@ void Neuropixels1::run()
                     event_codes[i + packetNum * 12] = eventCode;
 
                     if (sendSync)
-                        apSamples[384 * (12 * count) + i + (packetNum * 12)] = (float) eventCode;
+                        apSamples[384 + i * SKIP + packetNum * 12 * SKIP] = (float) eventCode;
                 }
 
                 lfp_timestamps[packetNum] = lfp_timestamp++;
                 lfp_event_codes[packetNum] = eventCode;
 
                 if (sendSync)
-                    lfpSamples[(384 * count) + packetNum] = (float) eventCode;
+                    lfpSamples[384 + packetNum * SKIP] = (float) eventCode;
             }
 
             apBuffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, 12 * count);

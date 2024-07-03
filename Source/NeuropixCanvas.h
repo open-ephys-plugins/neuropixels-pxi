@@ -84,7 +84,7 @@ class NeuropixCanvas : public Visualizer
 {
 public:
     /** Constructor */
-    NeuropixCanvas (GenericProcessor*, NeuropixEditor*, NeuropixThread*);
+    NeuropixCanvas (NeuropixEditor*, NeuropixThread*);
 
     /** Destructor */
     ~NeuropixCanvas();
@@ -106,7 +106,7 @@ public:
 
     /** Called when the Visualizer is first created, and optionally when
 		the parameters of the underlying processor are changed */
-    void updateSettings() override;
+    void update();
 
     /** Sets which interface is active */
     void setSelectedInterface (DataSource* d);

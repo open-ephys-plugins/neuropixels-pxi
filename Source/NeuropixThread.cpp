@@ -463,7 +463,7 @@ void NeuropixThread::applyProbeSettingsQueue()
 
         // Show alert window on the message thread asynchronously
         MessageManager::callAsync ([this, message]
-                                   { auto* alertWindow = new AlertWindow ("Calibration files not found", message, MessageBoxIconType::WarningIcon, sn->getEditor()->getTopLevelComponent());
+                                   { auto* alertWindow = new AlertWindow ("Calibration files not found", message, AlertWindow::WarningIcon, sn->getEditor()->getTopLevelComponent());
                                    alertWindow->addButton ("OK", 1, KeyPress (KeyPress::returnKey), KeyPress (KeyPress::escapeKey));
                                    alertWindow->enterModalState (true, nullptr, true); });
 
@@ -479,10 +479,6 @@ void NeuropixThread::initialize (bool signalChainIsLoading)
     editor->initialize (signalChainIsLoading);
 }
 
-bool NeuropixThread::isReady()
-{
-    return initializationComplete && configurationComplete;
-}
 
 void NeuropixThread::initializeBasestations (bool signalChainIsLoading)
 {
@@ -586,7 +582,7 @@ String NeuropixThread::getProbeInfoString()
     output.setProperty (Identifier ("probes"), probes);
 
     MemoryOutputStream f;
-    output.writeAsJSON (f, JSON::FormatOptions {}.withIndentLevel (0).withSpacing (JSON::Spacing::singleLine).withMaxDecimalPlaces (4));
+    output.writeAsJSON (f, 0, true, 4);
 
     return f.toString();
 }
@@ -1215,7 +1211,7 @@ void NeuropixThread::setAutoRestart (bool restart)
     autoRestart = restart;
 }
 
-void NeuropixThread::handleBroadcastMessage (const String& msg, const int64 messageTimeMillis)
+void NeuropixThread::handleBroadcastMessage (String msg)
 {
     // Available commands:
     //
@@ -1293,7 +1289,7 @@ void NeuropixThread::handleBroadcastMessage (const String& msg, const int64 mess
     }
 }
 
-String NeuropixThread::handleConfigMessage (const String& msg)
+String NeuropixThread::handleConfigMessage (String msg)
 {
     // Available commands:
     // NP SELECT <bs> <port> <dock> <electrode> <electrode> <electrode> ...

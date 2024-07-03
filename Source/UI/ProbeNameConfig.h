@@ -118,8 +118,6 @@ public:
     void showNextScheme();
     void showPrevScheme();
 
-    void paint (Graphics& g) override;
-
     std::vector<std::unique_ptr<ProbeNameEditor>> probeNames;
 
     /** Checks whether a requested name is unique, and if not appends a string */
