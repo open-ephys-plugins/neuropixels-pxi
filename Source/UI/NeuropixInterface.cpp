@@ -614,8 +614,6 @@ void NeuropixInterface::updateProbeSettingsInBackground()
 
     probe->updateSettings (settings);
 
-    int ch0index = settings.selectedChannel.indexOf (0);
-
     thread->updateProbeSettingsQueue (settings);
 
     LOGC ("NeuropixInterface requesting thread start");
@@ -1686,12 +1684,16 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
 
             String chString = String (bank);
 
-            if (probe->type == ProbeType::NP2_4 || probe->type == ProbeType::QUAD_BASE)
+            if (probe->type == ProbeType::NP2_4)
                 chString += ":" + String (shank);
 
-            channelNode->setAttribute ("CH" + String (channel), chString);
-            xposNode->setAttribute ("CH" + String (channel), String (probe->electrodeMetadata[elec].xpos + 250 * shank));
-            yposNode->setAttribute ("CH" + String (channel), String (probe->electrodeMetadata[elec].ypos));
+            String chId = "CH" + String (channel);
+            if (probe->type == ProbeType::QUAD_BASE)
+				chId += ":" + String (shank);
+
+            channelNode->setAttribute (chId, chString);
+            xposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].xpos + 250 * shank));
+            yposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].ypos));
         }
 
         if (probe->emissionSiteMetadata.size() > 0)
@@ -1763,13 +1765,30 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
         settings.availableBanks = probe->settings.availableBanks;
         settings.availableReferences = probe->settings.availableReferences;
 
-        for (int i = 0; i < probe->channel_count; i++)
+        if (probe->type != ProbeType::QUAD_BASE)
         {
-            settings.selectedBank.add (Bank::A);
-            settings.selectedChannel.add (probe->electrodeMetadata[i].channel);
-            settings.selectedShank.add (0);
-            settings.selectedElectrode.add (probe->electrodeMetadata[i].global_index);
+            for (int i = 0; i < probe->channel_count; i++)
+            {
+                settings.selectedBank.add (Bank::A);
+                settings.selectedChannel.add (probe->electrodeMetadata[i].channel);
+                settings.selectedShank.add (0);
+                settings.selectedElectrode.add (probe->electrodeMetadata[i].global_index);
+            }
         }
+        else
+        {
+            for (int shank = 0; shank < 4; shank++)
+            {
+                for (int i = 0; i < 384; i++)
+                {
+                    settings.selectedBank.add (Bank::A);
+                    settings.selectedChannel.add (i);
+                    settings.selectedShank.add (shank);
+                    settings.selectedElectrode.add (i + shank * 1280);
+                }
+            }
+        }
+        
 
         XmlElement* matchingNode = nullptr;
 
@@ -1847,33 +1866,63 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
 
                 XmlElement* status = matchingNode->getChildByName ("CHANNELS");
 
-                for (int i = 0; i < probe->channel_count; i++)
+                if (probe->type != ProbeType::QUAD_BASE)
                 {
-                    settings.selectedChannel.add (i);
-
-                    String bankInfo = status->getStringAttribute ("CH" + String (i));
-                    Bank bank = static_cast<Bank> (bankInfo.substring (0, 1).getIntValue());
-                    int shank = 0;
-
-                    if (probe->type == ProbeType::NP2_4)
+                    for (int i = 0; i < probe->channel_count; i++)
                     {
-                        shank = bankInfo.substring (2, 3).getIntValue();
-                    }
+                        settings.selectedChannel.add (i);
 
-                    settings.selectedBank.add (bank);
-                    settings.selectedShank.add (shank);
+                        String bankInfo = status->getStringAttribute ("CH" + String (i));
+                        Bank bank = static_cast<Bank> (bankInfo.substring (0, 1).getIntValue());
+                        int shank = 0;
 
-                    for (int j = 0; j < electrodeMetadata.size(); j++)
-                    {
-                        if (electrodeMetadata[j].channel == i)
+                        if (probe->type == ProbeType::NP2_4)
                         {
-                            if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
+                            shank = bankInfo.substring (2, 3).getIntValue();
+                        }
+
+                        settings.selectedBank.add (bank);
+                        settings.selectedShank.add (shank);
+
+                        for (int j = 0; j < electrodeMetadata.size(); j++)
+                        {
+                            if (electrodeMetadata[j].channel == i)
                             {
-                                settings.selectedElectrode.add (j);
+                                if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
+                                {
+                                    settings.selectedElectrode.add (j);
+                                }
                             }
                         }
                     }
                 }
+                else
+                {
+                    for (int i = 0; i < 384; i++)
+                    {
+
+                        for (int shank = 0; shank < 4; shank++)
+                        {
+                            settings.selectedChannel.add (i);
+
+                            String bankInfo = status->getStringAttribute ("CH" + String (i) + ":" + String(shank));
+                            Bank bank = static_cast<Bank> (bankInfo.substring (0, 1).getIntValue());
+
+                            settings.selectedBank.add (bank);
+                            settings.selectedShank.add (shank);
+
+                            for (int j = 0; j < electrodeMetadata.size(); j++)
+                            {
+                                if (electrodeMetadata[j].channel == i && electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
+                                {
+                                    settings.selectedElectrode.add (j);
+                                }
+                            }
+                        }
+                        
+                    }
+                }
+                
             }
 
             probeBrowser->setZoomHeightAndOffset (matchingNode->getIntAttribute ("ZoomHeight"),

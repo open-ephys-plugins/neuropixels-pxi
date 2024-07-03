@@ -67,18 +67,18 @@ Neuropixels_QuadBase::Neuropixels_QuadBase (Basestation* bs, Headstage* hs, Flex
         settings.referenceIndex = 0;
         settings.apFilterState = false;
 
-        channel_count = 384;
+        channel_count = 384 * 4;
         lfp_sample_rate = 2500.0f; // not used
         ap_sample_rate = 30000.0f;
 
         for (int shank = 0; shank < 4; shank++)
         {
-            for (int i = 0; i < channel_count; i++)
+            for (int i = 0; i < 384; i++)
             {
                 settings.selectedBank.add (Bank::A);
-                settings.selectedChannel.add (electrodeMetadata[i].channel);
+                settings.selectedChannel.add (i);
                 settings.selectedShank.add (shank);
-                settings.selectedElectrode.add (electrodeMetadata[i].global_index);
+                settings.selectedElectrode.add (i + shank * 1280);
             }
         }
 
@@ -111,7 +111,7 @@ bool Neuropixels_QuadBase::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = new ActivityView (channel_count, 3000);
+    apView = new ActivityView (384, 3000);
 
     return errorCode == Neuropixels::SUCCESS;
 }
@@ -304,7 +304,7 @@ void Neuropixels_QuadBase::setAllReferences()
 
     for (int shank = 0; shank < 4; shank++)
     {
-        for (int channel = 0; channel < channel_count; channel++)
+        for (int channel = 0; channel < 384; channel++)
             Neuropixels::setReference (basestation->slot,
                                        headstage->port,
                                        dock,
@@ -404,7 +404,7 @@ void AcquisitionThread::run()
 
     while (! threadShouldExit())
     {
-        int channel_count = 384;
+        int shank_channel_count = 384;
 
         int count = MAXPACKETS;
 
@@ -415,7 +415,7 @@ void AcquisitionThread::run()
             stream_source,
             &packetInfo[0],
             &data[0],
-            channel_count,
+            shank_channel_count,
             count,
             &count);
 
@@ -446,10 +446,10 @@ void AcquisitionThread::run()
 
                 last_npx_timestamp = npx_timestamp;
 
-                for (int j = 0; j < channel_count; j++)
+                for (int j = 0; j < shank_channel_count; j++)
                 {
                     apSamples[packetNum + count * j] =
-                        float (data[packetNum * channel_count + j]) / 4096.0f / 100.0f * 1000000.0f; // convert to microvolts
+                        float (data[packetNum * shank_channel_count + j]) / 4096.0f / 100.0f * 1000000.0f; // convert to microvolts
 
                     //probe->apView->addSample(apSamples[j + packetNum * SKIP], j);
                 }
