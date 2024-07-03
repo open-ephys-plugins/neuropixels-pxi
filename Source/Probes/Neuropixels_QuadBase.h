@@ -31,12 +31,14 @@
 class AcquisitionThread : public Thread
 {
 public:
+
     AcquisitionThread (int slot,
                        int port,
                        int dock,
                        int shank,
                        DataBuffer* buffer,
-                       Probe* probe);
+                       Probe* probe,
+                       ActivityView* apView);
 
     /** Acquires data from the probe */
     void run() override; // acquire data
@@ -77,6 +79,7 @@ private:
     DataBuffer* buffer;
     Probe* probe;
     bool invertSyncLine = false;
+    ActivityView* apView;
 };
 
 /**
@@ -88,6 +91,7 @@ private:
 class Neuropixels_QuadBase : public Probe
 {
 public:
+
     /** Constructor */
     Neuropixels_QuadBase (Basestation*,
                           Headstage*,

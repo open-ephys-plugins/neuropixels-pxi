@@ -111,7 +111,7 @@ bool Neuropixels_QuadBase::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = new ActivityView (384, 3000);
+    apView = new ActivityView (384 * 4, 3000);
 
     return errorCode == Neuropixels::SUCCESS;
 }
@@ -324,6 +324,9 @@ void Neuropixels_QuadBase::writeConfiguration()
 
 void Neuropixels_QuadBase::startAcquisition()
 {
+    
+    apView->reset();
+
     if (acquisitionThreads.size() == 0)
     {
         for (int shank = 0; shank < 4; shank++)
@@ -336,11 +339,10 @@ void Neuropixels_QuadBase::startAcquisition()
                                        dock,
                                        shank,
                                        quadBaseBuffers[shank],
-                                       this));
+                                       this,
+                                       apView));
         }
     }
-
-    apView->reset();
 
     for (int shank = 0; shank < 4; shank++)
     {
@@ -366,13 +368,15 @@ AcquisitionThread::AcquisitionThread (
     int dock_,
     int shank_,
     DataBuffer* buffer_,
-    Probe* probe_) : Thread ("AcquisitionThread" + String (shank)),
+    Probe* probe_,
+    ActivityView* apView_) : Thread ("AcquisitionThread" + String (shank)),
                      slot (slot_),
                      port (port_),
                      dock (dock_),
                      shank (shank_),
                      buffer (buffer_),
                      probe (probe_),
+                     apView(apView_),
                      ap_sample_rate (30000.0f),
                      ap_timestamp (0),
                      last_npx_timestamp (0),
@@ -392,7 +396,6 @@ AcquisitionThread::AcquisitionThread (
 
 void AcquisitionThread::run()
 {
-    //apView->reset();
 
     ap_timestamp = 0;
     last_npx_timestamp = 0;
@@ -451,7 +454,7 @@ void AcquisitionThread::run()
                     apSamples[packetNum + count * j] =
                         float (data[packetNum * shank_channel_count + j]) / 4096.0f / 100.0f * 1000000.0f; // convert to microvolts
 
-                    //probe->apView->addSample(apSamples[j + packetNum * SKIP], j);
+                    apView->addSample (apSamples[packetNum + count * j], j + shank * 384);
                 }
 
                 if (sendSync)

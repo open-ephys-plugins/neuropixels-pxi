@@ -28,7 +28,20 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
     cursorType = MouseCursor::NormalCursor;
 
     activityToView = ActivityToView::APVIEW;
-    maxPeakToPeakAmplitude = 250.0f;
+
+    ProbeType probeType = parent->probe->type;
+
+    if (probeType == ProbeType::QUAD_BASE ||
+        probeType == ProbeType::NP2_1 ||
+        probeType == ProbeType::NP2_4)
+    {
+        maxPeakToPeakAmplitude = 1000.0f;
+    }
+    else
+    {
+        maxPeakToPeakAmplitude = 250.0f;
+    }
+
 
     isOverZoomRegion = false;
     isOverUpperBorder = false;
@@ -1015,6 +1028,9 @@ void ProbeBrowser::timerCallback()
         if (parent->electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
         {
             int channelNumber = parent->electrodeMetadata[i].channel;
+            
+            if (parent->probe->type == ProbeType::QUAD_BASE)
+                channelNumber += parent->electrodeMetadata[i].shank * 384;
 
             parent->electrodeMetadata.getReference (i).colour =
                 ColourScheme::getColourForNormalizedValue (peakToPeakValues[channelNumber] / maxPeakToPeakAmplitude);
