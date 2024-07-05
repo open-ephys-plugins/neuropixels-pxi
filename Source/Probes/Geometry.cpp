@@ -7069,7 +7069,7 @@ void Geometry::QuadBase (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.rows_per_shank = 1280 / 2;
     probeMetadata.columns_per_shank = 2;
     probeMetadata.shankOutline = path;
-    probeMetadata.num_adcs = 96;
+    probeMetadata.num_adcs = 24;
     probeMetadata.adc_bits = 12;
 
     probeMetadata.availableBanks = {
