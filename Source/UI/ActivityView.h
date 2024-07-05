@@ -41,14 +41,37 @@ Helper class for viewing real-time activity across the probe.
 class ActivityView
 {
 public:
-    ActivityView (int numChannels, int updateInterval_)
+    ActivityView (int numChannels, int updateInterval_, Array<Array<int>> blocks_ = Array<Array<int>>())
     {
-        for (int i = 0; i < numChannels; i++)
-            peakToPeakValues.add (0);
 
+        if (blocks_.size() == 0)
+        {
+            Array<int> block;
+
+            for (int i = 0; i < numChannels; i++)
+            {
+				block.add (i);
+			}
+            blocks.add (block);
+        }
+        else
+        {
+        	blocks = blocks_;
+        }
+        
         updateInterval = updateInterval_;
 
-        reset();
+        for (int i = 0; i < numChannels; i++)
+        {
+            minChannelValues.add (999999.9f);
+			maxChannelValues.add (-999999.9f);
+            peakToPeakValues.add (0);
+        }
+
+        for (int i = 0; i < blocks.size(); i++)
+        {
+            counters.add (0);
+		}
     }
 
     const float* getPeakToPeakValues()
@@ -56,17 +79,17 @@ public:
         return peakToPeakValues.getRawDataPointer();
     }
 
-    void addSample (float sample, int channel)
+    void addSample (float sample, int channel, int block=0)
     {
-        if (channel == 0)
+        if (channel == blocks[block][0])
         {
-            if (counter == updateInterval)
-                reset();
+            if (counters[block] == updateInterval)
+                reset(block);
 
-            counter++;
+            counters.set (block, counters[block] + 1);
         }
 
-        if (counter % 10 == 0)
+        if (counters[block] % 10 == 0)
         {
             if (sample < minChannelValues[channel])
             {
@@ -81,17 +104,19 @@ public:
         }
     }
 
-    void reset()
+    void reset(int blockIndex = 0)
     {
-        for (int i = 0; i < peakToPeakValues.size(); i++)
-        {
-            peakToPeakValues.set (i, maxChannelValues[i] - minChannelValues[i]);
 
-            minChannelValues.set (i, 999999.9f);
-            maxChannelValues.set (i, -999999.9f);
+        for (auto ch : blocks[blockIndex])
+        {
+            peakToPeakValues.set (ch, maxChannelValues[ch] - minChannelValues[ch]);
+            minChannelValues.set (ch, 999999.9f);
+            maxChannelValues.set (ch, -999999.9f);
         }
 
-        counter = 0;
+        counters.set (blockIndex, 0);
+
+        
     }
 
 private:
@@ -99,7 +124,8 @@ private:
     Array<float, CriticalSection> maxChannelValues;
     Array<float, CriticalSection> peakToPeakValues;
 
-    int counter;
+    Array<Array<int>> blocks;
+    Array<int> counters;
     int updateInterval;
 };
 

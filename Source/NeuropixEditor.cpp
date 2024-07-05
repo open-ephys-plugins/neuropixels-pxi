@@ -101,8 +101,6 @@ void EditorBackground::paint (Graphics& g)
             g.setFont (10);
             g.drawText ("SLOT", 90 * i + 72, 15, 50, 12, Justification::centredLeft);
 
-            //g.setFont(26);
-            //g.drawText(String(basestations[i]->slot), 90 * i + 72, 28, 25, 26, Justification::centredLeft);
             g.setFont (8);
             g.drawText (String ("0"), 90 * i + 87, 100, 50, 10, Justification::centredLeft);
             g.drawText (String ("100"), 90 * i + 87, 60, 50, 10, Justification::centredLeft);

@@ -111,7 +111,20 @@ bool Neuropixels_QuadBase::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = new ActivityView (384 * 4, 3000);
+    Array<Array<int>> blocks;
+
+    for (int shank = 0; shank < 4; shank++)
+    {
+
+        blocks.add (Array<int>());
+
+        for (int i = 0; i < 384; i++)
+        {
+            blocks.getReference(shank).add (i + 384 * shank);
+        }
+    }
+
+    apView = new ActivityView (384 * 4, 3000, blocks);
 
     return errorCode == Neuropixels::SUCCESS;
 }
@@ -325,12 +338,15 @@ void Neuropixels_QuadBase::writeConfiguration()
 void Neuropixels_QuadBase::startAcquisition()
 {
     
-    apView->reset();
+    
 
     if (acquisitionThreads.size() == 0)
     {
         for (int shank = 0; shank < 4; shank++)
         {
+
+            apView->reset(shank);
+
             quadBaseBuffers[shank]->clear();
 
             acquisitionThreads.add (
@@ -454,7 +470,7 @@ void AcquisitionThread::run()
                     apSamples[j + packetNum * SKIP] =
                         float (data[packetNum * shank_channel_count + j]) / 4096.0f / 100.0f * 1000000.0f; // convert to microvolts
 
-                    apView->addSample (apSamples[j + packetNum * SKIP], j + shank * 384);
+                    apView->addSample (apSamples[j + packetNum * SKIP], j + shank * 384, shank);
                 }
 
                 if (sendSync)
