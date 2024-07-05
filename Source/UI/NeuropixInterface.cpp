@@ -1477,7 +1477,7 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
 
         probe->settings.clearElectrodeSelection();
 
-        for (auto electrode : electrodeMetadata)
+        for (auto const electrode : electrodeMetadata)
         {
             if (electrode.status == ElectrodeStatus::CONNECTED)
             {
@@ -1563,7 +1563,7 @@ ProbeSettings NeuropixInterface::getProbeSettings()
 
     if (p.probeType != ProbeType::UHD2)
     {
-        for (auto electrode : electrodeMetadata)
+        for (auto const electrode : electrodeMetadata)
         {
             if (electrode.status == ElectrodeStatus::CONNECTED)
             {

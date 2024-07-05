@@ -97,25 +97,25 @@ WavePlayer::WavePlayer (OneBoxDAC* dac_)
     patternSelector->setEditableText (true);
     addAndMakeVisible (patternSelector);
 
-    startStopButton = new UtilityButton ("RUN", Font ("Small Text", 15, Font::plain));
+    startStopButton = new UtilityButton ("RUN", FontOptions ("Small Text", 15, Font::plain));
     startStopButton->setBounds (30, 85, 55, 30);
     startStopButton->addListener (this);
     addAndMakeVisible (startStopButton);
 
-    pulsePatternButton = new UtilityButton ("Pulse", Font ("Small Text", 10, Font::plain));
+    pulsePatternButton = new UtilityButton ("Pulse", FontOptions ("Small Text", 10, Font::plain));
     pulsePatternButton->setCorners (true, false, true, false);
     pulsePatternButton->setBounds (140, 40, 50, 20);
     pulsePatternButton->addListener (this);
     pulsePatternButton->setToggleState (true, false);
     addAndMakeVisible (pulsePatternButton);
 
-    sinePatternButton = new UtilityButton ("Sine", Font ("Small Text", 10, Font::plain));
+    sinePatternButton = new UtilityButton ("Sine", FontOptions ("Small Text", 10, Font::plain));
     sinePatternButton->setCorners (false, false, false, false);
     sinePatternButton->setBounds (190, 40, 50, 20);
     sinePatternButton->addListener (this);
     addAndMakeVisible (sinePatternButton);
 
-    customPatternButton = new UtilityButton ("Custom", Font ("Small Text", 10, Font::plain));
+    customPatternButton = new UtilityButton ("Custom", FontOptions ("Small Text", 10, Font::plain));
     customPatternButton->setCorners (false, true, false, true);
     customPatternButton->setBounds (240, 40, 60, 20);
     customPatternButton->addListener (this);

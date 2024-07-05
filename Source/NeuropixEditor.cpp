@@ -101,8 +101,6 @@ void EditorBackground::paint (Graphics& g)
             g.setFont (10);
             g.drawText ("SLOT", 90 * i + 72, 15, 50, 12, Justification::centredLeft);
 
-            //g.setFont(26);
-            //g.drawText(String(basestations[i]->slot), 90 * i + 72, 28, 25, 26, Justification::centredLeft);
             g.setFont (8);
             g.drawText (String ("0"), 90 * i + 87, 100, 50, 10, Justification::centredLeft);
             g.drawText (String ("100"), 90 * i + 87, 60, 50, 10, Justification::centredLeft);
@@ -444,7 +442,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
         int x_pos = i * 90 + 70;
         int y_pos = 50;
 
-        UtilityButton* b = new UtilityButton ("", Font ("Small Text", 13, Font::plain));
+        UtilityButton* b = new UtilityButton ("", FontOptions ("Small Text", 13, Font::plain));
         b->setBounds (x_pos, y_pos, 30, 20);
         b->addListener (this);
         //addAndMakeVisible(b);
@@ -501,7 +499,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     background->toBack();
     background->repaint();
 
-    addSyncChannelButton = std::make_unique<UtilityButton> ("+", Font ("Small Text", 13, Font::plain));
+    addSyncChannelButton = std::make_unique<UtilityButton> ("+", FontOptions ("Small Text", 13, Font::plain));
     addSyncChannelButton->setBounds (90 * basestations.size() + 78, 40, 20, 20);
     addSyncChannelButton->addListener (this);
     addSyncChannelButton->setTooltip ("Add sync channel to the continuous data stream.");
