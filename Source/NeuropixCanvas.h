@@ -148,7 +148,7 @@ public:
     NeuropixThread* thread;
 
 private:
-    ScopedPointer<CustomTabComponent> topLevelTabComponent;
+    std::unique_ptr<CustomTabComponent> topLevelTabComponent;
     Array<CustomTabComponent*> basestationTabs;
 
     Array<int> topLevelTabIndex;

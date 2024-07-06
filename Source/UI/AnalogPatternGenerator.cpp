@@ -49,27 +49,27 @@ EditableTextInput<T>::EditableTextInput (String mainlabelText,
                                                                          maxValue (maxValue_),
                                                                          apg (apg_)
 {
-    mainLabel = new Label ("Main Label", mainlabelText);
+    mainLabel = std::make_unique<Label> ("Main Label", mainlabelText);
     mainLabel->setFont (Font ("Small Text", 12, Font::plain));
     mainLabel->setBounds (0, 0, 100, 20);
     mainLabel->setColour (Label::textColourId, Colours::white);
     mainLabel->setJustificationType (Justification::centredRight);
-    addAndMakeVisible (mainLabel);
+    addAndMakeVisible (mainLabel.get());
 
-    unitsLabel = new Label ("Units Label", unitsLabelText);
+    unitsLabel = std::make_unique<Label> ("Units Label", unitsLabelText);
     unitsLabel->setFont (Font ("Small Text", 12, Font::plain));
     unitsLabel->setBounds (150, 0, 30, 20);
     unitsLabel->setColour (Label::textColourId, Colours::white);
-    addAndMakeVisible (unitsLabel);
+    addAndMakeVisible (unitsLabel.get());
 
-    inputBox = new Label ("Input Box", String (defaultValue));
+    inputBox = std::make_unique<Label> ("Input Box", String (defaultValue));
     inputBox->setFont (Font ("Small Text", 12, Font::plain));
     inputBox->setBounds (100, 0, 50, 20);
     inputBox->setColour (Label::backgroundColourId, Colours::lightgrey);
     inputBox->setColour (Label::textColourId, Colours::darkgrey);
     inputBox->addListener (this);
     inputBox->setEditable (true);
-    addAndMakeVisible (inputBox);
+    addAndMakeVisible (inputBox.get());
 
     lastValue = defaultValue;
 }
@@ -160,7 +160,7 @@ PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_
 {
     setSize (190, 190);
 
-    onDuration = new EditableTextInput<int> ("On duration:",
+    onDuration = std::make_unique<EditableTextInput<int>> ("On duration:",
                                              "ms",
                                              0,
                                              10000,
@@ -168,9 +168,9 @@ PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_
                                              this);
 
     onDuration->setBounds (10, 10, 180, 20);
-    addAndMakeVisible (onDuration);
+    addAndMakeVisible (onDuration.get());
 
-    offDuration = new EditableTextInput<int> ("Off duration:",
+    offDuration = std::make_unique<EditableTextInput<int>> ("Off duration:",
                                               "ms",
                                               0,
                                               10000,
@@ -178,9 +178,9 @@ PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_
                                               this);
 
     offDuration->setBounds (10, 35, 180, 20);
-    addAndMakeVisible (offDuration);
+    addAndMakeVisible (offDuration.get());
 
-    delayDuration = new EditableTextInput<int> ("Delay:",
+    delayDuration = std::make_unique<EditableTextInput<int>> ("Delay:",
                                                 "ms",
                                                 0,
                                                 10000,
@@ -188,9 +188,9 @@ PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_
                                                 this);
 
     delayDuration->setBounds (10, 60, 180, 20);
-    addAndMakeVisible (delayDuration);
+    addAndMakeVisible (delayDuration.get());
 
-    repeatNumber = new EditableTextInput<int> ("Num repeats:",
+    repeatNumber = std::make_unique<EditableTextInput<int>> ("Num repeats:",
                                                "x",
                                                0,
                                                100,
@@ -198,9 +198,9 @@ PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_
                                                this);
 
     repeatNumber->setBounds (10, 85, 180, 20);
-    addAndMakeVisible (repeatNumber);
+    addAndMakeVisible (repeatNumber.get());
 
-    rampOnDuration = new EditableTextInput<int> ("Ramp on:",
+    rampOnDuration = std::make_unique<EditableTextInput<int>> ("Ramp on:",
                                                  "ms",
                                                  0,
                                                  100,
@@ -208,9 +208,9 @@ PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_
                                                  this);
 
     rampOnDuration->setBounds (10, 110, 180, 20);
-    addAndMakeVisible (rampOnDuration);
+    addAndMakeVisible (rampOnDuration.get());
 
-    rampOffDuration = new EditableTextInput<int> ("Ramp off:",
+    rampOffDuration = std::make_unique<EditableTextInput<int>> ("Ramp off:",
                                                   "ms",
                                                   0,
                                                   100,
@@ -218,9 +218,9 @@ PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_
                                                   this);
 
     rampOffDuration->setBounds (10, 135, 180, 20);
-    addAndMakeVisible (rampOffDuration);
+    addAndMakeVisible (rampOffDuration.get());
 
-    maxVoltage = new EditableTextInput<float> ("Max voltage:",
+    maxVoltage = std::make_unique<EditableTextInput<float>> ("Max voltage:",
                                                "V",
                                                0.0f,
                                                5.0f,
@@ -228,7 +228,7 @@ PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_
                                                this);
 
     maxVoltage->setBounds (10, 160, 180, 20);
-    addAndMakeVisible (maxVoltage);
+    addAndMakeVisible (maxVoltage.get());
 
     setState (pattern);
 }
@@ -328,7 +328,7 @@ SinePatternGenerator::SinePatternGenerator (WavePlayer* wv_, Pattern* pattern_) 
 {
     setSize (190, 120);
 
-    frequency = new EditableTextInput<int> ("Frequency:",
+    frequency = std::make_unique<EditableTextInput<int>> ("Frequency:",
                                             "Hz",
                                             1,
                                             1000,
@@ -336,9 +336,9 @@ SinePatternGenerator::SinePatternGenerator (WavePlayer* wv_, Pattern* pattern_) 
                                             this);
 
     frequency->setBounds (10, 10, 180, 20);
-    addAndMakeVisible (frequency);
+    addAndMakeVisible (frequency.get());
 
-    cycles = new EditableTextInput<int> ("Num cycles:",
+    cycles = std::make_unique<EditableTextInput<int>> ("Num cycles:",
                                          "",
                                          1,
                                          10000,
@@ -346,9 +346,9 @@ SinePatternGenerator::SinePatternGenerator (WavePlayer* wv_, Pattern* pattern_) 
                                          this);
 
     cycles->setBounds (10, 35, 180, 20);
-    addAndMakeVisible (cycles);
+    addAndMakeVisible (cycles.get());
 
-    delay = new EditableTextInput<int> ("Delay:",
+    delay = std::make_unique<EditableTextInput<int>> ("Delay:",
                                         "ms",
                                         0,
                                         10000,
@@ -356,9 +356,9 @@ SinePatternGenerator::SinePatternGenerator (WavePlayer* wv_, Pattern* pattern_) 
                                         this);
 
     delay->setBounds (10, 60, 180, 20);
-    addAndMakeVisible (delay);
+    addAndMakeVisible (delay.get());
 
-    maxVoltage = new EditableTextInput<float> ("Max voltage:",
+    maxVoltage = std::make_unique<EditableTextInput<float>> ("Max voltage:",
                                                "V",
                                                0.0f,
                                                5.0f,
@@ -366,7 +366,7 @@ SinePatternGenerator::SinePatternGenerator (WavePlayer* wv_, Pattern* pattern_) 
                                                this);
 
     maxVoltage->setBounds (10, 85, 180, 20);
-    addAndMakeVisible (maxVoltage);
+    addAndMakeVisible (maxVoltage.get());
 
     setState (pattern);
 }
@@ -434,20 +434,20 @@ CustomPatternGenerator::CustomPatternGenerator (WavePlayer* wv_, Pattern* patter
     TextEditor::LengthAndCharacterRestriction* inputFilter =
         new TextEditor::LengthAndCharacterRestriction (-1, "-0123456789,. ");
 
-    mainLabel = new Label ("Main Label", "Enter voltage values separated by commas:");
+    mainLabel = std::make_unique<Label> ("Main Label", "Enter voltage values separated by commas:");
     mainLabel->setBounds (10, 2, 260, 20);
     mainLabel->setColour (Label::textColourId, Colours::grey);
     mainLabel->setJustificationType (Justification::centredLeft);
-    addAndMakeVisible (mainLabel);
+    addAndMakeVisible (mainLabel.get());
 
-    textEditor = new TextEditor();
+    textEditor = std::make_unique<TextEditor>();
     textEditor->setBounds (10, 25, 260, 215);
     textEditor->addListener (this);
     textEditor->setMultiLine (true);
     textEditor->setColour (TextEditor::ColourIds::textColourId, Colours::white);
     textEditor->setColour (TextEditor::ColourIds::backgroundColourId, Colours::darkgrey);
     textEditor->setInputFilter (inputFilter, true);
-    addAndMakeVisible (textEditor);
+    addAndMakeVisible (textEditor.get());
 
     setState (pattern);
 }

@@ -60,39 +60,39 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         mode = VisualizationMode::ENABLE_VIEW;
 
-        probeBrowser = new ProbeBrowser (this);
+        probeBrowser = std::make_unique<ProbeBrowser> (this);
         probeBrowser->setBounds (0, 0, 800, 600);
-        addAndMakeVisible (probeBrowser);
+        addAndMakeVisible (probeBrowser.get());
 
         int currentHeight = 55;
 
-        electrodesLabel = new Label ("ELECTRODES", "ELECTRODES");
+        electrodesLabel = std::make_unique<Label> ("ELECTRODES", "ELECTRODES");
         electrodesLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
         electrodesLabel->setBounds (446, currentHeight - 20, 100, 20);
-        addAndMakeVisible (electrodesLabel);
+        addAndMakeVisible (electrodesLabel.get());
 
-        enableViewButton = new UtilityButton ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+        enableViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
         enableViewButton->setRadius (3.0f);
         enableViewButton->setBounds (530, currentHeight + 2, 45, 18);
         enableViewButton->addListener (this);
         enableViewButton->setTooltip ("View electrode enabled state");
-        addAndMakeVisible (enableViewButton);
+        addAndMakeVisible (enableViewButton.get());
 
-        enableButton = new UtilityButton ("ENABLE", FontOptions ("Inter", "Regular", 13.0f));
+        enableButton = std::make_unique<UtilityButton> ("ENABLE", FontOptions ("Inter", "Regular", 13.0f));
         enableButton->setRadius (3.0f);
         enableButton->setBounds (450, currentHeight, 65, 22);
         enableButton->addListener (this);
         enableButton->setTooltip ("Enable selected electrodes");
-        addAndMakeVisible (enableButton);
+        addAndMakeVisible (enableButton.get());
 
         currentHeight += 58;
 
-        electrodePresetLabel = new Label ("ELECTRODE PRESET", "ELECTRODE PRESET");
+        electrodePresetLabel = std::make_unique<Label> ("ELECTRODE PRESET", "ELECTRODE PRESET");
         electrodePresetLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
         electrodePresetLabel->setBounds (446, currentHeight - 20, 150, 20);
-        addAndMakeVisible (electrodePresetLabel);
+        addAndMakeVisible (electrodePresetLabel.get());
 
-        electrodeConfigurationComboBox = new ComboBox ("electrodeConfigurationComboBox");
+        electrodeConfigurationComboBox = std::make_unique<ComboBox> ("electrodeConfigurationComboBox");
         electrodeConfigurationComboBox->setBounds (450, currentHeight, 135, 22);
         electrodeConfigurationComboBox->addListener (this);
         electrodeConfigurationComboBox->setTooltip ("Enable a pre-configured set of electrodes");
@@ -110,13 +110,13 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         electrodeConfigurationComboBox->setSelectedId (1, dontSendNotification);
 
-        addAndMakeVisible (electrodeConfigurationComboBox);
+        addAndMakeVisible (electrodeConfigurationComboBox.get());
 
         currentHeight += 55;
 
         if (probe->settings.availableApGains.size() > 0)
         {
-            apGainComboBox = new ComboBox ("apGainComboBox");
+            apGainComboBox = std::make_unique<ComboBox> ("apGainComboBox");
             apGainComboBox->setBounds (450, currentHeight, 65, 22);
             apGainComboBox->addListener (this);
 
@@ -124,26 +124,26 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
                 apGainComboBox->addItem (String (probe->settings.availableApGains[i]) + "x", i + 1);
 
             apGainComboBox->setSelectedId (probe->settings.apGainIndex + 1, dontSendNotification);
-            addAndMakeVisible (apGainComboBox);
+            addAndMakeVisible (apGainComboBox.get());
 
-            apGainViewButton = new UtilityButton ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+            apGainViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
             apGainViewButton->setRadius (3.0f);
             apGainViewButton->setBounds (530, currentHeight + 2, 45, 18);
             apGainViewButton->addListener (this);
             apGainViewButton->setTooltip ("View AP gain of each channel");
-            addAndMakeVisible (apGainViewButton);
+            addAndMakeVisible (apGainViewButton.get());
 
-            apGainLabel = new Label ("AP GAIN", "AP GAIN");
+            apGainLabel = std::make_unique<Label> ("AP GAIN", "AP GAIN");
             apGainLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
             apGainLabel->setBounds (446, currentHeight - 20, 100, 20);
-            addAndMakeVisible (apGainLabel);
+            addAndMakeVisible (apGainLabel.get());
 
             currentHeight += 55;
         }
 
         if (probe->settings.availableLfpGains.size() > 0)
         {
-            lfpGainComboBox = new ComboBox ("lfpGainComboBox");
+            lfpGainComboBox = std::make_unique<ComboBox> ("lfpGainComboBox");
             lfpGainComboBox->setBounds (450, currentHeight, 65, 22);
             lfpGainComboBox->addListener (this);
 
@@ -151,26 +151,26 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
                 lfpGainComboBox->addItem (String (probe->settings.availableLfpGains[i]) + "x", i + 1);
 
             lfpGainComboBox->setSelectedId (probe->settings.lfpGainIndex + 1, dontSendNotification);
-            addAndMakeVisible (lfpGainComboBox);
+            addAndMakeVisible (lfpGainComboBox.get());
 
-            lfpGainViewButton = new UtilityButton ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+            lfpGainViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
             lfpGainViewButton->setRadius (3.0f);
             lfpGainViewButton->setBounds (530, currentHeight + 2, 45, 18);
             lfpGainViewButton->addListener (this);
             lfpGainViewButton->setTooltip ("View LFP gain of each channel");
-            addAndMakeVisible (lfpGainViewButton);
+            addAndMakeVisible (lfpGainViewButton.get());
 
-            lfpGainLabel = new Label ("LFP GAIN", "LFP GAIN");
+            lfpGainLabel = std::make_unique<Label> ("LFP GAIN", "LFP GAIN");
             lfpGainLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
             lfpGainLabel->setBounds (446, currentHeight - 20, 100, 20);
-            addAndMakeVisible (lfpGainLabel);
+            addAndMakeVisible (lfpGainLabel.get());
 
             currentHeight += 55;
         }
 
         if (probe->settings.availableReferences.size() > 0)
         {
-            referenceComboBox = new ComboBox ("ReferenceComboBox");
+            referenceComboBox = std::make_unique<ComboBox> ("ReferenceComboBox");
             referenceComboBox->setBounds (450, currentHeight, 65, 22);
             referenceComboBox->addListener (this);
 
@@ -180,49 +180,49 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
             }
 
             referenceComboBox->setSelectedId (probe->settings.referenceIndex + 1, dontSendNotification);
-            addAndMakeVisible (referenceComboBox);
+            addAndMakeVisible (referenceComboBox.get());
 
-            referenceViewButton = new UtilityButton ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+            referenceViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
             referenceViewButton->setRadius (3.0f);
             referenceViewButton->setBounds (530, currentHeight + 2, 45, 18);
             referenceViewButton->addListener (this);
             referenceViewButton->setTooltip ("View reference of each channel");
-            addAndMakeVisible (referenceViewButton);
+            addAndMakeVisible (referenceViewButton.get());
 
-            referenceLabel = new Label ("REFERENCE", "REFERENCE");
+            referenceLabel = std::make_unique<Label> ("REFERENCE", "REFERENCE");
             referenceLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
             referenceLabel->setBounds (446, currentHeight - 20, 100, 20);
-            addAndMakeVisible (referenceLabel);
+            addAndMakeVisible (referenceLabel.get());
 
             currentHeight += 55;
         }
 
         if (probe->hasApFilterSwitch())
         {
-            filterComboBox = new ComboBox ("FilterComboBox");
+            filterComboBox = std::make_unique<ComboBox> ("FilterComboBox");
             filterComboBox->setBounds (450, currentHeight, 75, 22);
             filterComboBox->addListener (this);
             filterComboBox->addItem ("ON", 1);
             filterComboBox->addItem ("OFF", 2);
             filterComboBox->setSelectedId (1, dontSendNotification);
-            addAndMakeVisible (filterComboBox);
+            addAndMakeVisible (filterComboBox.get());
 
-            filterLabel = new Label ("FILTER", "AP FILTER CUT");
+            filterLabel = std::make_unique<Label> ("FILTER", "AP FILTER CUT");
             filterLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
             filterLabel->setBounds (446, currentHeight - 20, 200, 20);
-            addAndMakeVisible (filterLabel);
+            addAndMakeVisible (filterLabel.get());
         }
 
         currentHeight += 55;
 
-        activityViewButton = new UtilityButton ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+        activityViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
         activityViewButton->setRadius (3.0f);
 
         activityViewButton->addListener (this);
         activityViewButton->setTooltip ("View peak-to-peak amplitudes for each channel");
-        addAndMakeVisible (activityViewButton);
+        addAndMakeVisible (activityViewButton.get());
 
-        activityViewComboBox = new ComboBox ("ActivityView Combo Box");
+        activityViewComboBox = std::make_unique<ComboBox> ("ActivityView Combo Box");
 
         if (probe->settings.availableLfpGains.size() > 0)
         {
@@ -231,7 +231,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
             activityViewComboBox->addItem ("AP", 1);
             activityViewComboBox->addItem ("LFP", 2);
             activityViewComboBox->setSelectedId (1, dontSendNotification);
-            addAndMakeVisible (activityViewComboBox);
+            addAndMakeVisible (activityViewComboBox.get());
             activityViewButton->setBounds (530, currentHeight + 2, 45, 18);
         }
         else
@@ -239,21 +239,21 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
             activityViewButton->setBounds (450, currentHeight + 2, 45, 18);
         }
 
-        activityViewLabel = new Label ("PROBE SIGNAL", "PROBE SIGNAL");
+        activityViewLabel = std::make_unique<Label> ("PROBE SIGNAL", "PROBE SIGNAL");
         activityViewLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
         activityViewLabel->setBounds (446, currentHeight - 20, 180, 20);
-        addAndMakeVisible (activityViewLabel);
+        addAndMakeVisible (activityViewLabel.get());
 
         currentHeight += 55;
 
         if (probe->info.part_number == "NP1300") // Neuropixels Opto
         {
-            redEmissionSiteLabel = new Label ("RED EMISSION SITE", "RED EMISSION SITE");
+            redEmissionSiteLabel = std::make_unique<Label> ("RED EMISSION SITE", "RED EMISSION SITE");
             redEmissionSiteLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
             redEmissionSiteLabel->setBounds (446, currentHeight - 20, 180, 20);
-            addAndMakeVisible (redEmissionSiteLabel);
+            addAndMakeVisible (redEmissionSiteLabel.get());
 
-            redEmissionSiteComboBox = new ComboBox ("Red Emission Site Combo Box");
+            redEmissionSiteComboBox = std::make_unique<ComboBox> ("Red Emission Site Combo Box");
             redEmissionSiteComboBox->addListener (this);
             redEmissionSiteComboBox->setBounds (450, currentHeight, 65, 22);
             redEmissionSiteComboBox->addItem ("OFF", 1);
@@ -262,16 +262,16 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
                 redEmissionSiteComboBox->addItem (String (i + 1), i + 2);
 
             redEmissionSiteComboBox->setSelectedId (1, dontSendNotification);
-            addAndMakeVisible (redEmissionSiteComboBox);
+            addAndMakeVisible (redEmissionSiteComboBox.get());
 
             currentHeight += 55;
 
-            blueEmissionSiteLabel = new Label ("BLUE EMISSION SITE", "BLUE EMISSION SITE");
+            blueEmissionSiteLabel = std::make_unique<Label> ("BLUE EMISSION SITE", "BLUE EMISSION SITE");
             blueEmissionSiteLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
             blueEmissionSiteLabel->setBounds (446, currentHeight - 20, 180, 20);
-            addAndMakeVisible (blueEmissionSiteLabel);
+            addAndMakeVisible (blueEmissionSiteLabel.get());
 
-            blueEmissionSiteComboBox = new ComboBox ("Blue Emission Site Combo Box");
+            blueEmissionSiteComboBox = std::make_unique<ComboBox> ("Blue Emission Site Combo Box");
             blueEmissionSiteComboBox->addListener (this);
             blueEmissionSiteComboBox->setBounds (450, currentHeight, 65, 22);
             blueEmissionSiteComboBox->addItem ("OFF", 1);
@@ -280,11 +280,11 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
                 blueEmissionSiteComboBox->addItem (String (i + 1), i + 2);
 
             blueEmissionSiteComboBox->setSelectedId (1, dontSendNotification);
-            addAndMakeVisible (blueEmissionSiteComboBox);
+            addAndMakeVisible (blueEmissionSiteComboBox.get());
         }
 
         // BIST
-        bistComboBox = new ComboBox ("BistComboBox");
+        bistComboBox = std::make_unique<ComboBox> ("BistComboBox");
         bistComboBox->setBounds (650, 500, 225, 22);
         bistComboBox->addListener (this);
 
@@ -321,71 +321,71 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         bistComboBox->addItem ("Test Basestation", 10);
 
         bistComboBox->setSelectedId (1, dontSendNotification);
-        addAndMakeVisible (bistComboBox);
+        addAndMakeVisible (bistComboBox.get());
 
-        bistButton = new UtilityButton ("RUN", FontOptions ("Inter", "Regular", 12.0f));
+        bistButton = std::make_unique<UtilityButton> ("RUN", FontOptions ("Inter", "Regular", 12.0f));
         bistButton->setRadius (3.0f);
         bistButton->setBounds (880, 500, 50, 22);
         bistButton->addListener (this);
         bistButton->setTooltip ("Run selected test");
-        addAndMakeVisible (bistButton);
+        addAndMakeVisible (bistButton.get());
 
-        bistLabel = new Label ("BIST", "Built-in self tests:");
+        bistLabel = std::make_unique<Label> ("BIST", "Built-in self tests:");
         bistLabel->setFont (FontOptions ("Inter", "Regular", 15.0f));
         bistLabel->setBounds (650, 473, 200, 20);
-        addAndMakeVisible (bistLabel);
+        addAndMakeVisible (bistLabel.get());
 
         // COPY / PASTE / UPLOAD
-        copyButton = new UtilityButton ("COPY", FontOptions ("Inter", "Regular", 12.0f));
+        copyButton = std::make_unique<UtilityButton> ("COPY", FontOptions ("Inter", "Regular", 12.0f));
         copyButton->setRadius (3.0f);
         copyButton->setBounds (45, 637, 60, 22);
         copyButton->addListener (this);
         copyButton->setTooltip ("Copy probe settings");
-        addAndMakeVisible (copyButton);
+        addAndMakeVisible (copyButton.get());
 
-        pasteButton = new UtilityButton ("PASTE", FontOptions ("Inter", "Regular", 12.0f));
+        pasteButton = std::make_unique<UtilityButton> ("PASTE", FontOptions ("Inter", "Regular", 12.0f));
         pasteButton->setRadius (3.0f);
         pasteButton->setBounds (115, 637, 60, 22);
         pasteButton->addListener (this);
         pasteButton->setTooltip ("Paste probe settings");
-        addAndMakeVisible (pasteButton);
+        addAndMakeVisible (pasteButton.get());
 
-        applyToAllButton = new UtilityButton ("APPLY TO ALL", FontOptions ("Inter", "Regular", 12.0f));
+        applyToAllButton = std::make_unique<UtilityButton> ("APPLY TO ALL", FontOptions ("Inter", "Regular", 12.0f));
         applyToAllButton->setRadius (3.0f);
         applyToAllButton->setBounds (185, 637, 120, 22);
         applyToAllButton->addListener (this);
         applyToAllButton->setTooltip ("Apply this probe's settings to all others");
-        addAndMakeVisible (applyToAllButton);
+        addAndMakeVisible (applyToAllButton.get());
 
-        saveImroButton = new UtilityButton ("SAVE TO IMRO", FontOptions ("Inter", "Regular", 12.0f));
+        saveImroButton = std::make_unique<UtilityButton> ("SAVE TO IMRO", FontOptions ("Inter", "Regular", 12.0f));
         saveImroButton->setRadius (3.0f);
         saveImroButton->setBounds (45, 672, 120, 22);
         saveImroButton->addListener (this);
         saveImroButton->setTooltip ("Save settings map to .imro file");
-        addAndMakeVisible (saveImroButton);
+        addAndMakeVisible (saveImroButton.get());
 
-        loadImroButton = new UtilityButton ("LOAD FROM IMRO", FontOptions ("Inter", "Regular", 12.0f));
+        loadImroButton = std::make_unique<UtilityButton> ("LOAD FROM IMRO", FontOptions ("Inter", "Regular", 12.0f));
         loadImroButton->setRadius (3.0f);
         loadImroButton->setBounds (175, 672, 130, 22);
         loadImroButton->addListener (this);
         loadImroButton->setTooltip ("Load settings map from .imro file");
-        addAndMakeVisible (loadImroButton);
+        addAndMakeVisible (loadImroButton.get());
 
-        saveJsonButton = new UtilityButton ("SAVE TO JSON", FontOptions ("Inter", "Regular", 12.0f));
+        saveJsonButton = std::make_unique<UtilityButton> ("SAVE TO JSON", FontOptions ("Inter", "Regular", 12.0f));
         saveJsonButton->setRadius (3.0f);
         saveJsonButton->setBounds (45, 707, 120, 22);
         saveJsonButton->addListener (this);
         saveJsonButton->setTooltip ("Save channel map to probeinterface .json file");
-        addAndMakeVisible (saveJsonButton);
+        addAndMakeVisible (saveJsonButton.get());
 
-        loadJsonButton = new UtilityButton ("LOAD FROM JSON", FontOptions ("Inter", "Regular", 12.0f));
+        loadJsonButton = std::make_unique<UtilityButton> ("LOAD FROM JSON", FontOptions ("Inter", "Regular", 12.0f));
         loadJsonButton->setRadius (3.0f);
         loadJsonButton->setBounds (175, 707, 130, 22);
         loadJsonButton->addListener (this);
         loadJsonButton->setTooltip ("Load channel map from probeinterface .json file");
         // addAndMakeVisible(loadJsonButton);
 
-        loadImroComboBox = new ComboBox ("Quick-load IMRO");
+        loadImroComboBox = std::make_unique<ComboBox> ("Quick-load IMRO");
         loadImroComboBox->setBounds (175, 707, 130, 22);
         loadImroComboBox->addListener (this);
         loadImroComboBox->setTooltip ("Load a favorite IMRO setting.");
@@ -407,12 +407,12 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
             loadImroComboBox->addItem (imroFiles.getLast(), imroFiles.size() + 1);
         }
         loadImroComboBox->setSelectedId (1, dontSendNotification);
-        addAndMakeVisible (loadImroComboBox);
+        addAndMakeVisible (loadImroComboBox.get());
 
-        probeSettingsLabel = new Label ("Settings", "Probe settings:");
+        probeSettingsLabel = std::make_unique<Label> ("Settings", "Probe settings:");
         probeSettingsLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
         probeSettingsLabel->setBounds (40, 610, 300, 20);
-        addAndMakeVisible (probeSettingsLabel);
+        addAndMakeVisible (probeSettingsLabel.get());
     }
     else
     {
@@ -425,107 +425,107 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         verticalOffset = 250;
 
     // FIRMWARE
-    firmwareToggleButton = new UtilityButton ("UPDATE FIRMWARE...", FontOptions ("Inter", "Regular", 12.0f));
+    firmwareToggleButton = std::make_unique<UtilityButton> ("UPDATE FIRMWARE...", FontOptions ("Inter", "Regular", 12.0f));
     firmwareToggleButton->setRadius (3.0f);
     firmwareToggleButton->addListener (this);
     firmwareToggleButton->setBounds (650, verticalOffset, 150, 22);
     firmwareToggleButton->setClickingTogglesState (true);
 
     if (thread->type == PXI)
-        addAndMakeVisible (firmwareToggleButton);
+        addAndMakeVisible (firmwareToggleButton.get());
 
-    bscFirmwareComboBox = new ComboBox ("bscFirmwareComboBox");
+    bscFirmwareComboBox = std::make_unique<ComboBox> ("bscFirmwareComboBox");
     bscFirmwareComboBox->setBounds (550, verticalOffset + 70, 375, 22);
     bscFirmwareComboBox->addListener (this);
     bscFirmwareComboBox->addItem ("Select file...", 1);
 
     if (thread->type == PXI)
-        addChildComponent (bscFirmwareComboBox);
+        addChildComponent (bscFirmwareComboBox.get());
 
-    bscFirmwareButton = new UtilityButton ("UPLOAD", FontOptions ("Inter", "Regular", 12.0f));
+    bscFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD", FontOptions ("Inter", "Regular", 12.0f));
     bscFirmwareButton->setRadius (3.0f);
     bscFirmwareButton->setBounds (930, verticalOffset + 70, 60, 22);
     bscFirmwareButton->addListener (this);
     bscFirmwareButton->setTooltip ("Upload firmware to selected basestation connect board");
 
     if (thread->type == PXI)
-        addChildComponent (bscFirmwareButton);
+        addChildComponent (bscFirmwareButton.get());
 
-    bscFirmwareLabel = new Label ("BSC FIRMWARE", "1. Update basestation connect board firmware (QBSC_FPGA_B189.bin):");
+    bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (QBSC_FPGA_B189.bin):");
     bscFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
     bscFirmwareLabel->setBounds (550, verticalOffset + 43, 500, 20);
 
     if (thread->type == PXI)
-        addChildComponent (bscFirmwareLabel);
+        addChildComponent (bscFirmwareLabel.get());
 
-    bsFirmwareComboBox = new ComboBox ("bscFirmwareComboBox");
+    bsFirmwareComboBox = std::make_unique<ComboBox> ("bscFirmwareComboBox");
     bsFirmwareComboBox->setBounds (550, verticalOffset + 140, 375, 22);
     bsFirmwareComboBox->addListener (this);
     bsFirmwareComboBox->addItem ("Select file...", 1);
 
     if (thread->type == PXI)
-        addChildComponent (bsFirmwareComboBox);
+        addChildComponent (bsFirmwareComboBox.get());
 
-    bsFirmwareButton = new UtilityButton ("UPLOAD", FontOptions ("Inter", "Regular", 12.0f));
+    bsFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD", FontOptions ("Inter", "Regular", 12.0f));
     bsFirmwareButton->setRadius (3.0f);
     bsFirmwareButton->setBounds (930, verticalOffset + 140, 60, 22);
     bsFirmwareButton->addListener (this);
     bsFirmwareButton->setTooltip ("Upload firmware to selected basestation");
 
     if (thread->type == PXI)
-        addChildComponent (bsFirmwareButton);
+        addChildComponent (bsFirmwareButton.get());
 
-    bsFirmwareLabel = new Label ("BS FIRMWARE", "2. Update basestation firmware (BS_FPGA_B169.bin):");
+    bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (BS_FPGA_B169.bin):");
     bsFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
     bsFirmwareLabel->setBounds (550, verticalOffset + 113, 500, 20);
 
     if (thread->type == PXI)
-        addChildComponent (bsFirmwareLabel);
+        addChildComponent (bsFirmwareLabel.get());
 
-    firmwareInstructionsLabel = new Label ("FIRMWARE INSTRUCTIONS", "3. Power cycle computer and PXI chassis");
+    firmwareInstructionsLabel = std::make_unique<Label> ("FIRMWARE INSTRUCTIONS", "3. Power cycle computer and PXI chassis");
     firmwareInstructionsLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
     firmwareInstructionsLabel->setBounds (550, verticalOffset + 183, 500, 20);
 
     if (thread->type == PXI)
-        addChildComponent (firmwareInstructionsLabel);
+        addChildComponent (firmwareInstructionsLabel.get());
 
     // PROBE INFO
-    nameLabel = new Label ("MAIN", "NAME");
+    nameLabel = std::make_unique<Label> ("MAIN", "NAME");
     nameLabel->setFont (FontOptions ("Fira Code", "Medium", 30.0f));
     nameLabel->setBounds (625, 40, 500, 45);
-    addAndMakeVisible (nameLabel);
+    addAndMakeVisible (nameLabel.get());
 
-    infoLabelView = new Viewport ("INFO");
+    infoLabelView = std::make_unique<Viewport> ("INFO");
     infoLabelView->setBounds (625, 98, 750, 400);
 
-    addAndMakeVisible (infoLabelView);
+    addAndMakeVisible (infoLabelView.get());
 
-    infoLabel = new Label ("INFO", "INFO");
-    infoLabelView->setViewedComponent (infoLabel, false);
+    infoLabel = std::make_unique<Label> ("INFO", "INFO");
+    infoLabelView->setViewedComponent (infoLabel.get(), false);
     infoLabel->setFont (FontOptions (15.0f));
     infoLabel->setBounds (0, 0, 750, 350);
     infoLabel->setJustificationType (Justification::topLeft);
 
     // ANNOTATIONS
-    annotationButton = new UtilityButton ("ADD", FontOptions ("Inter", "Regular", 12.0f));
+    annotationButton = std::make_unique<UtilityButton> ("ADD", FontOptions ("Inter", "Regular", 12.0f));
     annotationButton->setRadius (3.0f);
     annotationButton->setBounds (400, 680, 40, 18);
     annotationButton->addListener (this);
     annotationButton->setTooltip ("Add annotation to selected channels");
     //addAndMakeVisible(annotationButton);
 
-    annotationLabel = new Label ("ANNOTATION", "Custom annotation");
+    annotationLabel = std::make_unique<Label> ("ANNOTATION", "Custom annotation");
     annotationLabel->setBounds (396, 620, 200, 20);
     annotationLabel->setEditable (true);
     annotationLabel->addListener (this);
     // addAndMakeVisible(annotationLabel);
 
-    annotationLabelLabel = new Label ("ANNOTATION_LABEL", "ANNOTATION");
+    annotationLabelLabel = std::make_unique<Label> ("ANNOTATION_LABEL", "ANNOTATION");
     annotationLabelLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
     annotationLabelLabel->setBounds (396, 600, 200, 20);
     // addAndMakeVisible(annotationLabelLabel);
 
-    annotationColourSelector = new AnnotationColourSelector (this);
+    annotationColourSelector = std::make_unique<AnnotationColourSelector> (this);
     annotationColourSelector->setBounds (400, 650, 250, 20);
     // addAndMakeVisible(annotationColourSelector);
 
@@ -602,7 +602,7 @@ void NeuropixInterface::updateInfoString()
 
 void NeuropixInterface::labelTextChanged (Label* label)
 {
-    if (label == annotationLabel)
+    if (label == annotationLabel.get())
     {
         annotationColourSelector->updateCurrentString (label->getText());
     }
@@ -625,7 +625,7 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
 {
     if (! editor->acquisitionIsActive)
     {
-        if (comboBox == electrodeConfigurationComboBox)
+        if (comboBox == electrodeConfigurationComboBox.get())
         {
             String preset = electrodeConfigurationComboBox->getText();
 
@@ -633,19 +633,19 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
 
             selectElectrodes (selection);
         }
-        else if ((comboBox == apGainComboBox) || (comboBox == lfpGainComboBox))
+        else if ((comboBox == apGainComboBox.get()) || (comboBox == lfpGainComboBox.get()))
         {
             updateProbeSettingsInBackground();
         }
-        else if (comboBox == referenceComboBox)
+        else if (comboBox == referenceComboBox.get())
         {
             updateProbeSettingsInBackground();
         }
-        else if (comboBox == filterComboBox)
+        else if (comboBox == filterComboBox.get())
         {
             updateProbeSettingsInBackground();
         }
-        else if (comboBox == bscFirmwareComboBox)
+        else if (comboBox == bscFirmwareComboBox.get())
         {
             if (comboBox->getSelectedId() == 1)
             {
@@ -662,7 +662,7 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
                 }
             }
         }
-        else if (comboBox == bsFirmwareComboBox)
+        else if (comboBox == bsFirmwareComboBox.get())
         {
             if (comboBox->getSelectedId() == 1)
             {
@@ -679,11 +679,11 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
                 }
             }
         }
-        else if (comboBox == filterComboBox)
+        else if (comboBox == filterComboBox.get())
         {
             updateProbeSettingsInBackground();
         }
-        else if (comboBox == activityViewComboBox)
+        else if (comboBox == activityViewComboBox.get())
         {
             if (comboBox->getSelectedId() == 1)
             {
@@ -698,15 +698,15 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
                 probeBrowser->maxPeakToPeakAmplitude = 500.0f;
             }
         }
-        else if (comboBox == redEmissionSiteComboBox)
+        else if (comboBox == redEmissionSiteComboBox.get())
         {
             setEmissionSite ("red", comboBox->getSelectedId() - 1);
         }
-        else if (comboBox == blueEmissionSiteComboBox)
+        else if (comboBox == blueEmissionSiteComboBox.get())
         {
             setEmissionSite ("blue", comboBox->getSelectedId() - 1);
         }
-        else if (comboBox == loadImroComboBox)
+        else if (comboBox == loadImroComboBox.get())
         {
             if (! imroFiles.size())
             {
@@ -739,7 +739,7 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
     }
     else
     {
-        if (comboBox == activityViewComboBox)
+        if (comboBox == activityViewComboBox.get())
         {
             if (comboBox->getSelectedId() == 1)
             {
@@ -756,12 +756,12 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
 
             repaint();
         }
-        else if (comboBox == redEmissionSiteComboBox)
+        else if (comboBox == redEmissionSiteComboBox.get())
         {
             LOGD ("Select red emission site.");
             setEmissionSite ("red", comboBox->getSelectedId() - 1);
         }
-        else if (comboBox == blueEmissionSiteComboBox)
+        else if (comboBox == blueEmissionSiteComboBox.get())
         {
             LOGD ("Select blue emission site.");
             setEmissionSite ("blue", comboBox->getSelectedId() - 1);
@@ -783,31 +783,31 @@ void NeuropixInterface::setAnnotationLabel (String s, Colour c)
 
 void NeuropixInterface::buttonClicked (Button* button)
 {
-    if (button == enableViewButton)
+    if (button == enableViewButton.get())
     {
         mode = ENABLE_VIEW;
         probeBrowser->stopTimer();
         repaint();
     }
-    else if (button == apGainViewButton)
+    else if (button == apGainViewButton.get())
     {
         mode = AP_GAIN_VIEW;
         probeBrowser->stopTimer();
         repaint();
     }
-    else if (button == lfpGainViewButton)
+    else if (button == lfpGainViewButton.get())
     {
         mode = LFP_GAIN_VIEW;
         probeBrowser->stopTimer();
         repaint();
     }
-    else if (button == referenceViewButton)
+    else if (button == referenceViewButton.get())
     {
         mode = REFERENCE_VIEW;
         probeBrowser->stopTimer();
         repaint();
     }
-    else if (button == activityViewButton)
+    else if (button == activityViewButton.get())
     {
         mode = ACTIVITY_VIEW;
 
@@ -816,7 +816,7 @@ void NeuropixInterface::buttonClicked (Button* button)
 
         repaint();
     }
-    else if (button == enableButton)
+    else if (button == enableButton.get())
     {
         Array<int> selection = getSelectedElectrodes();
 
@@ -826,7 +826,7 @@ void NeuropixInterface::buttonClicked (Button* button)
             selectElectrodes (selection);
         }
     }
-    else if (button == annotationButton)
+    else if (button == annotationButton.get())
     {
         String s = annotationLabel->getText();
         Array<int> a = getSelectedElectrodes();
@@ -836,7 +836,7 @@ void NeuropixInterface::buttonClicked (Button* button)
 
         repaint();
     }
-    else if (button == bistButton)
+    else if (button == bistButton.get())
     {
         if (! editor->acquisitionIsActive)
         {
@@ -880,7 +880,7 @@ void NeuropixInterface::buttonClicked (Button* button)
             CoreServices::sendStatusMessage ("Cannot run test while acquisition is active.");
         }
     }
-    else if (button == loadImroButton)
+    else if (button == loadImroButton.get())
     {
         FileChooser fileChooser ("Select an IMRO file to load.", File(), "*.imro");
 
@@ -910,7 +910,7 @@ void NeuropixInterface::buttonClicked (Button* button)
             }
         }
     }
-    else if (button == saveImroButton)
+    else if (button == saveImroButton.get())
     {
         FileChooser fileChooser ("Save settings to an IMRO file.", File(), "*.imro");
 
@@ -924,7 +924,7 @@ void NeuropixInterface::buttonClicked (Button* button)
                 CoreServices::sendStatusMessage ("Successfully wrote probe settings.");
         }
     }
-    else if (button == loadJsonButton)
+    else if (button == loadJsonButton.get())
     {
         FileChooser fileChooser ("Select an probeinterface JSON file to load.", File(), "*.json");
 
@@ -940,7 +940,7 @@ void NeuropixInterface::buttonClicked (Button* button)
             }
         }
     }
-    else if (button == saveJsonButton)
+    else if (button == saveJsonButton.get())
     {
         FileChooser fileChooser ("Save channel map to a probeinterface JSON file.", File(), "*.json");
 
@@ -954,21 +954,21 @@ void NeuropixInterface::buttonClicked (Button* button)
                 CoreServices::sendStatusMessage ("Successfully wrote probe channel map.");
         }
     }
-    else if (button == copyButton)
+    else if (button == copyButton.get())
     {
         canvas->storeProbeSettings (getProbeSettings());
         CoreServices::sendStatusMessage ("Probe settings copied.");
     }
-    else if (button == pasteButton)
+    else if (button == pasteButton.get())
     {
         applyProbeSettings (canvas->getProbeSettings());
         CoreServices::updateSignalChain (editor);
     }
-    else if (button == applyToAllButton)
+    else if (button == applyToAllButton.get())
     {
         canvas->applyParametersToAllProbes (getProbeSettings());
     }
-    else if (button == firmwareToggleButton)
+    else if (button == firmwareToggleButton.get())
     {
         bool state = button->getToggleState();
 
@@ -984,7 +984,7 @@ void NeuropixInterface::buttonClicked (Button* button)
 
         repaint();
     }
-    else if (button == bsFirmwareButton)
+    else if (button == bsFirmwareButton.get())
     {
         if (bsFirmwareComboBox->getSelectedId() > 1)
         {
@@ -995,7 +995,7 @@ void NeuropixInterface::buttonClicked (Button* button)
             CoreServices::sendStatusMessage ("No file selected.");
         }
     }
-    else if (button == bscFirmwareButton)
+    else if (button == bscFirmwareButton.get())
     {
         if (bscFirmwareComboBox->getSelectedId() > 1)
         {

@@ -87,39 +87,39 @@ WavePlayer::WavePlayer (OneBoxDAC* dac_)
     : dac (dac_),
       nextPatternId (1)
 {
-    background = new WavePlayerBackground();
+    background = std::make_unique<WavePlayerBackground>();
     background->setBounds (0, 0, 350, 200);
-    addAndMakeVisible (background);
+    addAndMakeVisible (background.get());
 
-    patternSelector = new ComboBox();
+    patternSelector = std::make_unique<ComboBox>();
     patternSelector->setBounds (12, 40, 120, 20);
     patternSelector->addListener (this);
     patternSelector->setEditableText (true);
-    addAndMakeVisible (patternSelector);
+    addAndMakeVisible (patternSelector.get());
 
-    startStopButton = new UtilityButton ("RUN", FontOptions ("Small Text", 15, Font::plain));
+    startStopButton = std::make_unique<UtilityButton> ("RUN", FontOptions ("Small Text", 15, Font::plain));
     startStopButton->setBounds (30, 85, 55, 30);
     startStopButton->addListener (this);
-    addAndMakeVisible (startStopButton);
+    addAndMakeVisible (startStopButton.get());
 
-    pulsePatternButton = new UtilityButton ("Pulse", FontOptions ("Small Text", 10, Font::plain));
+    pulsePatternButton = std::make_unique<UtilityButton> ("Pulse", FontOptions ("Small Text", 10, Font::plain));
     pulsePatternButton->setCorners (true, false, true, false);
     pulsePatternButton->setBounds (140, 40, 50, 20);
     pulsePatternButton->addListener (this);
     pulsePatternButton->setToggleState (true, false);
-    addAndMakeVisible (pulsePatternButton);
+    addAndMakeVisible (pulsePatternButton.get());
 
-    sinePatternButton = new UtilityButton ("Sine", FontOptions ("Small Text", 10, Font::plain));
+    sinePatternButton = std::make_unique<UtilityButton> ("Sine", FontOptions ("Small Text", 10, Font::plain));
     sinePatternButton->setCorners (false, false, false, false);
     sinePatternButton->setBounds (190, 40, 50, 20);
     sinePatternButton->addListener (this);
-    addAndMakeVisible (sinePatternButton);
+    addAndMakeVisible (sinePatternButton.get());
 
-    customPatternButton = new UtilityButton ("Custom", FontOptions ("Small Text", 10, Font::plain));
+    customPatternButton = std::make_unique<UtilityButton> ("Custom", FontOptions ("Small Text", 10, Font::plain));
     customPatternButton->setCorners (false, true, false, true);
     customPatternButton->setBounds (240, 40, 60, 20);
     customPatternButton->addListener (this);
-    addAndMakeVisible (customPatternButton);
+    addAndMakeVisible (customPatternButton.get());
 
     currentPattern = new Pattern();
     currentPattern->id = nextPatternId++;
@@ -172,7 +172,7 @@ void WavePlayer::updatePatternSelector()
 
 void WavePlayer::comboBoxChanged (ComboBox* comboBox)
 {
-    if (comboBox == patternSelector)
+    if (comboBox == patternSelector.get())
     {
         std::cout << "COMBO BOX CHANGED" << std::endl;
 
@@ -290,7 +290,7 @@ void WavePlayer::initializePattern (Pattern* pattern)
 
 void WavePlayer::buttonClicked (Button* button)
 {
-    if (button == pulsePatternButton)
+    if (button == pulsePatternButton.get())
     {
         auto* patternGenerator = new PulsePatternGenerator (this, currentPattern);
 
@@ -304,7 +304,7 @@ void WavePlayer::buttonClicked (Button* button)
                                                               button->getScreenBounds(),
                                                               nullptr);
     }
-    else if (button == sinePatternButton)
+    else if (button == sinePatternButton.get())
     {
         auto* patternGenerator = new SinePatternGenerator (this, currentPattern);
 
@@ -318,7 +318,7 @@ void WavePlayer::buttonClicked (Button* button)
                                                               button->getScreenBounds(),
                                                               nullptr);
     }
-    else if (button == customPatternButton)
+    else if (button == customPatternButton.get())
     {
         auto* patternGenerator = new CustomPatternGenerator (this, currentPattern);
 
@@ -330,7 +330,7 @@ void WavePlayer::buttonClicked (Button* button)
                                                               button->getScreenBounds(),
                                                               nullptr);
     }
-    else if (button == startStopButton)
+    else if (button == startStopButton.get())
     {
         dac->playWaveform();
         //startTimer(currentPattern->samples.size() / getSampleRate() * 1000);

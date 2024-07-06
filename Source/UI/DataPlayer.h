@@ -78,14 +78,14 @@ public:
     void resized();
 
 private:
-    ScopedPointer<ComboBox> probeSelector;
-    ScopedPointer<ComboBox> streamSelector;
-    ScopedPointer<ComboBox> channelSelector;
-    ScopedPointer<ComboBox> outputSelector;
+    std::unique_ptr<ComboBox> probeSelector;
+    std::unique_ptr<ComboBox> streamSelector;
+    std::unique_ptr<ComboBox> channelSelector;
+    std::unique_ptr<ComboBox> outputSelector;
 
-    ScopedPointer<ComboBox> playerIndex;
+    std::unique_ptr<ComboBox> playerIndex;
 
-    ScopedPointer<DataPlayerBackground> background;
+    std::unique_ptr<DataPlayerBackground> background;
 
     OneBoxADC* adc;
     OneBoxDAC* dac;

@@ -92,7 +92,7 @@ private:
 
     Neuropixels::NP_ErrorCode errorCode;
 
-    ScopedPointer<HST_Status> status;
+    std::unique_ptr<HST_Status> status;
 };
 
 #endif // __NEUROPIXHS1V3_H_2C4C2D67__

@@ -148,31 +148,31 @@ ProbeNameConfig::ProbeNameConfig (Basestation* bs_, NeuropixThread* thread_)
 
     setSize (width, height);
 
-    titleLabel = new Label ("Probe Naming Scheme", "Probe Naming Scheme");
+    titleLabel = std::make_unique<Label> ("Probe Naming Scheme", "Probe Naming Scheme");
     titleLabel->setJustificationType (Justification::centred);
     titleLabel->setBounds (0, 0, width, 40);
     titleLabel->setFont (FontOptions ("Inter", "Semi Bold", 20.0f));
-    addAndMakeVisible (titleLabel);
+    addAndMakeVisible (titleLabel.get());
 
-    prevButton = new SelectionButton (this, true);
+    prevButton = std::make_unique<SelectionButton> (this, true);
     prevButton->setBounds (0, 42, 40, 40);
-    addAndMakeVisible (prevButton);
+    addAndMakeVisible (prevButton.get());
 
-    nextButton = new SelectionButton (this, false);
+    nextButton = std::make_unique<SelectionButton> (this, false);
     nextButton->setBounds (width - 40, 42, 40, 40);
-    addAndMakeVisible (nextButton);
+    addAndMakeVisible (nextButton.get());
 
-    schemeLabel = new Label ("Active Scheme", schemes[(int) namingScheme]);
+    schemeLabel = std::make_unique<Label> ("Active Scheme", schemes[(int) namingScheme]);
     schemeLabel->setJustificationType (Justification::centred);
     schemeLabel->setBounds (40, 42, width - 80, 40);
     schemeLabel->setFont (FontOptions ("Inter", "Medium", 20.0f));
-    addAndMakeVisible (schemeLabel);
+    addAndMakeVisible (schemeLabel.get());
 
-    description = new Label ("Scheme description", descriptions[(int) namingScheme]);
+    description = std::make_unique<Label> ("Scheme description", descriptions[(int) namingScheme]);
     description->setJustificationType (Justification::centredTop);
     description->setBounds (0, 82, width + 2, 150);
     description->setFont (FontOptions ("Inter", "Regular", 12.0f));
-    addAndMakeVisible (description);
+    addAndMakeVisible (description.get());
 
     int padding = 9;
     width = (width - 3 * padding) / 2;
@@ -194,17 +194,17 @@ ProbeNameConfig::ProbeNameConfig (Basestation* bs_, NeuropixThread* thread_)
         }
     }
 
-    dock1Label = new Label ("dock1Label", "Dock 1");
+    dock1Label = std::make_unique<Label> ("dock1Label", "Dock 1");
     dock1Label->setJustificationType (Justification::centred);
     dock1Label->setBounds (x - (padding + width), getHeight() - 5 * (padding + height), width, 1.5 * height);
     dock1Label->setFont (FontOptions ("Inter", "Medium", 14.0f));
-    addAndMakeVisible (dock1Label);
+    addAndMakeVisible (dock1Label.get());
 
-    dock2Label = new Label ("dock2Label", "Dock 2");
+    dock2Label = std::make_unique<Label> ("dock2Label", "Dock 2");
     dock2Label->setJustificationType (Justification::centred);
     dock2Label->setBounds (x, getHeight() - 5 * (padding + height), width, 1.5 * height);
     dock2Label->setFont (FontOptions ("Inter", "Medium", 14.0f));
-    addAndMakeVisible (dock2Label);
+    addAndMakeVisible (dock2Label.get());
 
     for (auto& probe : basestation->getProbes())
     {

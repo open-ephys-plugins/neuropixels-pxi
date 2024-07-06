@@ -84,8 +84,8 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
                                                                                                                   thread (thread_)
 
 {
-    topLevelTabComponent = new CustomTabComponent (editor, true);
-    addAndMakeVisible (topLevelTabComponent);
+    topLevelTabComponent = std::make_unique<CustomTabComponent> (editor, true);
+    addAndMakeVisible (topLevelTabComponent.get());
 
     Array<Basestation*> availableBasestations = thread->getBasestations();
 

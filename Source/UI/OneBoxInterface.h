@@ -128,13 +128,13 @@ private:
     OwnedArray<AdcChannelButton> channels;
     AdcChannelButton* selectedChannel;
 
-    ScopedPointer<ComboBox> rangeSelector;
-    ScopedPointer<ComboBox> thresholdSelector;
-    ScopedPointer<ComboBox> triggerSelector;
-    ScopedPointer<ComboBox> mappingSelector;
+    std::unique_ptr<ComboBox> rangeSelector;
+    std::unique_ptr<ComboBox> thresholdSelector;
+    std::unique_ptr<ComboBox> triggerSelector;
+    std::unique_ptr<ComboBox> mappingSelector;
 
-    ScopedPointer<WavePlayer> wavePlayer;
-    ScopedPointer<DataPlayer> dataPlayer;
+    std::unique_ptr<WavePlayer> wavePlayer;
+    std::unique_ptr<DataPlayer> dataPlayer;
 
     OneBoxDAC* dac;
     OneBoxADC* adc;

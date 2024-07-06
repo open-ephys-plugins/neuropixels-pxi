@@ -108,7 +108,7 @@ public:
 
         setBounds (0, 0, 1000, 820);
 
-        viewport = new CustomViewport (this);
+        viewport = std::make_unique<CustomViewport> (this);
     }
 
     /** Destructor */
@@ -136,7 +136,7 @@ public:
     Type type = UNKNOWN_SETTINGS_INTERFACE;
 
     /** Viewport for scrolling around this interface */
-    ScopedPointer<CustomViewport> viewport;
+    std::unique_ptr<CustomViewport> viewport;
 
     /** Pointer to the data source*/
     DataSource* dataSource;

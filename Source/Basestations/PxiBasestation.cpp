@@ -161,7 +161,7 @@ bool PxiBasestation::open()
     {
         LOGC ("  Opened BS on slot ", slot);
 
-        basestationConnectBoard = new BasestationConnectBoard_v3 (this);
+        basestationConnectBoard = std::make_unique<BasestationConnectBoard_v3> (this);
 
         //Confirm v3 basestation by BS version 2.0 or greater.
         LOGC ("  BS firmware: ", info.boot_version);

@@ -516,8 +516,8 @@ public:
     }
 
 protected:
-    ScopedPointer<ActivityView> apView;
-    ScopedPointer<ActivityView> lfpView;
+    std::unique_ptr<ActivityView> apView;
+    std::unique_ptr<ActivityView> lfpView;
 
     uint64 eventCode;
     Array<int> gains; // available gain values
@@ -695,7 +695,7 @@ public:
     unsigned char slot_c;
     int slot;
 
-    ScopedPointer<BasestationConnectBoard> basestationConnectBoard;
+    std::unique_ptr<BasestationConnectBoard> basestationConnectBoard;
 
     OwnedArray<Headstage> headstages;
     Array<Probe*> probes;

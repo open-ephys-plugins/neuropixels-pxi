@@ -62,24 +62,24 @@ DataPlayer::DataPlayer (OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* onebo
     inputChan = 0;
     outputChan = -1;
 
-    background = new DataPlayerBackground();
+    background = std::make_unique<DataPlayerBackground>();
 
-    addAndMakeVisible (background);
+    addAndMakeVisible (background.get());
 
     int leftMargin = 140;
 
-    playerIndex = new ComboBox();
+    playerIndex = std::make_unique<ComboBox>();
     playerIndex->setBounds (12, 40, 120, 20);
     ;
     playerIndex->addListener (this);
     for (int i = 1; i < 9; i++)
         playerIndex->addItem ("DataPlayer " + String (i), i);
     playerIndex->setSelectedId (1, dontSendNotification);
-    addAndMakeVisible (playerIndex);
+    addAndMakeVisible (playerIndex.get());
 
     availableProbes = adc_->basestation->getProbes();
 
-    probeSelector = new ComboBox();
+    probeSelector = std::make_unique<ComboBox>();
     probeSelector->setBounds (leftMargin, 40, 110, 20);
     probeSelector->addListener (this);
 
@@ -94,17 +94,17 @@ DataPlayer::DataPlayer (OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* onebo
     }
 
     probeSelector->setSelectedId (1, dontSendNotification);
-    addAndMakeVisible (probeSelector);
+    addAndMakeVisible (probeSelector.get());
 
-    streamSelector = new ComboBox();
+    streamSelector = std::make_unique<ComboBox>();
     streamSelector->setBounds (leftMargin, 70, 110, 20);
     streamSelector->addListener (this);
     streamSelector->addItem ("AP", StreamType::AP);
     streamSelector->addItem ("LFP", StreamType::LFP);
     streamSelector->setSelectedId (1, dontSendNotification);
-    addAndMakeVisible (streamSelector);
+    addAndMakeVisible (streamSelector.get());
 
-    channelSelector = new ComboBox();
+    channelSelector = std::make_unique<ComboBox>();
     channelSelector->setBounds (leftMargin, 100, 110, 20);
     channelSelector->addListener (this);
 
@@ -112,13 +112,13 @@ DataPlayer::DataPlayer (OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* onebo
         channelSelector->addItem (String (i + 1), i + 1);
 
     channelSelector->setSelectedId (1, dontSendNotification);
-    addAndMakeVisible (channelSelector);
+    addAndMakeVisible (channelSelector.get());
 
-    outputSelector = new ComboBox();
+    outputSelector = std::make_unique<ComboBox>();
     outputSelector->setBounds (leftMargin, 130, 110, 20);
     outputSelector->addListener (this);
 
-    addAndMakeVisible (outputSelector);
+    addAndMakeVisible (outputSelector.get());
 }
 
 DataPlayer::~DataPlayer()
@@ -132,19 +132,19 @@ void DataPlayer::resized()
 
 void DataPlayer::comboBoxChanged (ComboBox* comboBox)
 {
-    if (comboBox == probeSelector)
+    if (comboBox == probeSelector.get())
     {
         selectedProbe = availableProbes[comboBox->getSelectedId()];
     }
-    else if (comboBox == streamSelector)
+    else if (comboBox == streamSelector.get())
     {
         streamType = (StreamType) comboBox->getSelectedId();
     }
-    else if (comboBox == channelSelector)
+    else if (comboBox == channelSelector.get())
     {
         inputChan = comboBox->getSelectedId() - 1;
     }
-    else if (comboBox == outputSelector)
+    else if (comboBox == outputSelector.get())
     {
         if (comboBox->getSelectedId() == 1) // deselect output
         {
