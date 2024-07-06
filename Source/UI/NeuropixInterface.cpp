@@ -71,14 +71,14 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         electrodesLabel->setBounds (446, currentHeight - 20, 100, 20);
         addAndMakeVisible (electrodesLabel.get());
 
-        enableViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+        enableViewButton = std::make_unique<UtilityButton> ("VIEW");
         enableViewButton->setRadius (3.0f);
         enableViewButton->setBounds (530, currentHeight + 2, 45, 18);
         enableViewButton->addListener (this);
         enableViewButton->setTooltip ("View electrode enabled state");
         addAndMakeVisible (enableViewButton.get());
 
-        enableButton = std::make_unique<UtilityButton> ("ENABLE", FontOptions ("Inter", "Regular", 13.0f));
+        enableButton = std::make_unique<UtilityButton> ("ENABLE");
         enableButton->setRadius (3.0f);
         enableButton->setBounds (450, currentHeight, 65, 22);
         enableButton->addListener (this);
@@ -126,7 +126,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
             apGainComboBox->setSelectedId (probe->settings.apGainIndex + 1, dontSendNotification);
             addAndMakeVisible (apGainComboBox.get());
 
-            apGainViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+            apGainViewButton = std::make_unique<UtilityButton> ("VIEW");
             apGainViewButton->setRadius (3.0f);
             apGainViewButton->setBounds (530, currentHeight + 2, 45, 18);
             apGainViewButton->addListener (this);
@@ -153,7 +153,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
             lfpGainComboBox->setSelectedId (probe->settings.lfpGainIndex + 1, dontSendNotification);
             addAndMakeVisible (lfpGainComboBox.get());
 
-            lfpGainViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+            lfpGainViewButton = std::make_unique<UtilityButton> ("VIEW");
             lfpGainViewButton->setRadius (3.0f);
             lfpGainViewButton->setBounds (530, currentHeight + 2, 45, 18);
             lfpGainViewButton->addListener (this);
@@ -182,7 +182,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
             referenceComboBox->setSelectedId (probe->settings.referenceIndex + 1, dontSendNotification);
             addAndMakeVisible (referenceComboBox.get());
 
-            referenceViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+            referenceViewButton = std::make_unique<UtilityButton> ("VIEW");
             referenceViewButton->setRadius (3.0f);
             referenceViewButton->setBounds (530, currentHeight + 2, 45, 18);
             referenceViewButton->addListener (this);
@@ -215,7 +215,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         currentHeight += 55;
 
-        activityViewButton = std::make_unique<UtilityButton> ("VIEW", FontOptions ("Inter", "Regular", 12.0f));
+        activityViewButton = std::make_unique<UtilityButton> ("VIEW");
         activityViewButton->setRadius (3.0f);
 
         activityViewButton->addListener (this);
@@ -323,7 +323,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         bistComboBox->setSelectedId (1, dontSendNotification);
         addAndMakeVisible (bistComboBox.get());
 
-        bistButton = std::make_unique<UtilityButton> ("RUN", FontOptions ("Inter", "Regular", 12.0f));
+        bistButton = std::make_unique<UtilityButton> ("RUN");
         bistButton->setRadius (3.0f);
         bistButton->setBounds (880, 500, 50, 22);
         bistButton->addListener (this);
@@ -336,49 +336,49 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         addAndMakeVisible (bistLabel.get());
 
         // COPY / PASTE / UPLOAD
-        copyButton = std::make_unique<UtilityButton> ("COPY", FontOptions ("Inter", "Regular", 12.0f));
+        copyButton = std::make_unique<UtilityButton> ("COPY");
         copyButton->setRadius (3.0f);
         copyButton->setBounds (45, 637, 60, 22);
         copyButton->addListener (this);
         copyButton->setTooltip ("Copy probe settings");
         addAndMakeVisible (copyButton.get());
 
-        pasteButton = std::make_unique<UtilityButton> ("PASTE", FontOptions ("Inter", "Regular", 12.0f));
+        pasteButton = std::make_unique<UtilityButton> ("PASTE");
         pasteButton->setRadius (3.0f);
         pasteButton->setBounds (115, 637, 60, 22);
         pasteButton->addListener (this);
         pasteButton->setTooltip ("Paste probe settings");
         addAndMakeVisible (pasteButton.get());
 
-        applyToAllButton = std::make_unique<UtilityButton> ("APPLY TO ALL", FontOptions ("Inter", "Regular", 12.0f));
+        applyToAllButton = std::make_unique<UtilityButton> ("APPLY TO ALL");
         applyToAllButton->setRadius (3.0f);
         applyToAllButton->setBounds (185, 637, 120, 22);
         applyToAllButton->addListener (this);
         applyToAllButton->setTooltip ("Apply this probe's settings to all others");
         addAndMakeVisible (applyToAllButton.get());
 
-        saveImroButton = std::make_unique<UtilityButton> ("SAVE TO IMRO", FontOptions ("Inter", "Regular", 12.0f));
+        saveImroButton = std::make_unique<UtilityButton> ("SAVE TO IMRO");
         saveImroButton->setRadius (3.0f);
         saveImroButton->setBounds (45, 672, 120, 22);
         saveImroButton->addListener (this);
         saveImroButton->setTooltip ("Save settings map to .imro file");
         addAndMakeVisible (saveImroButton.get());
 
-        loadImroButton = std::make_unique<UtilityButton> ("LOAD FROM IMRO", FontOptions ("Inter", "Regular", 12.0f));
+        loadImroButton = std::make_unique<UtilityButton> ("LOAD FROM IMRO");
         loadImroButton->setRadius (3.0f);
         loadImroButton->setBounds (175, 672, 130, 22);
         loadImroButton->addListener (this);
         loadImroButton->setTooltip ("Load settings map from .imro file");
         addAndMakeVisible (loadImroButton.get());
 
-        saveJsonButton = std::make_unique<UtilityButton> ("SAVE TO JSON", FontOptions ("Inter", "Regular", 12.0f));
+        saveJsonButton = std::make_unique<UtilityButton> ("SAVE TO JSON");
         saveJsonButton->setRadius (3.0f);
         saveJsonButton->setBounds (45, 707, 120, 22);
         saveJsonButton->addListener (this);
         saveJsonButton->setTooltip ("Save channel map to probeinterface .json file");
         addAndMakeVisible (saveJsonButton.get());
 
-        loadJsonButton = std::make_unique<UtilityButton> ("LOAD FROM JSON", FontOptions ("Inter", "Regular", 12.0f));
+        loadJsonButton = std::make_unique<UtilityButton> ("LOAD FROM JSON");
         loadJsonButton->setRadius (3.0f);
         loadJsonButton->setBounds (175, 707, 130, 22);
         loadJsonButton->addListener (this);
@@ -425,7 +425,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         verticalOffset = 250;
 
     // FIRMWARE
-    firmwareToggleButton = std::make_unique<UtilityButton> ("UPDATE FIRMWARE...", FontOptions ("Inter", "Regular", 12.0f));
+    firmwareToggleButton = std::make_unique<UtilityButton> ("UPDATE FIRMWARE...");
     firmwareToggleButton->setRadius (3.0f);
     firmwareToggleButton->addListener (this);
     firmwareToggleButton->setBounds (650, verticalOffset, 150, 22);
@@ -442,7 +442,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bscFirmwareComboBox.get());
 
-    bscFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD", FontOptions ("Inter", "Regular", 12.0f));
+    bscFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD");
     bscFirmwareButton->setRadius (3.0f);
     bscFirmwareButton->setBounds (930, verticalOffset + 70, 60, 22);
     bscFirmwareButton->addListener (this);
@@ -466,7 +466,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bsFirmwareComboBox.get());
 
-    bsFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD", FontOptions ("Inter", "Regular", 12.0f));
+    bsFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD");
     bsFirmwareButton->setRadius (3.0f);
     bsFirmwareButton->setBounds (930, verticalOffset + 140, 60, 22);
     bsFirmwareButton->addListener (this);
@@ -507,7 +507,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     infoLabel->setJustificationType (Justification::topLeft);
 
     // ANNOTATIONS
-    annotationButton = std::make_unique<UtilityButton> ("ADD", FontOptions ("Inter", "Regular", 12.0f));
+    annotationButton = std::make_unique<UtilityButton> ("ADD");
     annotationButton->setRadius (3.0f);
     annotationButton->setBounds (400, 680, 40, 18);
     annotationButton->addListener (this);

@@ -442,7 +442,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
         int x_pos = i * 90 + 70;
         int y_pos = 50;
 
-        UtilityButton* b = new UtilityButton ("", FontOptions ("Small Text", 13, Font::plain));
+        UtilityButton* b = new UtilityButton ("");
         b->setBounds (x_pos, y_pos, 30, 20);
         b->addListener (this);
         //addAndMakeVisible(b);
@@ -499,7 +499,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     background->toBack();
     background->repaint();
 
-    addSyncChannelButton = std::make_unique<UtilityButton> ("+", FontOptions ("Small Text", 13, Font::plain));
+    addSyncChannelButton = std::make_unique<UtilityButton> ("+");
     addSyncChannelButton->setBounds (90 * basestations.size() + 78, 40, 20, 20);
     addSyncChannelButton->addListener (this);
     addSyncChannelButton->setTooltip ("Add sync channel to the continuous data stream.");

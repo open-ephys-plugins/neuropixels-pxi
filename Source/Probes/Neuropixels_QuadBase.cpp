@@ -356,7 +356,7 @@ void Neuropixels_QuadBase::startAcquisition()
                                        shank,
                                        quadBaseBuffers[shank],
                                        this,
-                                       apView));
+                                       apView.get()));
         }
     }
 

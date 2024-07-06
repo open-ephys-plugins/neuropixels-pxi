@@ -51,7 +51,7 @@ SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow (SimulatedBas
         comboBox->setBounds (65, 50 + 35 * i, 200, 20);
     }
 
-    acceptButton = std::make_unique<UtilityButton> ("LAUNCH", FontOptions ("Small Text", 13, Font::plain));
+    acceptButton = std::make_unique<UtilityButton> ("LAUNCH");
     acceptButton->setBounds (120, 200, 80, 20);
     acceptButton->addListener (this);
     addAndMakeVisible (acceptButton.get());
