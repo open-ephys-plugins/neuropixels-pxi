@@ -10,27 +10,37 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2019]
+        os: [windows-latest]
     
     steps:
     - uses: actions/checkout@v4
+    - name: set env vars
+      run: |
+        if [ ${{github.ref_name}} == 'juce8' ]; then
+          echo "GUI_BRANCH=development-juce8" >> "$GITHUB_ENV"
+          echo "GUI_LIB_VERSION=v1.0.0-dev" >> "$GITHUB_ENV"
+        elif [ ${{github.ref_name}} == 'testing-juce8' ]; then
+          echo "GUI_BRANCH=testing-juce8" >> "$GITHUB_ENV"
+          echo "GUI_LIB_VERSION=v1.0.0-alpha" >> "$GITHUB_ENV"
+        else
+          echo "Invalid branch : ${{github.ref_name}}"
+          exit 1
+        fi
+      shell: bash
     - name: setup
-      env: 
-        repo: open-ephys-gui
-        package: "open-ephys-lib"
       run: |
         cd ../..
-        git clone https://github.com/open-ephys/plugin-GUI.git --branch development-juce8
+        git clone https://github.com/open-ephys/plugin-GUI.git --branch $GUI_BRANCH
         cd plugin-GUI/Build
-        cmake -G "Visual Studio 16 2019" -A x64 .. 
+        cmake -G "Visual Studio 17 2022" -A x64 .. 
         mkdir Release && cd Release
-        curl -L https://openephysgui.jfrog.io/artifactory/Libraries/open-ephys-lib-v0.7.0.zip --output open-ephys-lib.zip 
+        curl -L https://openephysgui.jfrog.io/artifactory/Libraries/open-ephys-lib-$GUI_LIB_VERSION.zip --output open-ephys-lib.zip 
         unzip open-ephys-lib.zip
       shell: bash
     - name: configure
       run: |
         cd Build
-        cmake -G "Visual Studio 16 2019" -A x64 .. 
+        cmake -G "Visual Studio 17 2022" -A x64 .. 
       shell: bash
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
@@ -43,7 +53,7 @@ jobs:
 #    - name: test
 #      run: cd build && ctest
     - name: deploy
-      if: github.ref == 'refs/heads/juce8'
+      if: github.ref == 'refs/heads/testing-juce8'
       env:
         artifactoryApiKey: ${{ secrets.artifactoryApiKey }}
         build_dir: "Build/Release"
