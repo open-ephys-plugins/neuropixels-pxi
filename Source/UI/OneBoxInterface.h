@@ -26,46 +26,43 @@
 
 #include <VisualizerEditorHeaders.h>
 
-#include "SettingsInterface.h"
 #include "../NeuropixComponents.h"
 #include "../Probes/OneBoxADC.h"
+#include "SettingsInterface.h"
 
 class WavePlayer;
 class DataPlayer;
 class OneBoxDAC;
 
-enum AdcChannelStatus {
+enum AdcChannelStatus
+{
     AVAILABLE = 0,
     IN_USE = 1
 };
 
-
 class AdcChannelButton : public ToggleButton
 {
 public:
-
     /** Constructor */
-    AdcChannelButton(int channel);
+    AdcChannelButton (int channel);
 
     /** Called when channel is selected */
-    void setSelectedState(bool);
+    void setSelectedState (bool);
 
     /** Sets whether the ADC is active*/
-    void setStatus(AdcChannelStatus status, int sharedChannel);
+    void setStatus (AdcChannelStatus status, int sharedChannel);
 
     /** Returns channel index*/
     int getChannelIndex() { return channel; }
-    
 
 private:
-    void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
+    void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown);
 
     AdcChannelStatus status;
     int channel;
     int mapToOutput = -1;
 
     bool selected = false;
-
 };
 
 /** 
@@ -73,16 +70,16 @@ private:
     User interface for the OneBox ADC/DAC channels
 
 */
-class OneBoxInterface : public SettingsInterface, 
-                     public ComboBox::Listener, 
-                     public Button::Listener
+class OneBoxInterface : public SettingsInterface,
+                        public ComboBox::Listener,
+                        public Button::Listener
 {
 public:
     /** Constructor */
-    OneBoxInterface(DataSource* dataSource_, 
-        NeuropixThread* thread_, 
-        NeuropixEditor* editor_, 
-        NeuropixCanvas* canvas_);
+    OneBoxInterface (DataSource* dataSource_,
+                     NeuropixThread* thread_,
+                     NeuropixEditor* editor_,
+                     NeuropixCanvas* canvas_);
 
     /** Destructor */
     ~OneBoxInterface();
@@ -94,37 +91,36 @@ public:
     void stopAcquisition() override;
 
     /** Not used */
-    bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) override 
-    { 
-        return false; 
+    bool applyProbeSettings (ProbeSettings, bool shouldUpdateProbe = true) override
+    {
+        return false;
     }
 
     /** Save parameters */
-    void saveParameters(XmlElement* xml) override;
+    void saveParameters (XmlElement* xml) override;
 
     /** Load parameters */
-    void loadParameters(XmlElement* xml) override;
+    void loadParameters (XmlElement* xml) override;
 
     /** Draw the interface */
-    void paint(Graphics& g);
+    void paint (Graphics& g);
 
     /** Set channel as ADC or DAC */
-    void setChannelType(int chan, DataSourceType type);
+    void setChannelType (int chan, DataSourceType type);
 
     /** ComboBox callback */
-    void comboBoxChanged(ComboBox*);
+    void comboBoxChanged (ComboBox*);
 
     /** Button callback */
-    void buttonClicked(Button*);
+    void buttonClicked (Button*);
 
     /** DataSource method */
-    void updateInfoString() override { }
+    void updateInfoString() override {}
 
     /** Update combo boxes to reflect available channels */
     void updateAvailableChannels();
 
 private:
-
     OwnedArray<AdcChannelButton> channels;
     AdcChannelButton* selectedChannel;
 
@@ -138,7 +134,6 @@ private:
 
     OneBoxDAC* dac;
     OneBoxADC* adc;
-
 };
 
 #endif //__ONEBOXSETTINGSINTERFACE_H_2C4C2D67__

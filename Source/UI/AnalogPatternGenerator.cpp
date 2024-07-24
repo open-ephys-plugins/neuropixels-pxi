@@ -161,71 +161,71 @@ PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_
     setSize (190, 190);
 
     onDuration = std::make_unique<EditableTextInput<int>> ("On duration:",
-                                             "ms",
-                                             0,
-                                             10000,
-                                             100,
-                                             this);
+                                                           "ms",
+                                                           0,
+                                                           10000,
+                                                           100,
+                                                           this);
 
     onDuration->setBounds (10, 10, 180, 20);
     addAndMakeVisible (onDuration.get());
 
     offDuration = std::make_unique<EditableTextInput<int>> ("Off duration:",
-                                              "ms",
-                                              0,
-                                              10000,
-                                              100,
-                                              this);
+                                                            "ms",
+                                                            0,
+                                                            10000,
+                                                            100,
+                                                            this);
 
     offDuration->setBounds (10, 35, 180, 20);
     addAndMakeVisible (offDuration.get());
 
     delayDuration = std::make_unique<EditableTextInput<int>> ("Delay:",
-                                                "ms",
-                                                0,
-                                                10000,
-                                                100,
-                                                this);
+                                                              "ms",
+                                                              0,
+                                                              10000,
+                                                              100,
+                                                              this);
 
     delayDuration->setBounds (10, 60, 180, 20);
     addAndMakeVisible (delayDuration.get());
 
     repeatNumber = std::make_unique<EditableTextInput<int>> ("Num repeats:",
-                                               "x",
-                                               0,
-                                               100,
-                                               1,
-                                               this);
+                                                             "x",
+                                                             0,
+                                                             100,
+                                                             1,
+                                                             this);
 
     repeatNumber->setBounds (10, 85, 180, 20);
     addAndMakeVisible (repeatNumber.get());
 
     rampOnDuration = std::make_unique<EditableTextInput<int>> ("Ramp on:",
-                                                 "ms",
-                                                 0,
-                                                 100,
-                                                 0,
-                                                 this);
+                                                               "ms",
+                                                               0,
+                                                               100,
+                                                               0,
+                                                               this);
 
     rampOnDuration->setBounds (10, 110, 180, 20);
     addAndMakeVisible (rampOnDuration.get());
 
     rampOffDuration = std::make_unique<EditableTextInput<int>> ("Ramp off:",
-                                                  "ms",
-                                                  0,
-                                                  100,
-                                                  0,
-                                                  this);
+                                                                "ms",
+                                                                0,
+                                                                100,
+                                                                0,
+                                                                this);
 
     rampOffDuration->setBounds (10, 135, 180, 20);
     addAndMakeVisible (rampOffDuration.get());
 
     maxVoltage = std::make_unique<EditableTextInput<float>> ("Max voltage:",
-                                               "V",
-                                               0.0f,
-                                               5.0f,
-                                               5.0f,
-                                               this);
+                                                             "V",
+                                                             0.0f,
+                                                             5.0f,
+                                                             5.0f,
+                                                             this);
 
     maxVoltage->setBounds (10, 160, 180, 20);
     addAndMakeVisible (maxVoltage.get());
@@ -329,41 +329,41 @@ SinePatternGenerator::SinePatternGenerator (WavePlayer* wv_, Pattern* pattern_) 
     setSize (190, 120);
 
     frequency = std::make_unique<EditableTextInput<int>> ("Frequency:",
-                                            "Hz",
-                                            1,
-                                            1000,
-                                            5,
-                                            this);
+                                                          "Hz",
+                                                          1,
+                                                          1000,
+                                                          5,
+                                                          this);
 
     frequency->setBounds (10, 10, 180, 20);
     addAndMakeVisible (frequency.get());
 
     cycles = std::make_unique<EditableTextInput<int>> ("Num cycles:",
-                                         "",
-                                         1,
-                                         10000,
-                                         5,
-                                         this);
+                                                       "",
+                                                       1,
+                                                       10000,
+                                                       5,
+                                                       this);
 
     cycles->setBounds (10, 35, 180, 20);
     addAndMakeVisible (cycles.get());
 
     delay = std::make_unique<EditableTextInput<int>> ("Delay:",
-                                        "ms",
-                                        0,
-                                        10000,
-                                        100,
-                                        this);
+                                                      "ms",
+                                                      0,
+                                                      10000,
+                                                      100,
+                                                      this);
 
     delay->setBounds (10, 60, 180, 20);
     addAndMakeVisible (delay.get());
 
     maxVoltage = std::make_unique<EditableTextInput<float>> ("Max voltage:",
-                                               "V",
-                                               0.0f,
-                                               5.0f,
-                                               5.0f,
-                                               this);
+                                                             "V",
+                                                             0.0f,
+                                                             5.0f,
+                                                             5.0f,
+                                                             this);
 
     maxVoltage->setBounds (10, 85, 180, 20);
     addAndMakeVisible (maxVoltage.get());

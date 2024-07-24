@@ -25,9 +25,9 @@
 #define __ACTIVITYVIEW_H__
 
 #include <VisualizerEditorHeaders.h>
-#include <vector>
 #include <limits>
 #include <unordered_map>
+#include <vector>
 
 enum ActivityToView
 {
@@ -73,7 +73,7 @@ public:
         return peakToPeakValues.data();
     }
 
-    void addSample (float sample, int channel, int block=0)
+    void addSample (float sample, int channel, int block = 0)
     {
         int blockChannel = blocks[block][0];
         int& counter = counters[block];
@@ -82,7 +82,7 @@ public:
         {
             if (counter == updateInterval)
             {
-                reset(block);
+                reset (block);
                 counter = 0;
             }
             counter++;
@@ -103,9 +103,8 @@ public:
         }
     }
 
-    void reset(int blockIndex = 0)
+    void reset (int blockIndex = 0)
     {
-
         for (auto ch : blocks[blockIndex])
         {
             peakToPeakValues[ch] = maxChannelValues[ch] - minChannelValues[ch];

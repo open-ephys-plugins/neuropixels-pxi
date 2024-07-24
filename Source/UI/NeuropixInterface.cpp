@@ -1689,7 +1689,7 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
 
             String chId = "CH" + String (channel);
             if (probe->type == ProbeType::QUAD_BASE)
-				chId += ":" + String (shank);
+                chId += ":" + String (shank);
 
             channelNode->setAttribute (chId, chString);
             xposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].xpos + 250 * shank));
@@ -1788,7 +1788,6 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                 }
             }
         }
-        
 
         XmlElement* matchingNode = nullptr;
 
@@ -1900,12 +1899,11 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                 {
                     for (int i = 0; i < 384; i++)
                     {
-
                         for (int shank = 0; shank < 4; shank++)
                         {
                             settings.selectedChannel.add (i);
 
-                            String bankInfo = status->getStringAttribute ("CH" + String (i) + ":" + String(shank));
+                            String bankInfo = status->getStringAttribute ("CH" + String (i) + ":" + String (shank));
                             Bank bank = static_cast<Bank> (bankInfo.substring (0, 1).getIntValue());
 
                             settings.selectedBank.add (bank);
@@ -1919,10 +1917,8 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                                 }
                             }
                         }
-                        
                     }
                 }
-                
             }
 
             probeBrowser->setZoomHeightAndOffset (matchingNode->getIntAttribute ("ZoomHeight"),
