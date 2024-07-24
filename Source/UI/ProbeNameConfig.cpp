@@ -152,7 +152,7 @@ ProbeNameConfig::ProbeNameConfig (Basestation* bs_, NeuropixThread* thread_)
     titleLabel->setJustificationType (Justification::centred);
     titleLabel->setBounds (0, 0, width, 40);
     titleLabel->setFont (Font ("Fira Code", "Semi Bold", 20.0f));
-    addAndMakeVisible (titleLabel);
+    addAndMakeVisible (titleLabel.get());
 
     prevButton = std::make_unique<SelectionButton> (this, true);
     prevButton->setBounds (0, 42, 40, 40);
@@ -166,13 +166,13 @@ ProbeNameConfig::ProbeNameConfig (Basestation* bs_, NeuropixThread* thread_)
     schemeLabel->setJustificationType (Justification::centred);
     schemeLabel->setBounds (40, 42, width - 80, 40);
     schemeLabel->setFont (Font ("Fira Code", "Medium", 20.0f));
-    addAndMakeVisible (schemeLabel);
+    addAndMakeVisible (schemeLabel.get());
 
     description = std::make_unique<Label> ("Scheme description", descriptions[(int) namingScheme]);
     description->setJustificationType (Justification::centredTop);
     description->setBounds (0, 82, width + 2, 150);
     description->setFont (Font ("Fira Code", "Regular", 12.0f));
-    addAndMakeVisible (description);
+    addAndMakeVisible (description.get());
 
     int padding = 9;
     width = (width - 3 * padding) / 2;
@@ -198,13 +198,13 @@ ProbeNameConfig::ProbeNameConfig (Basestation* bs_, NeuropixThread* thread_)
     dock1Label->setJustificationType (Justification::centred);
     dock1Label->setBounds (x - (padding + width), getHeight() - 5 * (padding + height), width, 1.5 * height);
     dock1Label->setFont (Font ("Fira Code", "Medium", 14.0f));
-    addAndMakeVisible (dock1Label);
+    addAndMakeVisible (dock1Label.get());
 
     dock2Label = std::make_unique<Label> ("dock2Label", "Dock 2");
     dock2Label->setJustificationType (Justification::centred);
     dock2Label->setBounds (x, getHeight() - 5 * (padding + height), width, 1.5 * height);
     dock2Label->setFont (Font ("Fira Code", "Medium", 14.0f));
-    addAndMakeVisible (dock2Label);
+    addAndMakeVisible (dock2Label.get());
 
     for (auto& probe : basestation->getProbes())
     {
