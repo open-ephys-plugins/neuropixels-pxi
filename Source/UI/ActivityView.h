@@ -25,6 +25,9 @@
 #define __ACTIVITYVIEW_H__
 
 #include <VisualizerEditorHeaders.h>
+#include <vector>
+#include <limits>
+#include <unordered_map>
 
 enum ActivityToView
 {
@@ -41,65 +44,61 @@ Helper class for viewing real-time activity across the probe.
 class ActivityView
 {
 public:
-    ActivityView (int numChannels, int updateInterval_, Array<Array<int>> blocks_ = Array<Array<int>>())
+    ActivityView (int numChannels, int updateInterval_, std::vector<std::vector<int>> blocks_ = {})
+        : updateInterval (updateInterval_)
     {
-
-        if (blocks_.size() == 0)
+        if (blocks_.empty())
         {
-            Array<int> block;
-
+            std::vector<int> block;
             for (int i = 0; i < numChannels; i++)
             {
-				block.add (i);
-			}
-            blocks.add (block);
+                block.push_back (i);
+            }
+            blocks.push_back (block);
         }
         else
         {
-        	blocks = blocks_;
-        }
-        
-        updateInterval = updateInterval_;
-
-        for (int i = 0; i < numChannels; i++)
-        {
-            minChannelValues.add (999999.9f);
-			maxChannelValues.add (-999999.9f);
-            peakToPeakValues.add (0);
+            blocks = blocks_;
         }
 
-        for (int i = 0; i < blocks.size(); i++)
-        {
-            counters.add (0);
-		}
+        minChannelValues.resize (numChannels, std::numeric_limits<int>::max());
+        maxChannelValues.resize (numChannels, std::numeric_limits<int>::min());
+        peakToPeakValues.resize (numChannels, 0.0f);
+
+        counters.resize (blocks.size(), 0);
     }
 
     const float* getPeakToPeakValues()
     {
-        return peakToPeakValues.getRawDataPointer();
+        return peakToPeakValues.data();
     }
 
     void addSample (float sample, int channel, int block=0)
     {
-        if (channel == blocks[block][0])
-        {
-            if (counters[block] == updateInterval)
-                reset(block);
+        int blockChannel = blocks[block][0];
+        int& counter = counters[block];
 
-            counters.set (block, counters[block] + 1);
+        if (channel == blockChannel)
+        {
+            if (counter == updateInterval)
+            {
+                reset(block);
+                counter = 0;
+            }
+            counter++;
         }
 
-        if (counters[block] % 10 == 0)
+        if (counter % 10 == 0)
         {
             if (sample < minChannelValues[channel])
             {
-                minChannelValues.set (channel, sample);
+                minChannelValues[channel] = sample;
                 return;
             }
 
             if (sample > maxChannelValues[channel])
             {
-                maxChannelValues.set (channel, sample);
+                maxChannelValues[channel] = sample;
             }
         }
     }
@@ -109,23 +108,21 @@ public:
 
         for (auto ch : blocks[blockIndex])
         {
-            peakToPeakValues.set (ch, maxChannelValues[ch] - minChannelValues[ch]);
-            minChannelValues.set (ch, 999999.9f);
-            maxChannelValues.set (ch, -999999.9f);
+            peakToPeakValues[ch] = maxChannelValues[ch] - minChannelValues[ch];
+            minChannelValues[ch] = std::numeric_limits<int>::max();
+            maxChannelValues[ch] = std::numeric_limits<int>::min();
         }
 
-        counters.set (blockIndex, 0);
-
-        
+        counters[blockIndex] = 0;
     }
 
 private:
-    Array<float, CriticalSection> minChannelValues;
-    Array<float, CriticalSection> maxChannelValues;
-    Array<float, CriticalSection> peakToPeakValues;
+    std::vector<float> minChannelValues;
+    std::vector<float> maxChannelValues;
+    std::vector<float> peakToPeakValues;
 
-    Array<Array<int>> blocks;
-    Array<int> counters;
+    std::vector<std::vector<int>> blocks;
+    std::vector<int> counters;
     int updateInterval;
 };
 

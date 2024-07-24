@@ -111,16 +111,16 @@ bool Neuropixels_QuadBase::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    Array<Array<int>> blocks;
+    std::vector<std::vector<int>> blocks;
 
     for (int shank = 0; shank < 4; shank++)
     {
 
-        blocks.add (Array<int>());
+        blocks.push_back ({}); // add a new block
 
         for (int i = 0; i < 384; i++)
         {
-            blocks.getReference(shank).add (i + 384 * shank);
+            blocks[shank].push_back (i + 384 * shank);
         }
     }
 
