@@ -105,15 +105,15 @@ public:
     Pattern* currentPattern;
 
 private:
-    ScopedPointer<ComboBox> patternSelector;
+    std::unique_ptr<ComboBox> patternSelector;
 
-    ScopedPointer<UtilityButton> pulsePatternButton;
-    ScopedPointer<UtilityButton> sinePatternButton;
-    ScopedPointer<UtilityButton> customPatternButton;
+    std::unique_ptr<UtilityButton> pulsePatternButton;
+    std::unique_ptr<UtilityButton> sinePatternButton;
+    std::unique_ptr<UtilityButton> customPatternButton;
 
-    ScopedPointer<UtilityButton> startStopButton;
+    std::unique_ptr<UtilityButton> startStopButton;
 
-    ScopedPointer<WavePlayerBackground> background;
+    std::unique_ptr<WavePlayerBackground> background;
 
     void selectPatternType (PatternType t);
     void updatePatternSelector();

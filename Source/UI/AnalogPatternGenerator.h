@@ -119,9 +119,9 @@ public:
     AnalogPatternGenerator* apg;
 
 private:
-    ScopedPointer<Label> mainLabel;
-    ScopedPointer<Label> unitsLabel;
-    ScopedPointer<Label> inputBox;
+    std::unique_ptr<Label> mainLabel;
+    std::unique_ptr<Label> unitsLabel;
+    std::unique_ptr<Label> inputBox;
 
     T minValue;
     T maxValue;
@@ -141,13 +141,13 @@ public:
     void buildWaveform();
 
 private:
-    ScopedPointer<EditableTextInput<int>> onDuration;
-    ScopedPointer<EditableTextInput<int>> offDuration;
-    ScopedPointer<EditableTextInput<int>> delayDuration;
-    ScopedPointer<EditableTextInput<int>> repeatNumber;
-    ScopedPointer<EditableTextInput<int>> rampOnDuration;
-    ScopedPointer<EditableTextInput<int>> rampOffDuration;
-    ScopedPointer<EditableTextInput<float>> maxVoltage;
+    std::unique_ptr<EditableTextInput<int>> onDuration;
+    std::unique_ptr<EditableTextInput<int>> offDuration;
+    std::unique_ptr<EditableTextInput<int>> delayDuration;
+    std::unique_ptr<EditableTextInput<int>> repeatNumber;
+    std::unique_ptr<EditableTextInput<int>> rampOnDuration;
+    std::unique_ptr<EditableTextInput<int>> rampOffDuration;
+    std::unique_ptr<EditableTextInput<float>> maxVoltage;
 };
 
 class SinePatternGenerator : public AnalogPatternGenerator
@@ -162,10 +162,10 @@ public:
     void buildWaveform();
 
 private:
-    ScopedPointer<EditableTextInput<int>> frequency;
-    ScopedPointer<EditableTextInput<int>> cycles;
-    ScopedPointer<EditableTextInput<int>> delay;
-    ScopedPointer<EditableTextInput<float>> maxVoltage;
+    std::unique_ptr<EditableTextInput<int>> frequency;
+    std::unique_ptr<EditableTextInput<int>> cycles;
+    std::unique_ptr<EditableTextInput<int>> delay;
+    std::unique_ptr<EditableTextInput<float>> maxVoltage;
 };
 
 class CustomPatternGenerator : public AnalogPatternGenerator,
@@ -185,8 +185,8 @@ public:
     void keyPressed (KeyPress& key);
 
 private:
-    ScopedPointer<TextEditor> textEditor;
-    ScopedPointer<Label> mainLabel;
+    std::unique_ptr<TextEditor> textEditor;
+    std::unique_ptr<Label> mainLabel;
 
     float constrainVoltage (float input, float min = 0, float max = 5);
 

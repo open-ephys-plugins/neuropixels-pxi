@@ -111,20 +111,19 @@ bool Neuropixels_QuadBase::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    Array<Array<int>> blocks;
+    std::vector<std::vector<int>> blocks;
 
     for (int shank = 0; shank < 4; shank++)
     {
-
-        blocks.add (Array<int>());
+        blocks.push_back ({}); // add a new block
 
         for (int i = 0; i < 384; i++)
         {
-            blocks.getReference(shank).add (i + 384 * shank);
+            blocks[shank].push_back (i + 384 * shank);
         }
     }
 
-    apView = new ActivityView (384 * 4, 3000, blocks);
+    apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks);
 
     return errorCode == Neuropixels::SUCCESS;
 }
@@ -337,15 +336,11 @@ void Neuropixels_QuadBase::writeConfiguration()
 
 void Neuropixels_QuadBase::startAcquisition()
 {
-    
-    
-
     if (acquisitionThreads.size() == 0)
     {
         for (int shank = 0; shank < 4; shank++)
         {
-
-            apView->reset(shank);
+            apView->reset (shank);
 
             quadBaseBuffers[shank]->clear();
 
@@ -356,7 +351,7 @@ void Neuropixels_QuadBase::startAcquisition()
                                        shank,
                                        quadBaseBuffers[shank],
                                        this,
-                                       apView));
+                                       apView.get()));
         }
     }
 
@@ -386,19 +381,19 @@ AcquisitionThread::AcquisitionThread (
     DataBuffer* buffer_,
     Probe* probe_,
     ActivityView* apView_) : Thread ("AcquisitionThread" + String (shank)),
-                     slot (slot_),
-                     port (port_),
-                     dock (dock_),
-                     shank (shank_),
-                     buffer (buffer_),
-                     probe (probe_),
-                     apView(apView_),
-                     ap_sample_rate (30000.0f),
-                     ap_timestamp (0),
-                     last_npx_timestamp (0),
-                     sendSync (false),
-                     passedOneSecond (false),
-                     eventCode (0)
+                             slot (slot_),
+                             port (port_),
+                             dock (dock_),
+                             shank (shank_),
+                             buffer (buffer_),
+                             probe (probe_),
+                             apView (apView_),
+                             ap_sample_rate (30000.0f),
+                             ap_timestamp (0),
+                             last_npx_timestamp (0),
+                             sendSync (false),
+                             passedOneSecond (false),
+                             eventCode (0)
 {
     if (shank == 0)
         stream_source = Neuropixels::streamsource_t::SourceAP;
@@ -412,7 +407,6 @@ AcquisitionThread::AcquisitionThread (
 
 void AcquisitionThread::run()
 {
-
     ap_timestamp = 0;
     last_npx_timestamp = 0;
     passedOneSecond = false;

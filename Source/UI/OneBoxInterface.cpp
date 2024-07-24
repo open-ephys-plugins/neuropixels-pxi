@@ -108,44 +108,44 @@ OneBoxInterface::OneBoxInterface (DataSource* dataSource_,
         }
     }
 
-    rangeSelector = new ComboBox();
+    rangeSelector = std::make_unique<ComboBox>();
     rangeSelector->setBounds (300, 190, 120, 20);
     rangeSelector->addListener (this);
     rangeSelector->addItem ("+/- 2.5 V", (int) AdcInputRange::PLUSMINUS2PT5V);
     rangeSelector->addItem ("+/- 5 V", (int) AdcInputRange::PLUSMINUS5V);
     rangeSelector->addItem ("+/- 10 V", (int) AdcInputRange::PLUSMINUS10V);
     rangeSelector->setSelectedId ((int) AdcInputRange::PLUSMINUS5V, dontSendNotification);
-    addAndMakeVisible (rangeSelector);
+    addAndMakeVisible (rangeSelector.get());
 
-    thresholdSelector = new ComboBox();
+    thresholdSelector = std::make_unique<ComboBox>();
     thresholdSelector->setBounds (300, 300, 120, 20);
     thresholdSelector->addListener (this);
     thresholdSelector->addItem ("1 V", (int) AdcThresholdLevel::ONE_VOLT);
     thresholdSelector->addItem ("3 V", (int) AdcThresholdLevel::THREE_VOLTS);
     thresholdSelector->setSelectedId ((int) AdcThresholdLevel::ONE_VOLT, dontSendNotification);
-    addAndMakeVisible (thresholdSelector);
+    addAndMakeVisible (thresholdSelector.get());
 
-    triggerSelector = new ComboBox();
+    triggerSelector = std::make_unique<ComboBox>();
     triggerSelector->setBounds (300, 350, 120, 20);
     triggerSelector->addListener (this);
 
     triggerSelector->addItem ("FALSE", 1);
     triggerSelector->addItem ("TRUE", 2);
     triggerSelector->setSelectedId (1, dontSendNotification);
-    addAndMakeVisible (triggerSelector);
+    addAndMakeVisible (triggerSelector.get());
 
-    mappingSelector = new ComboBox();
+    mappingSelector = std::make_unique<ComboBox>();
     mappingSelector->setBounds (300, 400, 120, 20);
     mappingSelector->addListener (this);
-    addAndMakeVisible (mappingSelector);
+    addAndMakeVisible (mappingSelector.get());
 
-    wavePlayer = new WavePlayer (dac);
+    wavePlayer = std::make_unique<WavePlayer> (dac);
     wavePlayer->setBounds (500, 100, 320, 180);
-    addAndMakeVisible (wavePlayer);
+    addAndMakeVisible (wavePlayer.get());
 
-    dataPlayer = new DataPlayer (dac, adc, this);
+    dataPlayer = std::make_unique<DataPlayer> (dac, adc, this);
     dataPlayer->setBounds (500, 340, 320, 180);
-    addAndMakeVisible (dataPlayer);
+    addAndMakeVisible (dataPlayer.get());
 
     updateAvailableChannels();
 }
@@ -164,7 +164,7 @@ void OneBoxInterface::stopAcquisition()
 
 void OneBoxInterface::comboBoxChanged (ComboBox* comboBox)
 {
-    if (comboBox == rangeSelector)
+    if (comboBox == rangeSelector.get())
     {
         // change range
         // update bitVolts values
@@ -172,13 +172,13 @@ void OneBoxInterface::comboBoxChanged (ComboBox* comboBox)
 
         CoreServices::updateSignalChain ((GenericEditor*) editor);
     }
-    else if (comboBox == thresholdSelector)
+    else if (comboBox == thresholdSelector.get())
     {
         // change threshold
         adc->setAdcThresholdLevel ((AdcThresholdLevel) comboBox->getSelectedId(),
                                    selectedChannel->getChannelIndex());
     }
-    else if (comboBox == triggerSelector)
+    else if (comboBox == triggerSelector.get())
     {
         // set trigger
         for (auto channel : channels)
@@ -190,7 +190,7 @@ void OneBoxInterface::comboBoxChanged (ComboBox* comboBox)
         adc->setTriggersWaveplayer ((bool) (comboBox->getSelectedId() - 1),
                                     selectedChannel->getChannelIndex());
     }
-    else if (comboBox == mappingSelector)
+    else if (comboBox == mappingSelector.get())
     {
         adc->setAsOutput (comboBox->getSelectedId() - 2,
                           selectedChannel->getChannelIndex());

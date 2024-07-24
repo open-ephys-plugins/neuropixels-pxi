@@ -31,7 +31,6 @@
 class AcquisitionThread : public Thread
 {
 public:
-
     AcquisitionThread (int slot,
                        int port,
                        int dock,
@@ -91,7 +90,6 @@ private:
 class Neuropixels_QuadBase : public Probe
 {
 public:
-
     /** Constructor */
     Neuropixels_QuadBase (Basestation*,
                           Headstage*,

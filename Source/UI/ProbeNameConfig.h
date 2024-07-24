@@ -143,13 +143,13 @@ private:
         "Each probe has a name associated with it (default = probe serial number). There should be one text box for each probe that is currently connected.",
     };
 
-    ScopedPointer<Label> titleLabel;
-    ScopedPointer<SelectionButton> prevButton;
-    ScopedPointer<SelectionButton> nextButton;
-    ScopedPointer<Label> schemeLabel;
-    ScopedPointer<Label> description;
-    ScopedPointer<Label> dock1Label;
-    ScopedPointer<Label> dock2Label;
+    std::unique_ptr<Label> titleLabel;
+    std::unique_ptr<SelectionButton> prevButton;
+    std::unique_ptr<SelectionButton> nextButton;
+    std::unique_ptr<Label> schemeLabel;
+    std::unique_ptr<Label> description;
+    std::unique_ptr<Label> dock1Label;
+    std::unique_ptr<Label> dock2Label;
 };
 
 #endif // __PROBENAMECONFIG_H_F0BD2DD9__

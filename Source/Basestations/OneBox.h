@@ -93,8 +93,8 @@ public:
 
     const int first_available_slot = 16;
 
-    ScopedPointer<OneBoxADC> adcSource;
-    ScopedPointer<OneBoxDAC> dacSource;
+    std::unique_ptr<OneBoxADC> adcSource;
+    std::unique_ptr<OneBoxDAC> dacSource;
 };
 
 #endif // __ONEBOX_H_2C4C2D67__

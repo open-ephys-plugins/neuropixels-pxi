@@ -134,7 +134,7 @@ bool SimulatedBasestation::open()
 {
     savingDirectory = File();
 
-    basestationConnectBoard = new SimulatedBasestationConnectBoard (this);
+    basestationConnectBoard = std::make_unique<SimulatedBasestationConnectBoard> (this);
     basestationConnectBoard->getInfo();
 
     for (int i = 0; i < headstage_count; i++)

@@ -150,7 +150,7 @@ bool Neuropixels2::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = new ActivityView (384, 3000);
+    apView = std::make_unique<ActivityView> (384, 3000);
 
     return errorCode == Neuropixels::SUCCESS;
 }

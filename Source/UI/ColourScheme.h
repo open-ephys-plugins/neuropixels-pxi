@@ -26,27 +26,25 @@ enum class ColourSchemeId : int
 
 namespace ColourScheme
 {
-    /**
+/**
      *  Get the colour mapping for a given value, assuming normalized [0,1) and
      *  clipping at the bounds. The colour mapping used can be set using
      *  ColourScheme::setColourScheme
      */
-    Colour getColourForNormalizedValue(float val);
+Colour getColourForNormalizedValue (float val);
 
-    /**
+/**
      *  Get the colour mapping for a given value, with a specific ColourSchemeId and
      *  ignoring the value otherwise stored globally.
      */
-    Colour getColourForNormalizedValueInScheme(float val, ColourSchemeId colourScheme);
+Colour getColourForNormalizedValueInScheme (float val, ColourSchemeId colourScheme);
 
-
-    /**
+/**
      *  Set the global colour scheme, using this value automatically in
      *  ColourScheme::getColourForNormalizedValue. The default value, if never
      *  set by a user is ColourSchemeId::INFERNO.
      */
-    void setColourScheme(ColourSchemeId colourScheme);
-};
-
+void setColourScheme (ColourSchemeId colourScheme);
+}; // namespace ColourScheme
 
 #endif /* ColourScheme_h */

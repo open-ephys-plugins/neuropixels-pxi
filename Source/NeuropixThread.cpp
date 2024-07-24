@@ -253,6 +253,8 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
 
         if (probe->generatesLfpData())
             streamIndex += 2;
+        else if (probe->type == ProbeType::QUAD_BASE)
+            streamIndex += 4;
         else
             streamIndex += 1;
 
@@ -287,6 +289,8 @@ String NeuropixThread::generateProbeName (int probeIndex, ProbeNameConfig::Namin
             name = String (probe->streamIndex);
             if (probe->generatesLfpData())
                 name += "," + String (probe->streamIndex + 1);
+            else if (probe->type == ProbeType::QUAD_BASE)
+                name += "," + String (probe->streamIndex + 1) + "," + String (probe->streamIndex + 2) + "," + String (probe->streamIndex + 3);
             break;
         default:
             name = "Probe" + probeNames[probeIndex];
@@ -979,6 +983,21 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
             streamName = generateProbeName (probeIdx, p->namingScheme);
 
             probeIdx++;
+        }
+        else if (info.type == stream_type::QUAD_BASE)
+        {
+            Probe* p = getProbes()[probeIdx];
+            p->updateNamingScheme (p->namingScheme); // update displayName
+
+            streamName = generateProbeName (probeIdx, p->namingScheme);
+
+            if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
+                streamName += "-" + String (info.shank + 1);
+            else
+                streamName = String (p->streamIndex + info.shank);
+
+            if (info.shank == 3)
+                probeIdx++;
         }
         else
         {

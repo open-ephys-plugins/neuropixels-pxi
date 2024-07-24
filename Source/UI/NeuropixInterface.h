@@ -130,75 +130,75 @@ private:
     bool acquisitionIsActive = false;
 
     // Combo box - probe-specific settings
-    ScopedPointer<ComboBox> electrodeConfigurationComboBox;
-    ScopedPointer<ComboBox> lfpGainComboBox;
-    ScopedPointer<ComboBox> apGainComboBox;
-    ScopedPointer<ComboBox> referenceComboBox;
-    ScopedPointer<ComboBox> filterComboBox;
-    ScopedPointer<ComboBox> activityViewComboBox;
-    ScopedPointer<ComboBox> redEmissionSiteComboBox;
-    ScopedPointer<ComboBox> blueEmissionSiteComboBox;
+    std::unique_ptr<ComboBox> electrodeConfigurationComboBox;
+    std::unique_ptr<ComboBox> lfpGainComboBox;
+    std::unique_ptr<ComboBox> apGainComboBox;
+    std::unique_ptr<ComboBox> referenceComboBox;
+    std::unique_ptr<ComboBox> filterComboBox;
+    std::unique_ptr<ComboBox> activityViewComboBox;
+    std::unique_ptr<ComboBox> redEmissionSiteComboBox;
+    std::unique_ptr<ComboBox> blueEmissionSiteComboBox;
 
     // Combo box - basestation settings
-    ScopedPointer<ComboBox> bistComboBox;
-    ScopedPointer<ComboBox> bscFirmwareComboBox;
-    ScopedPointer<ComboBox> bsFirmwareComboBox;
+    std::unique_ptr<ComboBox> bistComboBox;
+    std::unique_ptr<ComboBox> bscFirmwareComboBox;
+    std::unique_ptr<ComboBox> bsFirmwareComboBox;
 
     // Combo box - probe settings
-    ScopedPointer<ComboBox> loadImroComboBox;
+    std::unique_ptr<ComboBox> loadImroComboBox;
 
     // LABELS
-    ScopedPointer<Viewport> infoLabelView;
-    ScopedPointer<Label> nameLabel;
-    ScopedPointer<Label> infoLabel;
-    ScopedPointer<Label> lfpGainLabel;
-    ScopedPointer<Label> apGainLabel;
-    ScopedPointer<Label> electrodesLabel;
-    ScopedPointer<Label> electrodePresetLabel;
-    ScopedPointer<Label> referenceLabel;
-    ScopedPointer<Label> filterLabel;
-    ScopedPointer<Label> bankViewLabel;
-    ScopedPointer<Label> activityViewLabel;
-    ScopedPointer<Label> redEmissionSiteLabel;
-    ScopedPointer<Label> blueEmissionSiteLabel;
+    std::unique_ptr<Viewport> infoLabelView;
+    std::unique_ptr<Label> nameLabel;
+    std::unique_ptr<Label> infoLabel;
+    std::unique_ptr<Label> lfpGainLabel;
+    std::unique_ptr<Label> apGainLabel;
+    std::unique_ptr<Label> electrodesLabel;
+    std::unique_ptr<Label> electrodePresetLabel;
+    std::unique_ptr<Label> referenceLabel;
+    std::unique_ptr<Label> filterLabel;
+    std::unique_ptr<Label> bankViewLabel;
+    std::unique_ptr<Label> activityViewLabel;
+    std::unique_ptr<Label> redEmissionSiteLabel;
+    std::unique_ptr<Label> blueEmissionSiteLabel;
 
-    ScopedPointer<Label> bistLabel;
-    ScopedPointer<Label> bscFirmwareLabel;
-    ScopedPointer<Label> bsFirmwareLabel;
-    ScopedPointer<Label> firmwareInstructionsLabel;
+    std::unique_ptr<Label> bistLabel;
+    std::unique_ptr<Label> bscFirmwareLabel;
+    std::unique_ptr<Label> bsFirmwareLabel;
+    std::unique_ptr<Label> firmwareInstructionsLabel;
 
-    ScopedPointer<Label> probeSettingsLabel;
+    std::unique_ptr<Label> probeSettingsLabel;
 
-    ScopedPointer<Label> annotationLabelLabel;
-    ScopedPointer<Label> annotationLabel;
+    std::unique_ptr<Label> annotationLabelLabel;
+    std::unique_ptr<Label> annotationLabel;
 
     // BUTTONS
-    ScopedPointer<UtilityButton> enableButton;
+    std::unique_ptr<UtilityButton> enableButton;
 
-    ScopedPointer<UtilityButton> enableViewButton;
-    ScopedPointer<UtilityButton> lfpGainViewButton;
-    ScopedPointer<UtilityButton> apGainViewButton;
-    ScopedPointer<UtilityButton> referenceViewButton;
-    ScopedPointer<UtilityButton> bankViewButton;
-    ScopedPointer<UtilityButton> activityViewButton;
+    std::unique_ptr<UtilityButton> enableViewButton;
+    std::unique_ptr<UtilityButton> lfpGainViewButton;
+    std::unique_ptr<UtilityButton> apGainViewButton;
+    std::unique_ptr<UtilityButton> referenceViewButton;
+    std::unique_ptr<UtilityButton> bankViewButton;
+    std::unique_ptr<UtilityButton> activityViewButton;
 
-    ScopedPointer<UtilityButton> annotationButton;
-    ScopedPointer<UtilityButton> bistButton;
-    ScopedPointer<UtilityButton> bsFirmwareButton;
-    ScopedPointer<UtilityButton> bscFirmwareButton;
-    ScopedPointer<UtilityButton> firmwareToggleButton;
+    std::unique_ptr<UtilityButton> annotationButton;
+    std::unique_ptr<UtilityButton> bistButton;
+    std::unique_ptr<UtilityButton> bsFirmwareButton;
+    std::unique_ptr<UtilityButton> bscFirmwareButton;
+    std::unique_ptr<UtilityButton> firmwareToggleButton;
 
-    ScopedPointer<UtilityButton> copyButton;
-    ScopedPointer<UtilityButton> pasteButton;
-    ScopedPointer<UtilityButton> applyToAllButton;
-    ScopedPointer<UtilityButton> loadImroButton;
-    ScopedPointer<UtilityButton> saveImroButton;
-    ScopedPointer<UtilityButton> loadJsonButton;
-    ScopedPointer<UtilityButton> saveJsonButton;
+    std::unique_ptr<UtilityButton> copyButton;
+    std::unique_ptr<UtilityButton> pasteButton;
+    std::unique_ptr<UtilityButton> applyToAllButton;
+    std::unique_ptr<UtilityButton> loadImroButton;
+    std::unique_ptr<UtilityButton> saveImroButton;
+    std::unique_ptr<UtilityButton> loadJsonButton;
+    std::unique_ptr<UtilityButton> saveJsonButton;
 
-    ScopedPointer<AnnotationColourSelector> annotationColourSelector;
+    std::unique_ptr<AnnotationColourSelector> annotationColourSelector;
 
-    ScopedPointer<ProbeBrowser> probeBrowser;
+    std::unique_ptr<ProbeBrowser> probeBrowser;
 
     VisualizationMode mode;
 

@@ -31,9 +31,7 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
 
     ProbeType probeType = parent->probe->type;
 
-    if (probeType == ProbeType::QUAD_BASE ||
-        probeType == ProbeType::NP2_1 ||
-        probeType == ProbeType::NP2_4)
+    if (probeType == ProbeType::QUAD_BASE || probeType == ProbeType::NP2_1 || probeType == ProbeType::NP2_4)
     {
         maxPeakToPeakAmplitude = 1000.0f;
     }
@@ -41,7 +39,6 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
     {
         maxPeakToPeakAmplitude = 250.0f;
     }
-
 
     isOverZoomRegion = false;
     isOverUpperBorder = false;
@@ -1028,7 +1025,7 @@ void ProbeBrowser::timerCallback()
         if (parent->electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
         {
             int channelNumber = parent->electrodeMetadata[i].channel;
-            
+
             if (parent->probe->type == ProbeType::QUAD_BASE)
                 channelNumber += parent->electrodeMetadata[i].shank * 384;
 

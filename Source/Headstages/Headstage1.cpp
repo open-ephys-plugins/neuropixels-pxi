@@ -177,7 +177,7 @@ void HeadstageTestModule_v3::getInfo()
 
 void HeadstageTestModule_v3::runAll()
 {
-    status = new HST_Status();
+    status = std::make_unique<HST_Status>();
 
     status->VDD_A1V2 = test_VDD_A1V2();
     status->VDD_A1V8 = test_VDD_A1V8();

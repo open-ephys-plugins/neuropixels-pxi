@@ -201,8 +201,8 @@ bool OneBox::open()
 
         LOGD ("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 
-        adcSource = new OneBoxADC (this);
-        dacSource = new OneBoxDAC (this);
+        adcSource = std::make_unique<OneBoxADC> (this);
+        dacSource = std::make_unique<OneBoxDAC> (this);
     }
 
     syncFrequencies.add (1);
@@ -213,7 +213,7 @@ bool OneBox::open()
 Array<DataSource*> OneBox::getAdditionalDataSources()
 {
     Array<DataSource*> sources;
-    sources.add ((DataSource*) adcSource);
+    sources.add ((DataSource*) adcSource.get());
 
     return sources;
 }
