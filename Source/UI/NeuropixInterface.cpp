@@ -1564,20 +1564,17 @@ ProbeSettings NeuropixInterface::getProbeSettings()
     LOGD ("Getting probe settings");
     int numElectrodes = 0;
 
-    if (p.probeType != ProbeType::UHD2)
+    for (auto const electrode : electrodeMetadata)
     {
-        for (auto const electrode : electrodeMetadata)
+        if (electrode.status == ElectrodeStatus::CONNECTED)
         {
-            if (electrode.status == ElectrodeStatus::CONNECTED)
-            {
-                p.selectedChannel.add (electrode.channel);
-                p.selectedBank.add (electrode.bank);
-                p.selectedShank.add (electrode.shank);
-                p.selectedElectrode.add (electrode.global_index);
-                numElectrodes++;
+            p.selectedChannel.add (electrode.channel);
+            p.selectedBank.add (electrode.bank);
+            p.selectedShank.add (electrode.shank);
+            p.selectedElectrode.add (electrode.global_index);
+            numElectrodes++;
 
-                // std::cout << electrode.channel << " : " << electrode.global_index << std::endl;
-            }
+            // std::cout << electrode.channel << " : " << electrode.global_index << std::endl;
         }
     }
 
