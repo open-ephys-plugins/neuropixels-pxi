@@ -104,66 +104,9 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
         basestationTab->setOutline (0);
         basestationTabs.add (basestationTab);
 
-        int probeCount = basestation->getProbes().size();
         basestations.add (basestation);
 
-        Array<DataSource*> availableDataSources = thread->getDataSources();
-
-        int basestationTabNumber = 0;
-
-        for (auto source : availableDataSources)
-        {
-            if (source->sourceType == DataSourceType::PROBE && source->basestation == basestation)
-            {
-                NeuropixInterface* neuropixInterface = new NeuropixInterface (source, thread, editor, this);
-                settingsInterfaces.add ((SettingsInterface*) neuropixInterface);
-
-                basestationTab->addTab (" " + source->getName() + " ",
-                                        findColour (ThemeColours::componentBackground),
-                                        neuropixInterface->viewport.get(),
-                                        false);
-
-                topLevelTabIndex.add (topLevelTabNumber);
-                basestationTabIndex.add (basestationTabNumber++);
-            }
-            else if (source->sourceType == DataSourceType::ADC && source->basestation == basestation)
-            {
-                OneBoxInterface* oneBoxInterface = new OneBoxInterface (source, thread, editor, this);
-                settingsInterfaces.add (oneBoxInterface);
-
-                //addChildComponent(oneBoxInterface->viewport.get());
-                basestationTab->addTab (" " + source->getName() + " ",
-                                        findColour (ThemeColours::componentBackground),
-                                        oneBoxInterface->viewport.get(),
-                                        false);
-
-                topLevelTabIndex.add (topLevelTabNumber);
-                basestationTabIndex.add (basestationTabNumber++);
-            }
-            // else if (source->sourceType == DataSourceType::DAC)
-            // {
-            //     DacInterface* dacInterface = new DacInterface(source, thread, editor, this);
-            //    settingsInterfaces.add(dacInterface);
-            //}
-
-            dataSources.add (source);
-        }
-
-        if (basestationTabNumber == 0)
-        {
-            BasestationInterface* basestationInterface = new BasestationInterface (basestation, thread, editor, this);
-            settingsInterfaces.add (basestationInterface);
-            basestationTab->addTab (" Firmware Update ",
-                                    findColour (ThemeColours::componentBackground),
-                                    basestationInterface->viewport.get(),
-                                    false);
-            topLevelTabIndex.add (topLevelTabNumber);
-            basestationTabIndex.add (basestationTabNumber++);
-
-            dataSources.add (nullptr);
-        }
-
-        topLevelTabNumber += 1;
+        populateSourceTabs (basestation, basestationTab, topLevelTabNumber);
     }
 
     topLevelTabComponent->setCurrentTabIndex (topLevelTabNumber - 1);
@@ -176,6 +119,71 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
     //resized();
 
     savedSettings.probeType = ProbeType::NONE;
+}
+
+void NeuropixCanvas::populateSourceTabs(Basestation* basestation, CustomTabComponent* basestationTab, int &topLevelTabNumber)
+{
+    int probeCount = basestation->getProbes().size();
+
+    Array<DataSource*> availableDataSources = thread->getDataSources();
+
+    int basestationTabNumber = 0;
+
+    for (auto source : availableDataSources)
+    {
+        if (source->sourceType == DataSourceType::PROBE && source->basestation == basestation)
+        {
+            NeuropixInterface* neuropixInterface = new NeuropixInterface (source, thread, editor, this);
+            settingsInterfaces.add ((SettingsInterface*) neuropixInterface);
+
+            LOGD("### Setting tab name: ", source->getName());
+
+            basestationTab->addTab (" " + source->getName() + " ",
+                                    findColour (ThemeColours::componentBackground),
+                                    neuropixInterface->viewport.get(),
+                                    false);
+
+            topLevelTabIndex.add (topLevelTabNumber);
+            basestationTabIndex.add (basestationTabNumber++);
+        }
+        else if (source->sourceType == DataSourceType::ADC && source->basestation == basestation)
+        {
+            OneBoxInterface* oneBoxInterface = new OneBoxInterface (source, thread, editor, this);
+            settingsInterfaces.add (oneBoxInterface);
+
+            //addChildComponent(oneBoxInterface->viewport.get());
+            basestationTab->addTab (" " + source->getName() + " ",
+                                    findColour (ThemeColours::componentBackground),
+                                    oneBoxInterface->viewport.get(),
+                                    false);
+
+            topLevelTabIndex.add (topLevelTabNumber);
+            basestationTabIndex.add (basestationTabNumber++);
+        }
+        // else if (source->sourceType == DataSourceType::DAC)
+        // {
+        //     DacInterface* dacInterface = new DacInterface(source, thread, editor, this);
+        //    settingsInterfaces.add(dacInterface);
+        //}
+
+        dataSources.add (source);
+    }
+
+    if (basestationTabNumber == 0)
+    {
+        BasestationInterface* basestationInterface = new BasestationInterface (basestation, thread, editor, this);
+        settingsInterfaces.add (basestationInterface);
+        basestationTab->addTab (" Firmware Update ",
+                                findColour (ThemeColours::componentBackground),
+                                basestationInterface->viewport.get(),
+                                false);
+        topLevelTabIndex.add (topLevelTabNumber);
+        basestationTabIndex.add (basestationTabNumber++);
+
+        dataSources.add (nullptr);
+    }
+
+    topLevelTabNumber += 1;
 }
 
 NeuropixCanvas::~NeuropixCanvas()

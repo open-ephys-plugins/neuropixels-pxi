@@ -298,7 +298,8 @@ BackgroundLoader::BackgroundLoader (NeuropixThread* thread_, NeuropixEditor* edi
       thread (thread_),
       editor (editor_),
       isInitialized (false),
-      signalChainIsLoading (false)
+      signalChainIsLoading (false),
+      isRefreshing(false)
 {
 }
 
@@ -313,6 +314,91 @@ BackgroundLoader::~BackgroundLoader()
 void BackgroundLoader::run()
 {
     LOGC ("Running background thread...");
+
+    if (isRefreshing) 
+    {
+        LOGC("Scanning for hardware changes...");
+        //Assume basestation counts/slots do not change
+        for (int i = 0; i < thread->getBasestations().size(); i++) {
+            Basestation* bs = thread->getBasestations()[i];
+            if (bs != nullptr) {
+                /*
+                for (auto probe : bs->getProbes()) {
+                    if (probe != nullptr) {
+                        Neuropixels::NP_ErrorCode err = Neuropixels::closePort (bs->slot, probe->headstage->port);
+                        LOGD("### Closing port ", probe->headstage->port, " on slot ", bs->slot, " returned ", err);
+                        if (err == 8) {
+                            LOGD("### Probe was most likely disconnected...");
+                        }
+                    }
+                }
+                */
+                bs->close();
+                bs->open();
+                //bs->probes.clear();
+                //bs->headstages.clear();
+                //bs->searchForProbes(); //populates headstages and probes
+                for (auto hs : bs->getHeadstages()) {
+                    if (hs != nullptr) {
+                        for (auto probe : hs->getProbes()) {
+                            if (probe != nullptr) {
+                                LOGC("### Found probe on slot ", bs->slot, " port ", hs->port, " dock ", probe->dock, " with serial number ", probe->info.serial_number);
+                                //check if probe key exists
+                                std::tuple<int, int, int> current_location = std::make_tuple(bs->slot, hs->port, probe->dock);
+                                if (thread->probeMap.find(current_location) != thread->probeMap.end()) {
+                                    //There was a probe there before refresh, make sure it's still the same probe by checking serial number
+                                    if (std::get<0>(thread->probeMap[current_location]) == probe->info.serial_number) {
+                                        //It's the same probe as before, apply the saved settings for this probe
+                                        LOGC("### Found same probe on slot ", bs->slot, " port ", hs->port, " dock ", probe->dock, " with serial number ", probe->info.serial_number);
+                                        //thread->updateProbeSettingsQueue(ProbeSettings(probeMap[key].second));
+                                    }
+                                    //else check if serial number of current probe is from somewhere else in the map
+                                    else {
+                                        bool found = false;
+                                        std::tuple<int, int, int> old_location;
+                                        for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++) {
+                                            if (it->second.first == probe->info.serial_number) {
+                                                found = true;
+                                                old_location = it->first;
+                                                break;
+                                            }
+                                        }
+                                        if (!found) {
+                                            LOGC("###Found new probe on slot ", bs->slot, " port ", hs->port, " dock ", probe->dock, " with serial number ", probe->info.serial_number);
+                                        }
+                                        else 
+                                        {
+                                            LOGC("###Found probe was moved from: slot ", std::get<0>(old_location), " port ", std::get<1>(old_location), " dock ", std::get<2>(old_location), " to slot ", bs->slot, " port ", hs->port, " dock ", probe->dock);
+                                        }
+                                    }
+
+
+                                }
+                                else
+                                {
+                                    LOGC("###Found new probe on slot ", bs->slot, " port ", hs->port, " dock ", probe->dock, " with serial number ", probe->info.serial_number);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        thread->initializeProbes();
+        thread->updateStreamInfo();
+
+        for (auto probe : thread->getProbes())
+        {
+            //Apply saved settings here
+            thread->updateProbeSettingsQueue (ProbeSettings (probe->settings));
+        }
+
+        MessageManagerLock mml;
+        editor->drawBasestations(thread->getBasestations());
+        editor->resetCanvas();
+
+        CoreServices::updateSignalChain (editor);
+    }
 
     /* Initializes the NPX-PXI probe connections in the background to prevent this 
 	   plugin from blocking the main GUI*/
@@ -346,6 +432,21 @@ void BackgroundLoader::run()
     thread->applyProbeSettingsQueue();
 }
 
+void NeuropixEditor::resetCanvas()
+{
+    if (canvas != nullptr)
+    {
+        VisualizerEditor::canvas.reset();
+
+        if (isOpenInTab)
+        {
+            removeTab();
+            addTab();
+        }
+        checkCanvas();
+    }
+}
+
 void NeuropixEditor::initialize (bool signalChainIsLoading)
 {
     uiLoader->signalChainIsLoading = signalChainIsLoading;
@@ -355,12 +456,94 @@ void NeuropixEditor::initialize (bool signalChainIsLoading)
 NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     : VisualizerEditor (parentNode, t->type == ONEBOX ? "OneBox" : "Neuropix PXI")
 {
-    thread = t;
     canvas = nullptr;
+
+    thread = t;
 
     Array<Basestation*> basestations = t->getBasestations();
 
-    bool foundFirst = false;
+    drawBasestations(basestations);
+
+    mainSyncSelector = std::make_unique<ComboBox> ("Basestation that acts as main synchronizer");
+    mainSyncSelector->setBounds (90 * (basestations.size()) + 32, 39, 38, 20);
+    for (int i = 0; i < basestations.size(); i++)
+    {
+        mainSyncSelector->addItem (String (basestations[i]->slot), i + 1);
+    }
+    mainSyncSelector->setSelectedItemIndex (0, dontSendNotification);
+    mainSyncSelector->addListener (this);
+    addChildComponent (mainSyncSelector.get());
+
+    inputOutputSyncSelector = std::make_unique<ComboBox> ("Toggles the main synchronizer as input or output");
+    inputOutputSyncSelector->setBounds (90 * (basestations.size()) + 32, 74, 78, 20);
+    inputOutputSyncSelector->addItem (String ("INPUT"), 1);
+    inputOutputSyncSelector->addItem (String ("OUTPUT"), 2);
+    inputOutputSyncSelector->setSelectedItemIndex (0, dontSendNotification);
+    inputOutputSyncSelector->addListener (this);
+    addChildComponent (inputOutputSyncSelector.get());
+
+    Array<int> syncFrequencies = t->getSyncFrequencies();
+
+    // syncFrequencySelector = std::make_unique<ComboBox> ("Select the sync frequency (if in output mode)");
+    // syncFrequencySelector->setBounds (90 * (basestations.size()) + 32, 105, 70, 20);
+    // for (int i = 0; i < syncFrequencies.size(); i++)
+    // {
+    //     syncFrequencySelector->addItem (String (syncFrequencies[i]) + String (" Hz"), i + 1);
+    // }
+    // syncFrequencySelector->setSelectedItemIndex (0, dontSendNotification);
+    // syncFrequencySelector->addListener (this);
+    // addChildComponent (syncFrequencySelector.get());
+
+    syncFrequencyLabel = std::make_unique<Label> ("Sync frequency label", String (syncFrequencies[0]) + " Hz");
+    syncFrequencyLabel->setBounds (90 * (basestations.size()) + 32, 105, 70, 20);
+    syncFrequencyLabel->setFont (FontOptions ("Inter", "Regular", 16.0f));
+    addChildComponent (syncFrequencyLabel.get());
+
+    background = std::make_unique<EditorBackground> (t, false);
+    background->setBounds (0, 15, 500, 150);
+    addAndMakeVisible (background.get());
+    background->toBack();
+    background->repaint();
+
+    addSyncChannelButton = std::make_unique<UtilityButton> ("+");
+    addSyncChannelButton->setBounds (90 * basestations.size() + 78, 40, 20, 20);
+    addSyncChannelButton->addListener (this);
+    addSyncChannelButton->setTooltip ("Add sync channel to the continuous data stream.");
+    addSyncChannelButton->setClickingTogglesState (true);
+    addChildComponent (addSyncChannelButton.get());
+
+    refreshButton = std::make_unique<UtilityButton> ("R");
+    refreshButton->setBounds (90 * basestations.size() + 78, 108, 20, 20);
+    refreshButton->addListener (this);
+    refreshButton->setTooltip ("Re-scan basestation for hardware changes.");
+    addChildComponent (refreshButton.get());
+
+    if (basestations.size() > 0)
+    {
+        mainSyncSelector->setVisible (true);
+        inputOutputSyncSelector->setVisible (true);
+        addSyncChannelButton->setVisible (true);
+        refreshButton->setVisible (true);
+        desiredWidth = 100 * basestations.size() + 120;
+    }
+    else
+    {
+        desiredWidth = 250;
+    }
+
+    uiLoader = std::make_unique<BackgroundLoader> (t, this);
+}
+
+void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
+    
+    //Clear any existing source buttons
+    for (auto button : sourceButtons)
+    {
+        LOGD("### Removing source button");
+        MessageManagerLock mml;
+        removeChildComponent (button);
+        sourceButtons.removeObject (button);
+    }
 
     int id = 0;
 
@@ -391,6 +574,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
                     int x_pos = slotIndex * 90 + 30 + offset;
                     int y_pos = 125 - (portIndex + 1) * 22;
 
+                    LOGD("### Adding new source button for probe at slot ", slotIndex, " port ", portIndex, " dock ", k);
                     SourceButton* p = new SourceButton (id++, probes[k]);
                     p->setBounds (x_pos, y_pos, 15, 15);
                     p->addListener (this);
@@ -458,67 +642,6 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
         fifoMonitors.add (f);
     }
 
-    mainSyncSelector = std::make_unique<ComboBox> ("Basestation that acts as main synchronizer");
-    mainSyncSelector->setBounds (90 * (basestations.size()) + 32, 39, 38, 20);
-    for (int i = 0; i < basestations.size(); i++)
-    {
-        mainSyncSelector->addItem (String (basestations[i]->slot), i + 1);
-    }
-    mainSyncSelector->setSelectedItemIndex (0, dontSendNotification);
-    mainSyncSelector->addListener (this);
-    addChildComponent (mainSyncSelector.get());
-
-    inputOutputSyncSelector = std::make_unique<ComboBox> ("Toggles the main synchronizer as input or output");
-    inputOutputSyncSelector->setBounds (90 * (basestations.size()) + 32, 74, 78, 20);
-    inputOutputSyncSelector->addItem (String ("INPUT"), 1);
-    inputOutputSyncSelector->addItem (String ("OUTPUT"), 2);
-    inputOutputSyncSelector->setSelectedItemIndex (0, dontSendNotification);
-    inputOutputSyncSelector->addListener (this);
-    addChildComponent (inputOutputSyncSelector.get());
-
-    Array<int> syncFrequencies = t->getSyncFrequencies();
-
-    // syncFrequencySelector = std::make_unique<ComboBox> ("Select the sync frequency (if in output mode)");
-    // syncFrequencySelector->setBounds (90 * (basestations.size()) + 32, 105, 70, 20);
-    // for (int i = 0; i < syncFrequencies.size(); i++)
-    // {
-    //     syncFrequencySelector->addItem (String (syncFrequencies[i]) + String (" Hz"), i + 1);
-    // }
-    // syncFrequencySelector->setSelectedItemIndex (0, dontSendNotification);
-    // syncFrequencySelector->addListener (this);
-    // addChildComponent (syncFrequencySelector.get());
-
-    syncFrequencyLabel = std::make_unique<Label> ("Sync frequency label", String (syncFrequencies[0]) + " Hz");
-    syncFrequencyLabel->setBounds (90 * (basestations.size()) + 32, 105, 70, 20);
-    syncFrequencyLabel->setFont (FontOptions ("Inter", "Regular", 16.0f));
-    addChildComponent (syncFrequencyLabel.get());
-
-    background = std::make_unique<EditorBackground> (t, false);
-    background->setBounds (0, 15, 500, 150);
-    addAndMakeVisible (background.get());
-    background->toBack();
-    background->repaint();
-
-    addSyncChannelButton = std::make_unique<UtilityButton> ("+");
-    addSyncChannelButton->setBounds (90 * basestations.size() + 78, 40, 20, 20);
-    addSyncChannelButton->addListener (this);
-    addSyncChannelButton->setTooltip ("Add sync channel to the continuous data stream.");
-    addSyncChannelButton->setClickingTogglesState (true);
-    addChildComponent (addSyncChannelButton.get());
-
-    if (basestations.size() > 0)
-    {
-        mainSyncSelector->setVisible (true);
-        inputOutputSyncSelector->setVisible (true);
-        addSyncChannelButton->setVisible (true);
-        desiredWidth = 100 * basestations.size() + 120;
-    }
-    else
-    {
-        desiredWidth = 250;
-    }
-
-    uiLoader = std::make_unique<BackgroundLoader> (t, this);
 }
 
 void NeuropixEditor::collapsedStateChanged()
@@ -639,6 +762,18 @@ void NeuropixEditor::buttonClicked (Button* button)
         {
             thread->sendSyncAsContinuousChannel (addSyncChannelButton->getToggleState());
             CoreServices::updateSignalChain (this);
+        }
+        else if (button == refreshButton.get())
+        {
+            for (auto btn : sourceButtons)
+            {
+                btn->setSourceStatus (SourceStatus::DISCONNECTED);
+                btn->stopTimer();
+            }
+            thread->isRefreshing = true;
+            uiLoader->isRefreshing = true;
+            uiLoader->startThread();
+            //CoreServices::updateSignalChain (this);
         }
     }
 }

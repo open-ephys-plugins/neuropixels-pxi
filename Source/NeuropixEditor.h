@@ -197,6 +197,7 @@ public:
     void run();
 
     bool signalChainIsLoading;
+    bool isRefreshing;
 
 private:
     NeuropixThread* thread;
@@ -253,10 +254,15 @@ public:
     /** Update settings */
     void update();
 
+    /** Draw basestations UI */
+    void drawBasestations(Array<Basestation*> basestations);
+
     /** Select a data source button */
     void selectSource (DataSource* source);
 
     void checkCanvas() { checkForCanvas(); };
+
+    void resetCanvas();
 
     OwnedArray<SourceButton> sourceButtons;
 
@@ -277,6 +283,7 @@ private:
     std::unique_ptr<EditorBackground> background;
 
     std::unique_ptr<UtilityButton> addSyncChannelButton;
+    std::unique_ptr<UtilityButton> refreshButton;
 
     Viewport* viewport;
     NeuropixCanvas* canvas;

@@ -192,6 +192,9 @@ public:
     /** Returns pointers to active probes */
     Array<Probe*> getProbes();
 
+    /** Initialize probes */
+    void initializeProbes();
+
     /** Returns a JSON-formatted string with info about all connected probes*/
     String getProbeInfoString();
 
@@ -250,6 +253,11 @@ public:
 
     DeviceType type;
 
+    // Map from <slot,port,dock> to <probe_serial, probe_settings>
+    std::map<std::tuple<int,int,int>, std::pair<uint64, ProbeSettings>> probeMap;
+
+    bool isRefreshing = false;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NeuropixThread);
 
 private:
@@ -289,7 +297,7 @@ private:
 
     NeuropixAPIv3 api_v3;
 
-    NeuropixEditor* editor;
+    NeuropixEditor* editor; 
 };
 
 #endif // __NEUROPIXTHREAD_H_2C4CBD67__

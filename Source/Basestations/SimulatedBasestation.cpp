@@ -223,6 +223,10 @@ void SimulatedBasestation::initialize (bool signalChainIsLoading)
     }
 }
 
+void SimulatedBasestation::searchForProbes()
+{
+}
+
 Array<int> SimulatedBasestation::getSyncFrequencies()
 {
     return syncFrequencies;

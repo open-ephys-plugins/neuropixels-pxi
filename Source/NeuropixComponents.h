@@ -592,6 +592,9 @@ public:
     /** Initializes all components for acquisition; may inclue some delays */
     virtual void initialize (bool signalChainIsLoading) = 0;
 
+    /** Searches for probes connected to this basestion */
+    virtual void searchForProbes() = 0;
+
     /** Sets the sync channel as an "input" (for external sync) */
     virtual void setSyncAsInput() = 0;
 

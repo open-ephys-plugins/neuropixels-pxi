@@ -174,9 +174,15 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
     LOGD ("Setting debug level to 0");
     Neuropixels::np_dbg_setlevel (0);
 
+    LOGD("### NeuropixThread()");
+    LOGD("### basestation.size() = ", basestations.size());
+    LOGD("### Running initializer thread");
+
     initializer = std::make_unique<Initializer> (this, basestations, type, api_v3);
     initializer->setStatusMessage ("Scanning for devices...");
     initializer->runThread();
+
+    LOGD("### basestation.size() = ", basestations.size());
 
     // If no basestations were found, ask user if they want to run in simulation mode
     if (basestations.size() == 0)
@@ -222,6 +228,15 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
         }
     }
 
+    initializeProbes();
+
+    updateStreamInfo();
+}
+
+void NeuropixThread::initializeProbes()
+{
+    sourceStreams.clear();
+    
     bool foundSync = false;
 
     int probeIndex = 0;
@@ -261,7 +276,15 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
         probeIndex++;
     }
 
-    updateStreamInfo();
+    if (baseStationAvailable)
+    {
+        for (auto bs : basestations)
+        {
+            bs->initialize (false);
+        }
+
+        probesInitialized = true;
+    }
 }
 
 String NeuropixThread::generateProbeName (int probeIndex, ProbeNameConfig::NamingScheme namingScheme)
@@ -445,6 +468,15 @@ void NeuropixThread::applyProbeSettingsQueue()
 
             if (! settings.probe->isCalibrated)
                 uncalibratedProbes.add (settings.probe);
+
+            //Update probe map
+            int slot = settings.probe->basestation->slot;
+            int port = settings.probe->headstage->port;
+            int dock = settings.probe->dock;
+
+            std::tuple<int,int,int> key = std::make_tuple (slot, port, dock);
+
+            probeMap[key] = std::make_pair (settings.probe->info.serial_number, settings);
 
             LOGC ("Wrote configuration");
         }

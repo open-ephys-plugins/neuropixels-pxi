@@ -54,6 +54,8 @@ void Flex2::getInfo()
                                              &version_major,
                                              &version_minor);
 
+    LOGD("### Flex2::getFlexVersion() errorCode: ", errorCode);
+
     info.version = String (version_major) + "." + String (version_minor);
 
     char pn[MAXLEN];
@@ -62,6 +64,8 @@ void Flex2::getInfo()
                                          dock,
                                          pn,
                                          MAXLEN);
+
+    LOGD("### Flex2::readFlexPN() errorCode: ", errorCode);
 
     info.part_number = String (pn);
 }

@@ -123,81 +123,7 @@ bool OneBox::open()
 
         LOGD ("    Searching for probes...");
 
-        for (int port = 1; port <= 2; port++)
-        {
-            bool detected = false;
-
-            errorCode = Neuropixels::detectHeadStage (slot, port, &detected); // check for headstage on port
-
-            if (detected && errorCode == Neuropixels::SUCCESS)
-            {
-                char pn[MAXLEN];
-                Neuropixels::readHSPN (slot, port, pn, MAXLEN);
-
-                String hsPartNumber = String (pn);
-
-                LOGDD ("Got part #: ", hsPartNumber);
-
-                Headstage* headstage;
-
-                if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
-                {
-                    LOGD ("      Found 1.0 single-dock headstage on port: ", port);
-                    headstage = new Headstage1 (this, port);
-                    if (headstage->testModule != nullptr)
-                    {
-                        headstage = nullptr;
-                    }
-                }
-                else if (hsPartNumber == "NPNH_HS_30" || hsPartNumber == "NPNH_HS_31") // 128-ch analog headstage
-                {
-                    LOGD ("      Found 128-ch analog headstage on port: ", port);
-                    headstage = new Headstage_Analog128 (this, port);
-                }
-                else if (hsPartNumber == "NPNH_HS_00") // custom 384-ch headstage
-                {
-                    LOGC ("      Found 384-ch custom headstage on port: ", port);
-                    headstage = new Headstage_Custom384 (this, port);
-                }
-                else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
-                {
-                    LOGD ("      Found 2.0 dual-dock headstage on port: ", port);
-                    headstage = new Headstage2 (this, port);
-                }
-                else
-                {
-                    headstage = nullptr;
-                }
-
-                headstages.add (headstage);
-
-                if (headstage != nullptr)
-                {
-                    for (auto probe : headstage->probes)
-                    {
-                        if (probe != nullptr)
-                            probes.add (probe);
-                    }
-                }
-
-                continue;
-            }
-            else
-            {
-                if (errorCode != Neuropixels::SUCCESS)
-                {
-                    LOGD ("***detectHeadstage failed w/ error code: ", errorCode);
-                }
-                else if (! detected)
-                {
-                    LOGDD ("  No headstage detected on port: ", port);
-                }
-
-                errorCode = Neuropixels::closePort (slot, port); // close port
-
-                headstages.add (nullptr);
-            }
-        }
+        searchForProbes();
 
         LOGD ("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 
@@ -208,6 +134,86 @@ bool OneBox::open()
     syncFrequencies.add (1);
 
     return true;
+}
+
+void OneBox::searchForProbes() {
+
+    for (int port = 1; port <= 2; port++)
+    {
+        bool detected = false;
+
+        errorCode = Neuropixels::detectHeadStage (slot, port, &detected); // check for headstage on port
+
+        if (detected && errorCode == Neuropixels::SUCCESS)
+        {
+            char pn[MAXLEN];
+            Neuropixels::readHSPN (slot, port, pn, MAXLEN);
+
+            String hsPartNumber = String (pn);
+
+            LOGDD ("Got part #: ", hsPartNumber);
+
+            Headstage* headstage;
+
+            if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
+            {
+                LOGD ("      Found 1.0 single-dock headstage on port: ", port);
+                headstage = new Headstage1 (this, port);
+                if (headstage->testModule != nullptr)
+                {
+                    headstage = nullptr;
+                }
+            }
+            else if (hsPartNumber == "NPNH_HS_30" || hsPartNumber == "NPNH_HS_31") // 128-ch analog headstage
+            {
+                LOGD ("      Found 128-ch analog headstage on port: ", port);
+                headstage = new Headstage_Analog128 (this, port);
+            }
+            else if (hsPartNumber == "NPNH_HS_00") // custom 384-ch headstage
+            {
+                LOGC ("      Found 384-ch custom headstage on port: ", port);
+                headstage = new Headstage_Custom384 (this, port);
+            }
+            else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
+            {
+                LOGD ("      Found 2.0 dual-dock headstage on port: ", port);
+                headstage = new Headstage2 (this, port);
+            }
+            else
+            {
+                headstage = nullptr;
+            }
+
+            headstages.add (headstage);
+
+            if (headstage != nullptr)
+            {
+                for (auto probe : headstage->probes)
+                {
+                    if (probe != nullptr)
+                        probes.add (probe);
+                }
+            }
+
+            continue;
+        }
+        else
+        {
+            if (errorCode != Neuropixels::SUCCESS)
+            {
+                LOGD ("***detectHeadstage failed w/ error code: ", errorCode);
+            }
+            else if (! detected)
+            {
+                LOGDD ("  No headstage detected on port: ", port);
+            }
+
+            errorCode = Neuropixels::closePort (slot, port); // close port
+
+            headstages.add (nullptr);
+        }
+    }
+
 }
 
 Array<DataSource*> OneBox::getAdditionalDataSources()
