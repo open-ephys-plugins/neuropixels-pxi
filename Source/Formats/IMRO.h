@@ -7,7 +7,7 @@ class IMRO
 {
 public:
 
-	static bool writeSettingsToImro(File& file, ProbeSettings& settings)
+	static bool writeSettingsToImro(const File& file, const ProbeSettings& settings)
 	{
 
         if (file.existsAsFile())
@@ -83,7 +83,7 @@ public:
 
 	}
 
-	static bool readSettingsFromImro(File& file, ProbeSettings& settings)
+	static bool readSettingsFromImro(const File& file, ProbeSettings& settings)
 	{
 
         String imro = file.loadFileAsString();

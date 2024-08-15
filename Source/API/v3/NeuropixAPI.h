@@ -14,9 +14,21 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <ctime>
 
+#ifdef _WIN32
+#include <Windows.h>
 #define NP_EXPORT __declspec(dllexport)
 #define NP_CALLBACK __stdcall
+#define NP_APIC __stdcall
+#else
+#define NP_EXPORT 
+#define NP_CALLBACK 
+#define NP_APIC 
+#endif //#ifdef _WIN32
+
+
+
 
   /**
    * @brief Main Neuropixels API namespace. All external functions are included in this namespace.
@@ -1533,7 +1545,6 @@ namespace Neuropixels {
 
 
 
-#define NP_APIC __stdcall
 	extern "C" {
 		//NeuropixAPI.h
 		NP_EXPORT void         NP_APIC np_getAPIVersion(int* version_major, int* version_minor);

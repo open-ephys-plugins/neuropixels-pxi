@@ -39,7 +39,7 @@ class Headstage_Custom384 : public Headstage
 public:
 
 	/** Constructor */
-	Headstage_Custom384::Headstage_Custom384(Basestation*, int port);
+	Headstage_Custom384(Basestation*, int port);
 
 	/** Get part numbers*/
 	void getInfo() override;
@@ -62,7 +62,7 @@ class Flex1_Custom : public Flex
 public:
 
 	/** Constructor */
-	Flex1_Custom::Flex1_Custom(Headstage*);
+	Flex1_Custom(Headstage*);
 
 	/** Get part number */
 	void getInfo() override;

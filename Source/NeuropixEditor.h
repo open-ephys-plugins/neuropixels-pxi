@@ -25,7 +25,7 @@
 #define __NEUROPIXEDITOR_H_2AD3C591__
 
 #include <VisualizerEditorHeaders.h>
-#include "UI\ProbeNameConfig.h"
+#include "UI/ProbeNameConfig.h"
 
 #include "NeuropixComponents.h"
 

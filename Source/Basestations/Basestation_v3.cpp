@@ -34,6 +34,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../Headstages/Headstage_Analog128.h"
 #include "../Headstages/Headstage_Custom384.h"
 
+#include <thread>
+
 #define MAXLEN 50
 
 

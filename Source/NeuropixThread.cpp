@@ -33,6 +33,7 @@
 #include "UI/NeuropixInterface.h"
 
 #include <vector>
+#include <thread>
 
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
 #define FORCE_SIMULATION_MODE false

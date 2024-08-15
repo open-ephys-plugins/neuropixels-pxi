@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "NeuropixComponents.h"
 
+#include <thread>
+
 float FirmwareUpdater::totalFirmwareBytes = 0;
 FirmwareUpdater* FirmwareUpdater::currentThread = nullptr;
 

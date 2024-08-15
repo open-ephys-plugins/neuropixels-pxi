@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Geometry.h"
 
 #include "../NeuropixThread.h"
+#include <thread>
 
 #define MAXLEN 50
 
