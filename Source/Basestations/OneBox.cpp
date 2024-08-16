@@ -21,15 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include "OneBox.h"
-
 #ifdef _WIN32
 #include <Windows.h>
 #else
 #include <unistd.h>
 #endif
 
-
+#include "OneBox.h"
 #include "../Probes/Neuropixels1_v3.h"
 #include "../Headstages/Headstage1_v3.h"
 #include "../Headstages/Headstage2.h"
