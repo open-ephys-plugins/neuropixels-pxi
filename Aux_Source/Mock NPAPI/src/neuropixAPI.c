@@ -238,7 +238,7 @@ EXPORT	NP_ErrorCode APIC writeId(uint8_t slotID, int8_t port, uint64_t id)
 	return SUCCESS;
 }
 
-#ifndef _WIN32
+#ifdef _APPLE_
 #include <string.h>
 
 static void strncpy_s(char *dst,unsigned dummy, const char *src, unsigned max_len){
@@ -248,7 +248,24 @@ static void strncpy_s(char *dst,unsigned dummy, const char *src, unsigned max_le
 static void strcpy_s(char *dst, unsigned max_len, const char *src){
     strlcpy(dst,src,max_len);
 }
+
+#elif __linux__
+
+//#warning "Linux defined"
+
+#include <string.h>
+
+static void strncpy_s(char *dst,unsigned dummy, const char *src, unsigned max_len){
+    strncpy(dst,src,max_len);
+}
+
+static void strcpy_s(char *dst, unsigned max_len, const char *src){
+    strncpy(dst,src,max_len);
+}
+
 #endif
+
+
 
 EXPORT	NP_ErrorCode APIC readProbePN(unsigned char slotID, signed char port, char* pn, size_t maxlen) 
 {
