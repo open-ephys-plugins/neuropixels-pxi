@@ -101,8 +101,30 @@ endif()
 
 set(NEUROPIX_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/neuropix-api)
 target_include_directories(${PLUGIN_NAME} PRIVATE ${NEUROPIX_INCLUDE_DIR})
+
+set(Mock_NPAPI YES)
+
+if(${Mock_NPAPI})
+
+target_link_libraries(${PLUGIN_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/Aux_Source/Mock NPAPI/build/libMOCK_NPAPI_LIB.so")
+target_link_libraries(${PLUGIN_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/Aux_Source/Mock NPAPI v3/build/libMOCK_NPAPI_V3_LIB.so")
+
+message("Mock NPAPI link library enabled")
+
+else()
+
 target_link_libraries(${PLUGIN_NAME} ${NEUROPIX_LINK_DIR})
 target_link_libraries(${PLUGIN_NAME} ${NEUROPIX2_LINK_DIR})
+
+message(NEUROPIX_LINK_DIR="${NEUROPIX_LINK_DIR}")
+message(NEUROPIX2_LINK_DIR="${NEUROPIX2_LINK_DIR}")
+
+endif()
+
+
+
+
+
 
 #additional libraries, if needed
 #find_package(LIBNAME)

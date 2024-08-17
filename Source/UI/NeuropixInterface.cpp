@@ -1705,7 +1705,7 @@ void NeuropixInterface::saveParameters(XmlElement* xml)
 
                 XmlElement* emissionSite = emissionSiteNode->createNewChildElement("SITE");
 
-                EmissionSiteMetadata& metadata = probe->emissionSiteMetadata[i];
+                const EmissionSiteMetadata& metadata = probe->emissionSiteMetadata[i];
 
                 emissionSite->setAttribute("WAVELENGTH", metadata.wavelength_nm);
                 emissionSite->setAttribute("SHANK_INDEX", metadata.shank_index);

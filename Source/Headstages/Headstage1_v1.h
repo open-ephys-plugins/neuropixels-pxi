@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class Headstage1_v1 : public Headstage
 {
 public:
-	Headstage1_v1::Headstage1_v1(Basestation*, int port);
+	Headstage1_v1(Basestation*, int port);
 	void getInfo() override;
 	bool hasTestModule() override;
 	void runTestModule() override;
@@ -43,7 +43,7 @@ public:
 class Flex1_v1 : public Flex
 {
 public:
-	Flex1_v1::Flex1_v1(Headstage*);
+	Flex1_v1(Headstage*);
 	void getInfo() override;
 
 	np::NP_ErrorCode errorCode;
@@ -67,7 +67,7 @@ class HeadstageTestModule_v1 : public HeadstageTestModule
 {
 public:
 
-	HeadstageTestModule_v1::HeadstageTestModule_v1(Basestation* bs, Headstage* hs);
+	HeadstageTestModule_v1(Basestation* bs, Headstage* hs);
 
 	void getInfo() override;
 

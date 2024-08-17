@@ -7,7 +7,7 @@ class ProbeInterfaceJson
 {
 public:
 
-    static bool writeProbeSettingsToJson(File& file, ProbeSettings settings)
+    static bool writeProbeSettingsToJson(const File& file, ProbeSettings settings)
     {
 
         //std::cout << "Writing JSON file." << std::endl;
@@ -84,7 +84,7 @@ public:
 
     }
 
-    static bool readProbeSettingsFromJson(File& file, ProbeSettings& settings)
+    static bool readProbeSettingsFromJson(const File& file, ProbeSettings& settings)
     {
 
        // std::cout << "Reading JSON file." << std::endl;

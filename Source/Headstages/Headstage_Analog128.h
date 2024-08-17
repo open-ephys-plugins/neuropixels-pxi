@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class Headstage_Analog128 : public Headstage
 {
 public:
-	Headstage_Analog128::Headstage_Analog128(Basestation*, int port);
+	Headstage_Analog128(Basestation*, int port);
 	void getInfo() override;
 	bool hasTestModule() override { return false; }
 	void runTestModule() override {}
@@ -43,7 +43,7 @@ public:
 class Flex1_NHP : public Flex
 {
 public:
-	Flex1_NHP::Flex1_NHP(Headstage*);
+	Flex1_NHP(Headstage*);
 	void getInfo() override;
 
 	Neuropixels::NP_ErrorCode errorCode;

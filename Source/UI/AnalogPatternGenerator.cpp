@@ -82,6 +82,7 @@ EditableTextInput<T>::~EditableTextInput()
 
 }
 
+template<>
 void EditableTextInput<int>::labelTextChanged(Label* label)
 {
 	String labelString = label->getText();
@@ -113,6 +114,7 @@ void EditableTextInput<int>::labelTextChanged(Label* label)
 	apg->updatePattern();
 }
 
+template<>
 void EditableTextInput<float>::labelTextChanged(Label* label)
 {
 	String labelString = label->getText();
@@ -145,11 +147,13 @@ void EditableTextInput<float>::labelTextChanged(Label* label)
 	apg->updatePattern();
 }
 
+template<>
 float EditableTextInput<float>::getValue()
 {
 	return inputBox->getText().getFloatValue();
 }
 
+template<>
 int EditableTextInput<int>::getValue()
 {
 	return inputBox->getText().getIntValue();

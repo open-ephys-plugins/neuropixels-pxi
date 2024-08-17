@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "SimulatedProbe.h"
 #include "Geometry.h"
 #include "../Headstages/SimulatedHeadstage.h"
+#include <thread>
 
 void SimulatedProbe::getInfo()
 {

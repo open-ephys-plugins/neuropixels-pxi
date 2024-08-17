@@ -26,6 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../NeuropixThread.h"
 
+#include <thread>
+
 #define MAXLEN 50
 
 void Neuropixels_NHP_Active::getInfo()

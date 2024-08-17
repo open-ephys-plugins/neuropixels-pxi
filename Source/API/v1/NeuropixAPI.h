@@ -6,10 +6,18 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <Windows.h>
+#include <stddef.h>
 
+#ifdef _WIN32
+#include <Windows.h>
 #define NP_EXPORT __declspec(dllexport)
 #define NP_APIC __stdcall
+#else
+#define NP_EXPORT 
+#define NP_APIC 
+#endif //#ifdef _WIN32
+
+
 
 #define PROBE_ELECTRODE_COUNT 960
 #define PROBE_CHANNEL_COUNT   384

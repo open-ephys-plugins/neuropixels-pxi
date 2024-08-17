@@ -239,7 +239,7 @@ public:
 class NeuropixAPIv1 : public NeuropixComponent
 {
 public:
-	NeuropixAPIv1::NeuropixAPIv1()
+	NeuropixAPIv1()
 	{
 		getInfo();
 		isActive = false;
@@ -262,7 +262,7 @@ class NeuropixAPIv3 : public NeuropixComponent
 {
 public:
 
-	NeuropixAPIv3::NeuropixAPIv3()
+	NeuropixAPIv3()
 	{
 		getInfo();
 		isActive = false;
@@ -740,7 +740,7 @@ class HeadstageTestModule : public NeuropixComponent
 public:
 
 	/** Constructor */
-	HeadstageTestModule::HeadstageTestModule(Basestation* bs_, Headstage* hs_) : NeuropixComponent()
+	HeadstageTestModule(Basestation* bs_, Headstage* hs_) : NeuropixComponent()
 	{
 		basestation = bs_;
 		headstage = hs_;
@@ -766,7 +766,7 @@ class Headstage : public NeuropixComponent
 public:
 
 	/** Constructor */
-	Headstage::Headstage(Basestation* bs_, int port_) : NeuropixComponent() {
+	Headstage(Basestation* bs_, int port_) : NeuropixComponent() {
 		basestation = bs_;
 		port_c = (signed char) port_;
 		port = port_;
@@ -821,7 +821,7 @@ class Flex : public NeuropixComponent
 public:
 
 	/** Constructor */
-	Flex::Flex(Headstage* hs_, int dock_)
+	Flex(Headstage* hs_, int dock_)
 	{
 		headstage = hs_;
 		dock = dock_;
@@ -832,6 +832,9 @@ public:
 };
 
 
+#ifndef _WIN32
+#define Sleep(x) std::this_thread::sleep_for(std::chrono::milliseconds{x})
+#endif
 
 
 #endif  // __NEUROPIXCOMPONENTS_H_2C4C2D67__

@@ -14,10 +14,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <ctime>
+//#include <time.h>
 
 #ifdef _WIN32
-#include <Windows.h>
 #define NP_EXPORT __declspec(dllexport)
 #define NP_CALLBACK __stdcall
 #define NP_APIC __stdcall
@@ -25,10 +24,7 @@
 #define NP_EXPORT 
 #define NP_CALLBACK 
 #define NP_APIC 
-#endif //#ifdef _WIN32
-
-
-
+#endif
 
   /**
    * @brief Main Neuropixels API namespace. All external functions are included in this namespace.
@@ -1499,6 +1495,8 @@ namespace Neuropixels {
 	NP_EXPORT NP_ErrorCode IMU_DfuWrite(int slot, int port, const uint8_t* data, size_t len, size_t* bytes_written);
 
 	/* Debug support functions ************************************************************************************************************************/
+	typedef unsigned long long time_t; // TODO : remove
+
 	NP_EXPORT void         dbg_setlevel(int level);
 	NP_EXPORT int          dbg_getlevel(void);
 	NP_EXPORT void         dbg_setlogcallback(int minlevel, void(*callback)(int level, time_t ts, const char* module, const char* msg));
@@ -1541,6 +1539,7 @@ namespace Neuropixels {
 	NP_EXPORT NP_ErrorCode dbg_sourcestats_read(int slotID, uint8_t sourceID, struct np_sourcestats* stats);
 	NP_EXPORT NP_ErrorCode dbg_read_srchain(int slotID, int portID, int dockID, uint8_t SRChain_registeraddress, uint8_t* dst, size_t len, size_t* actualread);
 	NP_EXPORT NP_ErrorCode setVirtualHeadstage(int slotID, int portID);
+
 
 
 

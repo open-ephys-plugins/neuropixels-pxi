@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../Headstages/Headstage1_v1.h"
 #include "../NeuropixThread.h"
+#include <thread>
 
 #define MAXLEN 50
 
