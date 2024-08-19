@@ -775,14 +775,6 @@ String NeuropixThread::getInfoString()
 /** Initializes data transfer.*/
 bool NeuropixThread::startAcquisition()
 {
-    startTimer (10);
-
-    return true;
-}
-
-void NeuropixThread::timerCallback()
-{
-    LOGD ("Timer callback.");
 
     if (editor->uiLoader->isThreadRunning())
     {
@@ -796,10 +788,9 @@ void NeuropixThread::timerCallback()
         basestations[i]->startAcquisition();
     }
 
-    //startThread();
-
-    stopTimer();
+    return true;
 }
+
 
 void NeuropixThread::setDirectoryForSlot (int slotIndex, File directory)
 {

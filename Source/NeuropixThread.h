@@ -103,7 +103,7 @@ private:
 
 */
 
-class NeuropixThread : public DataThread, public Timer
+class NeuropixThread : public DataThread
 {
 public:
     /** Constructor */
@@ -173,9 +173,6 @@ public:
 
     /** Toggles between auto-restart setting. */
     void setAutoRestart (bool restart);
-
-    /** Starts data acquisition after a certain time.*/
-    void timerCallback();
 
     /** Returns a mutex for live rendering of data */
     CriticalSection* getMutex()
