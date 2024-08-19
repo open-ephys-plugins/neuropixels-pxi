@@ -128,7 +128,6 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             info.part_number.equalsIgnoreCase ("NP2004"))
         {
             availableReferences.add ("Ground");
-            amplifierGain = 100.0f;
         }
 
         settings.availableReferences = availableReferences;
