@@ -393,6 +393,9 @@ void BackgroundLoader::run()
             thread->updateProbeSettingsQueue (ProbeSettings (probe->settings));
         }
 
+        isRefreshing = false;
+        thread->isRefreshing = false;
+
         MessageManagerLock mml;
         editor->drawBasestations(thread->getBasestations());
         editor->resetCanvas();
@@ -443,7 +446,13 @@ void NeuropixEditor::resetCanvas()
             removeTab();
             addTab();
         }
-        checkCanvas();
+        else
+        {
+            checkForCanvas();
+            
+            if (dataWindow != nullptr)
+                dataWindow->setContentNonOwned (VisualizerEditor::canvas.get(), false);
+        }
     }
 }
 
