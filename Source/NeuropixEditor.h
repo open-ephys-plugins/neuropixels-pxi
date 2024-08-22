@@ -268,6 +268,8 @@ public:
 
     std::unique_ptr<BackgroundLoader> uiLoader;
 
+    NeuropixCanvas* canvas;
+
 private:
     OwnedArray<UtilityButton> directoryButtons;
     OwnedArray<FifoMonitor> fifoMonitors;
@@ -286,7 +288,6 @@ private:
     std::unique_ptr<UtilityButton> refreshButton;
 
     Viewport* viewport;
-    NeuropixCanvas* canvas;
     NeuropixThread* thread;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NeuropixEditor);

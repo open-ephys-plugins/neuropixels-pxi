@@ -317,65 +317,49 @@ void BackgroundLoader::run()
 
     if (isRefreshing) 
     {
+        std::map<std::tuple<int, int, int>, std::pair<int, ProbeSettings>> updatedMap;
+
+        ProbeSettings temp;
         LOGC("Scanning for hardware changes...");
         //Assume basestation counts/slots do not change
         for (int i = 0; i < thread->getBasestations().size(); i++) {
             Basestation* bs = thread->getBasestations()[i];
             if (bs != nullptr) {
-                /*
-                for (auto probe : bs->getProbes()) {
-                    if (probe != nullptr) {
-                        Neuropixels::NP_ErrorCode err = Neuropixels::closePort (bs->slot, probe->headstage->port);
-                        LOGD("### Closing port ", probe->headstage->port, " on slot ", bs->slot, " returned ", err);
-                        if (err == 8) {
-                            LOGD("### Probe was most likely disconnected...");
-                        }
-                    }
-                }
-                */
                 bs->close();
                 bs->open();
-                //bs->probes.clear();
-                //bs->headstages.clear();
-                //bs->searchForProbes(); //populates headstages and probes
                 for (auto hs : bs->getHeadstages()) {
                     if (hs != nullptr) {
                         for (auto probe : hs->getProbes()) {
                             if (probe != nullptr) {
-                                LOGC("### Found probe on slot ", bs->slot, " port ", hs->port, " dock ", probe->dock, " with serial number ", probe->info.serial_number);
-                                //check if probe key exists
                                 std::tuple<int, int, int> current_location = std::make_tuple(bs->slot, hs->port, probe->dock);
                                 if (thread->probeMap.find(current_location) != thread->probeMap.end()) {
-                                    //There was a probe there before refresh, make sure it's still the same probe by checking serial number
+                                    // There is a probe in the map at this location
                                     if (std::get<0>(thread->probeMap[current_location]) == probe->info.serial_number) {
-                                        //It's the same probe as before, apply the saved settings for this probe
-                                        LOGC("### Found same probe on slot ", bs->slot, " port ", hs->port, " dock ", probe->dock, " with serial number ", probe->info.serial_number);
-                                        //thread->updateProbeSettingsQueue(ProbeSettings(probeMap[key].second));
+                                        LOGC ("### Found same probe in same location!");
+                                        //Serial number matches the previous one, just copy entry to updated map
+                                        temp = ProbeSettings(thread->probeMap[current_location].second);
+                                        temp.probe = probe;
+                                        updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
                                     }
-                                    //else check if serial number of current probe is from somewhere else in the map
-                                    else {
-                                        bool found = false;
-                                        std::tuple<int, int, int> old_location;
-                                        for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++) {
-                                            if (it->second.first == probe->info.serial_number) {
-                                                found = true;
-                                                old_location = it->first;
-                                                break;
-                                            }
-                                        }
-                                        if (!found) {
-                                            LOGC("###Found new probe on slot ", bs->slot, " port ", hs->port, " dock ", probe->dock, " with serial number ", probe->info.serial_number);
-                                        }
-                                        else 
-                                        {
-                                            LOGC("###Found probe was moved from: slot ", std::get<0>(old_location), " port ", std::get<1>(old_location), " dock ", std::get<2>(old_location), " to slot ", bs->slot, " port ", hs->port, " dock ", probe->dock);
-                                        }
-                                    }
-
-
                                 }
                                 else
                                 {
+                                    //Check if probe serial number is in the map
+                                    bool found = false;
+                                    std::tuple<int, int, int> old_location;
+                                    for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++) {
+                                        uint64 old_serial = it->second.first;
+                                        if (old_serial == probe->info.serial_number) {
+                                            found = true;
+                                            old_location = it->first;
+                                            temp = ProbeSettings(it->second.second);
+                                            temp.probe = probe;
+                                            updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
+                                            //delete old-location entry
+                                            thread->probeMap.erase(it);
+                                            break;
+                                        }
+                                    }
                                     LOGC("###Found new probe on slot ", bs->slot, " port ", hs->port, " dock ", probe->dock, " with serial number ", probe->info.serial_number);
                                 }
                             }
@@ -387,19 +371,15 @@ void BackgroundLoader::run()
         thread->initializeProbes();
         thread->updateStreamInfo();
 
-        for (auto probe : thread->getProbes())
-        {
-            //Apply saved settings here
-            thread->updateProbeSettingsQueue (ProbeSettings (probe->settings));
-        }
-
         MessageManagerLock mml;
         editor->drawBasestations(thread->getBasestations());
+        editor->resetCanvas();
+
+        //TODO: This needs to be generalized to match probes to the correct interfaces
+        editor->canvas->settingsInterfaces[0]->applyProbeSettings(temp, true);
 
         isRefreshing = false;
         thread->isRefreshing = false;
-
-        editor->resetCanvas();
 
         CoreServices::updateSignalChain (editor);
     }

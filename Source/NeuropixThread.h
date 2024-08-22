@@ -253,7 +253,7 @@ public:
 
     DeviceType type;
 
-    // Map from <slot,port,dock> to <probe_serial, probe_settings>
+    /** Map from <slot,port,dock> to <probe_serial, probe_settings> */
     std::map<std::tuple<int,int,int>, std::pair<uint64, ProbeSettings>> probeMap;
 
     bool isRefreshing = false;
