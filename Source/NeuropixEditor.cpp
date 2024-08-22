@@ -393,11 +393,12 @@ void BackgroundLoader::run()
             thread->updateProbeSettingsQueue (ProbeSettings (probe->settings));
         }
 
+        MessageManagerLock mml;
+        editor->drawBasestations(thread->getBasestations());
+
         isRefreshing = false;
         thread->isRefreshing = false;
 
-        MessageManagerLock mml;
-        editor->drawBasestations(thread->getBasestations());
         editor->resetCanvas();
 
         CoreServices::updateSignalChain (editor);
@@ -545,14 +546,12 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
 
 void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
     
-    //Clear any existing source buttons
-    for (auto button : sourceButtons)
+    //Clear any existing source buttons from sourceButtons vector of unique ptrs
+    for (auto& button : sourceButtons)
     {
-        LOGD("### Removing source button");
-        MessageManagerLock mml;
-        removeChildComponent (button);
-        sourceButtons.removeObject (button);
+        removeChildComponent (button.get());
     }
+    sourceButtons.clear();
 
     int id = 0;
 
@@ -584,11 +583,12 @@ void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
                     int y_pos = 125 - (portIndex + 1) * 22;
 
                     LOGD("### Adding new source button for probe at slot ", slotIndex, " port ", portIndex, " dock ", k);
-                    SourceButton* p = new SourceButton (id++, probes[k]);
-                    p->setBounds (x_pos, y_pos, 15, 15);
-                    p->addListener (this);
-                    addAndMakeVisible (p);
-                    sourceButtons.add (p);
+                    sourceButtons.emplace_back (std::make_unique<SourceButton> (id++, probes[k]));
+
+                    SourceButton* sourceButton = sourceButtons[sourceButtons.size() - 1].get();
+                    sourceButton->setBounds (x_pos, y_pos, 15, 15);
+                    sourceButton->addListener (this);
+                    addAndMakeVisible (sourceButton);
                 }
             }
             else
@@ -596,17 +596,15 @@ void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
                 int x_pos = slotIndex * 90 + 40;
                 int y_pos = 125 - (portIndex + 1) * 22;
 
-                SourceButton* p;
-
                 if (probeCount == 0)
-                    p = new SourceButton (id++, nullptr, basestations[i]);
+                    sourceButtons.emplace_back (std::make_unique<SourceButton> (id++, nullptr, basestations[i]));
                 else
-                    p = new SourceButton (id++, nullptr, nullptr);
+                    sourceButtons.emplace_back (std::make_unique<SourceButton> (id++, nullptr, nullptr));
 
+                SourceButton* p = sourceButtons[sourceButtons.size() - 1].get();
                 p->setBounds (x_pos, y_pos, 15, 15);
                 p->addListener (this);
                 addAndMakeVisible (p);
-                sourceButtons.add (p);
             }
         }
 
@@ -622,11 +620,11 @@ void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
             int x_pos = slotIndex * 90 + 40;
             int y_pos = 125 - (portIndex + 1) * 22;
 
-            SourceButton* p = new SourceButton (id++, additionalDataSources[j]);
+            sourceButtons.emplace_back( std::make_unique<SourceButton> (id++, additionalDataSources[j]));
+            SourceButton* p = sourceButtons[sourceButtons.size() - 1].get();
             p->setBounds (x_pos, y_pos, 15, 15);
             p->addListener (this);
             addAndMakeVisible (p);
-            sourceButtons.add (p);
         }
     }
 
@@ -725,27 +723,30 @@ void NeuropixEditor::stopAcquisition()
 
 void NeuropixEditor::buttonClicked (Button* button)
 {
-    if (sourceButtons.contains ((SourceButton*) button))
+    for (auto & source : sourceButtons)
     {
-        for (auto button : sourceButtons)
+        if (source.get() == button)
         {
-            button->setSelectedState (false);
+            for (auto & button : sourceButtons)
+            {
+                button->setSelectedState (false);
+            }
+
+            SourceButton* sourceButton = (SourceButton*) button;
+
+            sourceButton->setSelectedState (true);
+
+            if (canvas != nullptr && sourceButton->dataSource != nullptr)
+            {
+                canvas->setSelectedInterface (sourceButton->dataSource);
+            }
+            else if (canvas != nullptr && sourceButton->dataSource == nullptr)
+            {
+                canvas->setSelectedBasestation (sourceButton->basestation);
+            }
+
+            repaint();
         }
-
-        SourceButton* sourceButton = (SourceButton*) button;
-
-        sourceButton->setSelectedState (true);
-
-        if (canvas != nullptr && sourceButton->dataSource != nullptr)
-        {
-            canvas->setSelectedInterface (sourceButton->dataSource);
-        }
-        else if (canvas != nullptr && sourceButton->dataSource == nullptr)
-        {
-            canvas->setSelectedBasestation (sourceButton->basestation);
-        }
-
-        repaint();
     }
 
     if (! acquisitionIsActive)
@@ -774,7 +775,7 @@ void NeuropixEditor::buttonClicked (Button* button)
         }
         else if (button == refreshButton.get())
         {
-            for (auto btn : sourceButtons)
+            for (auto & btn : sourceButtons)
             {
                 btn->setSourceStatus (SourceStatus::DISCONNECTED);
                 btn->stopTimer();
@@ -789,7 +790,7 @@ void NeuropixEditor::buttonClicked (Button* button)
 
 void NeuropixEditor::selectSource (DataSource* source)
 {
-    for (auto button : sourceButtons)
+    for (auto & button : sourceButtons)
     {
         if (source == button->dataSource)
         {

@@ -264,7 +264,7 @@ public:
 
     void resetCanvas();
 
-    OwnedArray<SourceButton> sourceButtons;
+    std::vector<std::unique_ptr<SourceButton>> sourceButtons;
 
     std::unique_ptr<BackgroundLoader> uiLoader;
 
