@@ -28,6 +28,11 @@
 
 #define SAMPLECOUNT 64
 
+#define BS_FIRMWARE_VERSION "2.0169"
+#define BSC_FIRMWARE_VERSION "3.2191"
+#define BS_FIRMWARE_FILENAME "BS_FPGA_B169.bin"
+#define BSC_FIRMWARE_FILENAME "QBSC_FPGA_B191.bin"
+
 /* 
 * 
 	Thread for arming basestation immediately after acquisition
@@ -144,6 +149,9 @@ public:
 
     /** Waits for the arm basestation thread to exit */
     void waitForThreadToExit() override;
+
+    /** Checks for firmware compatibility with API version */
+    void checkFirmwareVersion() override;
 
 private:
     void print_switchmatrix();

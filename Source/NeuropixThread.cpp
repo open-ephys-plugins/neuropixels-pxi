@@ -222,6 +222,11 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
         }
     }
 
+    for (auto basestation : basestations)
+    {
+        basestation->checkFirmwareVersion();
+    }
+
     bool foundSync = false;
 
     int probeIndex = 0;

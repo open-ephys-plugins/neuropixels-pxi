@@ -33,6 +33,8 @@
 #include "../Formats/IMRO.h"
 #include "../Formats/ProbeInterfaceJson.h"
 
+#include "../Basestations/PxiBasestation.h"
+
 NeuropixInterface::NeuropixInterface (DataSource* p,
                                       NeuropixThread* t,
                                       NeuropixEditor* e,
@@ -428,8 +430,9 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     firmwareToggleButton = std::make_unique<UtilityButton> ("UPDATE FIRMWARE...");
     firmwareToggleButton->setRadius (3.0f);
     firmwareToggleButton->addListener (this);
-    firmwareToggleButton->setBounds (650, verticalOffset, 150, 22);
+    firmwareToggleButton->setBounds (640, verticalOffset, 160, 24);
     firmwareToggleButton->setClickingTogglesState (true);
+    firmwareToggleButton->setEnabled (true);
 
     if (thread->type == PXI)
         addAndMakeVisible (firmwareToggleButton.get());
@@ -451,7 +454,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bscFirmwareButton.get());
 
-    bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (QBSC_FPGA_B189.bin):");
+    bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String (BSC_FIRMWARE_FILENAME) + ") : ");
     bscFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
     bscFirmwareLabel->setBounds (550, verticalOffset + 43, 500, 20);
 
@@ -475,7 +478,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bsFirmwareButton.get());
 
-    bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (BS_FPGA_B169.bin):");
+    bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String(BS_FIRMWARE_FILENAME) + "): ");
     bsFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
     bsFirmwareLabel->setBounds (550, verticalOffset + 113, 500, 20);
 
@@ -499,6 +502,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     infoLabelView->setBounds (625, 98, 750, 400);
 
     addAndMakeVisible (infoLabelView.get());
+    infoLabelView->toBack();
 
     infoLabel = std::make_unique<Label> ("INFO", "INFO");
     infoLabelView->setViewedComponent (infoLabel.get(), false);
@@ -783,6 +787,8 @@ void NeuropixInterface::setAnnotationLabel (String s, Colour c)
 
 void NeuropixInterface::buttonClicked (Button* button)
 {
+    LOGD ("Button clicked.");
+
     if (button == enableViewButton.get())
     {
         mode = ENABLE_VIEW;

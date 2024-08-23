@@ -630,6 +630,9 @@ public:
     /** Waits for initialization threads to exit */
     virtual void waitForThreadToExit() {}
 
+    /** Checks that firmware version matches what's expected by the plugin */
+    virtual void checkFirmwareVersion() {}
+
     /** Returns an array of headstages connected to this basestation
 		(can include null values for disconnected headstages) */
     Array<Headstage*> getHeadstages()
