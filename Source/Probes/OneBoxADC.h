@@ -26,7 +26,7 @@
 
 #include "../NeuropixComponents.h"
 
-#define SAMPLECOUNT 64
+#define MAXPACKETS 64 * 12
 #define NUM_ADCS 12
 
 class OneBoxInterface;

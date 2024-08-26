@@ -459,7 +459,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     }
 
     mainSyncSelector = std::make_unique<ComboBox> ("Basestation that acts as main synchronizer");
-    mainSyncSelector->setBounds (90 * (basestations.size()) + 32, 39, 38, 20);
+    mainSyncSelector->setBounds (90 * (basestations.size()) + 32, 39, 50, 20);
     for (int i = 0; i < basestations.size(); i++)
     {
         mainSyncSelector->addItem (String (basestations[i]->slot), i + 1);
@@ -500,7 +500,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     background->repaint();
 
     addSyncChannelButton = std::make_unique<UtilityButton> ("+");
-    addSyncChannelButton->setBounds (90 * basestations.size() + 78, 40, 20, 20);
+    addSyncChannelButton->setBounds (90 * basestations.size() + 90, 40, 20, 20);
     addSyncChannelButton->addListener (this);
     addSyncChannelButton->setTooltip ("Add sync channel to the continuous data stream.");
     addSyncChannelButton->setClickingTogglesState (true);

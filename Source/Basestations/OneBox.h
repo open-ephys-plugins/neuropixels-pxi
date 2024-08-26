@@ -39,7 +39,7 @@ class OneBox : public Basestation
 {
 public:
     /** Constructor */
-    OneBox (NeuropixThread*, int ID);
+    OneBox (NeuropixThread*, int serial_number);
 
     /** Destructor */
     ~OneBox();
@@ -89,7 +89,7 @@ public:
     Neuropixels::NP_ErrorCode errorCode;
 
     static Array<int> existing_oneboxes;
-    int original_slot_number;
+    int serial_number = -1;
 
     const int first_available_slot = 16;
 

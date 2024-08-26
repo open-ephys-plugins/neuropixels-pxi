@@ -31,7 +31,7 @@ OneBoxADC::OneBoxADC (Basestation* bs) : DataSource (bs)
     ui = nullptr;
 
     channel_count = NUM_ADCS;
-    sample_rate = 9300.0f;
+    sample_rate = 9500.0f;
 
     sourceType = DataSourceType::ADC;
     status = SourceStatus::CONNECTED;
@@ -212,15 +212,17 @@ bool OneBoxADC::getTriggersWaveplayer (int channel)
 
 void OneBoxADC::run()
 {
-    int16_t data[SAMPLECOUNT * NUM_ADCS];
+    int16_t data[MAXPACKETS * NUM_ADCS];
 
     double ts_s;
 
-    Neuropixels::PacketInfo packetInfo[SAMPLECOUNT];
+    Neuropixels::PacketInfo packetInfo[MAXPACKETS];
 
     while (! threadShouldExit())
     {
-        int count = SAMPLECOUNT;
+        int count = MAXPACKETS;
+
+        float adcSamples[NUM_ADCS * MAXPACKETS];
 
         errorCode = Neuropixels::ADC_readPackets (basestation->slot,
                                                   &packetInfo[0],
@@ -231,7 +233,7 @@ void OneBoxADC::run()
 
         if (errorCode == Neuropixels::SUCCESS && count > 0)
         {
-            float adcSamples[NUM_ADCS];
+            
 
             for (int packetNum = 0; packetNum < count; packetNum++)
             {

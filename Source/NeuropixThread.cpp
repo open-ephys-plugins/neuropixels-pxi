@@ -69,6 +69,8 @@ void Initializer::run()
         {
             Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo (list[i].ID, &list[i]);
 
+            LOGD ("Device ID: ", list[i].ID, ", Platform ID: ", list[i].platformid);
+
             if (list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
                 countForType++;
             else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX)
@@ -83,11 +85,21 @@ void Initializer::run()
         {
             int slotID;
 
-            bool foundSlot = Neuropixels::tryGetSlotID (&list[i], &slotID);
-
             Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo (list[i].ID, &list[i]);
 
-            LOGD ("Slot ID: ", slotID, ", Platform ID : ", list[i].platformid);
+            LOGD ("Device ID: ", list[i].ID, ", Platform ID: ", list[i].platformid);
+
+            bool foundSlot = Neuropixels::tryGetSlotID (&list[i], &slotID);
+
+            if (foundSlot)
+            {
+                LOGD ("  Slot ID: ", slotID);
+            }
+            else
+            {
+                LOGD ("  Could not find slot ID");
+            }
+            
 
             if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
             {
@@ -133,7 +145,7 @@ void Initializer::run()
             else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX)
             {
                 deviceNum++;
-                setStatusMessage ("Opening OneBox device on slot " + String (slotID) + " (" + String (deviceNum) + "/" + String (countForType) + ")");
+                setStatusMessage ("Opening OneBox with serial number " + String (list[i].ID) + " (" + String (deviceNum) + "/" + String (countForType) + ")");
 
                 Basestation* bs = new OneBox (neuropixThread, list[i].ID);
 
@@ -146,6 +158,8 @@ void Initializer::run()
                 }
                 else
                 {
+                    LOGC ("  Could not open OneBox");
+                    setStatusMessage ("Could not open OneBox");
                     delete bs;
                 }
             }
