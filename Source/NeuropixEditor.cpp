@@ -335,7 +335,7 @@ void BackgroundLoader::run()
                                 if (thread->probeMap.find(current_location) != thread->probeMap.end()) {
                                     // There is a probe in the map at this location
                                     if (std::get<0>(thread->probeMap[current_location]) == probe->info.serial_number) {
-                                        LOGC ("### Found same probe in same location!");
+                                        LOGC ("Found same probe in same location!");
                                         //Serial number matches the previous one, just copy entry to updated map
                                         temp = ProbeSettings(thread->probeMap[current_location].second);
                                         temp.probe = probe;
@@ -344,7 +344,6 @@ void BackgroundLoader::run()
                                 }
                                 else
                                 {
-                                    //Check if probe serial number is in the map
                                     bool found = false;
                                     std::tuple<int, int, int> old_location;
                                     for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++) {
@@ -355,8 +354,8 @@ void BackgroundLoader::run()
                                             temp = ProbeSettings(it->second.second);
                                             temp.probe = probe;
                                             updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
-                                            //delete old-location entry
                                             thread->probeMap.erase(it);
+                                            thread->probeMap[current_location] = std::make_pair(probe->info.serial_number, temp);
                                             break;
                                         }
                                     }
@@ -375,8 +374,14 @@ void BackgroundLoader::run()
         editor->drawBasestations(thread->getBasestations());
         editor->resetCanvas();
 
-        //TODO: This needs to be generalized to match probes to the correct interfaces
-        editor->canvas->settingsInterfaces[0]->applyProbeSettings(temp, true);
+        for (auto& interface : editor->canvas->settingsInterfaces) {
+            for (auto probe : thread->getProbes()) {
+                if (interface->dataSource != nullptr && interface->dataSource->getName() == probe->getName()) {
+                    ProbeSettings settingsToRestore = ProbeSettings(updatedMap[std::make_tuple(probe->basestation->slot, probe->headstage->port, probe->dock)].second);
+                    interface->applyProbeSettings (settingsToRestore, true);
+                }
+            }
+        }
 
         isRefreshing = false;
         thread->isRefreshing = false;
