@@ -241,7 +241,8 @@ void SimulatedBasestation::startAcquisition()
 {
     for (int i = 0; i < probes.size(); i++)
     {
-        probes[i]->startAcquisition();
+        if (probes[i]->isEnabled)
+            probes[i]->startAcquisition();
     }
 }
 
@@ -249,6 +250,7 @@ void SimulatedBasestation::stopAcquisition()
 {
     for (int i = 0; i < probes.size(); i++)
     {
-        probes[i]->stopAcquisition();
+        if (probes[i]->isEnabled)
+            probes[i]->stopAcquisition();
     }
 }

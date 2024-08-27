@@ -476,7 +476,8 @@ void PxiBasestation::startAcquisition()
 
     for (auto probe : probes)
     {
-        probe->startAcquisition();
+        if (probe->isEnabled)
+            probe->startAcquisition();
     }
 
     errorCode = Neuropixels::setSWTrigger (slot);
@@ -488,7 +489,8 @@ void PxiBasestation::stopAcquisition()
 
     for (auto probe : probes)
     {
-        probe->stopAcquisition();
+        if (probe->isEnabled)
+            probe->stopAcquisition();
     }
 
     armBasestation->startThread();

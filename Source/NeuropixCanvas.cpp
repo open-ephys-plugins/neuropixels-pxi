@@ -241,13 +241,23 @@ void NeuropixCanvas::resized()
 void NeuropixCanvas::startAcquisition()
 {
     for (auto settingsInterface : settingsInterfaces)
-        settingsInterface->startAcquisition();
+    {
+        if (settingsInterface->dataSource != nullptr && settingsInterface->dataSource->isEnabled)
+        {
+            settingsInterface->startAcquisition();
+        }
+    }
 }
 
 void NeuropixCanvas::stopAcquisition()
 {
     for (auto settingsInterface : settingsInterfaces)
-        settingsInterface->stopAcquisition();
+    {
+        if (settingsInterface->dataSource != nullptr && settingsInterface->dataSource->isEnabled)
+        {
+            settingsInterface->stopAcquisition();
+        }
+    }
 }
 
 void NeuropixCanvas::setSelectedInterface (DataSource* dataSource)

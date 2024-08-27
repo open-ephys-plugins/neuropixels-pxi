@@ -229,7 +229,7 @@ public:
     void sendSyncAsContinuousChannel (bool shouldSend);
 
     /** Adds info about all the available data streams */
-    void updateStreamInfo();
+    void updateStreamInfo(bool enabledStateChanged = false);
 
     /** Returns the current API version as a string */
     String getApiVersion();

@@ -101,6 +101,7 @@ enum class SourceStatus
     UPDATING, //The probe is currently updating its settings
     ACQUIRING, //The probe is currently streaming data to computer
     RECORDING, //The probe is recording the streaming data
+    DISABLED //The probe is connected but disabled during acquisition
 };
 
 enum class Bank
@@ -256,6 +257,8 @@ struct ProbeSettings
     ProbeType probeType;
 
     Probe* probe; // pointer to the probe
+
+    bool isEnabled = true;
 };
 
 /** Base class for all Neuropixels components, which must implement the "getInfo" method */
@@ -354,6 +357,9 @@ public:
 
     /** The data buffer used by this source */
     DataBuffer* apBuffer;
+
+    /** Flags if the the data source is enabled */
+    bool isEnabled = true;
 
 protected:
     SourceStatus status;

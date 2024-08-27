@@ -322,8 +322,10 @@ String NeuropixThread::generateProbeName (int probeIndex, ProbeNameConfig::Namin
     return name;
 }
 
-void NeuropixThread::updateStreamInfo()
+void NeuropixThread::updateStreamInfo(bool enabledStateChanged)
 {
+    if (enabledStateChanged) sourceStreams.clear();
+
     streamInfo.clear();
     sourceBuffers.clear();
 
@@ -334,6 +336,12 @@ void NeuropixThread::updateStreamInfo()
         if (source->sourceType == DataSourceType::PROBE)
         {
             Probe* probe = (Probe*) source;
+
+            if (!probe->isEnabled)
+            {
+                probe_index++;
+                continue;
+            }
 
             if (probe->type != ProbeType::QUAD_BASE)
             {
@@ -464,7 +472,10 @@ void NeuropixThread::applyProbeSettingsQueue()
 
             settings.probe->writeConfiguration();
 
-            settings.probe->setStatus (SourceStatus::CONNECTED);
+            if (settings.probe->isEnabled)
+                settings.probe->setStatus (SourceStatus::CONNECTED);
+            else
+                settings.probe->setStatus (SourceStatus::DISABLED);
 
             if (! settings.probe->isCalibrated)
                 uncalibratedProbes.add (settings.probe);
@@ -887,6 +898,8 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
 {
     LOGD ("NeuropixThread::updateSettings()");
 
+    bool checkStreamNames = true;
+
     if (sourceStreams.size() == 0) // initialize data streams
     {
         String lastName;
@@ -956,6 +969,8 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
             };
 
             sourceStreams.add (new DataStream (settings));
+
+            checkStreamNames = false;
         }
     }
 
@@ -972,66 +987,70 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
     {
         DataStream* currentStream = sourceStreams[i];
 
-        String streamName;
-
         StreamInfo info = streamInfo[i];
 
-        if (info.type == stream_type::AP_BAND)
-        {
-            Probe* p = getProbes()[probeIdx];
-            p->updateNamingScheme (p->namingScheme); // update displayName
+        if (checkStreamNames) {
 
-            streamName = generateProbeName (probeIdx, p->namingScheme);
+            String streamName;
 
-            if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
-                streamName += "-AP";
-            else
-                streamName = String (p->streamIndex);
-        }
-        else if (info.type == stream_type::LFP_BAND)
-        {
-            Probe* p = getProbes()[probeIdx];
-            p->updateNamingScheme (p->namingScheme); // update displayName
+            if (info.type == stream_type::AP_BAND)
+            {
+                Probe* p = getProbes()[probeIdx];
+                p->updateNamingScheme (p->namingScheme); // update displayName
 
-            streamName = generateProbeName (probeIdx, p->namingScheme);
+                streamName = generateProbeName (probeIdx, p->namingScheme);
 
-            if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
-                streamName += "-LFP";
-            else
-                streamName = String (p->streamIndex + 1);
+                if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
+                    streamName += "-AP";
+                else
+                    streamName = String (p->streamIndex);
+            }
+            else if (info.type == stream_type::LFP_BAND)
+            {
+                Probe* p = getProbes()[probeIdx];
+                p->updateNamingScheme (p->namingScheme); // update displayName
 
-            probeIdx++;
-        }
-        else if (info.type == stream_type::BROAD_BAND)
-        {
-            Probe* p = getProbes()[probeIdx];
-            p->updateNamingScheme (p->namingScheme); // update displayName
+                streamName = generateProbeName (probeIdx, p->namingScheme);
 
-            streamName = generateProbeName (probeIdx, p->namingScheme);
+                if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
+                    streamName += "-LFP";
+                else
+                    streamName = String (p->streamIndex + 1);
 
-            probeIdx++;
-        }
-        else if (info.type == stream_type::QUAD_BASE)
-        {
-            Probe* p = getProbes()[probeIdx];
-            p->updateNamingScheme (p->namingScheme); // update displayName
-
-            streamName = generateProbeName (probeIdx, p->namingScheme);
-
-            if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
-                streamName += "-" + String (info.shank + 1);
-            else
-                streamName = String (p->streamIndex + info.shank);
-
-            if (info.shank == 3)
                 probeIdx++;
-        }
-        else
-        {
-            streamName = currentStream->getName();
-        }
+            }
+            else if (info.type == stream_type::BROAD_BAND)
+            {
+                Probe* p = getProbes()[probeIdx];
+                p->updateNamingScheme (p->namingScheme); // update displayName
 
-        currentStream->setName (streamName);
+                streamName = generateProbeName (probeIdx, p->namingScheme);
+
+                probeIdx++;
+            }
+            else if (info.type == stream_type::QUAD_BASE)
+            {
+                Probe* p = getProbes()[probeIdx];
+                p->updateNamingScheme (p->namingScheme); // update displayName
+
+                streamName = generateProbeName (probeIdx, p->namingScheme);
+
+                if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
+                    streamName += "-" + String (info.shank + 1);
+                else
+                    streamName = String (p->streamIndex + info.shank);
+
+                if (info.shank == 3)
+                    probeIdx++;
+            }
+            else
+            {
+                streamName = currentStream->getName();
+            }
+
+            currentStream->setName (streamName);
+
+        }
 
         ContinuousChannel::Type type;
 

@@ -380,7 +380,8 @@ void OneBox::startAcquisition()
 {
     for (auto probe : probes)
     {
-        probe->startAcquisition();
+        if (probe->isEnabled)
+            probe->startAcquisition();
     }
 
     adcSource->startAcquisition();
@@ -393,7 +394,8 @@ void OneBox::stopAcquisition()
 {
     for (auto probe : probes)
     {
-        probe->stopAcquisition();
+        if (probe->isEnabled)
+            probe->stopAcquisition();
     }
 
     adcSource->stopAcquisition();

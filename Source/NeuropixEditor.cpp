@@ -262,6 +262,23 @@ void SourceButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown
                 g.setColour (Colours::orange);
         }
     }
+    else if (status == SourceStatus::DISABLED) {
+        if (selected)
+        {
+            if (isMouseOver)
+                g.setColour (Colours::red);
+            else
+                g.setColour (Colours::red);
+        }
+        else
+        {
+            if (isMouseOver)
+                g.setColour (Colours::red);
+            else
+                g.setColour (Colours::red);
+        }
+
+    }
     else
     {
         g.setColour (findColour (ThemeColours::widgetBackground));
@@ -404,10 +421,20 @@ void BackgroundLoader::run()
         MessageManagerLock mml;
         CoreServices::updateSignalChain (editor);
 
+        bool updateStreamInfoRequired = false;
+
         for (auto probe : thread->getProbes())
         {
             LOGC (" Updating queue for probe ", probe->name);
             thread->updateProbeSettingsQueue (ProbeSettings (probe->settings));
+
+            if (!probe->isEnabled) updateStreamInfoRequired = true;
+        }
+
+        if (updateStreamInfoRequired)
+        {
+            thread->updateStreamInfo(true);
+            CoreServices::updateSignalChain (editor);
         }
 
         editor->checkCanvas();
@@ -417,7 +444,7 @@ void BackgroundLoader::run()
 
     LOGC ("Initialized, applying probe settings...");
 
-    /* Apply any saved settings */
+    /* Apply any queued settings */
     thread->applyProbeSettingsQueue();
 }
 
