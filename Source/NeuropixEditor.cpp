@@ -95,7 +95,7 @@ void EditorBackground::paint (Graphics& g)
         for (int i = 0; i < numBasestations; i++)
         {
             g.setColour (findColour (ThemeColours::outline));
-            g.drawRoundedRectangle (90 * i + 32, 13, 32, 98, 4, 1);
+            g.drawRoundedRectangle (90 * i + 30, 13, 35, 98, 4, 1);
 
             g.setColour (findColour (ThemeColours::defaultText));
             g.setFont (10);
@@ -109,7 +109,7 @@ void EditorBackground::paint (Graphics& g)
             for (int j = 0; j < 4; j++)
             {
                 g.setFont (10);
-                g.drawText (String (j + 1), 90 * i + 22, 90 - j * 22, 10, 10, Justification::centredLeft);
+                g.drawText (String (j + 1), 90 * i + 20, 90 - j * 22 + 1, 10, 10, Justification::centredLeft);
             }
         }
 
