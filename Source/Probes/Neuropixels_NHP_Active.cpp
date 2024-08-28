@@ -51,6 +51,8 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active (Basestation* bs, Headstage* hs, 
     name = probeMetadata.name;
     type = probeMetadata.type;
 
+    settings.probeType = type;
+
     settings.probe = this;
 
     settings.availableBanks = probeMetadata.availableBanks;
