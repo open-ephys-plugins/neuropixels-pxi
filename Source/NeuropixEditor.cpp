@@ -128,7 +128,7 @@ void EditorBackground::paint (Graphics& g)
         for (int i = 0; i < numBasestations; i++)
         {
             g.setColour (Colours::lightgrey);
-            g.drawRoundedRectangle (90 * i + 32, 13, 32, 98, 4, 1);
+            g.drawRoundedRectangle (90 * i + 30, 13, 35, 98, 4, 1);
 
             g.setColour (Colours::darkgrey);
 
@@ -154,7 +154,7 @@ void EditorBackground::paint (Graphics& g)
                 }
                 else
                 {
-                    g.drawText (String (j + 1), 90 * i + 20 - 3, 90 - j * 22 + 1, 10, 10, Justification::centredLeft);
+                    g.drawText (String (j + 1), 90 * i + 20, 90 - j * 22 + 1, 10, 10, Justification::centredLeft);
                 }
             }
         }
