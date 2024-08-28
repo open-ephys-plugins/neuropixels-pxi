@@ -134,6 +134,9 @@ SimulatedBasestation::SimulatedBasestation (NeuropixThread* neuropixThread,
 
 bool SimulatedBasestation::open()
 {
+    headstages.clear();
+    probes.clear();
+
     savingDirectory = File();
 
     basestationConnectBoard = std::make_unique<SimulatedBasestationConnectBoard> (this);
