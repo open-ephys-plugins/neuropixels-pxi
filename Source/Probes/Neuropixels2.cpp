@@ -54,6 +54,8 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
         name = probeMetadata.name;
         type = probeMetadata.type;
 
+        settings.probeType = type;
+
         settings.probe = this;
 
         settings.availableBanks = probeMetadata.availableBanks;

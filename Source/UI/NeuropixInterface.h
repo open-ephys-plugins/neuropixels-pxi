@@ -173,6 +173,7 @@ private:
     std::unique_ptr<Label> annotationLabel;
 
     // BUTTONS
+    std::unique_ptr<UtilityButton> probeEnableButton;
     std::unique_ptr<UtilityButton> enableButton;
 
     std::unique_ptr<UtilityButton> enableViewButton;

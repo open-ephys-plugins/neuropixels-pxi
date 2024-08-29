@@ -68,6 +68,15 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         int currentHeight = 55;
 
+        probeEnableButton = std::make_unique<UtilityButton> ("ENABLE");
+        probeEnableButton->setRadius (3.0f);
+        probeEnableButton->setBounds (630, currentHeight + 25, 100, 22);
+        probeEnableButton->setClickingTogglesState (true);
+        probeEnableButton->setToggleState (probe->settings.isEnabled, dontSendNotification);
+        probeEnableButton->setTooltip ("If disabled, probe will not stream data during acquisition");
+        probeEnableButton->addListener (this);
+        addAndMakeVisible (probeEnableButton.get());
+
         electrodesLabel = std::make_unique<Label> ("ELECTRODES", "ELECTRODES");
         electrodesLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
         electrodesLabel->setBounds (446, currentHeight - 20, 100, 20);
@@ -499,7 +508,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     addAndMakeVisible (nameLabel.get());
 
     infoLabelView = std::make_unique<Viewport> ("INFO");
-    infoLabelView->setBounds (625, 98, 750, 400);
+    infoLabelView->setBounds (625, 110, 750, 400);
 
     addAndMakeVisible (infoLabelView.get());
     infoLabelView->toBack();
@@ -787,9 +796,16 @@ void NeuropixInterface::setAnnotationLabel (String s, Colour c)
 
 void NeuropixInterface::buttonClicked (Button* button)
 {
-    LOGD ("Button clicked.");
+    if (button == probeEnableButton.get())
+    {
+        probe->isEnabled = probeEnableButton->getToggleState();
 
-    if (button == enableViewButton.get())
+        probe->settings.isEnabled = probe->isEnabled;
+        probe->setStatus (probe->isEnabled ? SourceStatus::CONNECTED : SourceStatus::DISABLED);
+        thread->updateStreamInfo(true);
+        CoreServices::updateSignalChain (editor);
+    }
+    else if (button == enableViewButton.get())
     {
         mode = ENABLE_VIEW;
         probeBrowser->stopTimer();
@@ -1323,6 +1339,8 @@ void NeuropixInterface::paint (Graphics& g)
 
 void NeuropixInterface::drawLegend (Graphics& g)
 {
+
+    if (thread->isRefreshing) return;
     g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.75f));
     g.setFont (15);
 
@@ -1744,6 +1762,8 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
             annotationNode->setAttribute ("G", a.colour.getGreen());
             annotationNode->setAttribute ("B", a.colour.getBlue());
         }
+
+        xmlNode->setAttribute ("isEnabled", bool (probe->isEnabled));
     }
 }
 
@@ -1995,6 +2015,10 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                                                          annotationNode->getIntAttribute ("B"))));
                 }
             }
+
+            probe->isEnabled = matchingNode->getBoolAttribute ("isEnabled", true);
+            probe->settings.isEnabled = probe->isEnabled;
+            probeEnableButton->setToggleState (probe->isEnabled, dontSendNotification);
         }
 
         probe->updateSettings (settings);

@@ -63,6 +63,8 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
     name = probeMetadata.name;
     type = probeMetadata.type;
 
+    settings.probeType = type;
+
     settings.probe = this;
 
     settings.availableBanks = probeMetadata.availableBanks;
