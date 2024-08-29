@@ -348,24 +348,24 @@ void BackgroundLoader::run()
                     if (hs != nullptr) {
                         for (auto probe : hs->getProbes()) {
                             if (probe != nullptr) {
+                                //Check for existing probe settings
                                 std::tuple<int, int, int> current_location = std::make_tuple(bs->slot, hs->port, probe->dock);
                                 if (thread->probeMap.find(current_location) != thread->probeMap.end()) {
-                                    // There is a probe in the map at this location
                                     if (std::get<0>(thread->probeMap[current_location]) == probe->info.serial_number) {
-                                        LOGC ("Found same probe in same location!");
-                                        //Serial number matches the previous one, just copy entry to updated map
                                         temp = ProbeSettings(thread->probeMap[current_location].second);
                                         temp.probe = probe;
                                         updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
+                                        thread->probeMap[current_location] = std::make_pair(probe->info.serial_number, temp);
                                     }
                                 }
-                                else
+                                else //Check for new/moved probes
                                 {
                                     bool found = false;
                                     std::tuple<int, int, int> old_location;
                                     for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++) {
                                         uint64 old_serial = it->second.first;
                                         if (old_serial == probe->info.serial_number) {
+                                            //Probe moved to new location
                                             found = true;
                                             old_location = it->first;
                                             temp = ProbeSettings(it->second.second);
@@ -376,7 +376,11 @@ void BackgroundLoader::run()
                                             break;
                                         }
                                     }
-                                    LOGC("###Found new probe on slot ", bs->slot, " port ", hs->port, " dock ", probe->dock, " with serial number ", probe->info.serial_number);
+                                    if (!found) {
+                                        //New probe connected
+                                        updatedMap[current_location] = std::make_pair(probe->info.serial_number, probe->settings);
+                                        thread->probeMap[current_location] = std::make_pair(probe->info.serial_number, probe->settings);
+                                    }
                                 }
                             }
                         }
@@ -394,7 +398,7 @@ void BackgroundLoader::run()
         for (auto& interface : editor->canvas->settingsInterfaces) {
             for (auto probe : thread->getProbes()) {
                 if (interface->dataSource != nullptr && interface->dataSource->getName() == probe->getName()) {
-                    ProbeSettings settingsToRestore = ProbeSettings(updatedMap[std::make_tuple(probe->basestation->slot, probe->headstage->port, probe->dock)].second);
+                    ProbeSettings settingsToRestore = ProbeSettings(thread->probeMap[std::make_tuple(probe->basestation->slot, probe->headstage->port, probe->dock)].second);
                     interface->applyProbeSettings (settingsToRestore, true);
                 }
             }
