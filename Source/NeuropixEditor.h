@@ -37,6 +37,27 @@ class NeuropixEditor;
 class NeuropixCanvas;
 class NeuropixThread;
 
+/**
+    Refreshes the basestation to check for any hardware changes
+
+*/
+
+class RefreshButton : public Button
+{
+
+public:
+    /** Constructor */
+    RefreshButton ();
+
+    /** Destructor */
+    ~RefreshButton() {}
+
+    void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown) override;
+
+private:
+
+    std::unique_ptr<Drawable> refreshIcon;
+};
 /** 
 
 	Displays the slot number, and opens a pop-up name
@@ -285,7 +306,7 @@ private:
     std::unique_ptr<EditorBackground> background;
 
     std::unique_ptr<UtilityButton> addSyncChannelButton;
-    std::unique_ptr<UtilityButton> refreshButton;
+    std::unique_ptr<RefreshButton> refreshButton;
 
     Viewport* viewport;
     NeuropixThread* thread;
