@@ -334,7 +334,7 @@ void BackgroundLoader::run()
 
     if (isRefreshing) 
     {
-        std::map<std::tuple<int, int, int>, std::pair<int, ProbeSettings>> updatedMap;
+        std::map<std::tuple<int, int, int>, std::pair<uint64, ProbeSettings>> updatedMap;
 
         ProbeSettings temp;
         LOGC("Scanning for hardware changes...");
@@ -355,32 +355,27 @@ void BackgroundLoader::run()
                                         temp = ProbeSettings(thread->probeMap[current_location].second);
                                         temp.probe = probe;
                                         updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
-                                        thread->probeMap[current_location] = std::make_pair(probe->info.serial_number, temp);
+                                        continue;
                                     }
                                 }
-                                else //Check for new/moved probes
-                                {
-                                    bool found = false;
-                                    std::tuple<int, int, int> old_location;
-                                    for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++) {
-                                        uint64 old_serial = it->second.first;
-                                        if (old_serial == probe->info.serial_number) {
-                                            //Probe moved to new location
-                                            found = true;
-                                            old_location = it->first;
-                                            temp = ProbeSettings(it->second.second);
-                                            temp.probe = probe;
-                                            updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
-                                            thread->probeMap.erase(it);
-                                            thread->probeMap[current_location] = std::make_pair(probe->info.serial_number, temp);
-                                            break;
-                                        }
+
+                                bool found = false;
+                                std::tuple<int, int, int> old_location;
+                                for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++) {
+                                    uint64 old_serial = it->second.first;
+                                    if (old_serial == probe->info.serial_number) {
+                                        //Existing probe moved to new location
+                                        found = true;
+                                        old_location = it->first;
+                                        temp = ProbeSettings(it->second.second);
+                                        temp.probe = probe;
+                                        updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
+                                        break;
                                     }
-                                    if (!found) {
-                                        //New probe connected
-                                        updatedMap[current_location] = std::make_pair(probe->info.serial_number, probe->settings);
-                                        thread->probeMap[current_location] = std::make_pair(probe->info.serial_number, probe->settings);
-                                    }
+                                }
+                                if (!found) {
+                                    //New probe connected
+                                    updatedMap[current_location] = std::make_pair(probe->info.serial_number, probe->settings);
                                 }
                             }
                         }
@@ -388,6 +383,10 @@ void BackgroundLoader::run()
                 }
             }
         }
+
+        //Update the probe map
+        thread->probeMap = updatedMap;
+
         thread->initializeProbes();
         thread->updateStreamInfo();
 
