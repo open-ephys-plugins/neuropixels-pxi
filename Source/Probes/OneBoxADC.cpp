@@ -218,6 +218,9 @@ void OneBoxADC::run()
 
     Neuropixels::PacketInfo packetInfo[MAXPACKETS];
 
+    int packetsAvailable;
+    int headroom;
+
     while (! threadShouldExit())
     {
         int count = MAXPACKETS;
@@ -266,6 +269,15 @@ void OneBoxADC::run()
         else if (errorCode != Neuropixels::SUCCESS)
         {
             LOGD ("readPackets error code: ", errorCode, " for ADCs");
+        }
+
+        Neuropixels::ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom);
+
+        if (packetsAvailable < MAXPACKETS)
+        {
+            int uSecToWait = (MAXPACKETS - packetsAvailable) * 30;
+
+            std::this_thread::sleep_for (std::chrono::microseconds (uSecToWait));
         }
     }
 }
