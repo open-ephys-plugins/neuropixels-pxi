@@ -85,6 +85,9 @@ public:
     /** Initializes probes in a background thread */
     void initialize (bool signalChainIsLoading) override;
 
+    /** Searches for probes connected to this basestation */
+    void searchForProbes() override;
+
     /** Returns the total number of probes connected to this basestation*/
     int getProbeCount() override;
 

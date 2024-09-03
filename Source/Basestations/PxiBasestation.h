@@ -25,6 +25,7 @@
 #define __NEUROPIXBASESTATIONV3_H_2C4C2D67__
 
 #include "../NeuropixComponents.h"
+#include "../NeuropixThread.h"
 
 #define SAMPLECOUNT 64
 
@@ -113,6 +114,9 @@ public:
 
     /** Initializes probes in a background thread */
     void initialize (bool signalChainIsLoading) override;
+
+    /** Searches for probes connected to this basestation */
+    void searchForProbes() override;
 
     /** Returns the total number of probes connected to this basestation*/
     int getProbeCount() override;

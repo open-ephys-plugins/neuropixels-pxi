@@ -27,6 +27,34 @@
 #include "NeuropixComponents.h"
 #include "NeuropixThread.h"
 
+RefreshButton::RefreshButton() : Button ("Refresh")
+{
+
+    XmlDocument xmlDoc (R"(
+        <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M13 2L11 3.99545L11.0592 4.05474M11 18.0001L13 19.9108L12.9703 19.9417M11.0592 4.05474L13 6M11.0592 4.05474C11.3677 4.01859 11.6817 4 12 4C16.4183 4 20 7.58172 20 12C20 14.5264 18.8289 16.7793 17 18.2454M7 5.75463C5.17107 7.22075 4 9.47362 4 12C4 16.4183 7.58172 20 12 20C12.3284 20 12.6523 19.9802 12.9703 19.9417M11 22.0001L12.9703 19.9417" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+    )");
+
+    refreshIcon = Drawable::createFromSVG (*xmlDoc.getDocumentElement().get());
+
+    setClickingTogglesState (false);
+}
+
+void RefreshButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
+{
+    Colour buttonColour = findColour (ThemeColours::defaultText);
+
+    if (isMouseOver)
+        buttonColour = buttonColour.brighter (0.2f);
+
+    refreshIcon->replaceColour (Colours::black, buttonColour);
+
+    refreshIcon->drawWithin (g, getLocalBounds().toFloat(), RectanglePlacement::centred, 1.0f);
+
+    refreshIcon->replaceColour (buttonColour, Colours::black);
+}
+
 SlotButton::SlotButton (Basestation* bs, NeuropixThread* thread_) : Button (String (bs->slot))
 {
     isEnabled = true;
@@ -95,7 +123,7 @@ void EditorBackground::paint (Graphics& g)
         for (int i = 0; i < numBasestations; i++)
         {
             g.setColour (findColour (ThemeColours::outline));
-            g.drawRoundedRectangle (90 * i + 32, 13, 32, 98, 4, 1);
+            g.drawRoundedRectangle (90 * i + 30, 13, 35, 98, 4, 1);
 
             g.setColour (findColour (ThemeColours::defaultText));
             g.setFont (10);
@@ -109,7 +137,7 @@ void EditorBackground::paint (Graphics& g)
             for (int j = 0; j < 4; j++)
             {
                 g.setFont (10);
-                g.drawText (String (j + 1), 90 * i + 22, 90 - j * 22, 10, 10, Justification::centredLeft);
+                g.drawText (String (j + 1), 90 * i + 20, 90 - j * 22 + 1, 10, 10, Justification::centredLeft);
             }
         }
 
@@ -262,6 +290,23 @@ void SourceButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown
                 g.setColour (Colours::orange);
         }
     }
+    else if (status == SourceStatus::DISABLED) {
+        if (selected)
+        {
+            if (isMouseOver)
+                g.setColour (Colours::red);
+            else
+                g.setColour (Colours::red);
+        }
+        else
+        {
+            if (isMouseOver)
+                g.setColour (Colours::red);
+            else
+                g.setColour (Colours::red);
+        }
+
+    }
     else
     {
         g.setColour (findColour (ThemeColours::widgetBackground));
@@ -298,7 +343,8 @@ BackgroundLoader::BackgroundLoader (NeuropixThread* thread_, NeuropixEditor* edi
       thread (thread_),
       editor (editor_),
       isInitialized (false),
-      signalChainIsLoading (false)
+      signalChainIsLoading (false),
+      isRefreshing(false)
 {
 }
 
@@ -313,6 +359,83 @@ BackgroundLoader::~BackgroundLoader()
 void BackgroundLoader::run()
 {
     LOGC ("Running background thread...");
+
+    if (isRefreshing) 
+    {
+        std::map<std::tuple<int, int, int>, std::pair<uint64, ProbeSettings>> updatedMap;
+
+        ProbeSettings temp;
+        LOGC("Scanning for hardware changes...");
+        //Assume basestation counts/slots do not change
+        for (int i = 0; i < thread->getBasestations().size(); i++) {
+            Basestation* bs = thread->getBasestations()[i];
+            if (bs != nullptr) {
+                bs->close();
+                bs->open();
+                for (auto hs : bs->getHeadstages()) {
+                    if (hs != nullptr) {
+                        for (auto probe : hs->getProbes()) {
+                            if (probe != nullptr) {
+                                //Check for existing probe settings
+                                std::tuple<int, int, int> current_location = std::make_tuple(bs->slot, hs->port, probe->dock);
+                                if (thread->probeMap.find(current_location) != thread->probeMap.end()) {
+                                    if (std::get<0>(thread->probeMap[current_location]) == probe->info.serial_number) {
+                                        temp = ProbeSettings(thread->probeMap[current_location].second);
+                                        temp.probe = probe;
+                                        updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
+                                        continue;
+                                    }
+                                }
+
+                                bool found = false;
+                                std::tuple<int, int, int> old_location;
+                                for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++) {
+                                    uint64 old_serial = it->second.first;
+                                    if (old_serial == probe->info.serial_number) {
+                                        //Existing probe moved to new location
+                                        found = true;
+                                        old_location = it->first;
+                                        temp = ProbeSettings(it->second.second);
+                                        temp.probe = probe;
+                                        updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
+                                        break;
+                                    }
+                                }
+                                if (!found) {
+                                    //New probe connected
+                                    updatedMap[current_location] = std::make_pair(probe->info.serial_number, probe->settings);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //Update the probe map
+        thread->probeMap = updatedMap;
+
+        thread->initializeProbes();
+        thread->updateStreamInfo();
+
+        MessageManagerLock mml;
+        editor->drawBasestations(thread->getBasestations());
+        editor->resetCanvas();
+
+        for (auto& interface : editor->canvas->settingsInterfaces) {
+            for (auto probe : thread->getProbes()) {
+                if (interface->dataSource != nullptr && interface->dataSource->getName() == probe->getName()) {
+                    ProbeSettings settingsToRestore = ProbeSettings(thread->probeMap[std::make_tuple(probe->basestation->slot, probe->headstage->port, probe->dock)].second);
+                    interface->applyProbeSettings (settingsToRestore, true);
+                }
+            }
+        }
+
+        isRefreshing = false;
+        thread->isRefreshing = false;
+
+        CoreServices::updateSignalChain (editor);
+    }
 
     /* Initializes the NPX-PXI probe connections in the background to prevent this 
 	   plugin from blocking the main GUI*/
@@ -329,10 +452,20 @@ void BackgroundLoader::run()
         MessageManagerLock mml;
         CoreServices::updateSignalChain (editor);
 
+        bool updateStreamInfoRequired = false;
+
         for (auto probe : thread->getProbes())
         {
             LOGC (" Updating queue for probe ", probe->name);
             thread->updateProbeSettingsQueue (ProbeSettings (probe->settings));
+
+            if (!probe->isEnabled) updateStreamInfoRequired = true;
+        }
+
+        if (updateStreamInfoRequired)
+        {
+            thread->updateStreamInfo(true);
+            CoreServices::updateSignalChain (editor);
         }
 
         editor->checkCanvas();
@@ -342,8 +475,29 @@ void BackgroundLoader::run()
 
     LOGC ("Initialized, applying probe settings...");
 
-    /* Apply any saved settings */
+    /* Apply any queued settings */
     thread->applyProbeSettingsQueue();
+}
+
+void NeuropixEditor::resetCanvas()
+{
+    if (canvas != nullptr)
+    {
+        VisualizerEditor::canvas.reset();
+
+        if (isOpenInTab)
+        {
+            removeTab();
+            addTab();
+        }
+        else
+        {
+            checkForCanvas();
+            
+            if (dataWindow != nullptr)
+                dataWindow->setContentNonOwned (VisualizerEditor::canvas.get(), false);
+        }
+    }
 }
 
 void NeuropixEditor::initialize (bool signalChainIsLoading)
@@ -355,108 +509,13 @@ void NeuropixEditor::initialize (bool signalChainIsLoading)
 NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     : VisualizerEditor (parentNode, t->type == ONEBOX ? "OneBox" : "Neuropix PXI")
 {
-    thread = t;
     canvas = nullptr;
+
+    thread = t;
 
     Array<Basestation*> basestations = t->getBasestations();
 
-    bool foundFirst = false;
-
-    int id = 0;
-
-    for (int i = 0; i < basestations.size(); i++)
-    {
-        Array<Headstage*> headstages = basestations[i]->getHeadstages(); // can return null
-
-        int probeCount = basestations[i]->getProbeCount();
-
-        for (int j = 0; j < headstages.size(); j++)
-        {
-            int slotIndex = i;
-            int portIndex = j;
-
-            if (headstages[j] != nullptr)
-            {
-                Array<Probe*> probes = headstages[j]->getProbes();
-
-                for (int k = 0; k < probes.size(); k++)
-                {
-                    int offset;
-
-                    if (probes.size() == 2)
-                        offset = 20 * k;
-                    else
-                        offset = 10;
-
-                    int x_pos = slotIndex * 90 + 30 + offset;
-                    int y_pos = 125 - (portIndex + 1) * 22;
-
-                    SourceButton* p = new SourceButton (id++, probes[k]);
-                    p->setBounds (x_pos, y_pos, 15, 15);
-                    p->addListener (this);
-                    addAndMakeVisible (p);
-                    sourceButtons.add (p);
-                }
-            }
-            else
-            {
-                int x_pos = slotIndex * 90 + 40;
-                int y_pos = 125 - (portIndex + 1) * 22;
-
-                SourceButton* p;
-
-                if (probeCount == 0)
-                    p = new SourceButton (id++, nullptr, basestations[i]);
-                else
-                    p = new SourceButton (id++, nullptr, nullptr);
-
-                p->setBounds (x_pos, y_pos, 15, 15);
-                p->addListener (this);
-                addAndMakeVisible (p);
-                sourceButtons.add (p);
-            }
-        }
-
-        Array<DataSource*> additionalDataSources = basestations[i]->getAdditionalDataSources(); // can return null
-
-        for (int j = 0; j < additionalDataSources.size(); j++)
-        {
-            LOGD ("Creating source button for ADCs");
-
-            int slotIndex = i;
-            int portIndex = j + 3;
-
-            int x_pos = slotIndex * 90 + 40;
-            int y_pos = 125 - (portIndex + 1) * 22;
-
-            SourceButton* p = new SourceButton (id++, additionalDataSources[j]);
-            p->setBounds (x_pos, y_pos, 15, 15);
-            p->addListener (this);
-            addAndMakeVisible (p);
-            sourceButtons.add (p);
-        }
-    }
-
-    for (int i = 0; i < basestations.size(); i++)
-    {
-        int x_pos = i * 90 + 70;
-        int y_pos = 50;
-
-        UtilityButton* b = new UtilityButton ("");
-        b->setBounds (x_pos, y_pos, 30, 20);
-        b->addListener (this);
-        //addAndMakeVisible(b);
-        directoryButtons.add (b);
-
-        savingDirectories.add (File());
-        slotNamingSchemes.add (0);
-
-        FifoMonitor* f = new FifoMonitor (i, basestations[i]);
-        f->setBounds (x_pos + 2, 75, 12, 50);
-        addAndMakeVisible (f);
-        f->setSlot (basestations[i]->slot);
-        fifoMonitors.add (f);
-    }
+    drawBasestations(basestations);
 
     mainSyncSelector = std::make_unique<ComboBox> ("Basestation that acts as main synchronizer");
     mainSyncSelector->setBounds (90 * (basestations.size()) + 32, 39, 50, 20);
@@ -506,11 +565,18 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     addSyncChannelButton->setClickingTogglesState (true);
     addChildComponent (addSyncChannelButton.get());
 
+    refreshButton = std::make_unique<RefreshButton> ();
+    refreshButton->setBounds (90 * basestations.size() + 90, 105, 20, 20);
+    refreshButton->addListener (this);
+    refreshButton->setTooltip ("Re-scan basestation for hardware changes.");
+    addChildComponent (refreshButton.get());
+
     if (basestations.size() > 0)
     {
         mainSyncSelector->setVisible (true);
         inputOutputSyncSelector->setVisible (true);
         addSyncChannelButton->setVisible (true);
+        refreshButton->setVisible (true);
         desiredWidth = 100 * basestations.size() + 120;
     }
     else
@@ -519,6 +585,113 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     }
 
     uiLoader = std::make_unique<BackgroundLoader> (t, this);
+}
+
+void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
+    
+    //Clear any existing source buttons from sourceButtons vector of unique ptrs
+    for (auto& button : sourceButtons)
+    {
+        removeChildComponent (button.get());
+    }
+    sourceButtons.clear();
+
+    int id = 0;
+
+    for (int i = 0; i < basestations.size(); i++)
+    {
+        Array<Headstage*> headstages = basestations[i]->getHeadstages(); // can return null
+
+        int probeCount = basestations[i]->getProbeCount();
+
+        for (int j = 0; j < headstages.size(); j++)
+        {
+            int slotIndex = i;
+            int portIndex = j;
+
+            if (headstages[j] != nullptr)
+            {
+                Array<Probe*> probes = headstages[j]->getProbes();
+
+                for (int k = 0; k < probes.size(); k++)
+                {
+                    int offset;
+
+                    if (probes.size() == 2)
+                        offset = 20 * k;
+                    else
+                        offset = 10;
+
+                    int x_pos = slotIndex * 90 + 30 + offset;
+                    int y_pos = 125 - (portIndex + 1) * 22;
+
+                    LOGD("### Adding new source button for probe at slot ", slotIndex, " port ", portIndex, " dock ", k);
+                    sourceButtons.emplace_back (std::make_unique<SourceButton> (id++, probes[k]));
+
+                    SourceButton* sourceButton = sourceButtons[sourceButtons.size() - 1].get();
+                    sourceButton->setBounds (x_pos, y_pos, 15, 15);
+                    sourceButton->addListener (this);
+                    addAndMakeVisible (sourceButton);
+                }
+            }
+            else
+            {
+                int x_pos = slotIndex * 90 + 40;
+                int y_pos = 125 - (portIndex + 1) * 22;
+
+                if (probeCount == 0)
+                    sourceButtons.emplace_back (std::make_unique<SourceButton> (id++, nullptr, basestations[i]));
+                else
+                    sourceButtons.emplace_back (std::make_unique<SourceButton> (id++, nullptr, nullptr));
+
+                SourceButton* p = sourceButtons[sourceButtons.size() - 1].get();
+                p->setBounds (x_pos, y_pos, 15, 15);
+                p->addListener (this);
+                addAndMakeVisible (p);
+            }
+        }
+
+        Array<DataSource*> additionalDataSources = basestations[i]->getAdditionalDataSources(); // can return null
+
+        for (int j = 0; j < additionalDataSources.size(); j++)
+        {
+            LOGD ("Creating source button for ADCs");
+
+            int slotIndex = i;
+            int portIndex = j + 3;
+
+            int x_pos = slotIndex * 90 + 40;
+            int y_pos = 125 - (portIndex + 1) * 22;
+
+            sourceButtons.emplace_back( std::make_unique<SourceButton> (id++, additionalDataSources[j]));
+            SourceButton* p = sourceButtons[sourceButtons.size() - 1].get();
+            p->setBounds (x_pos, y_pos, 15, 15);
+            p->addListener (this);
+            addAndMakeVisible (p);
+        }
+    }
+
+    for (int i = 0; i < basestations.size(); i++)
+    {
+        int x_pos = i * 90 + 70;
+        int y_pos = 50;
+
+        UtilityButton* b = new UtilityButton ("");
+        b->setBounds (x_pos, y_pos, 30, 20);
+        b->addListener (this);
+        //addAndMakeVisible(b);
+        directoryButtons.add (b);
+
+        savingDirectories.add (File());
+        slotNamingSchemes.add (0);
+
+        FifoMonitor* f = new FifoMonitor (i, basestations[i]);
+        f->setBounds (x_pos + 2, 75, 12, 50);
+        addAndMakeVisible (f);
+        f->setSlot (basestations[i]->slot);
+        fifoMonitors.add (f);
+    }
+
 }
 
 void NeuropixEditor::collapsedStateChanged()
@@ -593,27 +766,30 @@ void NeuropixEditor::stopAcquisition()
 
 void NeuropixEditor::buttonClicked (Button* button)
 {
-    if (sourceButtons.contains ((SourceButton*) button))
+    for (auto & source : sourceButtons)
     {
-        for (auto button : sourceButtons)
+        if (source.get() == button)
         {
-            button->setSelectedState (false);
+            for (auto & button : sourceButtons)
+            {
+                button->setSelectedState (false);
+            }
+
+            SourceButton* sourceButton = (SourceButton*) button;
+
+            sourceButton->setSelectedState (true);
+
+            if (canvas != nullptr && sourceButton->dataSource != nullptr)
+            {
+                canvas->setSelectedInterface (sourceButton->dataSource);
+            }
+            else if (canvas != nullptr && sourceButton->dataSource == nullptr)
+            {
+                canvas->setSelectedBasestation (sourceButton->basestation);
+            }
+
+            repaint();
         }
-
-        SourceButton* sourceButton = (SourceButton*) button;
-
-        sourceButton->setSelectedState (true);
-
-        if (canvas != nullptr && sourceButton->dataSource != nullptr)
-        {
-            canvas->setSelectedInterface (sourceButton->dataSource);
-        }
-        else if (canvas != nullptr && sourceButton->dataSource == nullptr)
-        {
-            canvas->setSelectedBasestation (sourceButton->basestation);
-        }
-
-        repaint();
     }
 
     if (! acquisitionIsActive)
@@ -640,12 +816,24 @@ void NeuropixEditor::buttonClicked (Button* button)
             thread->sendSyncAsContinuousChannel (addSyncChannelButton->getToggleState());
             CoreServices::updateSignalChain (this);
         }
+        else if (button == refreshButton.get())
+        {
+            for (auto & btn : sourceButtons)
+            {
+                btn->setSourceStatus (SourceStatus::DISCONNECTED);
+                btn->stopTimer();
+            }
+            thread->isRefreshing = true;
+            uiLoader->isRefreshing = true;
+            uiLoader->startThread();
+            //CoreServices::updateSignalChain (this);
+        }
     }
 }
 
 void NeuropixEditor::selectSource (DataSource* source)
 {
-    for (auto button : sourceButtons)
+    for (auto & button : sourceButtons)
     {
         if (source == button->dataSource)
         {

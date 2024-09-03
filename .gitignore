@@ -13,3 +13,5 @@ Builds/*/*
 # 3. OS-specific files
 
 .DS_Store
+
+.vscode

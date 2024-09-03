@@ -37,6 +37,27 @@ class NeuropixEditor;
 class NeuropixCanvas;
 class NeuropixThread;
 
+/**
+    Refreshes the basestation to check for any hardware changes
+
+*/
+
+class RefreshButton : public Button
+{
+
+public:
+    /** Constructor */
+    RefreshButton ();
+
+    /** Destructor */
+    ~RefreshButton() {}
+
+    void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown) override;
+
+private:
+
+    std::unique_ptr<Drawable> refreshIcon;
+};
 /** 
 
 	Displays the slot number, and opens a pop-up name
@@ -197,6 +218,7 @@ public:
     void run();
 
     bool signalChainIsLoading;
+    bool isRefreshing;
 
 private:
     NeuropixThread* thread;
@@ -253,14 +275,21 @@ public:
     /** Update settings */
     void update();
 
+    /** Draw basestations UI */
+    void drawBasestations(Array<Basestation*> basestations);
+
     /** Select a data source button */
     void selectSource (DataSource* source);
 
     void checkCanvas() { checkForCanvas(); };
 
-    OwnedArray<SourceButton> sourceButtons;
+    void resetCanvas();
+
+    std::vector<std::unique_ptr<SourceButton>> sourceButtons;
 
     std::unique_ptr<BackgroundLoader> uiLoader;
+
+    NeuropixCanvas* canvas;
 
 private:
     OwnedArray<UtilityButton> directoryButtons;
@@ -277,9 +306,9 @@ private:
     std::unique_ptr<EditorBackground> background;
 
     std::unique_ptr<UtilityButton> addSyncChannelButton;
+    std::unique_ptr<RefreshButton> refreshButton;
 
     Viewport* viewport;
-    NeuropixCanvas* canvas;
     NeuropixThread* thread;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NeuropixEditor);

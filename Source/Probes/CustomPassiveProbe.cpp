@@ -56,6 +56,8 @@ CustomPassiveProbe::CustomPassiveProbe (Basestation* bs, Headstage* hs, Flex* fl
         name = probeMetadata.name;
         type = probeMetadata.type;
 
+        settings.probeType = type;
+
         settings.probe = this;
         settings.availableBanks = probeMetadata.availableBanks;
 

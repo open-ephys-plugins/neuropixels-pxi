@@ -120,6 +120,9 @@ public:
     /** Stops animation of sub-interfaces */
     void stopAcquisition();
 
+    /** Called when the basestation is created or refreshed */
+    void populateSourceTabs(Basestation* basestation, CustomTabComponent* basestationTab, int &topLevelTabNumber);
+
     /** Stores probe settings (for copying) */
     void storeProbeSettings (ProbeSettings p);
 

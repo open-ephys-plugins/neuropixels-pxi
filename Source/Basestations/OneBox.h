@@ -53,6 +53,9 @@ public:
     /** Initializes in a separate thread*/
     void initialize (bool signalChainIsLoading) override;
 
+    /** Search for probes connected to OneBox */
+    void searchForProbes() override;
+
     /** Returns the total number of connected probes */
     int getProbeCount() override;
 

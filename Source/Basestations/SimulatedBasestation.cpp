@@ -134,6 +134,9 @@ SimulatedBasestation::SimulatedBasestation (NeuropixThread* neuropixThread,
 
 bool SimulatedBasestation::open()
 {
+    headstages.clear();
+    probes.clear();
+
     savingDirectory = File();
 
     basestationConnectBoard = std::make_unique<SimulatedBasestationConnectBoard> (this);
@@ -223,6 +226,10 @@ void SimulatedBasestation::initialize (bool signalChainIsLoading)
     }
 }
 
+void SimulatedBasestation::searchForProbes()
+{
+}
+
 Array<int> SimulatedBasestation::getSyncFrequencies()
 {
     return syncFrequencies;
@@ -237,7 +244,8 @@ void SimulatedBasestation::startAcquisition()
 {
     for (int i = 0; i < probes.size(); i++)
     {
-        probes[i]->startAcquisition();
+        if (probes[i]->isEnabled)
+            probes[i]->startAcquisition();
     }
 }
 
@@ -245,6 +253,7 @@ void SimulatedBasestation::stopAcquisition()
 {
     for (int i = 0; i < probes.size(); i++)
     {
-        probes[i]->stopAcquisition();
+        if (probes[i]->isEnabled)
+            probes[i]->stopAcquisition();
     }
 }
