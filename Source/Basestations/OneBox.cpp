@@ -258,7 +258,9 @@ void OneBox::initialize (bool signalChainIsLoading)
 
     adcSource->initialize (signalChainIsLoading);
 
+    errorCode = Neuropixels::setSWTrigger (slot);
     errorCode = Neuropixels::arm (slot);
+
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC ("Failed to arm OneBox on slot ", slot, ", error code = ", errorCode);

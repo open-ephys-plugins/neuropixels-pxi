@@ -31,7 +31,7 @@ OneBoxADC::OneBoxADC (Basestation* bs) : DataSource (bs)
     ui = nullptr;
 
     channel_count = NUM_ADCS;
-    sample_rate = 9500.0f;
+    sample_rate = 30300.5;
 
     sourceType = DataSourceType::ADC;
     status = SourceStatus::CONNECTED;
@@ -54,6 +54,13 @@ OneBoxADC::OneBoxADC (Basestation* bs) : DataSource (bs)
 void OneBoxADC::initialize (bool signalChainIsLoading)
 {
     LOGD ("Initializing OneBoxADC");
+
+    errorCode = Neuropixels::ADC_enableProbe (basestation->slot, true);
+
+    if (errorCode != Neuropixels::SUCCESS)
+    {
+		LOGD ("Error enabling ADCs: ", errorCode);
+	}
 }
 
 void OneBoxADC::startAcquisition()
@@ -239,7 +246,6 @@ void OneBoxADC::run()
 
         if (errorCode == Neuropixels::SUCCESS && count > 0)
         {
-            
 
             for (int packetNum = 0; packetNum < count; packetNum++)
             {
@@ -252,8 +258,6 @@ void OneBoxADC::run()
                 {
                     adcSamples[j * count + packetNum] = float (data[packetNum * NUM_ADCS + j]) * bitVolts; // convert to volts
                 }
-
-                Neuropixels::ADC_readComparators (basestation->slot, &adcThresholdStates);
 
                 sample_numbers[packetNum] = sample_number++;
 
