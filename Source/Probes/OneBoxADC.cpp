@@ -252,26 +252,8 @@ void OneBoxADC::run()
 
                 Neuropixels::ADC_readComparators (basestation->slot, &adcThresholdStates);
 
-                //eventCode = eventCode | (adcThresholdStates << 1);
                 sample_numbers[packetNum] = sample_number++;
 
-
-                /*if (ap_timestamp % 30000 == 0)
-				{
-					int packetsAvailable;
-					int headroom;
-
-					Neuropixels::getElectrodeDataFifoState(
-						basestation->slot,
-						headstage->port,
-						dock,
-						&packetsAvailable,
-						&headroom);
-
-					//std::cout << "Basestation " << int(basestation->slot) << ", probe " << int(port) << ", packets: " << packetsAvailable << std::endl;
-
-					fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
-				}*/
             }
 
             apBuffer->addToBuffer (adcSamples, 
