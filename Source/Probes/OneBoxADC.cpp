@@ -223,6 +223,9 @@ void OneBoxADC::run()
         int count = MAXPACKETS;
 
         float adcSamples[NUM_ADCS * MAXPACKETS];
+        int64 sample_numbers[MAXPACKETS];
+        double timestamps[MAXPACKETS];
+        uint64 event_codes[MAXPACKETS];
 
         errorCode = Neuropixels::ADC_readPackets (basestation->slot,
                                                   &packetInfo[0],
@@ -237,7 +240,7 @@ void OneBoxADC::run()
 
             for (int packetNum = 0; packetNum < count; packetNum++)
             {
-                uint64 eventCode = packetInfo[packetNum].Status >> 6;
+                event_codes[packetNum] = packetInfo[packetNum].Status >> 6;
                 uint32_t adcThresholdStates;
 
                 uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
@@ -250,10 +253,8 @@ void OneBoxADC::run()
                 Neuropixels::ADC_readComparators (basestation->slot, &adcThresholdStates);
 
                 //eventCode = eventCode | (adcThresholdStates << 1);
+                sample_numbers[packetNum] = sample_number++;
 
-                sample_number += 1;
-
-                apBuffer->addToBuffer (adcSamples, &sample_number, &ts_s, &eventCode, 1);
 
                 /*if (ap_timestamp % 30000 == 0)
 				{
@@ -272,6 +273,13 @@ void OneBoxADC::run()
 					fifoFillPercentage = float(packetsAvailable) / float(packetsAvailable + headroom);
 				}*/
             }
+
+            apBuffer->addToBuffer (adcSamples, 
+                sample_numbers, 
+                timestamps, 
+                event_codes, 
+                count);
+
         }
         else if (errorCode != Neuropixels::SUCCESS)
         {
