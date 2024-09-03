@@ -259,7 +259,14 @@ void OneBox::initialize (bool signalChainIsLoading)
     adcSource->initialize (signalChainIsLoading);
 
     errorCode = Neuropixels::arm (slot);
-    LOGC ("OneBox is armed");
+    if (errorCode != Neuropixels::SUCCESS)
+    {
+        LOGC ("Failed to arm OneBox on slot ", slot, ", error code = ", errorCode);
+    }
+    else
+    {
+        LOGC ("OneBox initialized on slot ", slot);
+    }
 }
 
 void OneBox::close()
