@@ -68,7 +68,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         int currentHeight = 55;
 
-        probeEnableButton = std::make_unique<UtilityButton> ("ENABLE");
+        probeEnableButton = std::make_unique<UtilityButton> ("ENABLED");
         probeEnableButton->setRadius (3.0f);
         probeEnableButton->setBounds (630, currentHeight + 25, 100, 22);
         probeEnableButton->setClickingTogglesState (true);
@@ -799,6 +799,15 @@ void NeuropixInterface::buttonClicked (Button* button)
     if (button == probeEnableButton.get())
     {
         probe->isEnabled = probeEnableButton->getToggleState();
+        
+        if (probe->isEnabled)
+        {
+            probeEnableButton->setLabel ("ENABLED");
+        }
+        else
+        {
+            probeEnableButton->setLabel ("DISABLED");
+        }
 
         probe->settings.isEnabled = probe->isEnabled;
         probe->setStatus (probe->isEnabled ? SourceStatus::CONNECTED : SourceStatus::DISABLED);
@@ -2019,6 +2028,13 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
             probe->isEnabled = matchingNode->getBoolAttribute ("isEnabled", true);
             probe->settings.isEnabled = probe->isEnabled;
             probeEnableButton->setToggleState (probe->isEnabled, dontSendNotification);
+            if (probe->isEnabled)
+                probeEnableButton->setLabel ("ENABLED");
+            else
+            {
+                probeEnableButton->setLabel ("DISABLED");
+            }
+				stopAcquisition();
         }
 
         probe->updateSettings (settings);

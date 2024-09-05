@@ -39,16 +39,6 @@ OneBoxADC::OneBoxADC (Basestation* bs) : DataSource (bs)
     Neuropixels::ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_5V);
     bitVolts = 5.0f / float (pow (2, 15));
     inputRange = AdcInputRange::PLUSMINUS5V;
-
-    for (int i = 0; i < channel_count; i++)
-    {
-        outputChannel.add (-1);
-        isOutput.add (false);
-
-        Neuropixels::DAC_enableOutput (basestation->slot, i, false);
-        thresholdLevels.add (AdcThresholdLevel::ONE_VOLT);
-        waveplayerTrigger.add (false);
-    }
 }
 
 void OneBoxADC::initialize (bool signalChainIsLoading)
@@ -59,8 +49,19 @@ void OneBoxADC::initialize (bool signalChainIsLoading)
 
     if (errorCode != Neuropixels::SUCCESS)
     {
-		LOGD ("Error enabling ADCs: ", errorCode);
-	}
+        LOGD ("Error enabling ADCs: ", errorCode);
+    }
+
+    for (int i = 0; i < channel_count; i++)
+    {
+        outputChannel.add (-1);
+        isOutput[i] = false;
+        useAsDigitalInput[i] = false;
+        waveplayerTrigger[i] = false;
+
+        Neuropixels::DAC_enableOutput (basestation->slot, i, false);
+        setAdcThresholdLevel (AdcThresholdLevel::ONE_VOLT, i);
+    }
 }
 
 void OneBoxADC::startAcquisition()
@@ -84,10 +85,10 @@ void OneBoxADC::setAsOutput (int selectedOutput, int channel)
 
     if (outputChannel[channel] != -1)
     {
-        isOutput.set (outputChannel[channel], false);
+        isOutput[outputChannel[channel]] = false;
     }
 
-    isOutput.set (selectedOutput, true);
+    isOutput[selectedOutput] = true;
     outputChannel.set (channel, selectedOutput);
 
     // TODO: actually set the output
@@ -171,21 +172,21 @@ void OneBoxADC::setAdcThresholdLevel (AdcThresholdLevel level, int channel)
                                                      channel,
                                                      0.5f,
                                                      1.0f);
-            thresholdLevels.set (channel, AdcThresholdLevel::ONE_VOLT);
+            thresholdLevels[channel] = AdcThresholdLevel::ONE_VOLT;
             break;
         case AdcThresholdLevel::THREE_VOLTS:
             Neuropixels::ADC_setComparatorThreshold (basestation->slot,
                                                      channel,
                                                      1.5f,
                                                      3.0f);
-            thresholdLevels.set (channel, AdcThresholdLevel::THREE_VOLTS);
+            thresholdLevels[channel] = AdcThresholdLevel::THREE_VOLTS;
             break;
         default:
             Neuropixels::ADC_setComparatorThreshold (basestation->slot,
                                                      channel,
                                                      0.5f,
                                                      1.0f);
-            thresholdLevels.set (channel, AdcThresholdLevel::ONE_VOLT);
+            thresholdLevels[channel] = AdcThresholdLevel::ONE_VOLT;
     }
 }
 
@@ -202,7 +203,7 @@ void OneBoxADC::setTriggersWaveplayer (bool shouldTrigger, int channel)
     if (channel < 0 || channel >= channel_count)
         return;
 
-    waveplayerTrigger.set (channel, shouldTrigger);
+    waveplayerTrigger[channel] = shouldTrigger;
 
     LOGD ("Setting channel ", channel, " to trigger waveplayer: ", shouldTrigger);
 
@@ -219,7 +220,10 @@ bool OneBoxADC::getTriggersWaveplayer (int channel)
 
 void OneBoxADC::run()
 {
-    int16_t data[MAXPACKETS * NUM_ADCS];
+
+    const int NUM_ADCS_AND_COMPARATORS = NUM_ADCS * 2;
+
+    int16_t data[MAXPACKETS * NUM_ADCS_AND_COMPARATORS];
 
     double ts_s;
 
@@ -232,7 +236,7 @@ void OneBoxADC::run()
     {
         int count = MAXPACKETS;
 
-        float adcSamples[NUM_ADCS * MAXPACKETS];
+        float adcSamples[NUM_ADCS_AND_COMPARATORS * MAXPACKETS];
         int64 sample_numbers[MAXPACKETS];
         double timestamps[MAXPACKETS];
         uint64 event_codes[MAXPACKETS];
@@ -240,35 +244,39 @@ void OneBoxADC::run()
         errorCode = Neuropixels::ADC_readPackets (basestation->slot,
                                                   &packetInfo[0],
                                                   &data[0],
-                                                  NUM_ADCS,
+                                                  NUM_ADCS_AND_COMPARATORS,
                                                   count,
                                                   &count);
 
         if (errorCode == Neuropixels::SUCCESS && count > 0)
         {
-
             for (int packetNum = 0; packetNum < count; packetNum++)
             {
-                event_codes[packetNum] = packetInfo[packetNum].Status >> 6;
-                uint32_t adcThresholdStates;
+                uint64 eventCode = packetInfo[packetNum].Status >> 6;
 
                 uint32_t npx_timestamp = packetInfo[packetNum].Timestamp;
 
                 for (int j = 0; j < NUM_ADCS; j++)
                 {
-                    adcSamples[j * count + packetNum] = float (data[packetNum * NUM_ADCS + j]) * bitVolts; // convert to volts
+                    adcSamples[j * count + packetNum] = float (data[packetNum * NUM_ADCS_AND_COMPARATORS + j]) * bitVolts; // convert to volts
                 }
 
                 sample_numbers[packetNum] = sample_number++;
 
+                for (int j = 0; j < NUM_ADCS; j++)
+                {
+                    if (useAsDigitalInput[j])
+                        eventCode |= (data[packetNum * NUM_ADCS_AND_COMPARATORS + NUM_ADCS + j]) << (j + 1); // extract comparator states
+                }
+
+                event_codes[packetNum] = eventCode;
             }
 
-            apBuffer->addToBuffer (adcSamples, 
-                sample_numbers, 
-                timestamps, 
-                event_codes, 
-                count);
-
+            apBuffer->addToBuffer (adcSamples,
+                                   sample_numbers,
+                                   timestamps,
+                                   event_codes,
+                                   count);
         }
         else if (errorCode != Neuropixels::SUCCESS)
         {

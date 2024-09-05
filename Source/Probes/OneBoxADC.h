@@ -27,7 +27,7 @@
 #include "../NeuropixComponents.h"
 
 #define MAXPACKETS 64
-#define NUM_ADCS 24
+#define NUM_ADCS 12
 
 class OneBoxInterface;
 
@@ -112,20 +112,23 @@ private:
     /** Stores output mapping */
     Array<int> outputChannel;
 
-    /** Stores whether channel is ADC or DAC */
-    Array<bool> isOutput;
-
     /** Stores channel gains */
     float bitVolts;
 
     /** Stores channel input range */
     AdcInputRange inputRange;
 
+    /** Stores whether channel is ADC or DAC */
+    bool isOutput[NUM_ADCS];
+
     /** Stores channel trigger thresholds */
-    Array<AdcThresholdLevel> thresholdLevels;
+    AdcThresholdLevel thresholdLevels[NUM_ADCS];
+
+    /** Indicates whether to convert analog signal to a digital input */
+    bool useAsDigitalInput[NUM_ADCS];
 
     /** Stores WaveplayerTrigger state */
-    Array<bool> waveplayerTrigger;
+    bool waveplayerTrigger[NUM_ADCS];
 
     /** Neuropixels API error code*/
     Neuropixels::NP_ErrorCode errorCode;

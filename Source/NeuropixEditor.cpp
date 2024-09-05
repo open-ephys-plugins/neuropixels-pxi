@@ -753,6 +753,7 @@ void NeuropixEditor::startAcquisition()
 
     addSyncChannelButton->setEnabled (false);
     background->setEnabled (false);
+    refreshButton->setVisible (false);
 }
 
 void NeuropixEditor::stopAcquisition()
@@ -762,6 +763,7 @@ void NeuropixEditor::stopAcquisition()
 
     addSyncChannelButton->setEnabled (true);
     background->setEnabled (true);
+    refreshButton->setVisible (false);
 }
 
 void NeuropixEditor::buttonClicked (Button* button)
