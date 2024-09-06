@@ -162,8 +162,6 @@ private:
 
     std::unique_ptr<ArmBasestation> armBasestation;
 
-    Neuropixels::NP_ErrorCode errorCode;
-
     bool invertOutput;
 };
 

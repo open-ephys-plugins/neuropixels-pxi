@@ -102,7 +102,6 @@ private:
     void createElectrodeConfigurations();
 
     Neuropixels::electrodePacket packet[MAXPACKETS];
-    Neuropixels::NP_ErrorCode errorCode;
 
     bool switchable;
 

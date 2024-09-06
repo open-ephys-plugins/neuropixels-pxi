@@ -95,7 +95,6 @@ public:
     void run() override; // acquire data
 
 private:
-    Neuropixels::NP_ErrorCode errorCode;
 
     int SKIP;
 

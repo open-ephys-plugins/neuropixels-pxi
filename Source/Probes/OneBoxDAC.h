@@ -30,7 +30,7 @@ class OneBoxADC;
 
 /**
 
-	Data source for OneBox DAC channels
+	Interface for OneBox DAC channels
 
 	Each DAC line is shared with an ADC, and must be 
 	enabled in order to be used.
@@ -88,9 +88,6 @@ public:
     /** Disables DAC output channel */
     void enableOutput (int chan);
 
-private:
-    Neuropixels::NP_ErrorCode errorCode;
-    const int slot;
 };
 
-#endif // __ONEBOX_ADC_H_2C4C2D67__
+#endif // __ONEBOX_DAC_H_2C4C2D67__

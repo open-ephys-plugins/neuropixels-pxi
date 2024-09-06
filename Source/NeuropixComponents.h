@@ -265,11 +265,30 @@ struct ProbeSettings
 class NeuropixComponent
 {
 public:
+
+    /** Constructor */
     NeuropixComponent() {}
 
+    /** Pure virtual method for getting component info */
+    virtual void getInfo() = 0;
+
+    /** Holds component info */
     ComponentInfo info;
 
-    virtual void getInfo() = 0;
+    /** Checks error messages */
+    Neuropixels::NP_ErrorCode checkError (Neuropixels::NP_ErrorCode error, const String& function = "")
+    {
+        if (error != Neuropixels::SUCCESS)
+        {
+            LOGE (function, " Error: ", Neuropixels::getErrorMessage (error));
+		}
+
+        return error;
+	}
+
+    /** Holds error codes*/
+    Neuropixels::NP_ErrorCode errorCode;
+
 };
 
 /** Holds info about APIv3, as well as a boolean value to indicate whether or not it is being used*/

@@ -409,6 +409,8 @@ AcquisitionThread::AcquisitionThread (
 
 void AcquisitionThread::run()
 {
+    Neuropixels::NP_ErrorCode errorCode;
+
     ap_timestamp = 0;
     last_npx_timestamp = 0;
     passedOneSecond = false;

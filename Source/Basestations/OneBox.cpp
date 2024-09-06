@@ -26,6 +26,7 @@
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
 #include "../Headstages/Headstage_Custom384.h"
+#include "../Headstages/Headstage_QuadBase.h"
 #include "../Probes/Neuropixels1.h"
 #include "../Probes/OneBoxADC.h"
 #include "../Probes/OneBoxDAC.h"
@@ -133,6 +134,7 @@ bool OneBox::open()
         return false;
     }
 
+
     if (errorCode == Neuropixels::SUCCESS)
     {
         getInfo();
@@ -149,12 +151,16 @@ bool OneBox::open()
         dacSource = std::make_unique<OneBoxDAC> (this);
     }
 
+    syncFrequencies.clear();
     syncFrequencies.add (1);
 
     return true;
 }
 
 void OneBox::searchForProbes() {
+
+    probes.clear();
+    headstages.clear();
 
     for (int port = 1; port <= 2; port++)
     {
@@ -196,6 +202,11 @@ void OneBox::searchForProbes() {
             {
                 LOGD ("      Found 2.0 dual-dock headstage on port: ", port);
                 headstage = new Headstage2 (this, port);
+            }
+            else if (hsPartNumber == "NPM_HS_32") //QuadBase headstage
+            {
+                LOGC ("      Found 2.0 Phase 2C dual-dock headstage on port: ", port);
+                headstage = new Headstage_QuadBase (this, port);
             }
             else
             {
@@ -262,10 +273,8 @@ void OneBox::initialize (bool signalChainIsLoading)
     LOGD ("Initializing ADC source on slot ", slot);
     adcSource->initialize (signalChainIsLoading);
 
-    LOGD ("Neuropixels::setSWTrigger ", slot);
-    errorCode = Neuropixels::setSWTrigger (slot);
-    LOGD ("Neuropixels::arm ", slot);
-    errorCode = Neuropixels::arm (slot);
+    checkError(Neuropixels::setSWTrigger (slot), "setSWTrigger slot " + String(slot));
+    errorCode = checkError(Neuropixels::arm (slot), "arm slot " + String(slot));
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -282,12 +291,11 @@ void OneBox::close()
     LOGD ("Closing OneBox on slot: ", slot);
     for (auto probe : probes)
     {
-        errorCode = Neuropixels::closeProbe (slot, probe->headstage->port, probe->dock);
+        checkError (Neuropixels::closeProbe (slot, probe->headstage->port, probe->dock), "closeProbe");
     }
 
-    errorCode = Neuropixels::closeBS (slot);
+    checkError(Neuropixels::closeBS (slot), "closeBS slot " + String(slot));
 
-    LOGD ("Closed OneBox on slot: ", slot, " w/ error code: ", errorCode);
 }
 
 void OneBox::setSyncAsInput()

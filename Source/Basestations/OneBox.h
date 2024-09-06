@@ -89,8 +89,6 @@ public:
     /** Triggers the Waveplayer output */
     void triggerWaveplayer (bool shouldStart);
 
-    Neuropixels::NP_ErrorCode errorCode;
-
     static Array<int> existing_oneboxes;
     int serial_number = -1;
 

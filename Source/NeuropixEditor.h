@@ -199,6 +199,7 @@ private:
     int id;
 };
 
+
 /** 
 
 	A thread that loads probe settings in the background
@@ -217,15 +218,36 @@ public:
     /** Runs the thread */
     void run();
 
-    bool signalChainIsLoading;
-    bool isRefreshing;
+    bool signalChainIsLoading = false;
 
-private:
+protected:
     NeuropixThread* thread;
     NeuropixEditor* editor;
 
-    bool isInitialized;
+    bool isInitialized = false;
+
 };
+
+/** 
+
+	A thread that loads probe settings in the background
+	(and shows a progress bar)
+
+*/
+class BackgroundLoaderWithProgressWindow : public ThreadWithProgressWindow,
+    public BackgroundLoader
+{
+public:
+    /** Constructor */
+    BackgroundLoaderWithProgressWindow (NeuropixThread* t, NeuropixEditor* e);
+
+    /** Destructor */
+    ~BackgroundLoaderWithProgressWindow() {}
+
+    /** Runs the thread */
+    void run();
+};
+
 
 /**
 
@@ -288,6 +310,7 @@ public:
     std::vector<std::unique_ptr<SourceButton>> sourceButtons;
 
     std::unique_ptr<BackgroundLoader> uiLoader;
+    std::unique_ptr<BackgroundLoaderWithProgressWindow> uiLoaderWithProgressWindow;
 
     NeuropixCanvas* canvas;
 

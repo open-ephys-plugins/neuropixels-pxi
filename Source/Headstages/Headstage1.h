@@ -26,26 +26,43 @@
 
 #include "../NeuropixComponents.h"
 
+/** 
+    
+    Connects to a Neuropixels 1.0 probe
+
+*/
 class Headstage1 : public Headstage
 {
 public:
+    /** Constructor */
     Headstage1::Headstage1 (Basestation*, int port);
-    void getInfo() override;
-    bool hasTestModule() override;
-    void runTestModule() override;
 
-    Neuropixels::NP_ErrorCode errorCode;
+    /** Reads headstage part number and serial number */
+    void getInfo() override;
+
+    /** Returns true if headstage tester is connected */
+    bool hasTestModule() override;
+
+    /** Runs the headstage tests */
+    void runTestModule() override;
 };
 
+/** 
+	
+    Represents a Neuropixels 1.0 flex cable
+        
+*/
 class Flex1 : public Flex
 {
 public:
+    /** Constructor */
     Flex1::Flex1 (Headstage*);
-    void getInfo() override;
 
-    Neuropixels::NP_ErrorCode errorCode;
+    /** Reads flex part number */
+    void getInfo() override;
 };
 
+/** Test module status codes */
 typedef struct HST_Status
 {
     Neuropixels::NP_ErrorCode VDD_A1V2;
@@ -61,14 +78,25 @@ typedef struct HST_Status
     Neuropixels::NP_ErrorCode SIGNAL;
 };
 
+/** 
+
+    Interface to headstage test module
+
+*/
 class HeadstageTestModule_v3 : public HeadstageTestModule
 {
 public:
+
+    /** Constructor */
     HeadstageTestModule_v3::HeadstageTestModule_v3 (Basestation* bs, Headstage* hs);
 
+    /** Gets part info */
     void getInfo() override;
 
+    /** Runs all tests */
     void runAll() override;
+
+    /** Shows test results */
     void showResults() override;
 
 private:
@@ -89,8 +117,6 @@ private:
     HeadstageTestModule* testModule;
 
     std::vector<std::string> tests;
-
-    Neuropixels::NP_ErrorCode errorCode;
 
     std::unique_ptr<HST_Status> status;
 };

@@ -46,7 +46,7 @@ void RefreshButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown
     Colour buttonColour = findColour (ThemeColours::defaultText);
 
     if (isMouseOver)
-        buttonColour = buttonColour.brighter (0.2f);
+        buttonColour = buttonColour.brighter (0.4f);
 
     refreshIcon->replaceColour (Colours::black, buttonColour);
 
@@ -72,7 +72,7 @@ void SlotButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown)
     else
         g.setColour (findColour (ThemeColours::defaultText));
 
-    g.drawText (String (slot), 0, 0, getWidth(), getHeight(), Justification::centred);
+    g.drawText (String (slot), 0, 0, getWidth(), getHeight(), Justification::centredLeft);
 }
 
 void SlotButton::mouseUp (const MouseEvent& event)
@@ -106,7 +106,7 @@ EditorBackground::EditorBackground (NeuropixThread* t, bool freqSelectEnabled)
     {
         LOGD ("Creating slot button.");
         slotButtons.push_back (std::make_unique<SlotButton> (basestations[i], t));
-        slotButtons[slotButtons.size() - 1]->setBounds (90 * i + 72, 28, 25, 26);
+        slotButtons[slotButtons.size() - 1]->setBounds (90 * i + 72, 28, 35, 26);
         addAndMakeVisible (slotButtons[slotButtons.size() - 1].get());
     }
 }
@@ -123,9 +123,10 @@ void EditorBackground::paint (Graphics& g)
         for (int i = 0; i < numBasestations; i++)
         {
             g.setColour (findColour (ThemeColours::outline));
-            g.drawRoundedRectangle (90 * i + 30, 13, 35, 98, 4, 1);
+            g.drawRoundedRectangle (90 * i + 30-3, 13, 35+6, 98, 4, 1);
 
             g.setColour (findColour (ThemeColours::defaultText));
+            
             g.setFont (10);
             g.drawText ("SLOT", 90 * i + 72, 15, 50, 12, Justification::centredLeft);
 
@@ -137,13 +138,27 @@ void EditorBackground::paint (Graphics& g)
             for (int j = 0; j < 4; j++)
             {
                 g.setFont (10);
-                g.drawText (String (j + 1), 90 * i + 20, 90 - j * 22 + 1, 10, 10, Justification::centredLeft);
+
+                if (type == ONEBOX && j == 3)
+                {
+                    g.drawText (String ("ADC"), 90 * i + 20 - 12, 90 - j * 22 + 1, 20, 10, Justification::centredLeft);
+				}
+                else if (type == ONEBOX && j == 2)
+                {
+                    // skip
+                }
+                else
+                {
+                    g.drawText (String (j + 1), 90 * i + 20 - 3, 90 - j * 22 + 1, 10, 10, Justification::centredLeft);
+				}
+                
             }
         }
 
         g.setFont (10);
-        g.drawText (String ("MAIN SYNC SLOT"), 90 * (numBasestations) + 32, 13, 100, 10, Justification::centredLeft);
-        g.drawText (String ("CONFIG AS"), 90 * (numBasestations) + 32, 48, 100, 10, Justification::centredLeft);
+        if(type != ONEBOX)
+            g.drawText (String ("MAIN SYNC SLOT"), 90 * (numBasestations) + 32, 13, 100, 10, Justification::centredLeft);
+        g.drawText (String ("SMA CONFIGURATION"), 90 * (numBasestations) + 32, 48, 100, 10, Justification::centredLeft);
         if (freqSelectEnabled)
             g.drawText (String ("WITH FREQ"), 90 * (numBasestations) + 32, 82, 100, 10, Justification::centredLeft);
     }
@@ -338,13 +353,106 @@ void SourceButton::timerCallback()
     }
 }
 
+
+BackgroundLoaderWithProgressWindow::BackgroundLoaderWithProgressWindow (NeuropixThread* thread_, NeuropixEditor* editor_)
+    : ThreadWithProgressWindow("Re-scanning Neuropixels devices", true, false), 
+      BackgroundLoader (thread_, editor_)
+{
+}
+
+void BackgroundLoaderWithProgressWindow::run()
+{
+
+    setProgress (-1); // endless moving progress bar
+
+    std::map<std::tuple<int, int, int>, std::pair<uint64, ProbeSettings>> updatedMap;
+
+    ProbeSettings temp;
+
+    setStatusMessage ("Checking for hardware changes...");
+    LOGC ("Scanning for hardware changes...");
+    //Assume basestation counts/slots do not change
+    for (int i = 0; i < thread->getBasestations().size(); i++)
+    {
+        Basestation* bs = thread->getBasestations()[i];
+        if (bs != nullptr)
+        {
+            bs->close();
+            bs->open();
+
+            for (auto hs : bs->getHeadstages())
+            {
+                if (hs != nullptr)
+                {
+                    for (auto probe : hs->getProbes())
+                    {
+                        if (probe != nullptr)
+                        {
+                            //Check for existing probe settings
+                            std::tuple<int, int, int> current_location = std::make_tuple (bs->slot, hs->port, probe->dock);
+
+                            LOGD ("Checking for probe at slot ", bs->slot, " port ", hs->port, " dock ", probe->dock);
+
+                            if (thread->probeMap.find (current_location) != thread->probeMap.end())
+                            {
+                                LOGD ("Found matching probe.");
+
+                                if (std::get<0> (thread->probeMap[current_location]) == probe->info.serial_number)
+                                {
+                                    temp = ProbeSettings (thread->probeMap[current_location].second);
+                                    temp.probe = probe;
+                                    updatedMap[current_location] = std::make_pair (probe->info.serial_number, temp);
+                                    continue;
+                                }
+                            }
+
+                            bool found = false;
+                            std::tuple<int, int, int> old_location;
+
+                            for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++)
+                            {
+                                uint64 old_serial = it->second.first;
+                                if (old_serial == probe->info.serial_number)
+                                {
+                                    //Existing probe moved to new location
+                                    found = true;
+                                    old_location = it->first;
+                                    temp = ProbeSettings (it->second.second);
+                                    temp.probe = probe;
+                                    updatedMap[current_location] = std::make_pair (probe->info.serial_number, temp);
+                                    break;
+                                }
+                            }
+                            if (! found)
+                            {
+                                //New probe connected
+                                updatedMap[current_location] = std::make_pair (probe->info.serial_number, probe->settings);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //Update the probe map
+    LOGD ("Updating probe map...");
+    thread->probeMap = updatedMap;
+
+    setStatusMessage ("Initializing probes...");
+
+    LOGD ("Initializing probes...");
+    thread->initializeProbes();
+    thread->updateStreamInfo();
+
+    thread->isRefreshing = false;
+
+}
+
 BackgroundLoader::BackgroundLoader (NeuropixThread* thread_, NeuropixEditor* editor_)
     : Thread ("Neuropix Loader"),
       thread (thread_),
-      editor (editor_),
-      isInitialized (false),
-      signalChainIsLoading (false),
-      isRefreshing(false)
+      editor (editor_)
 {
 }
 
@@ -360,97 +468,19 @@ void BackgroundLoader::run()
 {
     LOGC ("Running background thread...");
 
-    if (isRefreshing) 
-    {
-        std::map<std::tuple<int, int, int>, std::pair<uint64, ProbeSettings>> updatedMap;
-
-        ProbeSettings temp;
-        LOGC("Scanning for hardware changes...");
-        //Assume basestation counts/slots do not change
-        for (int i = 0; i < thread->getBasestations().size(); i++) {
-            Basestation* bs = thread->getBasestations()[i];
-            if (bs != nullptr) {
-                bs->close();
-                bs->open();
-                for (auto hs : bs->getHeadstages()) {
-                    if (hs != nullptr) {
-                        for (auto probe : hs->getProbes()) {
-                            if (probe != nullptr) {
-                                //Check for existing probe settings
-                                std::tuple<int, int, int> current_location = std::make_tuple(bs->slot, hs->port, probe->dock);
-                                if (thread->probeMap.find(current_location) != thread->probeMap.end()) {
-                                    if (std::get<0>(thread->probeMap[current_location]) == probe->info.serial_number) {
-                                        temp = ProbeSettings(thread->probeMap[current_location].second);
-                                        temp.probe = probe;
-                                        updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
-                                        continue;
-                                    }
-                                }
-
-                                bool found = false;
-                                std::tuple<int, int, int> old_location;
-                                for (auto it = thread->probeMap.begin(); it != thread->probeMap.end(); it++) {
-                                    uint64 old_serial = it->second.first;
-                                    if (old_serial == probe->info.serial_number) {
-                                        //Existing probe moved to new location
-                                        found = true;
-                                        old_location = it->first;
-                                        temp = ProbeSettings(it->second.second);
-                                        temp.probe = probe;
-                                        updatedMap[current_location] = std::make_pair(probe->info.serial_number, temp);
-                                        break;
-                                    }
-                                }
-                                if (!found) {
-                                    //New probe connected
-                                    updatedMap[current_location] = std::make_pair(probe->info.serial_number, probe->settings);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        //Update the probe map
-        thread->probeMap = updatedMap;
-
-        thread->initializeProbes();
-        thread->updateStreamInfo();
-
-        MessageManagerLock mml;
-        editor->drawBasestations(thread->getBasestations());
-        editor->resetCanvas();
-
-        for (auto& interface : editor->canvas->settingsInterfaces) {
-            for (auto probe : thread->getProbes()) {
-                if (interface->dataSource != nullptr && interface->dataSource->getName() == probe->getName()) {
-                    ProbeSettings settingsToRestore = ProbeSettings(thread->probeMap[std::make_tuple(probe->basestation->slot, probe->headstage->port, probe->dock)].second);
-                    interface->applyProbeSettings (settingsToRestore, true);
-                }
-            }
-        }
-
-        isRefreshing = false;
-        thread->isRefreshing = false;
-
-        CoreServices::updateSignalChain (editor);
-    }
-
     /* Initializes the NPX-PXI probe connections in the background to prevent this 
 	   plugin from blocking the main GUI*/
-    if (! isInitialized)
+
+    if (!isInitialized)
     {
         LOGC ("Not initialized.");
         thread->initializeBasestations (signalChainIsLoading);
         isInitialized = true;
 
-        //if (!signalChainIsLoading)
-        //{
         LOGC ("Updating settings for ", thread->getProbes().size(), " probes.");
 
-        MessageManagerLock mml;
-        CoreServices::updateSignalChain (editor);
+        //MessageManagerLock mml;
+        //CoreServices::updateSignalChain (editor);
 
         bool updateStreamInfoRequired = false;
 
@@ -459,19 +489,21 @@ void BackgroundLoader::run()
             LOGC (" Updating queue for probe ", probe->name);
             thread->updateProbeSettingsQueue (ProbeSettings (probe->settings));
 
-            if (!probe->isEnabled) updateStreamInfoRequired = true;
+            if (! probe->isEnabled)
+                updateStreamInfoRequired = true;
         }
 
         if (updateStreamInfoRequired)
         {
             thread->updateStreamInfo(true);
+            MessageManagerLock mml;
             CoreServices::updateSignalChain (editor);
         }
 
-        editor->checkCanvas();
+        //editor->checkCanvas();
 
-        //}
     }
+    
 
     LOGC ("Initialized, applying probe settings...");
 
@@ -504,6 +536,8 @@ void NeuropixEditor::initialize (bool signalChainIsLoading)
 {
     uiLoader->signalChainIsLoading = signalChainIsLoading;
     uiLoader->startThread();
+
+    checkCanvas();
 }
 
 NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
@@ -566,17 +600,22 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     addChildComponent (addSyncChannelButton.get());
 
     refreshButton = std::make_unique<RefreshButton> ();
-    refreshButton->setBounds (90 * basestations.size() + 90, 105, 20, 20);
+    refreshButton->setBounds (90 * basestations.size() + 100, 102, 20, 20);
     refreshButton->addListener (this);
     refreshButton->setTooltip ("Re-scan basestation for hardware changes.");
     addChildComponent (refreshButton.get());
 
     if (basestations.size() > 0)
     {
-        mainSyncSelector->setVisible (true);
+        if (thread->type != ONEBOX)
+        {
+            mainSyncSelector->setVisible (true);   
+            //addSyncChannelButton->setVisible (true);
+            refreshButton->setVisible (true);
+            
+        }
+
         inputOutputSyncSelector->setVisible (true);
-        addSyncChannelButton->setVisible (true);
-        refreshButton->setVisible (true);
         desiredWidth = 100 * basestations.size() + 120;
     }
     else
@@ -585,6 +624,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     }
 
     uiLoader = std::make_unique<BackgroundLoader> (t, this);
+    uiLoaderWithProgressWindow = std::make_unique<BackgroundLoaderWithProgressWindow> (t, this);
 }
 
 void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
@@ -763,7 +803,7 @@ void NeuropixEditor::stopAcquisition()
 
     addSyncChannelButton->setEnabled (true);
     background->setEnabled (true);
-    refreshButton->setVisible (false);
+    refreshButton->setVisible (true);
 }
 
 void NeuropixEditor::buttonClicked (Button* button)
@@ -826,9 +866,27 @@ void NeuropixEditor::buttonClicked (Button* button)
                 btn->stopTimer();
             }
             thread->isRefreshing = true;
-            uiLoader->isRefreshing = true;
-            uiLoader->startThread();
-            //CoreServices::updateSignalChain (this);
+            uiLoaderWithProgressWindow->runThread();
+            LOGD ("Updating signal chain...");
+
+            LOGD ("Resetting canvas...");
+            drawBasestations (thread->getBasestations());
+            resetCanvas();
+
+            LOGD ("Updating settings interfaces...");
+            for (auto& interface : canvas->settingsInterfaces)
+            {
+                for (auto probe : thread->getProbes())
+                {
+                    if (interface->dataSource != nullptr && interface->dataSource->getName() == probe->getName())
+                    {
+                        ProbeSettings settingsToRestore = ProbeSettings (thread->probeMap[std::make_tuple (probe->basestation->slot, probe->headstage->port, probe->dock)].second);
+                        interface->applyProbeSettings (settingsToRestore, true);
+                    }
+                }
+            }
+
+            CoreServices::updateSignalChain (this);
         }
     }
 }

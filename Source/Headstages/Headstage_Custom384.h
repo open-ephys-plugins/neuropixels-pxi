@@ -45,8 +45,6 @@ public:
 
     /** No test module available*/
     void runTestModule() override {}
-
-    Neuropixels::NP_ErrorCode errorCode;
 };
 
 /** 
@@ -61,8 +59,6 @@ public:
 
     /** Get part number */
     void getInfo() override;
-
-    Neuropixels::NP_ErrorCode errorCode;
 };
 
 #endif // __NEUROPIXHSNP1V1_H_2C4C2D67__

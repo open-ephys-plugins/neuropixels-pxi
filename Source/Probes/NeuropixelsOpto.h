@@ -102,7 +102,6 @@ public:
 
 private:
     Neuropixels::electrodePacket packet[MAXPACKETS];
-    Neuropixels::NP_ErrorCode errorCode;
 
     int SKIP;
 

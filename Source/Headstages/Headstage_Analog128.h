@@ -33,8 +33,6 @@ public:
     void getInfo() override;
     bool hasTestModule() override { return false; }
     void runTestModule() override {}
-
-    Neuropixels::NP_ErrorCode errorCode;
 };
 
 class Flex1_NHP : public Flex
@@ -42,8 +40,6 @@ class Flex1_NHP : public Flex
 public:
     Flex1_NHP::Flex1_NHP (Headstage*);
     void getInfo() override;
-
-    Neuropixels::NP_ErrorCode errorCode;
 };
 
 #endif // __NEUROPIXHSNP1V1_H_2C4C2D67__

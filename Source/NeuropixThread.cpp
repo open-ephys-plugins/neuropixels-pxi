@@ -145,7 +145,7 @@ void Initializer::run()
             else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX)
             {
                 deviceNum++;
-                setStatusMessage ("Opening OneBox with serial number " + String (list[i].ID) + " (" + String (deviceNum) + "/" + String (countForType) + ")");
+                setStatusMessage ("Opening OneBox with serial number " + String (list[i].ID));
 
                 Basestation* bs = new OneBox (neuropixThread, list[i].ID);
 
@@ -155,6 +155,8 @@ void Initializer::run()
 
                     if (! bs->getProbeCount())
                         CoreServices::sendStatusMessage ("OneBox found, no probes connected.");
+
+                    break; // prevent multiple OneBoxes from being opened
                 }
                 else
                 {

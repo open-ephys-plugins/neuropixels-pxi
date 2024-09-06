@@ -130,9 +130,6 @@ private:
     /** Stores WaveplayerTrigger state */
     bool waveplayerTrigger[NUM_ADCS];
 
-    /** Neuropixels API error code*/
-    Neuropixels::NP_ErrorCode errorCode;
-
 };
 
 #endif // __ONEBOX_ADC_H_2C4C2D67__
