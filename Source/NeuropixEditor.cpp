@@ -42,16 +42,21 @@ RefreshButton::RefreshButton() : Button ("Refresh")
 
 void RefreshButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown)
 {
-    Colour buttonColour = findColour (ThemeColours::defaultText);
+    Colour buttonColour = Colours::darkgrey;
 
-    if (isMouseOver)
-        buttonColour = buttonColour.brighter (0.4f);
+    if (isMouseOver && isEnabled())
+        buttonColour = Colours::yellow;
 
     refreshIcon->replaceColour (Colours::black, buttonColour);
 
     refreshIcon->drawWithin (g, getLocalBounds().toFloat(), RectanglePlacement::centred, 1.0f);
 
     refreshIcon->replaceColour (buttonColour, Colours::black);
+}
+
+void RefreshButton::parentSizeChanged()
+{
+    setBounds (getParentWidth() - 65, 4, 16, 16);
 }
 
 SlotButton::SlotButton (Basestation* bs, NeuropixThread* thread_) : Button (String (bs->slot))
@@ -597,8 +602,9 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     addSyncChannelButton->setClickingTogglesState (true);
     addChildComponent (addSyncChannelButton.get());
 
-    refreshButton = std::make_unique<RefreshButton>();
-    refreshButton->setBounds (90 * basestations.size() + 100, 102, 20, 20);
+
+    refreshButton = std::make_unique<RefreshButton> ();
+    refreshButton->setBounds (desiredWidth - 65, 4, 16, 16);
     refreshButton->addListener (this);
     refreshButton->setTooltip ("Re-scan basestation for hardware changes.");
     addChildComponent (refreshButton.get());

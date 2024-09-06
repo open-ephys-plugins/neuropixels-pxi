@@ -63,7 +63,7 @@ OneBox::OneBox (NeuropixThread* neuropixThread, int serial_number_) : Basestatio
         return;
     }
 
-    int next_slot = first_available_slot + existing_oneboxes.size();
+    int next_slot = first_available_slot + existing_oneboxes.size() - 1;
 
     LOGD ("Mapping OneBox with serial number ", serial_number, " to slot ", next_slot);
 
