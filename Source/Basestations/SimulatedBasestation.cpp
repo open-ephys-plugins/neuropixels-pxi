@@ -41,10 +41,7 @@ SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow (SimulatedBas
         comboBox->addItem ("Neuropixels 2.0 4-shank", (int) ProbeType::NP2_4);
         comboBox->addItem ("Neuropixels Opto", (int) ProbeType::OPTO);
 
-        if (i == 0)
-            comboBox->setSelectedId ((int) ProbeType::NP1, dontSendNotification);
-        else
-            comboBox->setSelectedId ((int) ProbeType::NONE, dontSendNotification);
+        comboBox->setSelectedId ((int) bs->simulatedProbeTypes[i], dontSendNotification);
 
         portComboBoxes.add (comboBox);
         addAndMakeVisible (comboBox);
@@ -113,6 +110,12 @@ SimulatedBasestation::SimulatedBasestation (NeuropixThread* neuropixThread,
     simulatedProbeTypes[2] = ProbeType::NONE;
     simulatedProbeTypes[3] = ProbeType::NONE;
 
+    getInfo();
+}
+
+bool SimulatedBasestation::open()
+{
+
     DialogWindow::LaunchOptions options;
 
     configComponent = std::make_unique<SimulatedBasestationConfigWindow> (this);
@@ -129,11 +132,6 @@ SimulatedBasestation::SimulatedBasestation (NeuropixThread* neuropixThread,
 
     int result = options.runModal();
 
-    getInfo();
-}
-
-bool SimulatedBasestation::open()
-{
     headstages.clear();
     probes.clear();
 

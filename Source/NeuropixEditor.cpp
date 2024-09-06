@@ -29,7 +29,6 @@
 
 RefreshButton::RefreshButton() : Button ("Refresh")
 {
-
     XmlDocument xmlDoc (R"(
         <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M13 2L11 3.99545L11.0592 4.05474M11 18.0001L13 19.9108L12.9703 19.9417M11.0592 4.05474L13 6M11.0592 4.05474C11.3677 4.01859 11.6817 4 12 4C16.4183 4 20 7.58172 20 12C20 14.5264 18.8289 16.7793 17 18.2454M7 5.75463C5.17107 7.22075 4 9.47362 4 12C4 16.4183 7.58172 20 12 20C12.3284 20 12.6523 19.9802 12.9703 19.9417M11 22.0001L12.9703 19.9417" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -41,7 +40,7 @@ RefreshButton::RefreshButton() : Button ("Refresh")
     setClickingTogglesState (false);
 }
 
-void RefreshButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
+void RefreshButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown)
 {
     Colour buttonColour = findColour (ThemeColours::defaultText);
 
@@ -123,10 +122,10 @@ void EditorBackground::paint (Graphics& g)
         for (int i = 0; i < numBasestations; i++)
         {
             g.setColour (findColour (ThemeColours::outline));
-            g.drawRoundedRectangle (90 * i + 30-3, 13, 35+6, 98, 4, 1);
+            g.drawRoundedRectangle (90 * i + 30 - 3, 13, 35 + 6, 98, 4, 1);
 
             g.setColour (findColour (ThemeColours::defaultText));
-            
+
             g.setFont (10);
             g.drawText ("SLOT", 90 * i + 72, 15, 50, 12, Justification::centredLeft);
 
@@ -142,7 +141,7 @@ void EditorBackground::paint (Graphics& g)
                 if (type == ONEBOX && j == 3)
                 {
                     g.drawText (String ("ADC"), 90 * i + 20 - 12, 90 - j * 22 + 1, 20, 10, Justification::centredLeft);
-				}
+                }
                 else if (type == ONEBOX && j == 2)
                 {
                     // skip
@@ -150,13 +149,12 @@ void EditorBackground::paint (Graphics& g)
                 else
                 {
                     g.drawText (String (j + 1), 90 * i + 20 - 3, 90 - j * 22 + 1, 10, 10, Justification::centredLeft);
-				}
-                
+                }
             }
         }
 
         g.setFont (10);
-        if(type != ONEBOX)
+        if (type != ONEBOX)
             g.drawText (String ("MAIN SYNC SLOT"), 90 * (numBasestations) + 32, 13, 100, 10, Justification::centredLeft);
         g.drawText (String ("SMA CONFIGURATION"), 90 * (numBasestations) + 32, 48, 100, 10, Justification::centredLeft);
         if (freqSelectEnabled)
@@ -305,7 +303,8 @@ void SourceButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown
                 g.setColour (Colours::orange);
         }
     }
-    else if (status == SourceStatus::DISABLED) {
+    else if (status == SourceStatus::DISABLED)
+    {
         if (selected)
         {
             if (isMouseOver)
@@ -320,7 +319,6 @@ void SourceButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown
             else
                 g.setColour (Colours::red);
         }
-
     }
     else
     {
@@ -353,24 +351,18 @@ void SourceButton::timerCallback()
     }
 }
 
-
 BackgroundLoaderWithProgressWindow::BackgroundLoaderWithProgressWindow (NeuropixThread* thread_, NeuropixEditor* editor_)
-    : ThreadWithProgressWindow("Re-scanning Neuropixels devices", true, false), 
+    : ThreadWithProgressWindow ("Re-scanning Neuropixels devices", true, false),
       BackgroundLoader (thread_, editor_)
 {
 }
 
-void BackgroundLoaderWithProgressWindow::run()
+void BackgroundLoaderWithProgressWindow::updateProbeMap()
 {
-
-    setProgress (-1); // endless moving progress bar
-
     std::map<std::tuple<int, int, int>, std::pair<uint64, ProbeSettings>> updatedMap;
 
-    ProbeSettings temp;
+     ProbeSettings temp;
 
-    setStatusMessage ("Checking for hardware changes...");
-    LOGC ("Scanning for hardware changes...");
     //Assume basestation counts/slots do not change
     for (int i = 0; i < thread->getBasestations().size(); i++)
     {
@@ -444,9 +436,17 @@ void BackgroundLoaderWithProgressWindow::run()
     LOGD ("Initializing probes...");
     thread->initializeProbes();
     thread->updateStreamInfo();
+}
+
+void BackgroundLoaderWithProgressWindow::run()
+{
+    setProgress (-1); // endless moving progress bar
+
+    setStatusMessage ("Checking for hardware changes...");
+    LOGC ("Scanning for hardware changes...");
+    updateProbeMap();
 
     thread->isRefreshing = false;
-
 }
 
 BackgroundLoader::BackgroundLoader (NeuropixThread* thread_, NeuropixEditor* editor_)
@@ -471,7 +471,7 @@ void BackgroundLoader::run()
     /* Initializes the NPX-PXI probe connections in the background to prevent this 
 	   plugin from blocking the main GUI*/
 
-    if (!isInitialized)
+    if (! isInitialized)
     {
         LOGC ("Not initialized.");
         thread->initializeBasestations (signalChainIsLoading);
@@ -495,15 +495,13 @@ void BackgroundLoader::run()
 
         if (updateStreamInfoRequired)
         {
-            thread->updateStreamInfo(true);
+            thread->updateStreamInfo (true);
             MessageManagerLock mml;
             CoreServices::updateSignalChain (editor);
         }
 
         //editor->checkCanvas();
-
     }
-    
 
     LOGC ("Initialized, applying probe settings...");
 
@@ -525,7 +523,7 @@ void NeuropixEditor::resetCanvas()
         else
         {
             checkForCanvas();
-            
+
             if (dataWindow != nullptr)
                 dataWindow->setContentNonOwned (VisualizerEditor::canvas.get(), false);
         }
@@ -549,7 +547,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
 
     Array<Basestation*> basestations = t->getBasestations();
 
-    drawBasestations(basestations);
+    drawBasestations (basestations);
 
     mainSyncSelector = std::make_unique<ComboBox> ("Basestation that acts as main synchronizer");
     mainSyncSelector->setBounds (90 * (basestations.size()) + 32, 39, 50, 20);
@@ -599,7 +597,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     addSyncChannelButton->setClickingTogglesState (true);
     addChildComponent (addSyncChannelButton.get());
 
-    refreshButton = std::make_unique<RefreshButton> ();
+    refreshButton = std::make_unique<RefreshButton>();
     refreshButton->setBounds (90 * basestations.size() + 100, 102, 20, 20);
     refreshButton->addListener (this);
     refreshButton->setTooltip ("Re-scan basestation for hardware changes.");
@@ -609,10 +607,9 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     {
         if (thread->type != ONEBOX)
         {
-            mainSyncSelector->setVisible (true);   
+            mainSyncSelector->setVisible (true);
             //addSyncChannelButton->setVisible (true);
             refreshButton->setVisible (true);
-            
         }
 
         inputOutputSyncSelector->setVisible (true);
@@ -627,8 +624,8 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     uiLoaderWithProgressWindow = std::make_unique<BackgroundLoaderWithProgressWindow> (t, this);
 }
 
-void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
-    
+void NeuropixEditor::drawBasestations (Array<Basestation*> basestations)
+{
     //Clear any existing source buttons from sourceButtons vector of unique ptrs
     for (auto& button : sourceButtons)
     {
@@ -665,7 +662,7 @@ void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
                     int x_pos = slotIndex * 90 + 30 + offset;
                     int y_pos = 125 - (portIndex + 1) * 22;
 
-                    LOGD("### Adding new source button for probe at slot ", slotIndex, " port ", portIndex, " dock ", k);
+                    LOGD ("### Adding new source button for probe at slot ", slotIndex, " port ", portIndex, " dock ", k);
                     sourceButtons.emplace_back (std::make_unique<SourceButton> (id++, probes[k]));
 
                     SourceButton* sourceButton = sourceButtons[sourceButtons.size() - 1].get();
@@ -703,7 +700,7 @@ void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
             int x_pos = slotIndex * 90 + 40;
             int y_pos = 125 - (portIndex + 1) * 22;
 
-            sourceButtons.emplace_back( std::make_unique<SourceButton> (id++, additionalDataSources[j]));
+            sourceButtons.emplace_back (std::make_unique<SourceButton> (id++, additionalDataSources[j]));
             SourceButton* p = sourceButtons[sourceButtons.size() - 1].get();
             p->setBounds (x_pos, y_pos, 15, 15);
             p->addListener (this);
@@ -731,7 +728,6 @@ void NeuropixEditor::drawBasestations(Array<Basestation*> basestations) {
         f->setSlot (basestations[i]->slot);
         fifoMonitors.add (f);
     }
-
 }
 
 void NeuropixEditor::collapsedStateChanged()
@@ -808,11 +804,11 @@ void NeuropixEditor::stopAcquisition()
 
 void NeuropixEditor::buttonClicked (Button* button)
 {
-    for (auto & source : sourceButtons)
+    for (auto& source : sourceButtons)
     {
         if (source.get() == button)
         {
-            for (auto & button : sourceButtons)
+            for (auto& button : sourceButtons)
             {
                 button->setSelectedState (false);
             }
@@ -860,14 +856,21 @@ void NeuropixEditor::buttonClicked (Button* button)
         }
         else if (button == refreshButton.get())
         {
-            for (auto & btn : sourceButtons)
+            for (auto& btn : sourceButtons)
             {
                 btn->setSourceStatus (SourceStatus::DISCONNECTED);
                 btn->stopTimer();
             }
-            thread->isRefreshing = true;
-            uiLoaderWithProgressWindow->runThread();
-            LOGD ("Updating signal chain...");
+
+            if (thread->getBasestations()[0]->type == BasestationType::SIMULATED)
+            {
+                uiLoaderWithProgressWindow->updateProbeMap(); // call outside of thread
+            }
+            else
+            {
+                thread->isRefreshing = true;
+                uiLoaderWithProgressWindow->runThread();
+            }
 
             LOGD ("Resetting canvas...");
             drawBasestations (thread->getBasestations());
@@ -893,7 +896,7 @@ void NeuropixEditor::buttonClicked (Button* button)
 
 void NeuropixEditor::selectSource (DataSource* source)
 {
-    for (auto & button : sourceButtons)
+    for (auto& button : sourceButtons)
     {
         if (source == button->dataSource)
         {

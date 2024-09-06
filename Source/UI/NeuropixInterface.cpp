@@ -627,10 +627,10 @@ void NeuropixInterface::updateProbeSettingsInBackground()
 
     probe->updateSettings (settings);
 
-    thread->updateProbeSettingsQueue (settings);
-
     LOGC ("NeuropixInterface requesting thread start");
 
+    editor->uiLoader->waitForThreadToExit(5000);
+    thread->updateProbeSettingsQueue (settings);
     editor->uiLoader->startThread();
 }
 
@@ -1545,7 +1545,7 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
     // apply settings in background thread
     if (shouldUpdateProbe)
     {
-        thread->updateProbeSettingsQueue (p);
+        //thread->updateProbeSettingsQueue (p);
         updateProbeSettingsInBackground();
         CoreServices::saveRecoveryConfig();
     }

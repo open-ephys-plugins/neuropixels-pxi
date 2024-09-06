@@ -246,6 +246,9 @@ public:
 
     /** Runs the thread */
     void run();
+
+    /** Updates the probe map */
+    void updateProbeMap();
 };
 
 
