@@ -54,6 +54,9 @@ public:
 
     void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown) override;
 
+    /** Sets the button bounds when editor is resized */
+    void parentSizeChanged() override;
+
 private:
 
     std::unique_ptr<Drawable> refreshIcon;
