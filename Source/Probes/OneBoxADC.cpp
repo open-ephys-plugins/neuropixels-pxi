@@ -61,6 +61,7 @@ void OneBoxADC::initialize (bool signalChainIsLoading)
 
         Neuropixels::DAC_enableOutput (basestation->slot, i, false);
         setAdcThresholdLevel (AdcThresholdLevel::ONE_VOLT, i);
+        setAdcComparatorState (AdcComparatorState::COMPARATOR_OFF, i);
     }
 }
 
@@ -198,6 +199,33 @@ AdcThresholdLevel OneBoxADC::getAdcThresholdLevel (int channel)
     return thresholdLevels[channel];
 }
 
+void OneBoxADC::setAdcComparatorState (AdcComparatorState state, int channel)
+{
+    if (channel < 0 || channel >= channel_count)
+        return;
+
+    switch (state)
+    {
+        case AdcComparatorState::COMPARATOR_ON:
+            useAsDigitalInput[channel] = true;
+            break;
+        case AdcComparatorState::COMPARATOR_OFF:
+            useAsDigitalInput[channel] = false;
+            break;
+        default:
+            useAsDigitalInput[channel] = false;
+    }
+}
+
+AdcComparatorState OneBoxADC::getAdcComparatorState (int channel)
+{
+    if (channel < 0 || channel >= channel_count)
+        return AdcComparatorState::COMPARATOR_OFF;
+
+    return useAsDigitalInput[channel] ? AdcComparatorState::COMPARATOR_ON : AdcComparatorState::COMPARATOR_OFF;
+}
+
+
 void OneBoxADC::setTriggersWaveplayer (bool shouldTrigger, int channel)
 {
     if (channel < 0 || channel >= channel_count)
@@ -220,7 +248,6 @@ bool OneBoxADC::getTriggersWaveplayer (int channel)
 
 void OneBoxADC::run()
 {
-
     const int NUM_ADCS_AND_COMPARATORS = NUM_ADCS * 2;
 
     int16_t data[MAXPACKETS * NUM_ADCS_AND_COMPARATORS];
@@ -266,7 +293,7 @@ void OneBoxADC::run()
                 for (int j = 0; j < NUM_ADCS; j++)
                 {
                     if (useAsDigitalInput[j])
-                        eventCode |= (data[packetNum * NUM_ADCS_AND_COMPARATORS + NUM_ADCS + j]) << (j + 1); // extract comparator states
+                        eventCode |= (data[packetNum * NUM_ADCS_AND_COMPARATORS + NUM_ADCS + j]) << j; // extract comparator states
                 }
 
                 event_codes[packetNum] = eventCode;

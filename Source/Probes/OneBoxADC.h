@@ -93,6 +93,12 @@ public:
     /** Returns threshold level of a particular channel */
     AdcThresholdLevel getAdcThresholdLevel (int channel);
 
+    /** Sets ADC comparator state */
+    void setAdcComparatorState (AdcComparatorState state, int channel);
+
+    /** Returns ADC comparator state for a particular channel */
+    AdcComparatorState getAdcComparatorState (int channel);
+
     /** Sets waveplayer trigger state for a particular channel */
     void setTriggersWaveplayer (bool shouldTrigger, int channel);
 

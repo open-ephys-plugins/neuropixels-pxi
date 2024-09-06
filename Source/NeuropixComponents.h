@@ -171,6 +171,12 @@ enum class FirmwareType
     BSC_FIRMWARE
 };
 
+enum class AdcComparatorState
+{
+    COMPARATOR_OFF = 1,
+    COMPARATOR_ON = 2
+};
+
 enum class AdcInputRange
 {
     PLUSMINUS2PT5V = 1,
@@ -280,7 +286,7 @@ public:
     {
         if (error != Neuropixels::SUCCESS)
         {
-            LOGE (function, " Error: ", Neuropixels::getErrorMessage (error));
+            LOGE (function, ":", Neuropixels::getErrorMessage (error));
 		}
 
         return error;

@@ -55,10 +55,14 @@ public:
     /** Returns channel index*/
     int getChannelIndex() { return channel; }
 
+    /** Whether ADC channel is using the comparator*/
+    bool useAsDigitalInput = false;
+
 private:
     void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown);
 
     AdcChannelStatus status;
+    
     int channel;
     int mapToOutput = -1;
 
@@ -125,6 +129,7 @@ private:
     AdcChannelButton* selectedChannel;
 
     std::unique_ptr<ComboBox> rangeSelector;
+    std::unique_ptr<ComboBox> digitalInputSelector;
     std::unique_ptr<ComboBox> thresholdSelector;
     std::unique_ptr<ComboBox> triggerSelector;
     std::unique_ptr<ComboBox> mappingSelector;
