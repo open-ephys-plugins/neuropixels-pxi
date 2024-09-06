@@ -799,7 +799,9 @@ void NeuropixEditor::stopAcquisition()
 
     addSyncChannelButton->setEnabled (true);
     background->setEnabled (true);
-    refreshButton->setVisible (true);
+
+    if(thread->type != ONEBOX)
+        refreshButton->setVisible (true);
 }
 
 void NeuropixEditor::buttonClicked (Button* button)
