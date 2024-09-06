@@ -244,8 +244,11 @@ Array<DataSource*> OneBox::getAdditionalDataSources()
 
 void OneBox::initialize (bool signalChainIsLoading)
 {
+
+    LOGD ("Initializing OneBox on slot ", slot);
     Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
 
+    LOGD ("Initializing probes on slot ", slot);
     if (! probesInitialized)
     {
         for (auto probe : probes)
@@ -256,9 +259,12 @@ void OneBox::initialize (bool signalChainIsLoading)
         probesInitialized = true;
     }
 
+    LOGD ("Initializing ADC source on slot ", slot);
     adcSource->initialize (signalChainIsLoading);
 
+    LOGD ("Neuropixels::setSWTrigger ", slot);
     errorCode = Neuropixels::setSWTrigger (slot);
+    LOGD ("Neuropixels::arm ", slot);
     errorCode = Neuropixels::arm (slot);
 
     if (errorCode != Neuropixels::SUCCESS)
