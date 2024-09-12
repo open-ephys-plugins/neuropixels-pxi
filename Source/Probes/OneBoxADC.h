@@ -26,7 +26,7 @@
 
 #include "../NeuropixComponents.h"
 
-#define SAMPLECOUNT 64
+#define MAXPACKETS 64
 #define NUM_ADCS 12
 
 class OneBoxInterface;
@@ -93,6 +93,12 @@ public:
     /** Returns threshold level of a particular channel */
     AdcThresholdLevel getAdcThresholdLevel (int channel);
 
+    /** Sets ADC comparator state */
+    void setAdcComparatorState (AdcComparatorState state, int channel);
+
+    /** Returns ADC comparator state for a particular channel */
+    AdcComparatorState getAdcComparatorState (int channel);
+
     /** Sets waveplayer trigger state for a particular channel */
     void setTriggersWaveplayer (bool shouldTrigger, int channel);
 
@@ -112,23 +118,24 @@ private:
     /** Stores output mapping */
     Array<int> outputChannel;
 
-    /** Stores whether channel is ADC or DAC */
-    Array<bool> isOutput;
-
     /** Stores channel gains */
     float bitVolts;
 
     /** Stores channel input range */
     AdcInputRange inputRange;
 
+    /** Stores whether channel is ADC or DAC */
+    bool isOutput[NUM_ADCS];
+
     /** Stores channel trigger thresholds */
-    Array<AdcThresholdLevel> thresholdLevels;
+    AdcThresholdLevel thresholdLevels[NUM_ADCS];
+
+    /** Indicates whether to convert analog signal to a digital input */
+    bool useAsDigitalInput[NUM_ADCS];
 
     /** Stores WaveplayerTrigger state */
-    Array<bool> waveplayerTrigger;
+    bool waveplayerTrigger[NUM_ADCS];
 
-    /** Neuropixels API error code*/
-    Neuropixels::NP_ErrorCode errorCode;
 };
 
 #endif // __ONEBOX_ADC_H_2C4C2D67__

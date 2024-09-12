@@ -96,7 +96,6 @@ public:
 
 private:
     Neuropixels::electrodePacket packet[SAMPLECOUNT];
-    Neuropixels::NP_ErrorCode errorCode;
 
     Array<int> channel_map;
 

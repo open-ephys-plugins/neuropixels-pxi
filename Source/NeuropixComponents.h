@@ -101,6 +101,7 @@ enum class SourceStatus
     UPDATING, //The probe is currently updating its settings
     ACQUIRING, //The probe is currently streaming data to computer
     RECORDING, //The probe is recording the streaming data
+    DISABLED //The probe is connected but disabled during acquisition
 };
 
 enum class Bank
@@ -168,6 +169,12 @@ enum class FirmwareType
 {
     BS_FIRMWARE,
     BSC_FIRMWARE
+};
+
+enum class AdcComparatorState
+{
+    COMPARATOR_OFF = 1,
+    COMPARATOR_ON = 2
 };
 
 enum class AdcInputRange
@@ -256,17 +263,38 @@ struct ProbeSettings
     ProbeType probeType;
 
     Probe* probe; // pointer to the probe
+
+    bool isEnabled = true;
 };
 
 /** Base class for all Neuropixels components, which must implement the "getInfo" method */
 class NeuropixComponent
 {
 public:
+
+    /** Constructor */
     NeuropixComponent() {}
 
+    /** Pure virtual method for getting component info */
+    virtual void getInfo() = 0;
+
+    /** Holds component info */
     ComponentInfo info;
 
-    virtual void getInfo() = 0;
+    /** Checks error messages */
+    Neuropixels::NP_ErrorCode checkError (Neuropixels::NP_ErrorCode error, const String& function = "")
+    {
+        if (error != Neuropixels::SUCCESS)
+        {
+            LOGE (function, ":", Neuropixels::getErrorMessage (error));
+		}
+
+        return error;
+	}
+
+    /** Holds error codes*/
+    Neuropixels::NP_ErrorCode errorCode;
+
 };
 
 /** Holds info about APIv3, as well as a boolean value to indicate whether or not it is being used*/
@@ -354,6 +382,9 @@ public:
 
     /** The data buffer used by this source */
     DataBuffer* apBuffer;
+
+    /** Flags if the the data source is enabled */
+    bool isEnabled = true;
 
 protected:
     SourceStatus status;
@@ -592,6 +623,9 @@ public:
     /** Initializes all components for acquisition; may inclue some delays */
     virtual void initialize (bool signalChainIsLoading) = 0;
 
+    /** Searches for probes connected to this basestion */
+    virtual void searchForProbes() = 0;
+
     /** Sets the sync channel as an "input" (for external sync) */
     virtual void setSyncAsInput() = 0;
 
@@ -629,6 +663,9 @@ public:
 
     /** Waits for initialization threads to exit */
     virtual void waitForThreadToExit() {}
+
+    /** Checks that firmware version matches what's expected by the plugin */
+    virtual void checkFirmwareVersion() {}
 
     /** Returns an array of headstages connected to this basestation
 		(can include null values for disconnected headstages) */

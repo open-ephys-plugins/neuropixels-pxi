@@ -33,6 +33,8 @@
 #include "../Formats/IMRO.h"
 #include "../Formats/ProbeInterfaceJson.h"
 
+#include "../Basestations/PxiBasestation.h"
+
 NeuropixInterface::NeuropixInterface (DataSource* p,
                                       NeuropixThread* t,
                                       NeuropixEditor* e,
@@ -65,6 +67,15 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         addAndMakeVisible (probeBrowser.get());
 
         int currentHeight = 55;
+
+        probeEnableButton = std::make_unique<UtilityButton> ("ENABLED", Font ("Fira Code", "Regular", 12.0f));
+        probeEnableButton->setRadius (3.0f);
+        probeEnableButton->setBounds (630, currentHeight + 25, 100, 22);
+        probeEnableButton->setClickingTogglesState (true);
+        probeEnableButton->setToggleState (probe->settings.isEnabled, dontSendNotification);
+        probeEnableButton->setTooltip ("If disabled, probe will not stream data during acquisition");
+        probeEnableButton->addListener (this);
+        addAndMakeVisible (probeEnableButton.get());
 
         electrodesLabel = std::make_unique<Label> ("ELECTRODES", "ELECTRODES");
         electrodesLabel->setFont (Font ("Inter", "Regular", 13.0f));
@@ -428,8 +439,9 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     firmwareToggleButton = std::make_unique<UtilityButton> ("UPDATE FIRMWARE...", Font ("Fira Code", "Regular", 12.0f));
     firmwareToggleButton->setRadius (3.0f);
     firmwareToggleButton->addListener (this);
-    firmwareToggleButton->setBounds (650, verticalOffset, 150, 22);
+    firmwareToggleButton->setBounds (640, verticalOffset, 160, 24);
     firmwareToggleButton->setClickingTogglesState (true);
+    firmwareToggleButton->setEnabled (true);
 
     if (thread->type == PXI)
         addAndMakeVisible (firmwareToggleButton.get());
@@ -453,6 +465,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
     bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (QBSC_FPGA_B189.bin):");
     bscFirmwareLabel->setFont (Font ("Fira Code", "Medium", 15.0f));
+
     bscFirmwareLabel->setBounds (550, verticalOffset + 43, 500, 20);
 
     if (thread->type == PXI)
@@ -496,9 +509,10 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     addAndMakeVisible (nameLabel.get());
 
     infoLabelView = std::make_unique<Viewport> ("INFO");
-    infoLabelView->setBounds (625, 98, 750, 400);
+    infoLabelView->setBounds (625, 110, 750, 400);
 
     addAndMakeVisible (infoLabelView.get());
+    infoLabelView->toBack();
 
     infoLabel = std::make_unique<Label> ("INFO", "INFO");
     infoLabelView->setViewedComponent (infoLabel.get(), false);
@@ -617,10 +631,10 @@ void NeuropixInterface::updateProbeSettingsInBackground()
 
     probe->updateSettings (settings);
 
-    thread->updateProbeSettingsQueue (settings);
-
     LOGC ("NeuropixInterface requesting thread start");
 
+    editor->uiLoader->waitForThreadToExit (5000);
+    thread->updateProbeSettingsQueue (settings);
     editor->uiLoader->startThread();
 }
 
@@ -786,7 +800,25 @@ void NeuropixInterface::setAnnotationLabel (String s, Colour c)
 
 void NeuropixInterface::buttonClicked (Button* button)
 {
-    if (button == enableViewButton.get())
+    if (button == probeEnableButton.get())
+    {
+        probe->isEnabled = probeEnableButton->getToggleState();
+
+        if (probe->isEnabled)
+        {
+            probeEnableButton->setLabel ("ENABLED");
+        }
+        else
+        {
+            probeEnableButton->setLabel ("DISABLED");
+        }
+
+        probe->settings.isEnabled = probe->isEnabled;
+        probe->setStatus (probe->isEnabled ? SourceStatus::CONNECTED : SourceStatus::DISABLED);
+        thread->updateStreamInfo (true);
+        CoreServices::updateSignalChain (editor);
+    }
+    else if (button == enableViewButton.get())
     {
         mode = ENABLE_VIEW;
         probeBrowser->stopTimer();
@@ -1320,6 +1352,9 @@ void NeuropixInterface::paint (Graphics& g)
 
 void NeuropixInterface::drawLegend (Graphics& g)
 {
+    if (thread->isRefreshing)
+        return;
+
     g.setColour (Colour (55, 55, 55));
     g.setFont (15);
 
@@ -1515,7 +1550,7 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
     // apply settings in background thread
     if (shouldUpdateProbe)
     {
-        thread->updateProbeSettingsQueue (p);
+        //thread->updateProbeSettingsQueue (p);
         updateProbeSettingsInBackground();
         CoreServices::saveRecoveryConfig();
     }
@@ -1741,6 +1776,8 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
             annotationNode->setAttribute ("G", a.colour.getGreen());
             annotationNode->setAttribute ("B", a.colour.getBlue());
         }
+
+        xmlNode->setAttribute ("isEnabled", bool (probe->isEnabled));
     }
 }
 
@@ -1992,6 +2029,17 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                                                          annotationNode->getIntAttribute ("B"))));
                 }
             }
+
+            probe->isEnabled = matchingNode->getBoolAttribute ("isEnabled", true);
+            probe->settings.isEnabled = probe->isEnabled;
+            probeEnableButton->setToggleState (probe->isEnabled, dontSendNotification);
+            if (probe->isEnabled)
+                probeEnableButton->setLabel ("ENABLED");
+            else
+            {
+                probeEnableButton->setLabel ("DISABLED");
+            }
+            stopAcquisition();
         }
 
         probe->updateSettings (settings);

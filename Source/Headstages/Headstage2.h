@@ -34,24 +34,42 @@ Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
 
 #include "../NeuropixComponents.h"
 
+/** 
+
+	Connects to a Neuropixels 2.0 probe
+
+*/
 class Headstage2 : public Headstage
 {
 public:
-    Headstage2::Headstage2 (Basestation*, int port);
-    void getInfo() override;
-    bool hasTestModule() override { return false; }
-    void runTestModule() override {}
 
-    Neuropixels::NP_ErrorCode errorCode;
+    /** Constructor */
+    Headstage2::Headstage2 (Basestation*, int port);
+
+    /** Gets headstage info */
+    void getInfo() override;
+
+    /** No test module available for 2.0 probes, so this is always false */
+    bool hasTestModule() override { return false; }
+
+    /** No tests can be run */
+    void runTestModule() override {}
 };
 
+/** 
+
+	Represents a Neuropixels 2.0 probe flex cable
+
+*/
 class Flex2 : public Flex
 {
 public:
-    Flex2::Flex2 (Headstage*, int dock);
-    void getInfo() override;
 
-    Neuropixels::NP_ErrorCode errorCode;
+    /** Constructor */
+    Flex2::Flex2 (Headstage*, int dock);
+
+    /** Gets flex info */
+    void getInfo() override;
 };
 
 #endif // __NEUROPIXHS2_H_2C4C2D67__

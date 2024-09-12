@@ -25,8 +25,14 @@
 #define __NEUROPIXBASESTATIONV3_H_2C4C2D67__
 
 #include "../NeuropixComponents.h"
+#include "../NeuropixThread.h"
 
 #define SAMPLECOUNT 64
+
+#define BS_FIRMWARE_VERSION "2.0169"
+#define BSC_FIRMWARE_VERSION "3.2191"
+#define BS_FIRMWARE_FILENAME "BS_FPGA_B169.bin"
+#define BSC_FIRMWARE_FILENAME "QBSC_FPGA_B191.bin"
 
 /* 
 * 
@@ -109,6 +115,9 @@ public:
     /** Initializes probes in a background thread */
     void initialize (bool signalChainIsLoading) override;
 
+    /** Searches for probes connected to this basestation */
+    void searchForProbes() override;
+
     /** Returns the total number of probes connected to this basestation*/
     int getProbeCount() override;
 
@@ -145,12 +154,13 @@ public:
     /** Waits for the arm basestation thread to exit */
     void waitForThreadToExit() override;
 
+    /** Checks for firmware compatibility with API version */
+    void checkFirmwareVersion() override;
+
 private:
     void print_switchmatrix();
 
     std::unique_ptr<ArmBasestation> armBasestation;
-
-    Neuropixels::NP_ErrorCode errorCode;
 
     bool invertOutput;
 };

@@ -38,7 +38,7 @@ public:
         output.setProperty (Identifier ("specification"),
                             var ("probeinterface"));
         output.setProperty (Identifier ("version"),
-                            var ("0.2.2dev0"));
+                            var ("0.2.23"));
 
         Array<var> contact_positions;
         Array<var> shank_ids;
@@ -51,22 +51,24 @@ public:
         Array<var> ax2 = { 0.0f, 1.0f };
         Array<var> contact_plane_axis = { ax1, ax2 };
 
-        Array<int> xpositions = { 27, 59, 11, 43 };
-
-        for (int ch = 0; ch < settings.selectedElectrode.size(); ch++)
+        for (int elec = 0; elec < settings.probe->electrodeMetadata.size(); elec++)
         {
-            int elec = settings.selectedElectrode[ch];
+            ElectrodeMetadata& em = settings.probe->electrodeMetadata.getReference (elec);
+            int channelIndex = settings.selectedElectrode.indexOf (elec);
+            int channel = -1;
+            if(channelIndex > -1)
+				channel = settings.selectedChannel[channelIndex];
 
             Array<var> contact_position;
-            contact_position.add (settings.probe->electrodeMetadata.getReference (elec).xpos + 250 * settings.selectedShank[ch]);
-            contact_position.add (settings.probe->electrodeMetadata.getReference (elec).ypos);
+            contact_position.add (em.xpos + 250 * em.shank);
+            contact_position.add (em.ypos);
 
             DynamicObject::Ptr contact_shape_param = new DynamicObject;
             contact_shape_param->setProperty (Identifier ("width"), settings.probe->electrodeMetadata.getReference (elec).site_width);
 
             contact_positions.add (contact_position);
-            shank_ids.add (String (settings.selectedShank[ch]));
-            device_channel_indices.add (settings.selectedChannel[ch]);
+            shank_ids.add (String (em.shank));
+            device_channel_indices.add (channel);
             contact_plane_axes.add (contact_plane_axis);
             contact_shapes.add ("square");
             contact_shape_params.add (contact_shape_param.get());
@@ -74,7 +76,8 @@ public:
 
         DynamicObject::Ptr probe = new DynamicObject();
         DynamicObject::Ptr annotations = new DynamicObject();
-        annotations->setProperty (Identifier ("name"), var (""));
+        annotations->setProperty (Identifier ("name"), settings.probe->name);
+        annotations->setProperty (Identifier ("manufacturer"), "imec");
 
         probe->setProperty (Identifier ("ndim"), 2);
         probe->setProperty (Identifier ("si_units"), "um");
@@ -85,7 +88,6 @@ public:
         probe->setProperty (Identifier ("contact_shape_params"), contact_shape_params);
         probe->setProperty (Identifier ("device_channel_indices"), device_channel_indices);
         probe->setProperty (Identifier ("shank_ids"), shank_ids);
-        probe->setProperty (Identifier ("num_adcs"), settings.probe->probeMetadata.num_adcs);
 
         Array<var> probes;
         probes.add (probe.get());

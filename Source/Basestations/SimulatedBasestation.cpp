@@ -41,10 +41,7 @@ SimulatedBasestationConfigWindow::SimulatedBasestationConfigWindow (SimulatedBas
         comboBox->addItem ("Neuropixels 2.0 4-shank", (int) ProbeType::NP2_4);
         comboBox->addItem ("Neuropixels Opto", (int) ProbeType::OPTO);
 
-        if (i == 0)
-            comboBox->setSelectedId ((int) ProbeType::NP1, dontSendNotification);
-        else
-            comboBox->setSelectedId ((int) ProbeType::NONE, dontSendNotification);
+        comboBox->setSelectedId ((int) bs->simulatedProbeTypes[i], dontSendNotification);
 
         portComboBoxes.add (comboBox);
         addAndMakeVisible (comboBox);
@@ -111,6 +108,12 @@ SimulatedBasestation::SimulatedBasestation (NeuropixThread* neuropixThread,
     simulatedProbeTypes[2] = ProbeType::NONE;
     simulatedProbeTypes[3] = ProbeType::NONE;
 
+    getInfo();
+}
+
+bool SimulatedBasestation::open()
+{
+
     DialogWindow::LaunchOptions options;
 
     configComponent = std::make_unique<SimulatedBasestationConfigWindow> (this);
@@ -127,11 +130,9 @@ SimulatedBasestation::SimulatedBasestation (NeuropixThread* neuropixThread,
 
     int result = options.runModal();
 
-    getInfo();
-}
+    headstages.clear();
+    probes.clear();
 
-bool SimulatedBasestation::open()
-{
     savingDirectory = File();
 
     basestationConnectBoard = std::make_unique<SimulatedBasestationConnectBoard> (this);
@@ -221,6 +222,10 @@ void SimulatedBasestation::initialize (bool signalChainIsLoading)
     }
 }
 
+void SimulatedBasestation::searchForProbes()
+{
+}
+
 Array<int> SimulatedBasestation::getSyncFrequencies()
 {
     return syncFrequencies;
@@ -235,7 +240,8 @@ void SimulatedBasestation::startAcquisition()
 {
     for (int i = 0; i < probes.size(); i++)
     {
-        probes[i]->startAcquisition();
+        if (probes[i]->isEnabled)
+            probes[i]->startAcquisition();
     }
 }
 
@@ -243,6 +249,7 @@ void SimulatedBasestation::stopAcquisition()
 {
     for (int i = 0; i < probes.size(); i++)
     {
-        probes[i]->stopAcquisition();
+        if (probes[i]->isEnabled)
+            probes[i]->stopAcquisition();
     }
 }

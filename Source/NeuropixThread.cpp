@@ -69,6 +69,8 @@ void Initializer::run()
         {
             Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo (list[i].ID, &list[i]);
 
+            LOGD ("Device ID: ", list[i].ID, ", Platform ID: ", list[i].platformid);
+
             if (list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
                 countForType++;
             else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX)
@@ -83,11 +85,21 @@ void Initializer::run()
         {
             int slotID;
 
-            bool foundSlot = Neuropixels::tryGetSlotID (&list[i], &slotID);
-
             Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo (list[i].ID, &list[i]);
 
-            LOGD ("Slot ID: ", slotID, ", Platform ID : ", list[i].platformid);
+            LOGD ("Device ID: ", list[i].ID, ", Platform ID: ", list[i].platformid);
+
+            bool foundSlot = Neuropixels::tryGetSlotID (&list[i], &slotID);
+
+            if (foundSlot)
+            {
+                LOGD ("  Slot ID: ", slotID);
+            }
+            else
+            {
+                LOGD ("  Could not find slot ID");
+            }
+            
 
             if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
             {
@@ -133,7 +145,7 @@ void Initializer::run()
             else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX)
             {
                 deviceNum++;
-                setStatusMessage ("Opening OneBox device on slot " + String (slotID) + " (" + String (deviceNum) + "/" + String (countForType) + ")");
+                setStatusMessage ("Opening OneBox with serial number " + String (list[i].ID));
 
                 Basestation* bs = new OneBox (neuropixThread, list[i].ID);
 
@@ -143,9 +155,13 @@ void Initializer::run()
 
                     if (! bs->getProbeCount())
                         CoreServices::sendStatusMessage ("OneBox found, no probes connected.");
+
+                    break; // prevent multiple OneBoxes from being opened
                 }
                 else
                 {
+                    LOGC ("  Could not open OneBox");
+                    setStatusMessage ("Could not open OneBox");
                     delete bs;
                 }
             }
@@ -174,9 +190,15 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
     LOGD ("Setting debug level to 0");
     Neuropixels::np_dbg_setlevel (0);
 
+    LOGD("### NeuropixThread()");
+    LOGD("### basestation.size() = ", basestations.size());
+    LOGD("### Running initializer thread");
+
     initializer = std::make_unique<Initializer> (this, basestations, type, api_v3);
     initializer->setStatusMessage ("Scanning for devices...");
     initializer->runThread();
+
+    LOGD("### basestation.size() = ", basestations.size());
 
     // If no basestations were found, ask user if they want to run in simulation mode
     if (basestations.size() == 0)
@@ -222,6 +244,20 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
         }
     }
 
+    for (auto basestation : basestations)
+    {
+        basestation->checkFirmwareVersion();
+    }
+
+    initializeProbes();
+
+    updateStreamInfo();
+}
+
+void NeuropixThread::initializeProbes()
+{
+    sourceStreams.clear();
+    
     bool foundSync = false;
 
     int probeIndex = 0;
@@ -261,7 +297,15 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
         probeIndex++;
     }
 
-    updateStreamInfo();
+    if (baseStationAvailable)
+    {
+        for (auto bs : basestations)
+        {
+            bs->initialize (false);
+        }
+
+        probesInitialized = true;
+    }
 }
 
 String NeuropixThread::generateProbeName (int probeIndex, ProbeNameConfig::NamingScheme namingScheme)
@@ -299,8 +343,10 @@ String NeuropixThread::generateProbeName (int probeIndex, ProbeNameConfig::Namin
     return name;
 }
 
-void NeuropixThread::updateStreamInfo()
+void NeuropixThread::updateStreamInfo(bool enabledStateChanged)
 {
+    if (enabledStateChanged) sourceStreams.clear();
+
     streamInfo.clear();
     sourceBuffers.clear();
 
@@ -311,6 +357,12 @@ void NeuropixThread::updateStreamInfo()
         if (source->sourceType == DataSourceType::PROBE)
         {
             Probe* probe = (Probe*) source;
+
+            if (!probe->isEnabled)
+            {
+                probe_index++;
+                continue;
+            }
 
             if (probe->type != ProbeType::QUAD_BASE)
             {
@@ -441,10 +493,22 @@ void NeuropixThread::applyProbeSettingsQueue()
 
             settings.probe->writeConfiguration();
 
-            settings.probe->setStatus (SourceStatus::CONNECTED);
+            if (settings.probe->isEnabled)
+                settings.probe->setStatus (SourceStatus::CONNECTED);
+            else
+                settings.probe->setStatus (SourceStatus::DISABLED);
 
             if (! settings.probe->isCalibrated)
                 uncalibratedProbes.add (settings.probe);
+
+            //Update probe map
+            int slot = settings.probe->basestation->slot;
+            int port = settings.probe->headstage->port;
+            int dock = settings.probe->dock;
+
+            std::tuple<int,int,int> key = std::make_tuple (slot, port, dock);
+
+            probeMap[key] = std::make_pair (settings.probe->info.serial_number, settings);
 
             LOGC ("Wrote configuration");
         }
@@ -771,14 +835,6 @@ String NeuropixThread::getInfoString()
 /** Initializes data transfer.*/
 bool NeuropixThread::startAcquisition()
 {
-    startTimer (10);
-
-    return true;
-}
-
-void NeuropixThread::timerCallback()
-{
-    LOGD ("Timer callback.");
 
     if (editor->uiLoader->isThreadRunning())
     {
@@ -792,10 +848,9 @@ void NeuropixThread::timerCallback()
         basestations[i]->startAcquisition();
     }
 
-    //startThread();
-
-    stopTimer();
+    return true;
 }
+
 
 void NeuropixThread::setDirectoryForSlot (int slotIndex, File directory)
 {
@@ -859,6 +914,8 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
                                      OwnedArray<ConfigurationObject>* configurationObjects)
 {
     LOGD ("NeuropixThread::updateSettings()");
+
+    bool checkStreamNames = true;
 
     if (sourceStreams.size() == 0) // initialize data streams
     {
@@ -929,6 +986,8 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
             };
 
             sourceStreams.add (new DataStream (settings));
+
+            checkStreamNames = false;
         }
     }
 
@@ -945,66 +1004,70 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
     {
         DataStream* currentStream = sourceStreams[i];
 
-        String streamName;
-
         StreamInfo info = streamInfo[i];
 
-        if (info.type == stream_type::AP_BAND)
-        {
-            Probe* p = getProbes()[probeIdx];
-            p->updateNamingScheme (p->namingScheme); // update displayName
+        if (checkStreamNames) {
 
-            streamName = generateProbeName (probeIdx, p->namingScheme);
+            String streamName;
 
-            if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
-                streamName += "-AP";
-            else
-                streamName = String (p->streamIndex);
-        }
-        else if (info.type == stream_type::LFP_BAND)
-        {
-            Probe* p = getProbes()[probeIdx];
-            p->updateNamingScheme (p->namingScheme); // update displayName
+            if (info.type == stream_type::AP_BAND)
+            {
+                Probe* p = getProbes()[probeIdx];
+                p->updateNamingScheme (p->namingScheme); // update displayName
 
-            streamName = generateProbeName (probeIdx, p->namingScheme);
+                streamName = generateProbeName (probeIdx, p->namingScheme);
 
-            if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
-                streamName += "-LFP";
-            else
-                streamName = String (p->streamIndex + 1);
+                if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
+                    streamName += "-AP";
+                else
+                    streamName = String (p->streamIndex);
+            }
+            else if (info.type == stream_type::LFP_BAND)
+            {
+                Probe* p = getProbes()[probeIdx];
+                p->updateNamingScheme (p->namingScheme); // update displayName
 
-            probeIdx++;
-        }
-        else if (info.type == stream_type::BROAD_BAND)
-        {
-            Probe* p = getProbes()[probeIdx];
-            p->updateNamingScheme (p->namingScheme); // update displayName
+                streamName = generateProbeName (probeIdx, p->namingScheme);
 
-            streamName = generateProbeName (probeIdx, p->namingScheme);
+                if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
+                    streamName += "-LFP";
+                else
+                    streamName = String (p->streamIndex + 1);
 
-            probeIdx++;
-        }
-        else if (info.type == stream_type::QUAD_BASE)
-        {
-            Probe* p = getProbes()[probeIdx];
-            p->updateNamingScheme (p->namingScheme); // update displayName
-
-            streamName = generateProbeName (probeIdx, p->namingScheme);
-
-            if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
-                streamName += "-" + String (info.shank + 1);
-            else
-                streamName = String (p->streamIndex + info.shank);
-
-            if (info.shank == 3)
                 probeIdx++;
-        }
-        else
-        {
-            streamName = currentStream->getName();
-        }
+            }
+            else if (info.type == stream_type::BROAD_BAND)
+            {
+                Probe* p = getProbes()[probeIdx];
+                p->updateNamingScheme (p->namingScheme); // update displayName
 
-        currentStream->setName (streamName);
+                streamName = generateProbeName (probeIdx, p->namingScheme);
+
+                probeIdx++;
+            }
+            else if (info.type == stream_type::QUAD_BASE)
+            {
+                Probe* p = getProbes()[probeIdx];
+                p->updateNamingScheme (p->namingScheme); // update displayName
+
+                streamName = generateProbeName (probeIdx, p->namingScheme);
+
+                if (p->namingScheme != ProbeNameConfig::STREAM_INDICES)
+                    streamName += "-" + String (info.shank + 1);
+                else
+                    streamName = String (p->streamIndex + info.shank);
+
+                if (info.shank == 3)
+                    probeIdx++;
+            }
+            else
+            {
+                streamName = currentStream->getName();
+            }
+
+            currentStream->setName (streamName);
+
+        }
 
         ContinuousChannel::Type type;
 

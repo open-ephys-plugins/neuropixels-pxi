@@ -54,6 +54,8 @@ Neuropixels_UHD::Neuropixels_UHD (Basestation* bs, Headstage* hs, Flex* fl) : Pr
         type = probeMetadata.type;
         switchable = probeMetadata.switchable;
 
+        settings.probeType = type;
+
         settings.probe = this;
         settings.availableBanks = probeMetadata.availableBanks;
 

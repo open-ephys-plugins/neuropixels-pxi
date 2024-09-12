@@ -39,7 +39,7 @@ class OneBox : public Basestation
 {
 public:
     /** Constructor */
-    OneBox (NeuropixThread*, int ID);
+    OneBox (NeuropixThread*, int serial_number);
 
     /** Destructor */
     ~OneBox();
@@ -52,6 +52,9 @@ public:
 
     /** Initializes in a separate thread*/
     void initialize (bool signalChainIsLoading) override;
+
+    /** Search for probes connected to OneBox */
+    void searchForProbes() override;
 
     /** Returns the total number of connected probes */
     int getProbeCount() override;
@@ -86,10 +89,8 @@ public:
     /** Triggers the Waveplayer output */
     void triggerWaveplayer (bool shouldStart);
 
-    Neuropixels::NP_ErrorCode errorCode;
-
     static Array<int> existing_oneboxes;
-    int original_slot_number;
+    int serial_number = -1;
 
     const int first_available_slot = 16;
 

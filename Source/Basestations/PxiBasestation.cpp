@@ -149,6 +149,10 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 
 bool PxiBasestation::open()
 {
+
+    syncFrequencies.clear();
+    syncFrequencies.add (1);
+
     errorCode = Neuropixels::openBS (slot);
 
     if (errorCode == Neuropixels::VERSION_MISMATCH)
@@ -170,95 +174,84 @@ bool PxiBasestation::open()
 
         invertOutput = false;
 
-        if (info.boot_version.equalsIgnoreCase ("2.0137"))
+        if (! info.boot_version.equalsIgnoreCase (BS_FIRMWARE_VERSION))
         {
-            LOGC ("Found basestation firmware version ", info.boot_version, "; setting invertOutput to true.");
+            LOGC ("Found basestation firmware version ", info.boot_version);
+            LOGC ("Required version is ", BS_FIRMWARE_VERSION);
 
-            // show popup notification window
-            String message = "The basestation on slot " + String (slot) + " has firmware version 2.0137, but version 2.0169 is required for this plugin. ";
-            message += "This is contained in the file named BS_FPGA_B169.bin. ";
-            message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update. ";
-
-            AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation firmware on slot " + String (slot), message, "OK");
-
-            invertOutput = true;
+            return true;
         }
 
-        if (basestationConnectBoard->info.boot_version.equalsIgnoreCase ("3.2176"))
+        if (! basestationConnectBoard->info.boot_version.equalsIgnoreCase (BSC_FIRMWARE_VERSION))
         {
             LOGC ("Found basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
+            LOGC ("Required version is ", BSC_FIRMWARE_VERSION);
 
-            // show popup notification window
-            String message = "The basestation on slot " + String (slot) + " has basestation firmware version 3.2176, but version 3.2189 is required for this plugin. ";
-            message += "This is contained in the file named QBSC_FPGA_B189.bin. ";
-            message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
+            return true;
 
-            AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String (slot), message, "OK");
-        }
-
-        if (basestationConnectBoard->info.boot_version.equalsIgnoreCase ("3.2186"))
-        {
-            LOGC ("Found basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
-
-            // show popup notification window
-            String message = "The basestation on slot " + String (slot) + " has basestation firmware version 3.2186, but version 3.2189 is required for this plugin. ";
-            message += "This is contained in the file named QBSC_FPGA_B189.bin. ";
-            message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
-
-            AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String (slot), message, "OK");
         }
 
         LOGC ("    Searching for probes...");
 
-        ThreadPool threadPool;
-        OwnedArray<PortChecker> portCheckers;
-
-        for (int port = 1; port <= 4; port++)
-        {
-            if (type == BasestationType::OPTO && port > 2)
-                break;
-
-            bool detected = false;
-
-            portCheckers.add (new PortChecker (slot, port, this));
-            threadPool.addJob (portCheckers.getLast(), false);
-        }
-
-        //LOGC("    Waiting for jobs to finish...");
-        while (threadPool.getNumJobs() > 0)
-            std::this_thread::sleep_for (std::chrono::milliseconds (100));
-        //LOGC("    Jobs finished.");
-
-        int portIndex = 0;
-
-        for (auto portChecker : portCheckers)
-        {
-            headstages.add (portChecker->headstage);
-
-            if (portChecker->headstage != nullptr)
-            {
-                for (auto probe : portChecker->headstage->probes)
-                {
-                    if (probe != nullptr)
-                    {
-                        probes.add (probe);
-
-                        if (probe->info.part_number.equalsIgnoreCase ("NP1300"))
-                            type = BasestationType::OPTO;
-                    }
-                }
-            }
-        }
+        probes.clear();
+        searchForProbes();
 
         LOGC ("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
     }
-
-    syncFrequencies.add (1);
 
     //LOGC("Initial switchmatrix status:");
     //print_switchmatrix();
 
     return true;
+}
+
+void PxiBasestation::searchForProbes()
+{
+
+    ThreadPool threadPool;
+    OwnedArray<PortChecker> portCheckers;
+
+    for (int port = 1; port <= 4; port++)
+    {
+        if (type == BasestationType::OPTO && port > 2)
+            break;
+
+        bool detected = false;
+
+        portCheckers.add (new PortChecker (slot, port, this));
+        threadPool.addJob (portCheckers.getLast(), false);
+    }
+
+    //LOGC("    Waiting for jobs to finish...");
+    while (threadPool.getNumJobs() > 0)
+        std::this_thread::sleep_for (std::chrono::milliseconds (100));
+    //LOGC("    Jobs finished.");
+
+    int portIndex = 0;
+
+    headstages.clear();
+
+    for (auto portChecker : portCheckers)
+    {
+        headstages.add (portChecker->headstage);
+
+        if (portChecker->headstage != nullptr)
+        {
+            for (auto probe : portChecker->headstage->probes)
+            {
+                if (probe != nullptr)
+                {
+                    //check if probe serial number already exists
+                    probes.add (probe);
+
+                    if (probe->info.part_number.equalsIgnoreCase ("NP1300"))
+                        type = BasestationType::OPTO;
+                }
+            }
+        }
+    }
+
+    LOGC("*** Found ", probes.size(), " probes on slot ", slot);
 }
 
 void PxiBasestation::initialize (bool signalChainIsLoading)
@@ -340,12 +333,50 @@ void PxiBasestation::close()
 {
     for (auto probe : probes)
     {
-        errorCode = Neuropixels::closeProbe (slot, probe->headstage->port, probe->dock);
+        try {
+            errorCode = Neuropixels::closeBS (slot);
+            LOGC(" Closing probe ", probe->info.serial_number, " on slot ", slot, " w/ error code: ", errorCode);
+        } catch (std::exception& e) {
+            LOGC ("Error closing probe: ", e.what());
+        }
     }
+    probes.clear();
+    headstages.clear();
 
     errorCode = Neuropixels::closeBS (slot);
-    LOGD ("Closed basestation on slot: ", slot, " w/ error code: ", errorCode);
+
+    LOGC ("Closed basestation on slot: ", slot, " w/ error code: ", errorCode);
 }
+
+void PxiBasestation::checkFirmwareVersion()
+{
+    if (! info.boot_version.equalsIgnoreCase (BS_FIRMWARE_VERSION))
+    {
+        LOGC ("Found basestation firmware version ", info.boot_version);
+
+        // show popup notification window
+        String message = "The basestation on slot " + String (slot) + " has firmware version " + info.boot_version;
+        message += ", but version " + String (BS_FIRMWARE_VERSION) + " is required for this plugin. ";
+        message += "This is contained in the file named " + String(BS_FIRMWARE_FILENAME) + ". ";
+        message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update. ";
+
+        AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation firmware on slot " + String (slot), message, "OK");
+    }
+
+    if (! basestationConnectBoard->info.boot_version.equalsIgnoreCase (BSC_FIRMWARE_VERSION))
+    {
+        LOGC ("Found basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
+
+        // show popup notification window
+        String message = "The basestation on slot " + String (slot) + " has basestation firmware version " + basestationConnectBoard->info.boot_version;
+        message += ", but version " + String (BSC_FIRMWARE_VERSION) + " is required for this plugin. ";
+        message += "This is contained in the file named " + String(BSC_FIRMWARE_FILENAME) + ". ";
+        message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
+
+        AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String (slot), message, "OK");
+    }
+}
+
 
 bool PxiBasestation::isBusy()
 {
@@ -432,6 +463,8 @@ int PxiBasestation::getProbeCount()
 
 float PxiBasestation::getFillPercentage()
 {
+    if (neuropixThread->isRefreshing) return 0.0;
+
     float perc = 0.0;
 
     for (int i = 0; i < getProbeCount(); i++)
@@ -452,7 +485,8 @@ void PxiBasestation::startAcquisition()
 
     for (auto probe : probes)
     {
-        probe->startAcquisition();
+        if (probe->isEnabled)
+            probe->startAcquisition();
     }
 
     errorCode = Neuropixels::setSWTrigger (slot);
@@ -464,7 +498,8 @@ void PxiBasestation::stopAcquisition()
 
     for (auto probe : probes)
     {
-        probe->stopAcquisition();
+        if (probe->isEnabled)
+            probe->stopAcquisition();
     }
 
     armBasestation->startThread();

@@ -81,6 +81,12 @@ void AdcChannelButton::paintButton (Graphics& g, bool isMouseOver, bool isButton
     g.fillEllipse (74, 2, 16, 16);
 
     g.drawText (statusText, 100, 0, 200, 20, Justification::left);
+
+    if (useAsDigitalInput)
+    {
+        g.fillRect (3, 6, 7, 7);
+    }
+        
 }
 
 OneBoxInterface::OneBoxInterface (DataSource* dataSource_,
@@ -117,13 +123,21 @@ OneBoxInterface::OneBoxInterface (DataSource* dataSource_,
     rangeSelector->setSelectedId ((int) AdcInputRange::PLUSMINUS5V, dontSendNotification);
     addAndMakeVisible (rangeSelector.get());
 
+    digitalInputSelector = std::make_unique<ComboBox>();
+    digitalInputSelector->setBounds (300, 300, 120, 20);
+    digitalInputSelector->addListener (this);
+    digitalInputSelector->addItem ("OFF", (int) AdcComparatorState::COMPARATOR_OFF);
+    digitalInputSelector->addItem ("ON", (int) AdcComparatorState::COMPARATOR_ON);
+    digitalInputSelector->setSelectedId ((int) AdcComparatorState::COMPARATOR_OFF);
+    addAndMakeVisible (digitalInputSelector.get());
+
     thresholdSelector = std::make_unique<ComboBox>();
     thresholdSelector->setBounds (300, 300, 120, 20);
     thresholdSelector->addListener (this);
     thresholdSelector->addItem ("1 V", (int) AdcThresholdLevel::ONE_VOLT);
     thresholdSelector->addItem ("3 V", (int) AdcThresholdLevel::THREE_VOLTS);
     thresholdSelector->setSelectedId ((int) AdcThresholdLevel::ONE_VOLT, dontSendNotification);
-    addAndMakeVisible (thresholdSelector.get());
+    //addAndMakeVisible (thresholdSelector.get());
 
     triggerSelector = std::make_unique<ComboBox>();
     triggerSelector->setBounds (300, 350, 120, 20);
@@ -132,12 +146,12 @@ OneBoxInterface::OneBoxInterface (DataSource* dataSource_,
     triggerSelector->addItem ("FALSE", 1);
     triggerSelector->addItem ("TRUE", 2);
     triggerSelector->setSelectedId (1, dontSendNotification);
-    addAndMakeVisible (triggerSelector.get());
+    addChildComponent (triggerSelector.get());
 
     mappingSelector = std::make_unique<ComboBox>();
     mappingSelector->setBounds (300, 400, 120, 20);
     mappingSelector->addListener (this);
-    addAndMakeVisible (mappingSelector.get());
+    //addAndMakeVisible (mappingSelector.get());
 
     wavePlayer = std::make_unique<WavePlayer> (dac);
     wavePlayer->setBounds (500, 100, 320, 180);
@@ -178,6 +192,26 @@ void OneBoxInterface::comboBoxChanged (ComboBox* comboBox)
         adc->setAdcThresholdLevel ((AdcThresholdLevel) comboBox->getSelectedId(),
                                    selectedChannel->getChannelIndex());
     }
+    else if (comboBox == digitalInputSelector.get())
+    {
+        // set digital input
+        adc->setAdcComparatorState ((AdcComparatorState) comboBox->getSelectedId(),
+                                    selectedChannel->getChannelIndex());
+
+        bool isOn = (bool) (comboBox->getSelectedId() - 1);
+        channels[selectedChannel->getChannelIndex()]->useAsDigitalInput = isOn;
+
+        if (isOn)
+        {
+			triggerSelector->setVisible (true);
+		}
+        else
+        {
+			triggerSelector->setVisible (false);
+		}
+
+        repaint();
+    }
     else if (comboBox == triggerSelector.get())
     {
         // set trigger
@@ -206,8 +240,22 @@ void OneBoxInterface::buttonClicked (Button* button)
             channel->setSelectedState (true);
             selectedChannel = channel;
 
-            rangeSelector->setSelectedId ((int) adc->getAdcInputRange(), dontSendNotification);
+            //rangeSelector->setSelectedId ((int) adc->getAdcInputRange(), dontSendNotification);
             thresholdSelector->setSelectedId ((int) adc->getAdcThresholdLevel (selectedChannel->getChannelIndex()), dontSendNotification);
+            
+            AdcComparatorState state = adc->getAdcComparatorState (selectedChannel->getChannelIndex());
+
+            digitalInputSelector->setSelectedId ((int) state, dontSendNotification);
+            LOGD ("Comparator state: ", (int) state, " for channel ", selectedChannel->getChannelIndex())
+            
+            if (state == AdcComparatorState::COMPARATOR_ON)
+            {
+                triggerSelector->setVisible (true);
+			}
+            else
+            {
+                triggerSelector->setVisible (false);
+			}
             triggerSelector->setSelectedId ((int) adc->getTriggersWaveplayer (selectedChannel->getChannelIndex()) + 1, dontSendNotification);
 
             Array<int> availableChannels = adc->getAvailableChannels (selectedChannel->getChannelIndex());
@@ -271,7 +319,7 @@ void OneBoxInterface::saveParameters (XmlElement* xml)
 
         xmlNode->setAttribute ("index", channel->getChannelIndex());
         xmlNode->setAttribute ("input_range", (int) adc->getAdcInputRange());
-        xmlNode->setAttribute ("threshold_level", (int) adc->getAdcThresholdLevel (channel->getChannelIndex()));
+        xmlNode->setAttribute ("comparator_state", (int) adc->getAdcComparatorState (channel->getChannelIndex()));
         xmlNode->setAttribute ("triggers_waveplayer", adc->getTriggersWaveplayer (channel->getChannelIndex()));
         xmlNode->setAttribute ("selected", channel == selectedChannel);
 
@@ -291,17 +339,22 @@ void OneBoxInterface::loadParameters (XmlElement* xml)
         {
             int index = xmlNode->getIntAttribute ("index", 0);
             int input_range = xmlNode->getIntAttribute ("input_range", (int) AdcInputRange::PLUSMINUS5V);
-            int threshold_level = xmlNode->getIntAttribute ("threshold_level", (int) AdcThresholdLevel::ONE_VOLT);
+            int comparator_state = xmlNode->getIntAttribute ("comparator_state", (int) AdcComparatorState::COMPARATOR_OFF);
             bool triggers_waveplayer = xmlNode->getBoolAttribute ("triggers_waveplayer", false);
             bool is_selected = xmlNode->getBoolAttribute ("selected", false);
 
             if (index == 0)
+            {
                 adc->setAdcInputRange ((AdcInputRange) input_range);
+                rangeSelector->setSelectedId (input_range, dontSendNotification);
+            }
 
             if (is_selected)
                 selectedIndex = index;
 
-            adc->setAdcThresholdLevel ((AdcThresholdLevel) threshold_level, index);
+            adc->setAdcComparatorState ((AdcComparatorState) comparator_state, index);
+            channels[index]->useAsDigitalInput = (bool) (comparator_state - 1);
+
             adc->setTriggersWaveplayer (triggers_waveplayer, index);
         }
     }
@@ -327,11 +380,20 @@ void OneBoxInterface::paint (Graphics& g)
     g.setFont (15);
     g.drawText ("CHANNEL PARAMETERS:", 300, 250, 300, 18, Justification::left, false);
     g.drawText ("ADC input range:", 300, 190 - 20, 300, 18, Justification::left, false);
-    g.drawText ("Threshold level:", 300, 300 - 20, 300, 18, Justification::left, false);
-    g.drawText ("Trigger WavePlayer:", 300, 350 - 20, 300, 18, Justification::left, false);
-    g.drawText ("Map to output:", 300, 400 - 20, 300, 18, Justification::left, false);
+    g.drawText ("Use as digital input:", 300, 300 - 20, 300, 18, Justification::left, false);
+    
+    if (selectedChannel->useAsDigitalInput)
+    {
+        g.drawText ("Trigger WavePlayer:", 300, 350 - 20, 300, 18, Justification::left, false);
+        //g.drawText ("Map to output:", 300, 400 - 20, 300, 18, Justification::left, false);
 
-    g.drawRect (290, 240, 180, 195);
+        g.drawRect (290, 240, 180, 146);
+    }
+    else
+    {
+    
+    	g.drawRect (290, 240, 180, 100);}
+        
 
     g.drawLine (selectedChannel->getX() + 82, selectedChannel->getBottom(), selectedChannel->getX() + 82, selectedChannel->getBottom() + 5, 1.0f);
 

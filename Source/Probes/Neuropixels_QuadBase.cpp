@@ -58,6 +58,8 @@ Neuropixels_QuadBase::Neuropixels_QuadBase (Basestation* bs, Headstage* hs, Flex
         name = probeMetadata.name;
         type = probeMetadata.type;
 
+        settings.probeType = type;
+
         settings.probe = this;
 
         settings.availableBanks = probeMetadata.availableBanks;
@@ -407,6 +409,8 @@ AcquisitionThread::AcquisitionThread (
 
 void AcquisitionThread::run()
 {
+    Neuropixels::NP_ErrorCode errorCode;
+
     ap_timestamp = 0;
     last_npx_timestamp = 0;
     passedOneSecond = false;

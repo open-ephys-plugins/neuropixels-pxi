@@ -37,6 +37,30 @@ class NeuropixEditor;
 class NeuropixCanvas;
 class NeuropixThread;
 
+/**
+    Refreshes the basestation to check for any hardware changes
+
+*/
+
+class RefreshButton : public Button
+{
+
+public:
+    /** Constructor */
+    RefreshButton ();
+
+    /** Destructor */
+    ~RefreshButton() {}
+
+    void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown) override;
+
+    /** Sets the button bounds when editor is resized */
+    void parentSizeChanged() override;
+
+private:
+
+    std::unique_ptr<Drawable> refreshIcon;
+};
 /** 
 
 	Displays the slot number, and opens a pop-up name
@@ -178,6 +202,7 @@ private:
     int id;
 };
 
+
 /** 
 
 	A thread that loads probe settings in the background
@@ -196,14 +221,39 @@ public:
     /** Runs the thread */
     void run();
 
-    bool signalChainIsLoading;
+    bool signalChainIsLoading = false;
 
-private:
+protected:
     NeuropixThread* thread;
     NeuropixEditor* editor;
 
-    bool isInitialized;
+    bool isInitialized = false;
+
 };
+
+/** 
+
+	A thread that loads probe settings in the background
+	(and shows a progress bar)
+
+*/
+class BackgroundLoaderWithProgressWindow : public ThreadWithProgressWindow,
+    public BackgroundLoader
+{
+public:
+    /** Constructor */
+    BackgroundLoaderWithProgressWindow (NeuropixThread* t, NeuropixEditor* e);
+
+    /** Destructor */
+    ~BackgroundLoaderWithProgressWindow() {}
+
+    /** Runs the thread */
+    void run();
+
+    /** Updates the probe map */
+    void updateProbeMap();
+};
+
 
 /**
 
@@ -253,14 +303,22 @@ public:
     /** Update settings */
     void update();
 
+    /** Draw basestations UI */
+    void drawBasestations(Array<Basestation*> basestations);
+
     /** Select a data source button */
     void selectSource (DataSource* source);
 
     void checkCanvas() { checkForCanvas(); };
 
-    OwnedArray<SourceButton> sourceButtons;
+    void resetCanvas();
+
+    std::vector<std::unique_ptr<SourceButton>> sourceButtons;
 
     std::unique_ptr<BackgroundLoader> uiLoader;
+    std::unique_ptr<BackgroundLoaderWithProgressWindow> uiLoaderWithProgressWindow;
+
+    NeuropixCanvas* canvas;
 
 private:
     OwnedArray<UtilityButton> directoryButtons;
@@ -277,9 +335,9 @@ private:
     std::unique_ptr<EditorBackground> background;
 
     std::unique_ptr<UtilityButton> addSyncChannelButton;
+    std::unique_ptr<RefreshButton> refreshButton;
 
     Viewport* viewport;
-    NeuropixCanvas* canvas;
     NeuropixThread* thread;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NeuropixEditor);

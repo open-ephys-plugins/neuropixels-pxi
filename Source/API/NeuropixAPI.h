@@ -1,5 +1,5 @@
 /********************************
- * Copyright (C) Imec 2023      *
+ * Copyright (C) Imec 2024      *
  *                              *
  * Neuropixels C/C++ API header *
  ********************************/
@@ -249,6 +249,9 @@ namespace Neuropixels {
 		SM_Input_SMA  = SM_Input_(5), /* PXI system SMA input */
 		SM_Input_SMA1 = SM_Input_(6), /* OneBox backpanel SMA (SMA1) */
 
+		SM_Input_SMATrigger = SM_Input_(7), /* PXI system pulse-stretched SMA */
+		SM_Input_SMASYNC = SM_Input_(8),    /* PXI system unprocessed input */
+
 		SM_Input_PXI0 = SM_Input_(0x10),
 		SM_Input_PXI1 = SM_Input_(0x11),
 		SM_Input_PXI2 = SM_Input_(0x12),
@@ -338,6 +341,11 @@ namespace Neuropixels {
 	 * @param size: size of destination buffer
 	 */
 	NP_EXPORT size_t getAPIVersionFull(char* buffer, size_t size);
+
+	/*
+     * \brief Returns the minimum required FTDI Driver version number that is expected by the API library
+     */
+    NP_EXPORT void getMinimumFtdiDriverVersion(int* version_major, int* version_minor, int* version_build);
 
 	/**
 	 * Read the last error message
@@ -1393,6 +1401,7 @@ namespace Neuropixels {
 		//NeuropixAPI.h
 		NP_EXPORT void         NP_APIC np_getAPIVersion(int* version_major, int* version_minor);
 		NP_EXPORT size_t       NP_APIC np_getAPIVersionFull(char* buffer, size_t size);
+		NP_EXPORT void         NP_APIC np_getMinimumFtdiDriverVersion(int* version_major, int* version_minor, int* version_build);
 		NP_EXPORT size_t       NP_APIC np_getLastErrorMessage(char* buffer, size_t buffersize);
 		NP_EXPORT const char*  NP_APIC np_getErrorMessage(NP_ErrorCode code);
 		NP_EXPORT int          NP_APIC np_getDeviceList(struct basestationID* list, int count);
