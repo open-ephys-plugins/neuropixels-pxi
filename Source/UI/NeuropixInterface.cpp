@@ -112,8 +112,6 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         electrodeConfigurationComboBox->setItemEnabled (1, false);
         electrodeConfigurationComboBox->addSeparator();
 
-        LOGC ("FOUND ", probe->settings.availableElectrodeConfigurations.size(), " electrode configurations");
-
         for (int i = 0; i < probe->settings.availableElectrodeConfigurations.size(); i++)
         {
             electrodeConfigurationComboBox->addItem (probe->settings.availableElectrodeConfigurations[i], i + 2);
@@ -631,7 +629,7 @@ void NeuropixInterface::updateProbeSettingsInBackground()
 
     probe->updateSettings (settings);
 
-    LOGC ("NeuropixInterface requesting thread start");
+    LOGD ("NeuropixInterface requesting thread start");
 
     editor->uiLoader->waitForThreadToExit (5000);
     thread->updateProbeSettingsQueue (settings);
@@ -1472,7 +1470,7 @@ void NeuropixInterface::drawLegend (Graphics& g)
 
 bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdateProbe)
 {
-    LOGC ("NeuropixInterface applying probe settings for ", p.probe->name, " shouldUpdate: ", shouldUpdateProbe);
+    LOGD ("NeuropixInterface applying probe settings for ", p.probe->name, " shouldUpdate: ", shouldUpdateProbe);
 
     if (p.probeType != probe->type)
     {
@@ -1976,23 +1974,12 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
 
             String configurationName = matchingNode->getStringAttribute ("electrodeConfigurationPreset", "NONE");
 
-            std::cout << "configurationName: " << configurationName << std::endl;
-
             for (int i = 0; i < electrodeConfigurationComboBox->getNumItems(); i++)
             {
                 if (electrodeConfigurationComboBox->getItemText (i).equalsIgnoreCase (configurationName))
                 {
-                    std::cout << "Found matching configuration at index: " << i << std::endl;
                     electrodeConfigurationComboBox->setSelectedItemIndex (i, dontSendNotification);
-                    std::cout << "Setting electrodeConfigurationIndex: " << i - 1 << std::endl;
                     settings.electrodeConfigurationIndex = i - 1;
-
-                    //if (probe->type == ProbeType::UHD2)
-                    //{
-                    //    Array<int> selection = probe->selectElectrodeConfiguration(electrodeConfigurationComboBox->getText());
-                    //
-                    //    selectElectrodes(selection);
-                    // }
 
                     break;
                 }
