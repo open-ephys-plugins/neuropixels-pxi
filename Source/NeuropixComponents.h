@@ -286,7 +286,7 @@ public:
     {
         if (error != Neuropixels::SUCCESS)
         {
-            LOGE (function, ":", Neuropixels::getErrorMessage (error));
+            LOGE (function, ": ", Neuropixels::getErrorMessage (error));
 		}
 
         return error;

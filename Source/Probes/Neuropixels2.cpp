@@ -30,10 +30,10 @@
 
 void Neuropixels2::getInfo()
 {
-    errorCode = Neuropixels::readProbeSN (basestation->slot, headstage->port, dock, &info.serial_number);
+    checkError(Neuropixels::readProbeSN (basestation->slot, headstage->port, dock, &info.serial_number), "readProbeSN");
 
     char pn[MAXLEN];
-    errorCode = Neuropixels::readProbePN (basestation->slot_c, headstage->port_c, dock, pn, MAXLEN);
+    checkError (Neuropixels::readProbePN (basestation->slot_c, headstage->port_c, dock, pn, MAXLEN), "readProbePN");
 
     LOGC ("   Found probe part number: ", pn);
     LOGC ("   Found probe serial number: ", info.serial_number);
@@ -144,8 +144,8 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
 
 bool Neuropixels2::open()
 {
-    errorCode = Neuropixels::openProbe (basestation->slot, headstage->port, dock);
-    LOGD ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+    checkError (Neuropixels::openProbe (basestation->slot, headstage->port, dock),
+                "openProbe: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
 
     ap_timestamp = 0;
     lfp_timestamp = 0;
@@ -158,16 +158,16 @@ bool Neuropixels2::open()
 
 bool Neuropixels2::close()
 {
-    errorCode = Neuropixels::closeProbe (basestation->slot, headstage->port, dock);
-    LOGD ("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+    checkError (Neuropixels::closeProbe (basestation->slot, headstage->port, dock),
+                "closeProbe: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
 
     return errorCode == Neuropixels::SUCCESS;
 }
 
 void Neuropixels2::initialize (bool signalChainIsLoading)
 {
-    errorCode = Neuropixels::init (basestation->slot, headstage->port, dock);
-    LOGD ("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+    checkError (Neuropixels::init (basestation->slot, headstage->port, dock),
+                "init: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
 }
 
 void Neuropixels2::calibrate()
@@ -194,7 +194,7 @@ void Neuropixels2::calibrate()
 
     LOGD ("Gain file: ", gainFile);
 
-    errorCode = Neuropixels::setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
+    errorCode = checkError (Neuropixels::setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8()), "setGainCalibration");
 
     if (errorCode == 0)
     {
@@ -209,33 +209,34 @@ void Neuropixels2::calibrate()
 
     if (! errorCode == Neuropixels::SUCCESS)
     {
+        isCalibrated = false;
         LOGD ("Failed to write probe config w/ error code: ", errorCode);
     }
     else
     {
+        isCalibrated = true;
         LOGD ("Successfully wrote probe config ");
     }
 
-    errorCode = Neuropixels::np_setHSLed (basestation->slot, headstage->port, false);
+    checkError(Neuropixels::np_setHSLed (basestation->slot, headstage->port, false), "np_setHSLed");
 
-    isCalibrated = true;
+  
 }
 
 void Neuropixels2::selectElectrodes()
 {
-    Neuropixels::NP_ErrorCode ec;
 
     if (settings.selectedBank.size() == 0)
         return;
 
     for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
     {
-        ec = Neuropixels::selectElectrode (basestation->slot,
+        checkError(Neuropixels::selectElectrode (basestation->slot,
                                            headstage->port,
                                            dock,
                                            settings.selectedChannel[ch],
                                            settings.selectedShank[ch],
-                                           settings.availableBanks.indexOf (settings.selectedBank[ch]));
+                                           settings.availableBanks.indexOf (settings.selectedBank[ch])), "selectElectrode");
     }
 
     LOGD ("Updated electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
@@ -572,23 +573,30 @@ void Neuropixels2::setAllReferences()
         shank = 3;
     }
 
-    LOGC ("Setting reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", refId);
+    LOGC ("Setting reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", selectedRef);
 
     for (int channel = 0; channel < channel_count; channel++)
-        Neuropixels::setReference (basestation->slot,
-                                   headstage->port,
-                                   dock,
-                                   channel,
-                                   shank,
-                                   refId,
-                                   refElectrodeBank);
+    {
+        if (checkError (Neuropixels::setReference (basestation->slot,
+                                                   headstage->port,
+                                                   dock,
+                                                   channel,
+                                                   shank,
+                                                   refId,
+                                                   refElectrodeBank),
+                        "setReference")
+            != Neuropixels::SUCCESS)
+        {
+            LOGD ("Failed to set reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", selectedRef);
+        }
+    }
+        
 
-    LOGD ("Updated reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", refId);
 }
 
 void Neuropixels2::writeConfiguration()
 {
-    errorCode = Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false);
+    checkError(Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false) , "writeProbeConfiguration");
 }
 
 void Neuropixels2::startAcquisition()

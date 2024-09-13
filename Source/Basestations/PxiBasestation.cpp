@@ -132,7 +132,7 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
     {
         if (errorCode != Neuropixels::SUCCESS)
         {
-            LOGC ("***detectHeadstage failed w/ error code: ", errorCode);
+            LOGC ("  Error opening port ", port, ": ", errorCode);
         }
         else
         {
@@ -149,7 +149,6 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 
 bool PxiBasestation::open()
 {
-
     syncFrequencies.clear();
     syncFrequencies.add (1);
 
@@ -188,7 +187,6 @@ bool PxiBasestation::open()
             LOGC ("Required version is ", BSC_FIRMWARE_VERSION);
 
             return true;
-
         }
 
         LOGC ("    Searching for probes...");
@@ -196,7 +194,7 @@ bool PxiBasestation::open()
         probes.clear();
         searchForProbes();
 
-        LOGC ("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
+        LOGC ("    Found ", probes.size(), probes.size() == 1 ? " probe " : " probes on slot ", slot);
     }
 
     //LOGC("Initial switchmatrix status:");
@@ -207,7 +205,6 @@ bool PxiBasestation::open()
 
 void PxiBasestation::searchForProbes()
 {
-
     ThreadPool threadPool;
     OwnedArray<PortChecker> portCheckers;
 
@@ -222,10 +219,8 @@ void PxiBasestation::searchForProbes()
         threadPool.addJob (portCheckers.getLast(), false);
     }
 
-    //LOGC("    Waiting for jobs to finish...");
     while (threadPool.getNumJobs() > 0)
         std::this_thread::sleep_for (std::chrono::milliseconds (100));
-    //LOGC("    Jobs finished.");
 
     int portIndex = 0;
 
@@ -250,8 +245,6 @@ void PxiBasestation::searchForProbes()
             }
         }
     }
-
-    LOGC("*** Found ", probes.size(), " probes on slot ", slot);
 }
 
 void PxiBasestation::initialize (bool signalChainIsLoading)
@@ -266,9 +259,9 @@ void PxiBasestation::initialize (bool signalChainIsLoading)
         probesInitialized = true;
     }
 
-    LOGC ("Arming basestation");
+    LOGD ("Arming basestation");
     Neuropixels::arm (slot);
-    LOGC ("Arming complete");
+    LOGD ("Arming complete");
 }
 
 void PxiBasestation::print_switchmatrix()
@@ -333,10 +326,13 @@ void PxiBasestation::close()
 {
     for (auto probe : probes)
     {
-        try {
+        try
+        {
             errorCode = Neuropixels::closeBS (slot);
-            LOGC(" Closing probe ", probe->info.serial_number, " on slot ", slot, " w/ error code: ", errorCode);
-        } catch (std::exception& e) {
+            LOGC (" Closing probe ", probe->info.serial_number, " on slot ", slot, " w/ error code: ", errorCode);
+        }
+        catch (std::exception& e)
+        {
             LOGC ("Error closing probe: ", e.what());
         }
     }
@@ -357,7 +353,7 @@ void PxiBasestation::checkFirmwareVersion()
         // show popup notification window
         String message = "The basestation on slot " + String (slot) + " has firmware version " + info.boot_version;
         message += ", but version " + String (BS_FIRMWARE_VERSION) + " is required for this plugin. ";
-        message += "This is contained in the file named " + String(BS_FIRMWARE_FILENAME) + ". ";
+        message += "This is contained in the file named " + String (BS_FIRMWARE_FILENAME) + ". ";
         message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update. ";
 
         AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation firmware on slot " + String (slot), message, "OK");
@@ -370,13 +366,12 @@ void PxiBasestation::checkFirmwareVersion()
         // show popup notification window
         String message = "The basestation on slot " + String (slot) + " has basestation firmware version " + basestationConnectBoard->info.boot_version;
         message += ", but version " + String (BSC_FIRMWARE_VERSION) + " is required for this plugin. ";
-        message += "This is contained in the file named " + String(BSC_FIRMWARE_FILENAME) + ". ";
+        message += "This is contained in the file named " + String (BSC_FIRMWARE_FILENAME) + ". ";
         message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
 
         AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String (slot), message, "OK");
     }
 }
-
 
 bool PxiBasestation::isBusy()
 {
@@ -392,12 +387,12 @@ void PxiBasestation::setSyncAsPassive()
 {
     LOGC ("Setting slot ", slot, " sync as passive.");
 
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit);
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA);
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_PXISYNC);
+    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit), "switchmatrix_clear SM_Output_StatusBit");
+    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA), "switchmatrix_clear SM_Output_SMA");
+    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_PXISYNC), "switchmatrix_clear SM_Output_PXISYNC");
 
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXISYNC, true);
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, true);
+    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXISYNC, true), "switchmatrix_set SM_Input_PXISYNC --> SM_Output_StatusBit");
+    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXISYNC, true), "switchmatrix_set SM_Input_PXISYNC --> SM_Output_SMA");
 
     if (invertOutput)
     {
@@ -414,17 +409,12 @@ void PxiBasestation::setSyncAsInput()
 {
     LOGC ("Setting slot ", slot, " sync as input.");
 
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit);
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA);
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_PXISYNC);
+    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit), "switchmatrix_clear SM_Output_StatusBit");
+    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA), "switchmatrix_clear SM_Output_SMA");
+    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_PXISYNC), "switchmatrix_clear SM_Output_PXISYNC");
 
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, true);
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SMA, true);
-
-    if (errorCode != Neuropixels::SUCCESS)
-    {
-        LOGC ("Failed to set sync on SMA output on slot: ", slot);
-    }
+    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMASYNC, true), "switchmatrix_set SM_Input_SMA --> SM_Output_StatusBit");
+    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SMASYNC, true), "switchmatrix_set SM_Input_SMA --> SM_Output_PXISYNC");
 
     //print_switchmatrix();
 }
@@ -438,15 +428,15 @@ void PxiBasestation::setSyncAsOutput (int freqIndex)
 {
     LOGC ("Setting slot ", slot, " sync as output.");
 
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit);
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA);
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_PXISYNC);
+    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit), "switchmatrix_clear SM_Output_StatusBit");
+    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA), "switchmatrix_clear SM_Output_SMA");
+    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_PXISYNC), "switchmatrix_clear SM_Output_PXISYNC");
 
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, true);
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SyncClk, true);
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true);
+    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, true), "switchmatrix_set SM_Input_SyncClk --> SM_Output_StatusBit");
+    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_PXISYNC, Neuropixels::SM_Input_SyncClk, true), "switchmatrix_set SM_Input_SyncClk --> SM_Output_PXISYNC");
+    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true), "switchmatrix_set SM_Input_SyncClk --> SM_Output_SMA");
 
-    errorCode = Neuropixels::setSyncClockFrequency (slot, syncFrequencies[freqIndex]);
+    errorCode = checkError(Neuropixels::setSyncClockFrequency (slot, syncFrequencies[freqIndex]), "setSyncClockFrequency");
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -463,7 +453,8 @@ int PxiBasestation::getProbeCount()
 
 float PxiBasestation::getFillPercentage()
 {
-    if (neuropixThread->isRefreshing) return 0.0;
+    if (neuropixThread->isRefreshing)
+        return 0.0;
 
     float perc = 0.0;
 

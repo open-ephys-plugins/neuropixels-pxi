@@ -277,7 +277,6 @@ void NeuropixThread::initializeProbes()
 
         if (! foundSync)
         {
-            probe->basestation->setSyncAsInput();
             foundSync = true;
         }
 
@@ -686,6 +685,9 @@ String NeuropixThread::getApiVersion()
 
 void NeuropixThread::setMainSync (int slotIndex)
 {
+
+    LOGC ("Setting main sync for slot ", slotIndex);
+
     if (foundInputSource() && slotIndex > -1)
     {
         for (auto basestation : basestations)
@@ -895,8 +897,6 @@ ProbeNameConfig::NamingScheme NeuropixThread::getNamingSchemeForSlot (int slot)
 /** Stops data transfer.*/
 bool NeuropixThread::stopAcquisition()
 {
-    LOGC ("Stopping Neuropixels thread.");
-
     if (isThreadRunning())
     {
         signalThreadShouldExit();
@@ -917,8 +917,6 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
                                      OwnedArray<DeviceInfo>* devices,
                                      OwnedArray<ConfigurationObject>* configurationObjects)
 {
-    LOGD ("NeuropixThread::updateSettings()");
-
     bool checkStreamNames = true;
 
     if (sourceStreams.size() == 0) // initialize data streams
