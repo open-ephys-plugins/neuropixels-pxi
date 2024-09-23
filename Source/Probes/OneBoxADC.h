@@ -30,6 +30,7 @@
 #define NUM_ADCS 12
 
 class OneBoxInterface;
+class OneBoxDAC;
 
 /** 
 
@@ -43,7 +44,7 @@ class OneBoxADC : public DataSource
 {
 public:
     /** Constructor */
-    OneBoxADC (Basestation*);
+    OneBoxADC (Basestation*, OneBoxDAC*);
 
     /** Returns channel name */
     String getName() { return "ADC"; }
@@ -69,7 +70,7 @@ public:
     /** Read packets and add to buffer */
     void run() override; // acquire data
 
-    /** Map an ADC to a DAC, or turn it  */
+    /** Map an ADC to a DAC, or turn it back into an ADC */
     void setAsOutput (int selected, int channel);
 
     /** Returns the connected DAC channel, or -1 if channel is an ADC */
@@ -107,6 +108,9 @@ public:
 
     /** Pointer to OneBox UI*/
     OneBoxInterface* ui;
+
+    /** Pointer to DAC */
+    OneBoxDAC* dac;
 
 private:
     /** Sample number for acquisition */

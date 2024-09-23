@@ -182,13 +182,11 @@ public:
 
     void textEditorReturnKeyPressed (TextEditor&);
 
-    void keyPressed (KeyPress& key);
-
 private:
     std::unique_ptr<TextEditor> textEditor;
     std::unique_ptr<Label> mainLabel;
 
-    float constrainVoltage (float input, float min = 0, float max = 5);
+    float constrainVoltage (float input, float min = -5, float max = 5);
 
     float maxVoltage;
 };
