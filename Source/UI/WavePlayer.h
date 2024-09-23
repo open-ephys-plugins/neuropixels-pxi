@@ -37,6 +37,8 @@ User interface for defining custom OneBox DAC waveforms
 */
 
 class OneBoxDAC;
+class OneBoxADC;
+class OneBoxInterface;
 class PulsePatternGenerator;
 class SinePatternGenerator;
 class CustomPatternGenerator;
@@ -71,11 +73,12 @@ private:
 */
 class WavePlayer : public Component,
                    public ComboBox::Listener,
-                   public Button::Listener
+                   public Button::Listener,
+        		   public Timer    
 {
 public:
     /** Constructor */
-    WavePlayer (OneBoxDAC*);
+    WavePlayer (OneBoxDAC*, OneBoxADC*, OneBoxInterface*);
 
     /** Destructor */
     virtual ~WavePlayer();
@@ -101,12 +104,17 @@ public:
     /** Resizes interface */
     void resized();
 
+    /** Reverts toggle state of "Run" button */
+    void timerCallback();
+
     OwnedArray<Pattern> availablePatterns;
     Pattern* currentPattern;
 
 private:
     std::unique_ptr<ComboBox> patternSelector;
+    std::unique_ptr<ComboBox> triggerSelector;
 
+    std::unique_ptr<UtilityButton> enableButton;
     std::unique_ptr<UtilityButton> pulsePatternButton;
     std::unique_ptr<UtilityButton> sinePatternButton;
     std::unique_ptr<UtilityButton> customPatternButton;
@@ -120,6 +128,8 @@ private:
     void initializePattern (Pattern* pattern);
 
     OneBoxDAC* dac;
+    OneBoxADC* adc;
+    OneBoxInterface* ui;
     int nextPatternId;
 };
 

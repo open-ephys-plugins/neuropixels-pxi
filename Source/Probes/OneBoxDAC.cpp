@@ -35,33 +35,48 @@ OneBoxDAC::OneBoxDAC (Basestation* bs_) : DataSource (bs_)
 
 void OneBoxDAC::initialize (bool signalChainIsLoading)
 {
-    errorCode = Neuropixels::waveplayer_setSampleFrequency (basestation->slot,
-                                                            30000.0f);
-
-    LOGD ("waveplayer_setSampleFrequency error code: ", errorCode);
+    checkError(Neuropixels::waveplayer_setSampleFrequency (basestation->slot,
+                                                            30000.0f),
+                "waveplayer_setSampleFrequency");
 }
 
 void OneBoxDAC::setWaveform (Array<float> samples)
 {
     Array<int16_t> samples_t;
 
+    LOGC ("Setting waveform samples: ", samples.size());
+
     for (auto sample : samples)
-        samples_t.add (int (sample / 5.0f * 65535));
+    {
+       
+        float this_sample = sample;
 
-    errorCode = Neuropixels::waveplayer_writeBuffer (basestation->slot, samples_t.getRawDataPointer(), samples_t.size());
+        if (this_sample > 5.0f)
+            this_sample = 5.0f;
+        else if (this_sample < -5.0f)
+            this_sample = -5.0f;
 
-    LOGC ("waveplayer_writeBuffer error code: ", errorCode);
+        // convert to signed 16-bit integer
+        // -32767 = -5V, 32767 = 5V
+        int16_t sample_int16 = this_sample / 5.0f * 32767;
 
-    errorCode = Neuropixels::waveplayer_arm (basestation->slot, true);
+        samples_t.add (sample_int16);
+    }
 
-    LOGC ("waveplayer_arm error code: ", errorCode);
+    // ensure the buffer ends with 0V
+    for (int i = 0; i < 100; i++)
+        samples_t.add (0);
+
+    checkError(Neuropixels::waveplayer_writeBuffer (basestation->slot, samples_t.getRawDataPointer(), samples_t.size()), "waveplayer_writeBuffer");
+
+    checkError(Neuropixels::waveplayer_arm (basestation->slot, true), "waveplayer_arm");
 }
 
 void OneBoxDAC::playWaveform()
 {
-    errorCode = Neuropixels::setSWTriggerEx (basestation->slot, Neuropixels::swtrigger2);
+    checkError (Neuropixels::setSWTriggerEx (basestation->slot, Neuropixels::swtrigger2), "setSWTriggerEx");
 
-    LOGD ("setSWTriggerEx error code: ", errorCode);
+    LOGC ("Playing waveform");
 }
 
 void OneBoxDAC::stopWaveform()

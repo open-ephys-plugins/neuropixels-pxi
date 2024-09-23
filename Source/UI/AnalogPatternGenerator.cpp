@@ -26,7 +26,7 @@
 #include "AnalogPatternGenerator.h"
 #include "WavePlayer.h"
 
-#define MAX_SAMPLES 10000
+#define MAX_SAMPLES 16777000
 #define PI 3.14159265
 
 AnalogPatternGenerator::AnalogPatternGenerator (WavePlayer* wv_, Pattern* pattern_) : wv (wv_),
@@ -452,17 +452,6 @@ CustomPatternGenerator::CustomPatternGenerator (WavePlayer* wv_, Pattern* patter
     setState (pattern);
 }
 
-/*void CustomPatternGenerator::keyPressed(KeyPress& key)
-{
-	/*if (key.getTextCharacter() == 'c' && key.getModifiers().ctrlModifier)
-	{
-		textEditor->copyToClipboard();
-	}
-	else if (key.getTextCharacter() == 'p' && key.getModifiers().ctrlModifier)
-	{
-		textEditor->pasteFromClipboard();
-*/
-
 CustomPatternGenerator::~CustomPatternGenerator()
 {
 }
@@ -474,6 +463,9 @@ void CustomPatternGenerator::textEditorReturnKeyPressed (TextEditor& editor)
 
 void CustomPatternGenerator::updatePattern()
 {
+
+    LOGD ("CustomPatternGenerator::updatePattern()");
+
     String text = textEditor->getText();
 
     int startLoc = 0;
@@ -522,6 +514,9 @@ void CustomPatternGenerator::updatePattern()
     }
 
     setState (pattern);
+    buildWaveform();
+
+    wv->updateWaveform();
 }
 
 float CustomPatternGenerator::constrainVoltage (float input, float min, float max)
@@ -536,6 +531,9 @@ float CustomPatternGenerator::constrainVoltage (float input, float min, float ma
 
 void CustomPatternGenerator::setState (Pattern* pattern)
 {
+
+    LOGD ("CustomPatternGenerator::setState()");
+
     String text = "";
 
     for (int i = 0; i < pattern->custom.samples.size(); i++)
@@ -547,6 +545,8 @@ void CustomPatternGenerator::setState (Pattern* pattern)
     text = text.upToLastOccurrenceOf (",", false, true);
 
     textEditor->setText (text);
+
+   
 }
 
 void CustomPatternGenerator::buildWaveform()

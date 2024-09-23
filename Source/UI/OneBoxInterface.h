@@ -124,6 +124,12 @@ public:
     /** Update combo boxes to reflect available channels */
     void updateAvailableChannels();
 
+    /** Set a channel as a DAC (0-11) */
+    void setAsDac(int channel);
+
+    /** Set a channel as an ADC (0-11) */
+    void setAsAdc (int channel);
+
 private:
     OwnedArray<AdcChannelButton> channels;
     AdcChannelButton* selectedChannel;

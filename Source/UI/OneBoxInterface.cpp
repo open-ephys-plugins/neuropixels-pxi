@@ -95,6 +95,7 @@ OneBoxInterface::OneBoxInterface (DataSource* dataSource_,
                                   NeuropixCanvas* canvas_) : SettingsInterface (dataSource_, thread_, editor_, canvas_)
 {
     adc = (OneBoxADC*) dataSource_;
+    dac = adc->dac;
     adc->ui = this;
 
     type = SettingsInterface::ONEBOX_SETTINGS_INTERFACE;
@@ -131,6 +132,7 @@ OneBoxInterface::OneBoxInterface (DataSource* dataSource_,
     digitalInputSelector->setSelectedId ((int) AdcComparatorState::COMPARATOR_OFF);
     addAndMakeVisible (digitalInputSelector.get());
 
+    // threshold selector -- not visible to user 
     thresholdSelector = std::make_unique<ComboBox>();
     thresholdSelector->setBounds (300, 300, 120, 20);
     thresholdSelector->addListener (this);
@@ -142,7 +144,6 @@ OneBoxInterface::OneBoxInterface (DataSource* dataSource_,
     triggerSelector = std::make_unique<ComboBox>();
     triggerSelector->setBounds (300, 350, 120, 20);
     triggerSelector->addListener (this);
-
     triggerSelector->addItem ("FALSE", 1);
     triggerSelector->addItem ("TRUE", 2);
     triggerSelector->setSelectedId (1, dontSendNotification);
@@ -153,13 +154,13 @@ OneBoxInterface::OneBoxInterface (DataSource* dataSource_,
     mappingSelector->addListener (this);
     //addAndMakeVisible (mappingSelector.get());
 
-    wavePlayer = std::make_unique<WavePlayer> (dac);
+    wavePlayer = std::make_unique<WavePlayer> (dac, adc, this);
     wavePlayer->setBounds (500, 100, 320, 180);
     addAndMakeVisible (wavePlayer.get());
 
     dataPlayer = std::make_unique<DataPlayer> (dac, adc, this);
     dataPlayer->setBounds (500, 340, 320, 180);
-    addAndMakeVisible (dataPlayer.get());
+    //addAndMakeVisible (dataPlayer.get());
 
     updateAvailableChannels();
 }
@@ -240,7 +241,6 @@ void OneBoxInterface::buttonClicked (Button* button)
             channel->setSelectedState (true);
             selectedChannel = channel;
 
-            //rangeSelector->setSelectedId ((int) adc->getAdcInputRange(), dontSendNotification);
             thresholdSelector->setSelectedId ((int) adc->getAdcThresholdLevel (selectedChannel->getChannelIndex()), dontSendNotification);
             
             AdcComparatorState state = adc->getAdcComparatorState (selectedChannel->getChannelIndex());
@@ -281,6 +281,31 @@ void OneBoxInterface::buttonClicked (Button* button)
 
     //updateAvailableChannels();
 
+    repaint();
+}
+
+void OneBoxInterface::setAsDac(int channel)
+{
+    if (channel < 0 || channel > 11)
+    {
+		LOGE("Invalid DAC channel: ", channel);
+		return;
+	}
+
+    channels[channel]->setStatus (AdcChannelStatus::IN_USE, -1);
+
+    repaint();
+}
+
+void OneBoxInterface::setAsAdc (int channel)
+{
+    if (channel < 0 || channel > 11)
+    {
+        LOGE ("Invalid DAC channel: ", channel);
+        return;
+    }
+
+    channels[channel]->setStatus (AdcChannelStatus::AVAILABLE, -1);
     repaint();
 }
 

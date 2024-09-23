@@ -99,7 +99,6 @@ void Initializer::run()
             {
                 LOGD ("  Could not find slot ID");
             }
-            
 
             if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
             {
@@ -190,15 +189,15 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
     LOGD ("Setting debug level to 0");
     Neuropixels::np_dbg_setlevel (0);
 
-    LOGD("### NeuropixThread()");
-    LOGD("### basestation.size() = ", basestations.size());
-    LOGD("### Running initializer thread");
+    LOGD ("### NeuropixThread()");
+    LOGD ("### basestation.size() = ", basestations.size());
+    LOGD ("### Running initializer thread");
 
     initializer = std::make_unique<Initializer> (this, basestations, type, api_v3);
     initializer->setStatusMessage ("Scanning for devices...");
     initializer->runThread();
 
-    LOGD("### basestation.size() = ", basestations.size());
+    LOGD ("### basestation.size() = ", basestations.size());
 
     // If no basestations were found, ask user if they want to run in simulation mode
     if (basestations.size() == 0)
@@ -257,7 +256,7 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
 void NeuropixThread::initializeProbes()
 {
     sourceStreams.clear();
-    
+
     bool foundSync = false;
 
     int probeIndex = 0;
@@ -342,9 +341,10 @@ String NeuropixThread::generateProbeName (int probeIndex, ProbeNameConfig::Namin
     return name;
 }
 
-void NeuropixThread::updateStreamInfo(bool enabledStateChanged)
+void NeuropixThread::updateStreamInfo (bool enabledStateChanged)
 {
-    if (enabledStateChanged) sourceStreams.clear();
+    if (enabledStateChanged)
+        sourceStreams.clear();
 
     streamInfo.clear();
     sourceBuffers.clear();
@@ -357,7 +357,7 @@ void NeuropixThread::updateStreamInfo(bool enabledStateChanged)
         {
             Probe* probe = (Probe*) source;
 
-            if (!probe->isEnabled)
+            if (! probe->isEnabled)
             {
                 probe_index++;
                 continue;
@@ -505,7 +505,7 @@ void NeuropixThread::applyProbeSettingsQueue()
             int port = settings.probe->headstage->port;
             int dock = settings.probe->dock;
 
-            std::tuple<int,int,int> key = std::make_tuple (slot, port, dock);
+            std::tuple<int, int, int> key = std::make_tuple (slot, port, dock);
 
             probeMap[key] = std::make_pair (settings.probe->info.serial_number, settings);
 
@@ -681,7 +681,6 @@ String NeuropixThread::getApiVersion()
 
 void NeuropixThread::setMainSync (int slotIndex)
 {
-
     LOGC ("Setting main sync for slot ", slotIndex);
 
     if (foundInputSource() && slotIndex > -1)
@@ -837,7 +836,6 @@ String NeuropixThread::getInfoString()
 /** Initializes data transfer.*/
 bool NeuropixThread::startAcquisition()
 {
-
     if (editor->uiLoader->isThreadRunning())
     {
         LOGD ("Waiting for Neuropixels settings thread to exit.");
@@ -852,7 +850,6 @@ bool NeuropixThread::startAcquisition()
 
     return true;
 }
-
 
 void NeuropixThread::setDirectoryForSlot (int slotIndex, File directory)
 {
@@ -1004,8 +1001,8 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
 
         StreamInfo info = streamInfo[i];
 
-        if (checkStreamNames) {
-
+        if (checkStreamNames)
+        {
             String streamName;
 
             if (info.type == stream_type::AP_BAND)
@@ -1064,7 +1061,6 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
             }
 
             currentStream->setName (streamName);
-
         }
 
         ContinuousChannel::Type type;
@@ -1381,11 +1377,6 @@ String NeuropixThread::handleConfigMessage (String msg)
 
     LOGD ("Neuropix-PXI received ", msg);
 
-    if (CoreServices::getAcquisitionStatus())
-    {
-        return "Neuropixels plugin cannot update settings while acquisition is active.";
-    }
-
     StringArray parts = StringArray::fromTokens (msg, " ", "");
 
     if (parts[0].equalsIgnoreCase ("NP"))
@@ -1398,120 +1389,128 @@ String NeuropixThread::handleConfigMessage (String msg)
 
             LOGD ("Command: ", command);
 
-            if (command.equalsIgnoreCase ("SELECT") || command.equalsIgnoreCase ("GAIN") || command.equalsIgnoreCase ("REFERENCE") || command.equalsIgnoreCase ("FILTER"))
-            {
-                if (parts.size() > 5)
-                {
-                    int slot = parts[2].getIntValue();
-                    int port = parts[3].getIntValue();
-                    int dock = parts[4].getIntValue();
-
-                    LOGD ("Slot: ", slot, ", Port: ", port, ", Dock: ", dock);
-
-                    for (auto probe : getProbes())
-                    {
-                        if (probe->basestation->slot == slot && probe->headstage->port == port && probe->dock == dock)
-                        {
-                            if (command.equalsIgnoreCase ("GAIN"))
-                            {
-                                bool isApBand = parts[5].equalsIgnoreCase ("AP");
-                                float gain = parts[6].getFloatValue();
-
-                                if (isApBand)
-                                {
-                                    if (probe->settings.availableApGains.size() > 0)
-                                    {
-                                        int gainIndex = probe->settings.availableApGains.indexOf (gain);
-
-                                        if (gainIndex > -1)
-                                        {
-                                            probe->ui->setApGain (gainIndex);
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    if (probe->settings.availableLfpGains.size() > 0)
-                                    {
-                                        int gainIndex = probe->settings.availableLfpGains.indexOf (gain);
-
-                                        if (gainIndex > -1)
-                                        {
-                                            probe->ui->setLfpGain (gainIndex);
-                                        }
-                                    }
-                                }
-                            }
-                            else if (command.equalsIgnoreCase ("REFERENCE"))
-                            {
-                                int referenceIndex;
-
-                                if (parts[5].equalsIgnoreCase ("EXT"))
-                                {
-                                    referenceIndex = 0;
-                                }
-                                else if (parts[5].equalsIgnoreCase ("TIP"))
-                                {
-                                    referenceIndex = 1;
-                                }
-
-                                probe->ui->setReference (referenceIndex);
-                            }
-                            else if (command.equalsIgnoreCase ("FILTER"))
-                            {
-                                if (probe->hasApFilterSwitch())
-                                {
-                                    probe->ui->setApFilterState (parts[5].equalsIgnoreCase ("ON"));
-                                }
-                            }
-                            else if (command.equalsIgnoreCase ("SELECT"))
-                            {
-                                Array<int> electrodes;
-
-                                if (parts[5].substring (0, 1) == "\"")
-                                {
-                                    String presetName = msg.fromFirstOccurrenceOf ("\"", false, false).upToFirstOccurrenceOf ("\"", false, false);
-
-                                    LOGD ("Selecting preset: ", presetName);
-
-                                    electrodes = probe->selectElectrodeConfiguration (presetName);
-
-                                    probe->ui->selectElectrodes (electrodes);
-                                }
-                                else
-                                {
-                                    LOGD ("Selecting electrodes: ")
-
-                                    for (int i = 5; i < parts.size(); i++)
-                                    {
-                                        int electrode = parts[i].getIntValue();
-
-                                        //std::cout << electrode << std::endl;
-
-                                        if (electrode > 0 && electrode < probe->electrodeMetadata.size() + 1)
-                                            electrodes.add (electrode - 1);
-                                    }
-
-                                    probe->ui->selectElectrodes (electrodes);
-                                }
-                            }
-                        }
-                    }
-
-                    return "SUCCESS";
-                }
-                else
-                {
-                    return "Incorrect number of argument for " + command + ". Found " + String (parts.size()) + ", requires 6.";
-                }
-            }
-            else if (command.equalsIgnoreCase ("INFO"))
+            if (command.equalsIgnoreCase ("INFO"))
             {
                 return getProbeInfoString();
             }
             else
             {
-                return "NP command " + command + " not recognized.";
+                if (CoreServices::getAcquisitionStatus())
+                {
+                    return "Neuropixels plugin cannot update settings while acquisition is active.";
+                }
+
+                if (command.equalsIgnoreCase ("SELECT") || command.equalsIgnoreCase ("GAIN") || command.equalsIgnoreCase ("REFERENCE") || command.equalsIgnoreCase ("FILTER"))
+                {
+                    if (parts.size() > 5)
+                    {
+                        int slot = parts[2].getIntValue();
+                        int port = parts[3].getIntValue();
+                        int dock = parts[4].getIntValue();
+
+                        LOGD ("Slot: ", slot, ", Port: ", port, ", Dock: ", dock);
+
+                        for (auto probe : getProbes())
+                        {
+                            if (probe->basestation->slot == slot && probe->headstage->port == port && probe->dock == dock)
+                            {
+                                if (command.equalsIgnoreCase ("GAIN"))
+                                {
+                                    bool isApBand = parts[5].equalsIgnoreCase ("AP");
+                                    float gain = parts[6].getFloatValue();
+
+                                    if (isApBand)
+                                    {
+                                        if (probe->settings.availableApGains.size() > 0)
+                                        {
+                                            int gainIndex = probe->settings.availableApGains.indexOf (gain);
+
+                                            if (gainIndex > -1)
+                                            {
+                                                probe->ui->setApGain (gainIndex);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (probe->settings.availableLfpGains.size() > 0)
+                                        {
+                                            int gainIndex = probe->settings.availableLfpGains.indexOf (gain);
+
+                                            if (gainIndex > -1)
+                                            {
+                                                probe->ui->setLfpGain (gainIndex);
+                                            }
+                                        }
+                                    }
+                                }
+                                else if (command.equalsIgnoreCase ("REFERENCE"))
+                                {
+                                    int referenceIndex = 0;
+
+                                    if (parts[5].equalsIgnoreCase ("EXT"))
+                                    {
+                                        referenceIndex = 0;
+                                    }
+                                    else if (parts[5].equalsIgnoreCase ("TIP"))
+                                    {
+                                        referenceIndex = 1;
+                                    }
+
+                                    probe->ui->setReference (referenceIndex);
+                                }
+                                else if (command.equalsIgnoreCase ("FILTER"))
+                                {
+                                    if (probe->hasApFilterSwitch())
+                                    {
+                                        probe->ui->setApFilterState (parts[5].equalsIgnoreCase ("ON"));
+                                    }
+                                }
+                                else if (command.equalsIgnoreCase ("SELECT"))
+                                {
+                                    Array<int> electrodes;
+
+                                    if (parts[5].substring (0, 1) == "\"")
+                                    {
+                                        String presetName = msg.fromFirstOccurrenceOf ("\"", false, false).upToFirstOccurrenceOf ("\"", false, false);
+
+                                        LOGD ("Selecting preset: ", presetName);
+
+                                        electrodes = probe->selectElectrodeConfiguration (presetName);
+
+                                        probe->ui->selectElectrodes (electrodes);
+                                    }
+                                    else
+                                    {
+                                        LOGD ("Selecting electrodes: ")
+
+                                        for (int i = 5; i < parts.size(); i++)
+                                        {
+                                            int electrode = parts[i].getIntValue();
+
+                                            //std::cout << electrode << std::endl;
+
+                                            if (electrode > 0 && electrode < probe->electrodeMetadata.size() + 1)
+                                                electrodes.add (electrode - 1);
+                                        }
+
+                                        probe->ui->selectElectrodes (electrodes);
+                                    }
+                                }
+                            }
+                        }
+
+                        return "SUCCESS";
+                    }
+                    else
+                    {
+                        return "Incorrect number of argument for " + command + ". Found " + String (parts.size()) + ", requires 6.";
+                    }
+                }
+                else
+                {
+                    return "NP command " + command + " not recognized.";
+                }
             }
         }
     }

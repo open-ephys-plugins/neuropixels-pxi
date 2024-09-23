@@ -22,11 +22,13 @@
 */
 
 #include "OneBoxADC.h"
+#include "OneBoxDAC.h"
 #include "Geometry.h"
 
 #include "../UI/OneBoxInterface.h"
 
-OneBoxADC::OneBoxADC (Basestation* bs) : DataSource (bs)
+OneBoxADC::OneBoxADC (Basestation* bs, OneBoxDAC* dac_) : DataSource (bs),
+                                                          dac (dac_)
 {
     ui = nullptr;
 
@@ -225,7 +227,6 @@ AdcComparatorState OneBoxADC::getAdcComparatorState (int channel)
     return useAsDigitalInput[channel] ? AdcComparatorState::COMPARATOR_ON : AdcComparatorState::COMPARATOR_OFF;
 }
 
-
 void OneBoxADC::setTriggersWaveplayer (bool shouldTrigger, int channel)
 {
     if (channel < 0 || channel >= channel_count)
@@ -285,7 +286,7 @@ void OneBoxADC::run()
 
                 for (int j = 0; j < NUM_ADCS; j++)
                 {
-                    adcSamples[j * count + packetNum] = float (data[packetNum * NUM_ADCS_AND_COMPARATORS + j]) * bitVolts; // convert to volts
+                    adcSamples[j + packetNum * NUM_ADCS] = float (data[packetNum * NUM_ADCS_AND_COMPARATORS + j]) * bitVolts; // convert to volts
                 }
 
                 sample_numbers[packetNum] = sample_number++;

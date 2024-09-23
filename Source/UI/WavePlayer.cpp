@@ -23,7 +23,9 @@
 
 #include "WavePlayer.h"
 #include "AnalogPatternGenerator.h"
+#include "OneBoxInterface.h"
 
+#include "../Probes/OneBoxADC.h"
 #include "../Probes/OneBoxDAC.h"
 
 WavePlayerBackground::WavePlayerBackground()
@@ -37,6 +39,8 @@ void WavePlayerBackground::updateCurrentWaveform (Pattern* pattern)
 
     float numSamples = (float) pattern->samples.size();
 
+    std::cout << numSamples << std::endl;
+
     float blockSize = numSamples / waveformWidth;
 
     currentWaveform.clear();
@@ -47,6 +51,7 @@ void WavePlayerBackground::updateCurrentWaveform (Pattern* pattern)
     float lastIndex = 0;
 
     float maxVoltage = pattern->maxVoltage;
+    bool singleValueWaveform = true;
 
     if (maxVoltage == 0.0f)
     {
@@ -55,18 +60,28 @@ void WavePlayerBackground::updateCurrentWaveform (Pattern* pattern)
 
     currentWaveform.lineTo (0, 1 - lastSample / maxVoltage);
 
-    for (int i = 0; i < pattern->samples.size(); i++)
+    for (int i = 1; i < pattern->samples.size(); i++)
     {
+
         if (pattern->samples[i] != lastSample)
         {
-            currentWaveform.lineTo (float (i) / numSamples, 1 - lastSample / maxVoltage);
-            currentWaveform.lineTo (float (i) / numSamples, 1 - pattern->samples[i] / maxVoltage);
-            lastSample = pattern->samples[i];
-            lastIndex = i;
+            singleValueWaveform = false;
         }
+
+        lastSample = pattern->samples[i];
+        currentWaveform.lineTo (float (i) / numSamples, 1 - lastSample / maxVoltage);
+
     }
 
-    pathTransform = currentWaveform.getTransformToScaleToFit (140, 80, 160, 98, false);
+    if (singleValueWaveform)
+    {
+		pathTransform = AffineTransform::scale(160,98).translated(140,80);
+    }
+    else
+    {
+        pathTransform = currentWaveform.getTransformToScaleToFit (140, 80, 160, 98, false);
+    }
+    
 
     repaint();
 }
@@ -79,12 +94,17 @@ void WavePlayerBackground::paint (Graphics& g)
     g.setFont (20);
     g.drawText ("WavePlayer", 7, 5, 150, 20, Justification::left);
 
+    g.setFont (13);
+    g.drawText ("Trigger channel:", 12, 77, 150, 20, Justification::left);
+
     g.setColour (Colours::orange);
     g.strokePath (currentWaveform, PathStrokeType (1.0), pathTransform);
 }
 
-WavePlayer::WavePlayer (OneBoxDAC* dac_)
+WavePlayer::WavePlayer (OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* ui_)
     : dac (dac_),
+      adc (adc_),
+      ui (ui_),
       nextPatternId (1)
 {
     background = std::make_unique<WavePlayerBackground>();
@@ -97,21 +117,33 @@ WavePlayer::WavePlayer (OneBoxDAC* dac_)
     patternSelector->setEditableText (true);
     addAndMakeVisible (patternSelector.get());
 
+    triggerSelector = std::make_unique<ComboBox>();
+    triggerSelector->setBounds (12, 100, 120, 20);
+    triggerSelector->addListener (this);
+    triggerSelector->setEnabled (false);
+    addAndMakeVisible (triggerSelector.get());
+
+    enableButton = std::make_unique<UtilityButton> ("DISABLED", Font ("Small Text", 12, Font::plain));
+    enableButton->setBounds (120, 5, 70, 20);
+    enableButton->addListener (this);
+    addAndMakeVisible (enableButton.get());
+
     startStopButton = std::make_unique<UtilityButton> ("RUN", Font ("Small Text", 15, Font::plain));
-    startStopButton->setBounds (30, 85, 55, 30);
+    startStopButton->setBounds (42, 135, 60, 30);
     startStopButton->addListener (this);
+    startStopButton->setEnabled (false);
     addAndMakeVisible (startStopButton.get());
 
     pulsePatternButton = std::make_unique<UtilityButton> ("Pulse", Font ("Small Text", 10, Font::plain));
     pulsePatternButton->setCorners (true, false, true, false);
-    pulsePatternButton->setBounds (140, 40, 50, 20);
+    pulsePatternButton->setBounds (140, 40, 70, 20);
     pulsePatternButton->addListener (this);
     pulsePatternButton->setToggleState (true, false);
     addAndMakeVisible (pulsePatternButton.get());
 
     sinePatternButton = std::make_unique<UtilityButton> ("Sine", Font ("Small Text", 10, Font::plain));
-    sinePatternButton->setCorners (false, false, false, false);
-    sinePatternButton->setBounds (190, 40, 50, 20);
+    sinePatternButton->setCorners (false, true, false, true);
+    sinePatternButton->setBounds (210, 40, 70, 20);
     sinePatternButton->addListener (this);
     addAndMakeVisible (sinePatternButton.get());
 
@@ -119,7 +151,7 @@ WavePlayer::WavePlayer (OneBoxDAC* dac_)
     customPatternButton->setCorners (false, true, false, true);
     customPatternButton->setBounds (240, 40, 60, 20);
     customPatternButton->addListener (this);
-    addAndMakeVisible (customPatternButton.get());
+    //addAndMakeVisible (customPatternButton.get());
 
     currentPattern = new Pattern();
     currentPattern->id = nextPatternId++;
@@ -131,7 +163,7 @@ WavePlayer::WavePlayer (OneBoxDAC* dac_)
     PulsePatternGenerator* ppg = new PulsePatternGenerator (this, currentPattern);
     ppg->buildWaveform();
 
-    background->updateCurrentWaveform (currentPattern);
+    updateWaveform();
 
     delete ppg;
 }
@@ -147,6 +179,7 @@ void WavePlayer::resized()
 
 float WavePlayer::getSampleRate()
 {
+    // sample rate fixed at 30 kHz
     return 30000.0f;
 }
 
@@ -197,7 +230,7 @@ void WavePlayer::comboBoxChanged (ComboBox* comboBox)
 
             updatePatternSelector();
             selectPatternType (currentPattern->patternType);
-            background->updateCurrentWaveform (currentPattern);
+            updateWaveform();
 
             for (int i = 0; i < 16; i++)
             {
@@ -290,13 +323,33 @@ void WavePlayer::initializePattern (Pattern* pattern)
 
 void WavePlayer::buttonClicked (Button* button)
 {
-    if (button == pulsePatternButton.get())
+    if (button == enableButton.get())
+    {
+        if (enableButton->getToggleState())
+        {
+            enableButton->setToggleState (false, false);
+            enableButton->setLabel ("DISABLED");
+            ui->setAsAdc(0);
+            startStopButton->setEnabled (false);
+            triggerSelector->setEnabled (false);
+        }
+        else
+        {
+            enableButton->setToggleState (true, false);
+            enableButton->setLabel ("ENABLED");
+            startStopButton->setEnabled (true);
+            triggerSelector->setEnabled (true);
+
+            ui->setAsDac (0);
+        }
+    }
+    else if (button == pulsePatternButton.get())
     {
         auto* patternGenerator = new PulsePatternGenerator (this, currentPattern);
 
         patternGenerator->buildWaveform();
 
-        background->updateCurrentWaveform (currentPattern);
+        updateWaveform();
 
         selectPatternType (currentPattern->patternType);
 
@@ -310,7 +363,7 @@ void WavePlayer::buttonClicked (Button* button)
 
         patternGenerator->buildWaveform();
 
-        background->updateCurrentWaveform (currentPattern);
+        updateWaveform();
 
         selectPatternType (currentPattern->patternType);
 
@@ -326,6 +379,8 @@ void WavePlayer::buttonClicked (Button* button)
 
         selectPatternType (currentPattern->patternType);
 
+        updateWaveform();
+
         CallOutBox& myBox = CallOutBox::launchAsynchronously (std::unique_ptr<Component> (patternGenerator),
                                                               button->getScreenBounds(),
                                                               nullptr);
@@ -333,8 +388,14 @@ void WavePlayer::buttonClicked (Button* button)
     else if (button == startStopButton.get())
     {
         dac->playWaveform();
-        //startTimer(currentPattern->samples.size() / getSampleRate() * 1000);
+        startStopButton->setToggleState (true, false);
+        startTimer(currentPattern->samples.size() / getSampleRate() * 1000);
     }
+}
+
+void WavePlayer::timerCallback()
+{
+    startStopButton->setToggleState (false, false);
 }
 
 void WavePlayer::saveCustomParameters (XmlElement* xml)
