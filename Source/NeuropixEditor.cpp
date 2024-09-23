@@ -524,7 +524,7 @@ void NeuropixEditor::resetCanvas()
         {
             removeTab (tabIndex);
             addTab (thread->type == ONEBOX ? "OneBox" : "Neuropix PXI",
-                    VisualizerEditor::canvas.get());
+                    createNewCanvas());
         }
         else
         {
