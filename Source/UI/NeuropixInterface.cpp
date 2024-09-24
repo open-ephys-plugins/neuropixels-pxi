@@ -521,29 +521,6 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     infoLabel->setBounds (0, 0, 750, 350);
     infoLabel->setJustificationType (Justification::topLeft);
 
-    // ANNOTATIONS
-    annotationButton = std::make_unique<UtilityButton> ("ADD", Font ("Fira Code", "Regular", 12.0f));
-    annotationButton->setRadius (3.0f);
-    annotationButton->setBounds (400, 680, 40, 18);
-    annotationButton->addListener (this);
-    annotationButton->setTooltip ("Add annotation to selected channels");
-    //addAndMakeVisible(annotationButton);
-
-    annotationLabel = std::make_unique<Label> ("ANNOTATION", "Custom annotation");
-    annotationLabel->setBounds (396, 620, 200, 20);
-    annotationLabel->setEditable (true);
-    annotationLabel->addListener (this);
-    // addAndMakeVisible(annotationLabel);
-
-    annotationLabelLabel = std::make_unique<Label> ("ANNOTATION_LABEL", "ANNOTATION");
-    annotationLabelLabel->setFont (Font ("Fira Code", "Regular", 13.0f));
-    annotationLabelLabel->setBounds (396, 600, 200, 20);
-    // addAndMakeVisible(annotationLabelLabel);
-
-    annotationColourSelector = std::make_unique<AnnotationColourSelector> (this);
-    annotationColourSelector->setBounds (400, 650, 250, 20);
-    // addAndMakeVisible(annotationColourSelector);
-
     updateInfoString();
 }
 
@@ -613,14 +590,6 @@ void NeuropixInterface::updateInfoString()
 
     infoLabel->setText (infoString, dontSendNotification);
     nameLabel->setText (nameString, dontSendNotification);
-}
-
-void NeuropixInterface::labelTextChanged (Label* label)
-{
-    if (label == annotationLabel.get())
-    {
-        annotationColourSelector->updateCurrentString (label->getText());
-    }
 }
 
 void NeuropixInterface::updateProbeSettingsInBackground()
@@ -858,16 +827,6 @@ void NeuropixInterface::buttonClicked (Button* button)
             electrodeConfigurationComboBox->setSelectedId (1);
             selectElectrodes (selection);
         }
-    }
-    else if (button == annotationButton.get())
-    {
-        String s = annotationLabel->getText();
-        Array<int> a = getSelectedElectrodes();
-
-        if (a.size() > 0)
-            annotations.add (Annotation (s, a, annotationColourSelector->getCurrentColour()));
-
-        repaint();
     }
     else if (button == bistButton.get())
     {
@@ -2052,55 +2011,4 @@ Annotation::Annotation (String t, Array<int> e, Colour c)
 
 Annotation::~Annotation()
 {
-}
-
-// ---------------------------------------
-
-AnnotationColourSelector::AnnotationColourSelector (NeuropixInterface* np)
-{
-    npi = np;
-    Path p;
-    p.addRoundedRectangle (0, 0, 15, 15, 3);
-
-    for (int i = 0; i < 6; i++)
-    {
-        standardColours.add (Colour (245, 245, 245 - 40 * i));
-        hoverColours.add (Colour (215, 215, 215 - 40 * i));
-    }
-
-    for (int i = 0; i < 6; i++)
-    {
-        buttons.add (new ShapeButton (String (i), standardColours[i], hoverColours[i], hoverColours[i]));
-        buttons[i]->setShape (p, true, true, false);
-        buttons[i]->setBounds (18 * i, 0, 15, 15);
-        buttons[i]->addListener (this);
-        addAndMakeVisible (buttons[i]);
-
-        strings.add ("Annotation " + String (i + 1));
-    }
-
-    npi->setAnnotationLabel (strings[0], standardColours[0]);
-
-    activeButton = 0;
-}
-
-AnnotationColourSelector::~AnnotationColourSelector()
-{
-}
-
-void AnnotationColourSelector::buttonClicked (Button* b)
-{
-    activeButton = buttons.indexOf ((ShapeButton*) b);
-
-    npi->setAnnotationLabel (strings[activeButton], standardColours[activeButton]);
-}
-
-void AnnotationColourSelector::updateCurrentString (String s)
-{
-    strings.set (activeButton, s);
-}
-
-Colour AnnotationColourSelector::getCurrentColour()
-{
-    return standardColours[activeButton];
 }

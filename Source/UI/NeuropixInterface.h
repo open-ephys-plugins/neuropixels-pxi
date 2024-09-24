@@ -30,7 +30,6 @@
 #include "ColourScheme.h"
 #include "SettingsInterface.h"
 
-class AnnotationColourSelector;
 class ProbeBrowser;
 
 enum VisualizationMode
@@ -66,8 +65,7 @@ public:
 */
 class NeuropixInterface : public SettingsInterface,
                           public Button::Listener,
-                          public ComboBox::Listener,
-                          public Label::Listener
+                          public ComboBox::Listener
 {
 public:
     friend class ProbeBrowser;
@@ -84,7 +82,6 @@ public:
     /** Listener methods*/
     void buttonClicked (Button*);
     void comboBoxChanged (ComboBox*);
-    void labelTextChanged (Label* l);
 
     /** Disables buttons and starts animation if necessary */
     void startAcquisition();
@@ -183,7 +180,6 @@ private:
     std::unique_ptr<UtilityButton> bankViewButton;
     std::unique_ptr<UtilityButton> activityViewButton;
 
-    std::unique_ptr<UtilityButton> annotationButton;
     std::unique_ptr<UtilityButton> bistButton;
     std::unique_ptr<UtilityButton> bsFirmwareButton;
     std::unique_ptr<UtilityButton> bscFirmwareButton;
@@ -196,8 +192,6 @@ private:
     std::unique_ptr<UtilityButton> saveImroButton;
     std::unique_ptr<UtilityButton> loadJsonButton;
     std::unique_ptr<UtilityButton> saveJsonButton;
-
-    std::unique_ptr<AnnotationColourSelector> annotationColourSelector;
 
     std::unique_ptr<ProbeBrowser> probeBrowser;
 
@@ -228,29 +222,6 @@ public:
         : NeuropixInterface (nullptr, thread, editor, canvas, basestation_)
     {
     }
-};
-
-class AnnotationColourSelector : public Component, public Button::Listener
-{
-public:
-    AnnotationColourSelector (NeuropixInterface* np);
-    ~AnnotationColourSelector();
-
-    Array<Colour> standardColours;
-    Array<Colour> hoverColours;
-    StringArray strings;
-
-    OwnedArray<ShapeButton> buttons;
-
-    void buttonClicked (Button* button);
-
-    void updateCurrentString (String s);
-
-    Colour getCurrentColour();
-
-    NeuropixInterface* npi;
-
-    int activeButton;
 };
 
 #endif //__NEUROPIXINTERFACE_H_2C4C2D67__
