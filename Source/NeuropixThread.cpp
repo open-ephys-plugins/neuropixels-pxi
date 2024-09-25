@@ -243,9 +243,22 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
         }
     }
 
+    int bsIndex = 0;
+
     for (auto basestation : basestations)
     {
         basestation->checkFirmwareVersion();
+
+        if (basestation->type == BasestationType::PXI)
+        {
+            if (bsIndex == 0)
+                basestation->setSyncAsInput();
+            else
+                basestation->setSyncAsPassive();
+
+            bsIndex++;
+        }
+        
     }
 
     initializeProbes();
