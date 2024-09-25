@@ -520,16 +520,16 @@ void NeuropixEditor::resetCanvas()
     {
         VisualizerEditor::canvas.reset();
 
+        checkForCanvas();
+
         if (tabIndex != -1)
         {
             removeTab (tabIndex);
             addTab (thread->type == ONEBOX ? "OneBox" : "Neuropix PXI",
-                    createNewCanvas());
+                    VisualizerEditor::canvas.get());
         }
         else
         {
-            checkForCanvas();
-
             if (dataWindow != nullptr)
                 dataWindow->setContentNonOwned (VisualizerEditor::canvas.get(), false);
         }
