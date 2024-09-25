@@ -76,13 +76,13 @@ void WavePlayerBackground::updateCurrentWaveform (Pattern* pattern)
 void WavePlayerBackground::paint (Graphics& g)
 {
     g.setColour (findColour (ThemeColours::defaultText));
-    g.drawRect (0, 0, getWidth(), getHeight(), 3.0);
+    g.drawRect (0, 0, getWidth(), getHeight(), 1.0);
 
     g.setFont (20);
     g.drawText ("WavePlayer", 7, 5, 150, 20, Justification::left);
 
-    g.setFont (13);
-    g.drawText ("Trigger channel:", 12, 77, 150, 20, Justification::left);
+    //g.setFont (13);
+    //g.drawText ("Trigger channel:", 12, 77, 150, 20, Justification::left);
 
     g.setColour (Colours::orange);
     g.strokePath (currentWaveform, PathStrokeType (1.0), pathTransform);
@@ -110,7 +110,7 @@ WavePlayer::WavePlayer (OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* ui_)
     triggerSelector->setEnabled (false);
     triggerSelector->addItem ("NONE", 1);
     triggerSelector->setSelectedId (1);
-    addAndMakeVisible (triggerSelector.get());
+    //addAndMakeVisible (triggerSelector.get());
 
     enableButton = std::make_unique<UtilityButton> ("DISABLED");
     enableButton->setBounds (120, 5, 70, 20);
@@ -118,7 +118,7 @@ WavePlayer::WavePlayer (OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* ui_)
     addAndMakeVisible (enableButton.get());
 
     startStopButton = std::make_unique<UtilityButton> ("RUN");
-    startStopButton->setBounds (42, 135, 60, 30);
+    startStopButton->setBounds (42, 105, 60, 30);
     startStopButton->addListener (this);
     startStopButton->setEnabled (false);
     addAndMakeVisible (startStopButton.get());
@@ -164,6 +164,24 @@ WavePlayer::~WavePlayer()
 void WavePlayer::resized()
 {
     background->setBounds (0, 0, getWidth(), getHeight());
+}
+
+void WavePlayer::updateAvailableTriggerChannels(Array <AdcChannelButton*> channels)
+{
+	triggerSelector->clear();
+    triggerSelector->addItem ("NONE", 1);
+
+    for (int i = 0; i < channels.size(); i++)
+    {
+        triggerSelector->addItem (channels[i]->getName(), channels[i]->getChannelIndex()+2);
+	}
+}
+
+void WavePlayer::setTriggerChannel(int triggerChannel)
+{
+	currentPattern->triggerChannel = triggerChannel;
+
+    triggerSelector->setSelectedId (triggerChannel + 2);
 }
 
 float WavePlayer::getSampleRate()
@@ -251,6 +269,11 @@ void WavePlayer::comboBoxChanged (ComboBox* comboBox)
 
             initializePattern (currentPattern);
         }
+    }
+    else if (comboBox == triggerSelector.get())
+    {
+        currentPattern->triggerChannel = triggerSelector->getSelectedId() - 2;
+        ui->setTriggerChannel (currentPattern->triggerChannel);
     }
 }
 

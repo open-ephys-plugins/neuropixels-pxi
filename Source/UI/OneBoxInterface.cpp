@@ -89,6 +89,12 @@ void AdcChannelButton::paintButton (Graphics& g, bool isMouseOver, bool isButton
     if (useAsDigitalInput && status == AdcChannelStatus::AVAILABLE)
     {
         g.fillRect (3, 6, 7, 7);
+
+        if (triggersWaveplayer)
+        {
+			g.setColour (Colours::black);
+			g.drawRect (5, 8, 3, 3, 2.0);
+		}
     }
         
 }
@@ -206,14 +212,26 @@ void OneBoxInterface::comboBoxChanged (ComboBox* comboBox)
         bool isOn = (bool) (comboBox->getSelectedId() - 1);
         channels[selectedChannel->getChannelIndex()]->useAsDigitalInput = isOn;
 
-        if (isOn)
+        //if (isOn)
+        //{
+		//	triggerSelector->setVisible (true);
+		//}
+        //else
+        //{
+		//	triggerSelector->setVisible (false);
+		//}
+
+        Array<AdcChannelButton*> channels;
+
+        for (auto channel : channels)
         {
-			triggerSelector->setVisible (true);
+            if (channel->useAsDigitalInput)
+            {
+				channels.add (channel);
+			}
 		}
-        else
-        {
-			triggerSelector->setVisible (false);
-		}
+
+        wavePlayer->updateAvailableTriggerChannels (channels);
 
         repaint();
     }
@@ -222,12 +240,13 @@ void OneBoxInterface::comboBoxChanged (ComboBox* comboBox)
         // set trigger
         for (auto channel : channels)
         {
-            adc->setTriggersWaveplayer (false,
-                                        channel->getChannelIndex());
+            channel->triggersWaveplayer = false;
         }
 
-        adc->setTriggersWaveplayer ((bool) (comboBox->getSelectedId() - 1),
-                                    selectedChannel->getChannelIndex());
+        channels[selectedChannel->getChannelIndex()]->triggersWaveplayer = true;
+        wavePlayer->setTriggerChannel (selectedChannel->getChannelIndex());
+
+        repaint();
     }
     else if (comboBox == mappingSelector.get())
     {
@@ -252,14 +271,14 @@ void OneBoxInterface::buttonClicked (Button* button)
             digitalInputSelector->setSelectedId ((int) state, dontSendNotification);
             LOGD ("Comparator state: ", (int) state, " for channel ", selectedChannel->getChannelIndex())
             
-            if (state == AdcComparatorState::COMPARATOR_ON)
-            {
-                triggerSelector->setVisible (true);
-			}
-            else
-            {
-                triggerSelector->setVisible (false);
-			}
+            //if (state == AdcComparatorState::COMPARATOR_ON)
+            //{
+            //    triggerSelector->setVisible (true);
+			//}
+           // else
+            //{
+            //    triggerSelector->setVisible (false);
+			//}
             triggerSelector->setSelectedId ((int) adc->getTriggersWaveplayer (selectedChannel->getChannelIndex()) + 1, dontSendNotification);
 
             Array<int> availableChannels = adc->getAvailableChannels (selectedChannel->getChannelIndex());
@@ -284,6 +303,21 @@ void OneBoxInterface::buttonClicked (Button* button)
     }
 
     //updateAvailableChannels();
+
+    repaint();
+}
+
+void OneBoxInterface::setTriggerChannel(int triggerChannel)
+{
+    for (auto channel : channels)
+    {
+        channel->triggersWaveplayer = false;
+    }
+
+    if (triggerChannel > -1)
+    {
+		channels[triggerChannel]->triggersWaveplayer = true;
+	}
 
     repaint();
 }
@@ -349,7 +383,7 @@ void OneBoxInterface::saveParameters (XmlElement* xml)
         xmlNode->setAttribute ("index", channel->getChannelIndex());
         xmlNode->setAttribute ("input_range", (int) adc->getAdcInputRange());
         xmlNode->setAttribute ("comparator_state", (int) adc->getAdcComparatorState (channel->getChannelIndex()));
-        xmlNode->setAttribute ("triggers_waveplayer", adc->getTriggersWaveplayer (channel->getChannelIndex()));
+        xmlNode->setAttribute ("triggers_waveplayer", channel->triggersWaveplayer);
         xmlNode->setAttribute ("selected", channel == selectedChannel);
 
         //xmlNode->setAttribute("map_to_output", channel->mapToOutput);
@@ -383,8 +417,10 @@ void OneBoxInterface::loadParameters (XmlElement* xml)
 
             adc->setAdcComparatorState ((AdcComparatorState) comparator_state, index);
             channels[index]->useAsDigitalInput = (bool) (comparator_state - 1);
+            channels[index]->triggersWaveplayer = triggers_waveplayer;
 
-            adc->setTriggersWaveplayer (triggers_waveplayer, index);
+            if (triggers_waveplayer)
+                wavePlayer->setTriggerChannel (index);
         }
     }
 
@@ -411,7 +447,7 @@ void OneBoxInterface::paint (Graphics& g)
     g.drawText ("ADC input range:", 300, 190 - 20, 300, 18, Justification::left, false);
     g.drawText ("Use as digital input:", 300, 300 - 20, 300, 18, Justification::left, false);
     
-    if (selectedChannel->useAsDigitalInput)
+    if (false) //selectedChannel->useAsDigitalInput)
     {
         g.drawText ("Trigger WavePlayer:", 300, 350 - 20, 300, 18, Justification::left, false);
         //g.drawText ("Map to output:", 300, 400 - 20, 300, 18, Justification::left, false);

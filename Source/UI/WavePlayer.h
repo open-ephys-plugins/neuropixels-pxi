@@ -43,6 +43,7 @@ class PulsePatternGenerator;
 class SinePatternGenerator;
 class CustomPatternGenerator;
 class AnalogPatternInfo;
+class AdcChannelButton;
 
 /** 
 
@@ -100,6 +101,12 @@ public:
 
     /** Updates the waveform to be triggered */
     void updateWaveform();
+
+    /** Updates available trigger channels (ADCs with comparators enabled) */
+    void updateAvailableTriggerChannels (Array <AdcChannelButton*> channels);
+
+    /** Sets the trigger channel */
+    void setTriggerChannel(int triggerChannel);
 
     /** Resizes interface */
     void resized();

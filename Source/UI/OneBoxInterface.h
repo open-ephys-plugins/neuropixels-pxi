@@ -58,6 +58,9 @@ public:
     /** Whether ADC channel is using the comparator*/
     bool useAsDigitalInput = false;
 
+    /** Whether ADC channel triggers the waveplayer */
+    bool triggersWaveplayer = false;
+
 private:
     void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown);
 
@@ -123,6 +126,9 @@ public:
 
     /** Update combo boxes to reflect available channels */
     void updateAvailableChannels();
+
+    /** Sets the waveplayer trigger channel */
+    void setTriggerChannel (int triggerChannel);
 
     /** Set a channel as a DAC (0-11) */
     void setAsDac(int channel);
