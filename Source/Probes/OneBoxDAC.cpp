@@ -61,14 +61,11 @@ void OneBoxDAC::setWaveform (Array<float> samples)
         int16_t sample_int16 = this_sample / 5.0f * 32767;
 
         samples_t.add (sample_int16);
-        std::cout << samples_t.getLast() << " ";
     }
 
     // ensure the buffer ends with 0V
     for (int i = 0; i < 100; i++)
         samples_t.add (0);
-
-    std::cout << std::endl;
 
     checkError(Neuropixels::waveplayer_writeBuffer (basestation->slot, samples_t.getRawDataPointer(), samples_t.size()), "waveplayer_writeBuffer");
 

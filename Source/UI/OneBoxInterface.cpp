@@ -61,7 +61,11 @@ void AdcChannelButton::paintButton (Graphics& g, bool isMouseOver, bool isButton
 
     if (status == AdcChannelStatus::AVAILABLE)
     {
-        baseColour = Colours::mediumspringgreen;
+        if (findColour(ThemeColours::componentBackground) == Colour(225,225,225))
+			baseColour = Colours::darkgreen;
+		else
+            baseColour = Colours::mediumspringgreen;
+
         statusText = "ENABLED";
     }
 
@@ -72,7 +76,7 @@ void AdcChannelButton::paintButton (Graphics& g, bool isMouseOver, bool isButton
     }
 
     if (isMouseOver || selected)
-        baseColour = baseColour.brighter (1.9f);
+        baseColour = baseColour.brighter (1.0f);
 
     g.setColour (baseColour);
 
@@ -82,7 +86,7 @@ void AdcChannelButton::paintButton (Graphics& g, bool isMouseOver, bool isButton
 
     g.drawText (statusText, 100, 0, 200, 20, Justification::left);
 
-    if (useAsDigitalInput)
+    if (useAsDigitalInput && status == AdcChannelStatus::AVAILABLE)
     {
         g.fillRect (3, 6, 7, 7);
     }
@@ -384,14 +388,14 @@ void OneBoxInterface::loadParameters (XmlElement* xml)
         }
     }
 
-    //wavePlayer->loadCustomParameters(xml);
+    wavePlayer->loadCustomParameters(xml);
 
     buttonClicked (channels[selectedIndex]);
 }
 
 void OneBoxInterface::paint (Graphics& g)
 {
-    g.setColour (Colours::lightgrey);
+    g.setColour (findColour(ThemeColours::defaultText));
     g.setFont (40);
 
     g.drawText ("OneBox ADC/DAC Settings",
