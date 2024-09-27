@@ -166,7 +166,7 @@ OneBoxInterface::OneBoxInterface (DataSource* dataSource_,
 
     wavePlayer = std::make_unique<WavePlayer> (dac, adc, this);
     wavePlayer->setBounds (500, 100, 320, 180);
-    addAndMakeVisible (wavePlayer.get());
+    //addAndMakeVisible (wavePlayer.get());
 
     dataPlayer = std::make_unique<DataPlayer> (dac, adc, this);
     dataPlayer->setBounds (500, 340, 320, 180);
