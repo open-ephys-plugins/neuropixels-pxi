@@ -88,14 +88,14 @@ void WavePlayerBackground::updateCurrentWaveform (Pattern* pattern)
 
 void WavePlayerBackground::paint (Graphics& g)
 {
-    g.setColour (Colours::lightgrey);
-    g.drawRoundedRectangle (0, 0, getWidth(), getHeight(), 3.0, 2.0);
+    g.setColour (Colours::darkgrey);
+    g.drawRect (0, 0, getWidth(), getHeight(), 1.0);
 
     g.setFont (20);
     g.drawText ("WavePlayer", 7, 5, 150, 20, Justification::left);
 
-    g.setFont (13);
-    g.drawText ("Trigger channel:", 12, 77, 150, 20, Justification::left);
+    //g.setFont (13);
+    //g.drawText ("Trigger channel:", 12, 77, 150, 20, Justification::left);
 
     g.setColour (Colours::orange);
     g.strokePath (currentWaveform, PathStrokeType (1.0), pathTransform);
@@ -121,14 +121,17 @@ WavePlayer::WavePlayer (OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* ui_)
     triggerSelector->setBounds (12, 100, 120, 20);
     triggerSelector->addListener (this);
     triggerSelector->setEnabled (false);
-    addAndMakeVisible (triggerSelector.get());
+    triggerSelector->addItem ("NONE", 1);
+    triggerSelector->setSelectedId (1);
+    //addAndMakeVisible (triggerSelector.get());
 
     enableButton = std::make_unique<UtilityButton> ("DISABLED", Font ("Small Text", 12, Font::plain));
     enableButton->setBounds (120, 5, 70, 20);
     enableButton->addListener (this);
     addAndMakeVisible (enableButton.get());
 
-    startStopButton = std::make_unique<UtilityButton> ("RUN", Font ("Small Text", 15, Font::plain));
+
+    startStopButton = std::make_unique<UtilityButton> ("RUN", Font ("Small Text", 12, Font::plain));
     startStopButton->setBounds (42, 135, 60, 30);
     startStopButton->addListener (this);
     startStopButton->setEnabled (false);
@@ -136,14 +139,15 @@ WavePlayer::WavePlayer (OneBoxDAC* dac_, OneBoxADC* adc_, OneBoxInterface* ui_)
 
     pulsePatternButton = std::make_unique<UtilityButton> ("Pulse", Font ("Small Text", 10, Font::plain));
     pulsePatternButton->setCorners (true, false, true, false);
-    pulsePatternButton->setBounds (140, 40, 70, 20);
+    pulsePatternButton->setBounds (143, 40, 80, 20);
     pulsePatternButton->addListener (this);
     pulsePatternButton->setToggleState (true, false);
     addAndMakeVisible (pulsePatternButton.get());
 
+
     sinePatternButton = std::make_unique<UtilityButton> ("Sine", Font ("Small Text", 10, Font::plain));
     sinePatternButton->setCorners (false, true, false, true);
-    sinePatternButton->setBounds (210, 40, 70, 20);
+    sinePatternButton->setBounds (221, 40, 78, 20);
     sinePatternButton->addListener (this);
     addAndMakeVisible (sinePatternButton.get());
 
@@ -177,6 +181,24 @@ void WavePlayer::resized()
     background->setBounds (0, 0, getWidth(), getHeight());
 }
 
+void WavePlayer::updateAvailableTriggerChannels(Array <AdcChannelButton*> channels)
+{
+	triggerSelector->clear();
+    triggerSelector->addItem ("NONE", 1);
+
+    for (int i = 0; i < channels.size(); i++)
+    {
+        triggerSelector->addItem (channels[i]->getName(), channels[i]->getChannelIndex()+2);
+	}
+}
+
+void WavePlayer::setTriggerChannel(int triggerChannel)
+{
+	currentPattern->triggerChannel = triggerChannel;
+
+    triggerSelector->setSelectedId (triggerChannel + 2);
+}
+
 float WavePlayer::getSampleRate()
 {
     // sample rate fixed at 30 kHz
@@ -185,6 +207,8 @@ float WavePlayer::getSampleRate()
 
 void WavePlayer::updateWaveform()
 {
+    LOGD("Updating waveform for ", currentPattern->name);
+
     background->updateCurrentWaveform (currentPattern);
 
     dac->setWaveform (currentPattern->samples);
@@ -194,8 +218,11 @@ void WavePlayer::updatePatternSelector()
 {
     patternSelector->clear();
 
+    LOGD ("Updating pattern selector.")
+
     for (auto pattern : availablePatterns)
     {
+        LOGD("  Adding pattern: ", pattern->name);
         patternSelector->addItem (pattern->name, pattern->id);
     }
 
@@ -207,10 +234,6 @@ void WavePlayer::comboBoxChanged (ComboBox* comboBox)
 {
     if (comboBox == patternSelector.get())
     {
-        std::cout << "COMBO BOX CHANGED" << std::endl;
-
-        std::cout << "Selected ID: " << comboBox->getSelectedId() << std::endl;
-
         if (comboBox->getSelectedId() == 0)
         {
             currentPattern->name = patternSelector->getText();
@@ -262,10 +285,17 @@ void WavePlayer::comboBoxChanged (ComboBox* comboBox)
             initializePattern (currentPattern);
         }
     }
+    else if (comboBox == triggerSelector.get())
+    {
+        currentPattern->triggerChannel = triggerSelector->getSelectedId() - 2;
+        ui->setTriggerChannel (currentPattern->triggerChannel);
+    }
 }
 
 void WavePlayer::selectPatternType (PatternType t)
 {
+    LOGD ("Selecting pattern type: ", (int) t);
+
     if (t == PatternType::pulse)
     {
         pulsePatternButton->setToggleState (true, false);
@@ -290,11 +320,15 @@ void WavePlayer::initializePattern (Pattern* pattern)
 {
     currentPattern = pattern;
 
+    LOGD ("Initializing pattern.");
+
     if (pattern->patternType == PatternType::pulse)
     {
         auto* patternGenerator = new PulsePatternGenerator (this, pattern);
 
         patternGenerator->buildWaveform();
+
+        LOGD ("Creating pulse wave.");
 
         delete patternGenerator;
     }
@@ -304,6 +338,8 @@ void WavePlayer::initializePattern (Pattern* pattern)
 
         patternGenerator->buildWaveform();
 
+        LOGD ("Creating sine wave.");
+
         delete patternGenerator;
     }
     else if (pattern->patternType == PatternType::sine)
@@ -311,6 +347,8 @@ void WavePlayer::initializePattern (Pattern* pattern)
         auto* patternGenerator = new CustomPatternGenerator (this, pattern);
 
         patternGenerator->buildWaveform();
+
+        LOGD ("Creating custom wave.");
 
         delete patternGenerator;
     }
@@ -400,6 +438,10 @@ void WavePlayer::timerCallback()
 
 void WavePlayer::saveCustomParameters (XmlElement* xml)
 {
+
+    XmlElement* xmlNode = xml->createNewChildElement ("WAVEPLAYER");
+    xmlNode->setAttribute ("enabled", enableButton->getToggleState());
+
     for (auto pattern : availablePatterns)
     {
         XmlElement* xmlNode = xml->createNewChildElement ("PATTERN");
@@ -452,14 +494,22 @@ void WavePlayer::loadCustomParameters (XmlElement* xml)
 
     forEachXmlChildElement (*xml, xmlNode)
     {
+        if (xmlNode->hasTagName("WAVEPLAYER"))
+        {
+            if (xmlNode->getBoolAttribute ("enabled", false))
+                buttonClicked (enableButton.get());
+        }
+            
+
         if (xmlNode->hasTagName ("PATTERN"))
         {
             foundPattern = true;
-
             Pattern* newPattern = new Pattern();
 
             newPattern->id = xmlNode->getIntAttribute ("id");
             newPattern->name = xmlNode->getStringAttribute ("name");
+
+            LOGD ("Loading pattern ", newPattern->name);
             newPattern->analogOutputChannel = xmlNode->getIntAttribute ("analog_output_channel", 0);
             newPattern->triggerChannel = xmlNode->getIntAttribute ("trigger_channel", 0);
             newPattern->gateChannel = xmlNode->getIntAttribute ("gate_channel", -1);
@@ -473,13 +523,15 @@ void WavePlayer::loadCustomParameters (XmlElement* xml)
             newPattern->pulse.maxVoltage = xmlNode->getDoubleAttribute ("pulse_max_voltage", 5.0);
 
             newPattern->sine.frequency = xmlNode->getIntAttribute ("sine_frequency", 5);
-            newPattern->sine.cycles = xmlNode->getIntAttribute ("sine_cycles", 100);
+            newPattern->sine.cycles = xmlNode->getIntAttribute ("sine_cycles", 1);
             newPattern->sine.delayDuration = xmlNode->getIntAttribute ("sine_delay_duration", 0);
             newPattern->sine.maxVoltage = xmlNode->getDoubleAttribute ("sine_max_voltage", 5.0);
 
             newPattern->custom.string = xmlNode->getStringAttribute ("custom_value_string", "0,0,0");
 
             int patternTypeId = xmlNode->getIntAttribute ("pattern_type", 0);
+
+            LOGD ("Pattern type: ", patternTypeId);
 
             switch (patternTypeId)
             {
@@ -499,6 +551,7 @@ void WavePlayer::loadCustomParameters (XmlElement* xml)
             if (xmlNode->getBoolAttribute ("is_current_pattern"))
             {
                 currentPattern = newPattern;
+                LOGD ("Setting as current pattern");
             }
 
             availablePatterns.add (newPattern);

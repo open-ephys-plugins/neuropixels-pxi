@@ -1139,7 +1139,7 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
             }
             else
             {
-                name += String (ch + 1);
+                name += String (ch);
             }
 
             ContinuousChannel::Settings settings {
