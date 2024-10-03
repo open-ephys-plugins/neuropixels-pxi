@@ -149,6 +149,7 @@ ProbeNameConfig::ProbeNameConfig (Basestation* bs_, NeuropixThread* thread_)
     setSize (width, height);
 
     titleLabel = std::make_unique<Label> ("Probe Naming Scheme", "Probe Naming Scheme");
+    titleLabel->setColour (juce::Label::ColourIds::textColourId, Colours::white);
     titleLabel->setJustificationType (Justification::centred);
     titleLabel->setBounds (0, 0, width, 40);
     titleLabel->setFont (Font ("Fira Code", "Semi Bold", 20.0f));
@@ -196,12 +197,14 @@ ProbeNameConfig::ProbeNameConfig (Basestation* bs_, NeuropixThread* thread_)
 
     dock1Label = std::make_unique<Label> ("dock1Label", "Dock 1");
     dock1Label->setJustificationType (Justification::centred);
+    dock1Label->setColour (juce::Label::ColourIds::textColourId, Colours::white);
     dock1Label->setBounds (x - (padding + width), getHeight() - 5 * (padding + height), width, 1.5 * height);
     dock1Label->setFont (Font ("Fira Code", "Medium", 14.0f));
     addAndMakeVisible (dock1Label.get());
 
     dock2Label = std::make_unique<Label> ("dock2Label", "Dock 2");
     dock2Label->setJustificationType (Justification::centred);
+    dock2Label->setColour (juce::Label::ColourIds::textColourId, Colours::white);
     dock2Label->setBounds (x, getHeight() - 5 * (padding + height), width, 1.5 * height);
     dock2Label->setFont (Font ("Fira Code", "Medium", 14.0f));
     addAndMakeVisible (dock2Label.get());
@@ -236,14 +239,21 @@ void ProbeNameConfig::update()
     basestation->setNamingScheme (namingScheme);
 
     schemeLabel->setText (schemes[(int) namingScheme], juce::NotificationType::sendNotificationAsync);
+    schemeLabel->setColour (juce::Label::ColourIds::textColourId, Colours::white);
     description->setText (descriptions[(int) namingScheme], juce::NotificationType::sendNotificationAsync);
+    description->setColour (juce::Label::ColourIds::textColourId, Colours::white);
 
     for (auto&& label : probeNames)
     {
+
+        label->setColour (juce::Label::ColourIds::textColourId, juce::Colours::white);
+        label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colours::white.withAlpha (0.0f));
+
         if (namingScheme == PORT_SPECIFIC_NAMING)
         {
             label->setEditable (true);
-            label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (255, 255, 255));
+            label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (100, 100, 100));
+            label->setColour (juce::Label::ColourIds::textWhenEditingColourId, juce::Colours::orange);
             label->setText (basestation->getCustomPortName (label->port, label->dock), dontSendNotification);
 
             if (label->probe != nullptr)
@@ -260,21 +270,20 @@ void ProbeNameConfig::update()
                 if (namingScheme == AUTO_NAMING)
                 {
                     label->setText (label->autoName, dontSendNotification);
-                    label->setColour (Label::outlineColourId, Colour (0x00000000));
                     label->setEditable (false);
                     label->probe->displayName = label->autoName;
                 }
                 else if (namingScheme == STREAM_INDICES)
                 {
                     label->setText (label->autoNumber, dontSendNotification);
-                    label->setColour (Label::outlineColourId, Colour (0x00000000));
                     label->setEditable (false);
                     label->probe->displayName = label->autoNumber;
                 }
                 else if (namingScheme == PROBE_SPECIFIC_NAMING)
                 {
                     label->setText (label->customProbe, dontSendNotification);
-                    label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (255, 255, 255));
+                    label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (100, 100, 100));
+                    label->setText (basestation->getCustomPortName (label->port, label->dock), dontSendNotification);
                     label->setEditable (true);
                     label->probe->displayName = label->customProbe;
                 }
