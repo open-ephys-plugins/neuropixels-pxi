@@ -437,7 +437,7 @@ void NeuropixThread::updateStreamInfo (bool enabledStateChanged)
 
                     probe->quadBaseBuffers.add (sourceBuffers.getLast());
 
-                    LOGD ("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") SHANK=", shank + 1, " CH = ", 384, " SR = ", apInfo.sample_rate, " Hz");
+                    LOGD ("Probe (slot=", probe->basestation->slot, ", port=", probe->headstage->port, ") SHANK=", shank + 1, " CH = ", apInfo.num_channels, " SR = ", apInfo.sample_rate, " Hz");
                 }
 
                 probe_index++;

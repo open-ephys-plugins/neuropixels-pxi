@@ -597,12 +597,11 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     background->repaint();
 
     addSyncChannelButton = std::make_unique<UtilityButton> ("+", Font ("Small Text", 13, Font::plain));
-    addSyncChannelButton->setBounds (90 * basestations.size() + 78, 40, 20, 20);
-
+    addSyncChannelButton->setBounds (90 * basestations.size() + 90, 40, 20, 20);
     addSyncChannelButton->addListener (this);
     addSyncChannelButton->setTooltip ("Add sync channel to the continuous data stream.");
     addSyncChannelButton->setClickingTogglesState (true);
-    addChildComponent (addSyncChannelButton.get());
+    addAndMakeVisible (addSyncChannelButton.get());
 
     refreshButton = std::make_unique<RefreshButton>();
     refreshButton->setBounds (desiredWidth - 65, 4, 16, 16);
