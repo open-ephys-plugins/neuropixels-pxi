@@ -461,7 +461,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bscFirmwareButton.get());
 
-    bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (QBSC_FPGA_B189.bin):");
+    bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String(BSC_FIRMWARE_FILENAME) + "):");
     bscFirmwareLabel->setFont (Font ("Fira Code", "Medium", 15.0f));
 
     bscFirmwareLabel->setBounds (550, verticalOffset + 43, 500, 20);
@@ -486,7 +486,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bsFirmwareButton.get());
 
-    bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (BS_FPGA_B169.bin):");
+    bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String(BS_FIRMWARE_FILENAME) + "):");
     bsFirmwareLabel->setFont (Font ("Fira Code", "Medium", 15.0f));
     bsFirmwareLabel->setBounds (550, verticalOffset + 113, 500, 20);
 
