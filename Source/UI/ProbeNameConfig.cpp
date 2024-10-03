@@ -247,13 +247,13 @@ void ProbeNameConfig::update()
     {
 
         label->setColour (juce::Label::ColourIds::textColourId, juce::Colours::white);
-        label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colours::white.withAlpha (0.0f));
+        
 
         if (namingScheme == PORT_SPECIFIC_NAMING)
         {
             label->setEditable (true);
-            label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (100, 100, 100));
-            label->setColour (juce::Label::ColourIds::textWhenEditingColourId, juce::Colours::orange);
+            label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (130, 130, 130));
+            label->setColour (juce::Label::ColourIds::outlineWhenEditingColourId, Colours::orange);
             label->setText (basestation->getCustomPortName (label->port, label->dock), dontSendNotification);
 
             if (label->probe != nullptr)
@@ -262,28 +262,34 @@ void ProbeNameConfig::update()
         else
         {
             label->setEditable (false);
-            label->setColour (Label::outlineColourId, Colour (0x00000000));
-            label->setText ("<>", dontSendNotification);
+            label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (70, 70, 70));
+            label->setText ("", dontSendNotification);
 
             if (label->probe != nullptr)
             {
                 if (namingScheme == AUTO_NAMING)
                 {
                     label->setText (label->autoName, dontSendNotification);
+                    label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (100, 100, 100));
+                    label->setColour (juce::Label::ColourIds::textColourId, juce::Colours::white.withAlpha(0.8f));
                     label->setEditable (false);
                     label->probe->displayName = label->autoName;
                 }
                 else if (namingScheme == STREAM_INDICES)
                 {
                     label->setText (label->autoNumber, dontSendNotification);
+                    label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (100, 100, 100));
+                    label->setColour (juce::Label::ColourIds::textColourId, juce::Colours::white.withAlpha (0.8f));
                     label->setEditable (false);
                     label->probe->displayName = label->autoNumber;
                 }
                 else if (namingScheme == PROBE_SPECIFIC_NAMING)
                 {
                     label->setText (label->customProbe, dontSendNotification);
-                    label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (100, 100, 100));
+                    label->setColour (juce::Label::ColourIds::outlineWhenEditingColourId, Colours::orange);
+                    label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (130, 130, 130));
                     label->setText (basestation->getCustomPortName (label->port, label->dock), dontSendNotification);
+
                     label->setEditable (true);
                     label->probe->displayName = label->customProbe;
                 }
