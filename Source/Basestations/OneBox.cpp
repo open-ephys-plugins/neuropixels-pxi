@@ -275,6 +275,8 @@ void OneBox::initialize (bool signalChainIsLoading)
 
     errorCode = checkError(Neuropixels::arm (slot), "arm slot " + String(slot));
 
+    setSyncAsInput();
+
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC ("Failed to arm OneBox on slot ", slot, ", error code = ", errorCode);
