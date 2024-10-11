@@ -271,7 +271,7 @@ public:
     NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* thread);
 
     /** Destructor */
-    virtual ~NeuropixEditor() {}
+    virtual ~NeuropixEditor();
 
     /** Called when editor is collapsed */
     void collapsedStateChanged() override;

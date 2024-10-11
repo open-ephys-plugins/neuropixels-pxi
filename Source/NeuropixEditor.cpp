@@ -544,6 +544,17 @@ void NeuropixEditor::initialize (bool signalChainIsLoading)
     checkCanvas();
 }
 
+NeuropixEditor::~NeuropixEditor()
+{
+    LOGD ("NeuropixEditor destructor.");
+
+    if (uiLoader->isThreadRunning())
+    {
+		uiLoader->waitForThreadToExit (5000);
+	}
+
+}
+
 NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     : VisualizerEditor (parentNode, t->type == ONEBOX ? "OneBox" : "Neuropix PXI")
 {
@@ -1023,8 +1034,7 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
                 mainSyncSlotIndex = 0;
 
             /*Configure main basestation */
-            thread->setMainSync (mainSyncSlotIndex);
-            mainSyncSelector->setSelectedItemIndex (mainSyncSlotIndex, dontSendNotification);
+            
             // syncFrequencySelector->setSelectedItemIndex (frequencyIndex, dontSendNotification);
 
             /* Add sync as continuous channel */
@@ -1035,6 +1045,8 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
             /* Set SMA as input or output */
             bool setAsOutput = (bool) xmlNode->getIntAttribute ("SyncDirection", false);
 
+            mainSyncSelector->setSelectedItemIndex (mainSyncSlotIndex, dontSendNotification);
+
             if (setAsOutput)
             {
                 inputOutputSyncSelector->setSelectedItemIndex (1, dontSendNotification);
@@ -1043,6 +1055,10 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
                 background->setFreqSelectAvailable (true);
                 // syncFrequencySelector->setSelectedItemIndex (frequencyIndex, dontSendNotification);
                 thread->setSyncFrequency (mainSyncSlotIndex, frequencyIndex);
+            }
+            else
+            {
+                thread->setMainSync (mainSyncSlotIndex);
             }
         }
     }

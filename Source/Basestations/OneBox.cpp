@@ -273,8 +273,9 @@ void OneBox::initialize (bool signalChainIsLoading)
     LOGD ("Initializing ADC source on slot ", slot);
     adcSource->initialize (signalChainIsLoading);
 
-    checkError(Neuropixels::setSWTrigger (slot), "setSWTrigger slot " + String(slot));
     errorCode = checkError(Neuropixels::arm (slot), "arm slot " + String(slot));
+
+    setSyncAsInput();
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -420,6 +421,8 @@ void OneBox::startAcquisition()
     errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
 
     LOGD ("OneBox software trigger");
+    checkError (Neuropixels::setSWTrigger (slot), "setSWTrigger slot " + String (slot));
+    checkError (Neuropixels::arm (slot), "arm slot " + String (slot));
     errorCode = Neuropixels::setSWTrigger (slot);
 
     if (errorCode != Neuropixels::SUCCESS)

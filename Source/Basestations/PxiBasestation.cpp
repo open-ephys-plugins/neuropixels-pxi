@@ -31,6 +31,8 @@
 
 #define MAXLEN 50
 
+Array<int> PxiBasestation::connected_slots = Array<int>();
+
 void PxiBasestation::getInfo()
 {
     Neuropixels::firmware_Info firmwareInfo;
@@ -152,6 +154,12 @@ bool PxiBasestation::open()
     syncFrequencies.clear();
     syncFrequencies.add (1);
 
+    if (connected_slots.contains(slot))
+    {
+		LOGC ("Slot ", slot, " already connected.");
+		return false;
+	}
+
     errorCode = Neuropixels::openBS (slot);
 
     if (errorCode == Neuropixels::VERSION_MISMATCH)
@@ -163,6 +171,8 @@ bool PxiBasestation::open()
     if (errorCode == Neuropixels::SUCCESS)
     {
         LOGC ("  Opened BS on slot ", slot);
+
+        connected_slots.add (slot);
 
         basestationConnectBoard = std::make_unique<BasestationConnectBoard_v3> (this);
 
@@ -262,6 +272,7 @@ void PxiBasestation::initialize (bool signalChainIsLoading)
     LOGD ("Arming basestation");
     Neuropixels::arm (slot);
     LOGD ("Arming complete");
+
 }
 
 void PxiBasestation::print_switchmatrix()
@@ -320,6 +331,7 @@ PxiBasestation::~PxiBasestation()
     setSyncAsPassive();
 
     close();
+
 }
 
 void PxiBasestation::close()
@@ -340,6 +352,8 @@ void PxiBasestation::close()
     headstages.clear();
 
     errorCode = Neuropixels::closeBS (slot);
+
+    connected_slots.removeFirstMatchingValue (slot);
 
     LOGC ("Closed basestation on slot: ", slot, " w/ error code: ", errorCode);
 }

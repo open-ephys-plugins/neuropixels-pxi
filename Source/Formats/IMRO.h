@@ -106,7 +106,7 @@ public:
         bool foundHeader = false;
         int lastOpeningParen = 0;
 
-        LOGD ("Length: ", imro.length());
+        LOGD ("IMRO length: ", imro.length());
 
         for (int i = 0; i < imro.length(); i++)
         {
@@ -126,19 +126,29 @@ public:
 
                     int value = substring.substring (0, commaLoc).getIntValue();
 
-                    std::cout << value << std::endl;
-
                     if (value == 0)
                     {
                         if (! (settings.probeType == ProbeType::NP1) && ! (settings.probeType == ProbeType::NHP10))
                             settings.probeType == ProbeType::NP1;
+
+                        LOGC ("Neuropixels 1.0 probe detected.");
                     }
-                    else if (value == 21)
+                    else if (value == 21 || value == 2003 || value == 2004)
+                    {
+                        LOGC ("Neuropixels 2.0 single shank probe detected.");
                         settings.probeType = ProbeType::NP2_1;
-                    else if (value == 24)
+                    }
+                        
+                    else if (value == 24 || value == 2013 || value == 2014)
+                    {
+                        LOGC ("Neuropixels 2.0 multi-shank probe detected.");
                         settings.probeType = ProbeType::NP2_4;
+                    }
                     else
+                    {
+                        LOGC ("Unknown probe type: ", value)
                         return false;
+                    }
 
                     foundHeader = true;
                 }

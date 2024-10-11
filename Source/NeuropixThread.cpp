@@ -263,6 +263,11 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
 
     initializeProbes();
 
+    if (type == PXI)
+    {
+        setMainSync (0);
+    }
+
     updateStreamInfo();
 }
 
@@ -467,6 +472,11 @@ void NeuropixThread::updateStreamInfo (bool enabledStateChanged)
 
 NeuropixThread::~NeuropixThread()
 {
+
+     LOGD ("NeuropixThread destructor.");
+
+     editor->uiLoader->waitForThreadToExit (-1);
+
     closeConnection();
 }
 
@@ -543,7 +553,7 @@ void NeuropixThread::applyProbeSettingsQueue()
 
         // Show alert window on the message thread asynchronously
         MessageManager::callAsync ([this, message]
-                                   { auto* alertWindow = new AlertWindow ("Calibration files not found", message, AlertWindow::WarningIcon, sn->getEditor()->getTopLevelComponent());
+                                   { auto* alertWindow = new AlertWindow ("Calibration files not found", message, AlertWindow::WarningIcon, nullptr);
                                    alertWindow->addButton ("OK", 1, KeyPress (KeyPress::returnKey), KeyPress (KeyPress::escapeKey));
                                    alertWindow->enterModalState (true, nullptr, true); });
 
@@ -694,25 +704,35 @@ String NeuropixThread::getApiVersion()
 
 void NeuropixThread::setMainSync (int slotIndex)
 {
-    LOGC ("Setting main sync for slot ", slotIndex);
+
+    LOGC ("NeuropixThread::setMainSync");
 
     if (foundInputSource() && slotIndex > -1)
     {
-        for (auto basestation : basestations)
-            basestation->setSyncAsPassive();
-
-        basestations[slotIndex]->setSyncAsInput();
+        for (int i = 0; i < basestations.size(); i++)
+        {
+            if (i == slotIndex)
+                basestations[i]->setSyncAsInput();
+			else
+				basestations[i]->setSyncAsPassive();
+		}
     }
 }
 
 void NeuropixThread::setSyncOutput (int slotIndex)
 {
+
+    LOGC ("NeuropixThread::setSyncOutput");
+
     if (foundInputSource() && slotIndex > -1)
     {
-        for (auto basestation : basestations)
-            basestation->setSyncAsPassive();
-
-        basestations[slotIndex]->setSyncAsOutput (0);
+        for (int i = 0; i < basestations.size(); i++)
+        {
+            if (i == slotIndex)
+                basestations[i]->setSyncAsOutput(0);
+            else
+                basestations[i]->setSyncAsPassive();
+        }
     }
 }
 
