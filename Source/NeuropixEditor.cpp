@@ -1024,8 +1024,7 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
                 mainSyncSlotIndex = 0;
 
             /*Configure main basestation */
-            thread->setMainSync (mainSyncSlotIndex);
-            mainSyncSelector->setSelectedItemIndex (mainSyncSlotIndex, dontSendNotification);
+            
             // syncFrequencySelector->setSelectedItemIndex (frequencyIndex, dontSendNotification);
 
             /* Add sync as continuous channel */
@@ -1036,6 +1035,8 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
             /* Set SMA as input or output */
             bool setAsOutput = (bool) xmlNode->getIntAttribute ("SyncDirection", false);
 
+            mainSyncSelector->setSelectedItemIndex (mainSyncSlotIndex, dontSendNotification);
+
             if (setAsOutput)
             {
                 inputOutputSyncSelector->setSelectedItemIndex (1, dontSendNotification);
@@ -1044,6 +1045,10 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
                 background->setFreqSelectAvailable (true);
                 // syncFrequencySelector->setSelectedItemIndex (frequencyIndex, dontSendNotification);
                 thread->setSyncFrequency (mainSyncSlotIndex, frequencyIndex);
+            }
+            else
+            {
+                thread->setMainSync (mainSyncSlotIndex);
             }
         }
     }

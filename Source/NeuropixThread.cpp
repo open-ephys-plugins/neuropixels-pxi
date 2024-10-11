@@ -250,6 +250,11 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
 
     initializeProbes();
 
+    if (type == PXI)
+    {
+        setMainSync (0);
+    }
+
     updateStreamInfo();
 }
 
@@ -685,25 +690,35 @@ String NeuropixThread::getApiVersion()
 
 void NeuropixThread::setMainSync (int slotIndex)
 {
-    LOGC ("Setting main sync for slot ", slotIndex);
+
+    LOGC ("NeuropixThread::setMainSync");
 
     if (foundInputSource() && slotIndex > -1)
     {
-        for (auto basestation : basestations)
-            basestation->setSyncAsPassive();
-
-        basestations[slotIndex]->setSyncAsInput();
+        for (int i = 0; i < basestations.size(); i++)
+        {
+            if (i == slotIndex)
+                basestations[i]->setSyncAsInput();
+			else
+				basestations[i]->setSyncAsPassive();
+		}
     }
 }
 
 void NeuropixThread::setSyncOutput (int slotIndex)
 {
+
+    LOGC ("NeuropixThread::setSyncOutput");
+
     if (foundInputSource() && slotIndex > -1)
     {
-        for (auto basestation : basestations)
-            basestation->setSyncAsPassive();
-
-        basestations[slotIndex]->setSyncAsOutput (0);
+        for (int i = 0; i < basestations.size(); i++)
+        {
+            if (i == slotIndex)
+                basestations[i]->setSyncAsOutput(0);
+            else
+                basestations[i]->setSyncAsPassive();
+        }
     }
 }
 

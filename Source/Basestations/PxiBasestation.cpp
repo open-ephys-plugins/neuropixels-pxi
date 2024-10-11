@@ -262,6 +262,7 @@ void PxiBasestation::initialize (bool signalChainIsLoading)
     LOGD ("Arming basestation");
     Neuropixels::arm (slot);
     LOGD ("Arming complete");
+
 }
 
 void PxiBasestation::print_switchmatrix()
