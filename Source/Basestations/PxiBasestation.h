@@ -157,6 +157,9 @@ public:
     /** Checks for firmware compatibility with API version */
     void checkFirmwareVersion() override;
 
+    /** Holds list of connected PXI slots */
+    static Array<int> connected_slots;
+
 private:
     void print_switchmatrix();
 
