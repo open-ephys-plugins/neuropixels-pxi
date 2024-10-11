@@ -459,6 +459,11 @@ void NeuropixThread::updateStreamInfo (bool enabledStateChanged)
 
 NeuropixThread::~NeuropixThread()
 {
+
+     LOGD ("NeuropixThread destructor.");
+
+     editor->uiLoader->waitForThreadToExit (-1);
+
     closeConnection();
 }
 
@@ -535,7 +540,7 @@ void NeuropixThread::applyProbeSettingsQueue()
 
         // Show alert window on the message thread asynchronously
         MessageManager::callAsync ([this, message]
-                                   { auto* alertWindow = new AlertWindow ("Calibration files not found", message, MessageBoxIconType::WarningIcon, sn->getEditor()->getTopLevelComponent());
+                                   { auto* alertWindow = new AlertWindow ("Calibration files not found", message, MessageBoxIconType::WarningIcon, nullptr);
                                    alertWindow->addButton ("OK", 1, KeyPress (KeyPress::returnKey), KeyPress (KeyPress::escapeKey));
                                    alertWindow->enterModalState (true, nullptr, true); });
 

@@ -332,7 +332,6 @@ PxiBasestation::~PxiBasestation()
 
     close();
 
-    connected_slots.removeFirstMatchingValue (slot);
 }
 
 void PxiBasestation::close()
@@ -353,6 +352,8 @@ void PxiBasestation::close()
     headstages.clear();
 
     errorCode = Neuropixels::closeBS (slot);
+
+    connected_slots.removeFirstMatchingValue (slot);
 
     LOGC ("Closed basestation on slot: ", slot, " w/ error code: ", errorCode);
 }

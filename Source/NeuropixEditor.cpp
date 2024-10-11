@@ -543,6 +543,17 @@ void NeuropixEditor::initialize (bool signalChainIsLoading)
     checkCanvas();
 }
 
+NeuropixEditor::~NeuropixEditor()
+{
+    LOGD ("NeuropixEditor destructor.");
+
+    if (uiLoader->isThreadRunning())
+    {
+		uiLoader->waitForThreadToExit (5000);
+	}
+
+}
+
 NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     : VisualizerEditor (parentNode, t->type == ONEBOX ? "OneBox" : "Neuropix PXI")
 {
