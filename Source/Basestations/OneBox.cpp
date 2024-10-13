@@ -385,7 +385,6 @@ float OneBox::getFillPercentage()
 
     for (int i = 0; i < getProbeCount(); i++)
     {
-        LOGDD ("Percentage for probe ", i, ": ", probes[i]->fifoFillPercentage);
 
         if (probes[i]->fifoFillPercentage > perc)
             perc = probes[i]->fifoFillPercentage;
