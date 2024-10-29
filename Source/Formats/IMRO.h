@@ -43,33 +43,58 @@ public:
             LOGC ("Could not create file: ", file.getFullPathName());
         }
 
-        if (settings.probeType == ProbeType::NP1 || settings.probeType == ProbeType::NHP10 || settings.probeType == ProbeType::NHP25 || settings.probeType == ProbeType::NHP45 || settings.probeType == ProbeType::UHD1)
-        {
-            file.appendText ("(0,384)");
-        }
-        else if (settings.probeType == ProbeType::NP2_1)
-        {
-            file.appendText ("(21,384)");
-        }
-        else if (settings.probeType == ProbeType::NP2_4)
-        {
-            file.appendText ("(24,384)");
-        }
-        else if (settings.probeType == ProbeType::NHP1)
-        {
-            file.appendText ("(0,128)");
-        }
+        String imroPartId;
+        String partNumber = settings.probe->info.part_number;
 
+        if (partNumber.startsWith ("NP"))
+        {
+            imroPartId = partNumber.substring (2);
+        }
         else
         {
-            return false;
+            if (partNumber.equalsIgnoreCase ("PRB2_1_2_0640_0"))
+                imroPartId = "21";
+            else if (partNumber.equalsIgnoreCase ("PRB2_4_2_0640_0"))
+                imroPartId = "24";
+            else if (partNumber.equalsIgnoreCase ("PRB_1_4_0480_1") || partNumber.equalsIgnoreCase ("PRB_1_4_0480_1_C") || partNumber.equalsIgnoreCase ("PRB_1_2_0480_2"))
+            {
+                imroPartId = "0";
+            }
+            else
+            {
+                LOGC ("Unknown part number: ", partNumber);
+                return false;
+            }
         }
+
+        String imroChannelCount;
+
+        if (settings.probeType == ProbeType::NHP1)
+        {
+            imroChannelCount = "128";
+        }
+        else if (settings.probeType == ProbeType::QUAD_BASE)
+        {
+            imroChannelCount = "1536";
+        }
+        else
+        {
+            imroChannelCount = "384";
+        }
+
+        if (settings.probeType == ProbeType::UHD2)
+        {
+            writeUHDFile (file, settings);
+            return true;
+        }
+        else
+            file.appendText ("(" + imroPartId + "," + imroChannelCount + ")");
 
         for (int i = 0; i < settings.selectedChannel.size(); i++)
         {
             String channelInfo = "(" + String (settings.selectedChannel[i]); // channel
 
-            if (settings.probeType == ProbeType::NP2_4)
+            if (settings.probeType == ProbeType::NP2_4 || settings.probeType == ProbeType::QUAD_BASE)
                 channelInfo += " " + String (settings.selectedShank[i]); // shank
 
             if (settings.probeType == ProbeType::NP2_1)
@@ -79,7 +104,12 @@ public:
 
             channelInfo += " " + String (settings.referenceIndex); // reference
 
-            if (settings.probeType == ProbeType::NP2_1 || settings.probeType == ProbeType::NP2_4)
+            if (settings.probeType == ProbeType::QUAD_BASE
+                || settings.probeType == ProbeType::NP2_4)
+            {
+                channelInfo += " " + String (1280 * settings.selectedShank[i] - settings.selectedElectrode[i]); // electrode
+            }
+            else if (settings.probeType == ProbeType::NP2_1)
             {
                 channelInfo += " " + String (settings.selectedElectrode[i]); // electrode
             }
@@ -128,26 +158,58 @@ public:
 
                     if (value == 0)
                     {
-                        if (! (settings.probeType == ProbeType::NP1) && ! (settings.probeType == ProbeType::NHP10))
-                            settings.probeType == ProbeType::NP1;
-
                         LOGC ("Neuropixels 1.0 probe detected.");
+                        settings.probeType = ProbeType::NP1;
+                    }
+                    else if (value >= 1010 && value <= 1016)
+                    {
+                        LOGC ("Neuropixels NHP probe 10 mm probe detected.");
+                        settings.probeType = ProbeType::NHP10;
+                    }
+                    else if (value >= 1020 && value <= 1022)
+                    {
+                        LOGC ("Neuropixels NHP probe 25 mm probe detected.");
+                        settings.probeType = ProbeType::NHP25;
+                    }
+                    else if (value >= 1030 && value <= 1032)
+                    {
+                        LOGC ("Neuropixels NHP probe 45 mm probe detected.");
+                        settings.probeType = ProbeType::NHP45;
+                    }
+                    else if (value == 1200 || value == 1210)
+                    {
+                        LOGC ("Neuropixels NHP passive probe detected.");
+                        settings.probeType = ProbeType::NHP1;
                     }
                     else if (value == 21 || value == 2003 || value == 2004)
                     {
                         LOGC ("Neuropixels 2.0 single shank probe detected.");
                         settings.probeType = ProbeType::NP2_1;
                     }
-                        
                     else if (value == 24 || value == 2013 || value == 2014)
                     {
                         LOGC ("Neuropixels 2.0 multi-shank probe detected.");
                         settings.probeType = ProbeType::NP2_4;
                     }
+                    else if (value == 2020 || value == 2021)
+                    {
+                        LOGC ("Neuropixels 2.0 quad base probe detected.");
+                        settings.probeType = ProbeType::QUAD_BASE;
+                    }
+                    else if (value == 1100 || value == 1120 || value == 1121 || value == 1122 || value == 1123)
+                    {
+                        LOGC ("Neuropixels UHD passive probe detected.");
+                        settings.probeType = ProbeType::UHD1;
+                    }
+                    else if (value == 1110)
+                    {
+                        LOGC ("Neuropixels UHD active probe detected.");
+                        settings.probeType = ProbeType::UHD2;
+                    }
                     else
                     {
-                        LOGC ("Unknown probe type: ", value)
-                        return false;
+                        LOGC ("Unknown probe type detected.");
+						return false;
                     }
 
                     foundHeader = true;
@@ -176,7 +238,10 @@ public:
 
     static void parseValues (Array<int> values, ProbeType probeType, ProbeSettings& settings)
     {
-        if (probeType == ProbeType::NP1 || probeType == ProbeType::NHP10 || probeType == ProbeType::NHP45)
+        if (probeType == ProbeType::NP1 
+            || probeType == ProbeType::NHP10 
+            || probeType == ProbeType::NHP25
+            || probeType == ProbeType::NHP45)
         {
             // 0 = 1.0 probe
             // channel ID
@@ -277,9 +342,9 @@ public:
             settings.referenceIndex = values[2];
             settings.selectedElectrode.add (values[3]);
         }
-        else if (probeType == ProbeType::NP2_4)
+        else if (probeType == ProbeType::NP2_4 || probeType == ProbeType::QUAD_BASE)
         {
-            // 24 = 4-shank 2.0
+            // 4-shank 2.0
             // channel ID
             // shank ID
             // bank ID
@@ -345,6 +410,25 @@ public:
             default:
                 return 3;
         }
+    }
+
+    static void writeUHDFile (File file, ProbeSettings settings)
+    {
+        String configuration = settings.availableElectrodeConfigurations[settings.electrodeConfigurationIndex];
+
+        int columnMode = 2; // ALL
+
+        if (configuration.startsWith ("1 x 384"))
+            columnMode = 1; // OUTER
+
+        file.appendText ("(1110,"
+                         + String (columnMode) + ","
+                         + String (settings.referenceIndex) + ","
+                         + String ((int) settings.availableApGains[settings.apGainIndex]) + ","
+                         + String ((int) settings.availableLfpGains[settings.lfpGainIndex]) + ","
+                         + String ((int) settings.apFilterState) + ")");
+
+        // TODO -- write the rest of the file
     }
 };
 

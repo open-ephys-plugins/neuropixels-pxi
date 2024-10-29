@@ -43,23 +43,25 @@ bool Geometry::forPartNumber (String PN,
     else if (PN.equalsIgnoreCase ("NP1016"))
         NHP2 (10, false, true, em, pm); // linear layout, Sapiens version
 
-    else if (PN.equalsIgnoreCase ("NP1020") || PN.equalsIgnoreCase ("NP1021"))
+    else if (PN.equalsIgnoreCase ("NP1020") 
+        || PN.equalsIgnoreCase ("NP1021"))
         NHP2 (25, true, false, em, pm); // staggered layout
 
     else if (PN.equalsIgnoreCase ("NP1022"))
         NHP2 (25, false, false, em, pm); // linear layout
 
-    else if (PN.equalsIgnoreCase ("NP1030") || PN.equalsIgnoreCase ("NP1031"))
+    else if (PN.equalsIgnoreCase ("NP1030") 
+        || PN.equalsIgnoreCase ("NP1031"))
         NHP2 (45, true, false, em, pm); // staggered layout
 
     else if (PN.equalsIgnoreCase ("NP1032"))
         NHP2 (45, false, false, em, pm); // linear layout
 
-    else if (PN.equalsIgnoreCase ("NP1200") || PN.equalsIgnoreCase ("NP1210"))
+    else if (PN.equalsIgnoreCase ("NP1200") 
+        || PN.equalsIgnoreCase ("NP1210"))
         NHP1 (em, pm);
 
     else if (PN.equalsIgnoreCase ("PRB2_1_2_0640_0")
-             || PN.equalsIgnoreCase ("PRB2_1_4_0480_1")
              || PN.equalsIgnoreCase ("NP2000"))
         NP2 (1, 14, em, pm); // single shank, 14-bit ADC
 
