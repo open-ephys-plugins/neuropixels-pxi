@@ -30,10 +30,19 @@
 
 void Neuropixels_NHP_Active::getInfo()
 {
-    errorCode = Neuropixels::readProbeSN (basestation->slot, headstage->port, dock, &info.serial_number);
+    checkError (Neuropixels::readProbeSN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          &info.serial_number),
+                "readProbeSN");
 
     char pn[MAXLEN];
-    errorCode = Neuropixels::readProbePN (basestation->slot_c, headstage->port_c, dock, pn, MAXLEN);
+    checkError (Neuropixels::readProbePN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          pn,
+                                          MAXLEN),
+                "readProbePN");
 
     info.part_number = String (pn);
 }
