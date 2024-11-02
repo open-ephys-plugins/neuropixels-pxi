@@ -182,12 +182,12 @@ public:
                         LOGC ("Neuropixels NHP passive probe detected.");
                         settings.probeType = ProbeType::NHP1;
                     }
-                    else if (value == 21 || value == 2003 || value == 2004)
+                    else if (value == 21 || value == 2000 || value == 2003 || value == 2004)
                     {
                         LOGC ("Neuropixels 2.0 single shank probe detected.");
                         settings.probeType = ProbeType::NP2_1;
                     }
-                    else if (value == 24 || value == 2013 || value == 2014)
+                    else if (value == 24 || value == 2010 || value == 2013 || value == 2014)
                     {
                         LOGC ("Neuropixels 2.0 multi-shank probe detected.");
                         settings.probeType = ProbeType::NP2_4;
