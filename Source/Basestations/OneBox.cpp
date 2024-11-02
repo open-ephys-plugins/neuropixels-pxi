@@ -275,16 +275,17 @@ void OneBox::initialize (bool signalChainIsLoading)
 
     errorCode = checkError(Neuropixels::arm (slot), "arm slot " + String(slot));
 
-    setSyncAsInput();
-
     if (errorCode != Neuropixels::SUCCESS)
     {
-        LOGC ("Failed to arm OneBox on slot ", slot, ", error code = ", errorCode);
-    }
+		LOGC ("Failed to arm OneBox on slot ", slot, ", error code = ", errorCode);
+	}
     else
     {
-        LOGC ("OneBox initialized on slot ", slot);
-    }
+		LOGC ("OneBox initialized on slot ", slot);
+	}
+
+    setSyncAsInput();
+
 }
 
 void OneBox::close()
@@ -422,7 +423,7 @@ void OneBox::startAcquisition()
     LOGD ("OneBox software trigger");
     checkError (Neuropixels::setSWTrigger (slot), "setSWTrigger slot " + String (slot));
     checkError (Neuropixels::arm (slot), "arm slot " + String (slot));
-    errorCode = Neuropixels::setSWTrigger (slot);
+    checkError(Neuropixels::setSWTrigger (slot));
 
     if (errorCode != Neuropixels::SUCCESS)
     {
