@@ -455,6 +455,8 @@ void NeuropixThread::updateStreamInfo (bool enabledStateChanged)
             }
         }
     }
+
+    LOGD ("Finished updating stream info");
 }
 
 NeuropixThread::~NeuropixThread()

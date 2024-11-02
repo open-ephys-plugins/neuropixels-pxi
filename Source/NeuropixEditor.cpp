@@ -26,6 +26,7 @@
 #include "NeuropixCanvas.h"
 #include "NeuropixComponents.h"
 #include "NeuropixThread.h"
+#include "UI/NeuropixInterface.h"
 
 RefreshButton::RefreshButton() : Button ("Refresh")
 {
@@ -778,7 +779,8 @@ void NeuropixEditor::comboBoxChanged (ComboBox* comboBox)
         if (asOutput)
         {
             thread->setSyncOutput (slotIndex);
-            syncFrequencyLabel->setVisible (true);
+            if(background->numBasestations > 0)
+                syncFrequencyLabel->setVisible (true);
             background->setFreqSelectAvailable (true);
         }
         else
@@ -881,6 +883,15 @@ void NeuropixEditor::buttonClicked (Button* button)
                 btn->stopTimer();
             }
 
+            for (auto& settingsInterface : canvas->settingsInterfaces)
+            {
+                if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
+                {
+                    NeuropixInterface* ni = (NeuropixInterface*) settingsInterface;
+                    ni->probe = nullptr;
+                }
+			}
+
             if (thread->getBasestations()[0]->type == BasestationType::SIMULATED)
             {
                 uiLoaderWithProgressWindow->updateProbeMap(); // call outside of thread
@@ -889,6 +900,7 @@ void NeuropixEditor::buttonClicked (Button* button)
             {
                 thread->isRefreshing = true;
                 uiLoaderWithProgressWindow->runThread();
+                LOGD ("Finished refresh thread.");
             }
 
             LOGD ("Resetting canvas...");
@@ -898,6 +910,7 @@ void NeuropixEditor::buttonClicked (Button* button)
             LOGD ("Updating settings interfaces...");
             for (auto& interface : canvas->settingsInterfaces)
             {
+
                 for (auto probe : thread->getProbes())
                 {
                     if (interface->dataSource != nullptr && interface->dataSource->getName() == probe->getName())
@@ -1052,7 +1065,8 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
             {
                 inputOutputSyncSelector->setSelectedItemIndex (1, dontSendNotification);
                 thread->setSyncOutput (mainSyncSlotIndex);
-                syncFrequencyLabel->setVisible (true);
+                if(background->numBasestations > 0)
+					syncFrequencyLabel->setVisible (true);
                 background->setFreqSelectAvailable (true);
                 // syncFrequencySelector->setSelectedItemIndex (frequencyIndex, dontSendNotification);
                 thread->setSyncFrequency (mainSyncSlotIndex, frequencyIndex);

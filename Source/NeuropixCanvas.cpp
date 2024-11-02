@@ -87,6 +87,8 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
     topLevelTabComponent = std::make_unique<CustomTabComponent> (editor, true);
     addAndMakeVisible (topLevelTabComponent.get());
 
+    LOGC ("Creating new NeuropixCanvas");
+
     Array<Basestation*> availableBasestations = thread->getBasestations();
 
     int topLevelTabNumber = 0;
@@ -98,6 +100,8 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
                                       findColour (ThemeColours::componentBackground).darker (0.2f),
                                       basestationTab,
                                       true);
+
+         LOGC ("Adding tab for ", String (" Slot " + String (basestation->slot) + " "));
 
         basestationTab->setTabBarDepth (26);
         basestationTab->setIndent (0); // gap to leave around the edge
@@ -111,13 +115,6 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
 
     topLevelTabComponent->setCurrentTabIndex (topLevelTabNumber - 1);
 
-    //neuropixViewport->setViewedComponent(settingsInterfaces.getFirst(), false);
-    //addAndMakeVisible(neuropixViewport);
-
-    //settingsInterfaces[0]->viewport->setVisible(true);
-
-    //resized();
-
     savedSettings.probeType = ProbeType::NONE;
 }
 
@@ -128,6 +125,8 @@ void NeuropixCanvas::populateSourceTabs(Basestation* basestation, CustomTabCompo
     Array<DataSource*> availableDataSources = thread->getDataSources();
 
     int basestationTabNumber = 0;
+
+    LOGC ("Found ", probeCount, " probes in slot ", basestation->slot, " with ", availableDataSources.size(), " data sources")
 
     for (auto source : availableDataSources)
     {

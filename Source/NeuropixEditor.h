@@ -120,11 +120,12 @@ public:
             slotButtons[i]->isEnabled = isEnabled;
     }
 
+    int numBasestations;
+
 private:
     /** Draws the background */
     void paint (Graphics& g);
 
-    int numBasestations;
     bool freqSelectEnabled;
 
     /* An array of Basestation objections, one for each basestation detected */
