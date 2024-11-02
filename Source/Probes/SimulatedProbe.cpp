@@ -47,6 +47,8 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
 
     setStatus (SourceStatus::DISCONNECTED);
 
+    isCalibrated = true; // automatically calibrate simulated probes
+
     customName.probeSpecific = String (info.serial_number);
 
     CoreServices::sendStatusMessage ("Probe part number: " + PN);
