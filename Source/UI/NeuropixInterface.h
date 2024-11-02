@@ -94,6 +94,7 @@ public:
 
     /** Settings-related functions*/
     bool applyProbeSettings (ProbeSettings, bool shouldUpdateProbe = true);
+    void applyProbeSettingsFromImro (File imroFile);
     ProbeSettings getProbeSettings();
     void updateProbeSettingsInBackground();
 

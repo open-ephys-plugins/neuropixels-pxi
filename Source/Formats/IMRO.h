@@ -84,6 +84,7 @@ public:
 
         if (settings.probeType == ProbeType::UHD2)
         {
+            // not yet implemented
             writeUHDFile (file, settings);
             return true;
         }
@@ -107,7 +108,7 @@ public:
             if (settings.probeType == ProbeType::QUAD_BASE
                 || settings.probeType == ProbeType::NP2_4)
             {
-                channelInfo += " " + String (1280 * settings.selectedShank[i] - settings.selectedElectrode[i]); // electrode
+                channelInfo += " " + String (settings.selectedElectrode[i] - 1280 * settings.selectedShank[i]); // electrode
             }
             else if (settings.probeType == ProbeType::NP2_1)
             {
@@ -208,7 +209,7 @@ public:
                     }
                     else
                     {
-                        LOGC ("Unknown probe type detected.");
+                        LOGC ("Could not load IMRO, unknown probe part number: ", value);
 						return false;
                     }
 

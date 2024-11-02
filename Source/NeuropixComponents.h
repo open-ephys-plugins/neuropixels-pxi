@@ -93,6 +93,37 @@ enum class ProbeType
     QUAD_BASE
 };
 
+static std::string probeTypeToString(const ProbeType type)
+{
+    switch (type)
+    {
+	case ProbeType::NP1:
+		return "Neuropixels 1.0";
+	case ProbeType::NHP10:
+		return "Neuropixels NHP 10 mm";
+	case ProbeType::NHP25:
+		return "Neuropixels NHP 25 mm";
+	case ProbeType::NHP45:
+		return "Neuropixels NHP 45 mm";
+	case ProbeType::NHP1:
+		return "Neuropixels NHP Passive";
+	case ProbeType::UHD1:
+		return "Neuropixels UHD (Fixed)";
+	case ProbeType::UHD2:
+		return "Neuropixels UHD (Switchable)";
+	case ProbeType::NP2_1:
+		return "Neuropixels 2.0 Single Shank";
+	case ProbeType::NP2_4:
+		return "Neuropixels 2.0 Multi Shank";
+	case ProbeType::OPTO:
+		return "Neuropixels Opto";
+	case ProbeType::QUAD_BASE:
+		return "Neuropixels 2.0 Quad Base";
+	default:
+		return "Unknown";
+	}
+}
+
 enum class SourceStatus
 {
     DISCONNECTED, //There is no communication between probe and computer
@@ -271,7 +302,6 @@ struct ProbeSettings
 class NeuropixComponent
 {
 public:
-
     /** Constructor */
     NeuropixComponent() {}
 
@@ -287,14 +317,13 @@ public:
         if (error != Neuropixels::SUCCESS)
         {
             LOGE (function, ": ", Neuropixels::getErrorMessage (error));
-		}
+        }
 
         return error;
-	}
+    }
 
     /** Holds error codes*/
     Neuropixels::NP_ErrorCode errorCode;
-
 };
 
 /** Holds info about APIv3, as well as a boolean value to indicate whether or not it is being used*/

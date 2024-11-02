@@ -371,14 +371,28 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         saveImroButton->setBounds (45, 672, 120, 22);
         saveImroButton->addListener (this);
         saveImroButton->setTooltip ("Save settings map to .imro file");
-        addAndMakeVisible (saveImroButton.get());
+        if (probe->type == ProbeType::UHD1 || probe->type == ProbeType::UHD2)
+        {
+            addChildComponent (saveImroButton.get());
+        }
+        else
+        {
+            addAndMakeVisible (saveImroButton.get());
+        }
 
         loadImroButton = std::make_unique<UtilityButton> ("LOAD FROM IMRO");
         loadImroButton->setRadius (3.0f);
         loadImroButton->setBounds (175, 672, 130, 22);
         loadImroButton->addListener (this);
         loadImroButton->setTooltip ("Load settings map from .imro file");
-        addAndMakeVisible (loadImroButton.get());
+        if (probe->type == ProbeType::UHD1 || probe->type == ProbeType::UHD2)
+        {
+            addChildComponent (loadImroButton.get());
+        }
+        else
+        {
+            addAndMakeVisible (loadImroButton.get());
+        }
 
         saveJsonButton = std::make_unique<UtilityButton> ("SAVE TO JSON");
         saveJsonButton->setRadius (3.0f);
@@ -397,26 +411,32 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         loadImroComboBox = std::make_unique<ComboBox> ("Quick-load IMRO");
         loadImroComboBox->setBounds (175, 707, 130, 22);
         loadImroComboBox->addListener (this);
-        loadImroComboBox->setTooltip ("Load a favorite IMRO setting.");
+        loadImroComboBox->setTooltip ("Load settings from a stored IMRO file.");
 
         File baseDirectory = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
         File imroDirectory = baseDirectory.getChildFile ("IMRO");
 
-        if (File (imroDirectory).findChildFiles (File::findFiles, false, "*.imro").size())
-            loadImroComboBox->addItem ("Select a preset...", 1);
-        else
-            loadImroComboBox->addItem ("No pre-set IMRO found", 1);
-
+        loadImroComboBox->addItem ("Quick-load IMRO...", 1);
+        loadImroComboBox->setItemEnabled (1, false);
         loadImroComboBox->addSeparator();
 
         for (const auto& filename : File (imroDirectory).findChildFiles (File::findFiles, false, "*.imro"))
         {
             imroFiles.add (filename.getFileNameWithoutExtension());
             imroLoadedFromFolder.add (true);
-            loadImroComboBox->addItem (imroFiles.getLast(), imroFiles.size() + 1);
+            loadImroComboBox->addItem (File(imroFiles.getLast()).getFileName(), 
+                imroFiles.size() + 1);
         }
         loadImroComboBox->setSelectedId (1, dontSendNotification);
-        addAndMakeVisible (loadImroComboBox.get());
+
+        if (probe->type == ProbeType::UHD1 || probe->type == ProbeType::UHD2)
+        {
+            addChildComponent (loadImroComboBox.get());
+        }
+        else
+        {
+            addAndMakeVisible (loadImroComboBox.get());
+        }
 
         probeSettingsLabel = std::make_unique<Label> ("Settings", "Probe settings:");
         probeSettingsLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
@@ -485,7 +505,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bsFirmwareButton.get());
 
-    bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String(BS_FIRMWARE_FILENAME) + "): ");
+    bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String (BS_FIRMWARE_FILENAME) + "): ");
     bsFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
     bsFirmwareLabel->setBounds (550, verticalOffset + 113, 500, 20);
 
@@ -560,7 +580,7 @@ void NeuropixInterface::updateInfoString()
     {
         nameString = probe->displayName;
 
-        infoString += "Probe Type: " + probe->name;
+        infoString += "Probe Type: " + String (probeTypeToString (probe->type));
         infoString += "\nPart Number: " + probe->info.part_number;
         infoString += "\nS/N: " + String (probe->info.serial_number);
         infoString += "\n";
@@ -627,7 +647,7 @@ void NeuropixInterface::updateProbeSettingsInBackground()
 
     LOGD ("NeuropixInterface requesting thread start");
 
-    editor->uiLoader->waitForThreadToExit(5000);
+    editor->uiLoader->waitForThreadToExit (5000);
     thread->updateProbeSettingsQueue (settings);
     editor->uiLoader->startThread();
 }
@@ -728,21 +748,7 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
 
             if (imroFiles[fileIndex].length())
             {
-                ProbeSettings settings = getProbeSettings();
-
-                settings.clearElectrodeSelection();
-
-                bool success = IMRO::readSettingsFromImro (File (imroFiles[fileIndex]), settings);
-
-                if (success)
-                {
-                    applyProbeSettings (settings);
-                    loadImroComboBox->setSelectedId (comboBox->getSelectedId(), false);
-                }
-                else
-                {
-                    loadImroComboBox->setSelectedId (1, false);
-                }
+                applyProbeSettingsFromImro (imroFiles[fileIndex]);
             }
         }
 
@@ -797,7 +803,7 @@ void NeuropixInterface::buttonClicked (Button* button)
     if (button == probeEnableButton.get())
     {
         probe->isEnabled = probeEnableButton->getToggleState();
-        
+
         if (probe->isEnabled)
         {
             probeEnableButton->setLabel ("ENABLED");
@@ -809,7 +815,7 @@ void NeuropixInterface::buttonClicked (Button* button)
 
         probe->settings.isEnabled = probe->isEnabled;
         probe->setStatus (probe->isEnabled ? SourceStatus::CONNECTED : SourceStatus::DISABLED);
-        thread->updateStreamInfo(true);
+        thread->updateStreamInfo (true);
         CoreServices::updateSignalChain (editor);
     }
     else if (button == enableViewButton.get())
@@ -915,28 +921,9 @@ void NeuropixInterface::buttonClicked (Button* button)
 
         if (fileChooser.browseForFileToOpen())
         {
-            ProbeSettings settings = getProbeSettings();
-
-            settings.clearElectrodeSelection();
-
             File selectedFile = fileChooser.getResult();
 
-            bool success = IMRO::readSettingsFromImro (selectedFile, settings);
-
-            if (success)
-            {
-                if (imroFiles.size() == 0)
-                {
-                    loadImroComboBox->clear();
-                }
-
-                imroFiles.add (selectedFile.getFullPathName());
-                imroLoadedFromFolder.add (false);
-                loadImroComboBox->addItem (selectedFile.getFullPathName(), imroFiles.size());
-
-                applyProbeSettings (settings, true);
-                CoreServices::updateSignalChain (editor);
-            }
+            applyProbeSettingsFromImro (selectedFile);
         }
     }
     else if (button == saveImroButton.get())
@@ -1346,8 +1333,8 @@ void NeuropixInterface::paint (Graphics& g)
 
 void NeuropixInterface::drawLegend (Graphics& g)
 {
-
-    if (thread->isRefreshing) return;
+    if (thread->isRefreshing)
+        return;
     g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.75f));
     g.setFont (15);
 
@@ -1461,6 +1448,49 @@ void NeuropixInterface::drawLegend (Graphics& g)
 
             break;
     }
+}
+
+void NeuropixInterface::applyProbeSettingsFromImro (File imroFile)
+{
+    ProbeSettings settings = getProbeSettings();
+
+    settings.clearElectrodeSelection();
+
+    bool success = IMRO::readSettingsFromImro (imroFile, settings);
+
+    if (! success)
+    {
+        loadImroComboBox->setSelectedId (1);
+        return;
+    }
+
+    if (settings.probeType == probe->type)
+    {
+        if (! imroFiles.contains (imroFile.getFullPathName()))
+        {
+            imroFiles.add (imroFile.getFullPathName());
+            imroLoadedFromFolder.add (false);
+            loadImroComboBox->addItem (imroFile.getFileName(), imroFiles.size() + 1);
+        }
+
+        electrodeConfigurationComboBox->setSelectedId (1);
+        applyProbeSettings (settings);
+        CoreServices::updateSignalChain (editor);
+    }
+    else
+    {
+        CoreServices::sendStatusMessage ("Probe types do not match.");
+        // show popup notification window
+        String message = "The IMRO file you have selected is for a " + probeTypeToString (settings.probeType);
+        message += " probe, but the current probe is a " + String (probeTypeToString (probe->type)) + " probe.";
+
+        AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon,
+                                     "Probe types do not match",
+                                     message,
+                                     "OK");
+    }
+
+    loadImroComboBox->setSelectedId (1);
 }
 
 bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdateProbe)
@@ -1988,12 +2018,10 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                 {
                     forEachXmlChildElement (*imroNode, fileNode)
                     {
-                        if (imroFiles.size() == 0)
-                            loadImroComboBox->clear();
-
                         imroFiles.add (fileNode->getStringAttribute ("PATH"));
                         imroLoadedFromFolder.add (false);
-                        loadImroComboBox->addItem (imroFiles.getLast(), imroFiles.size());
+                        loadImroComboBox->addItem (File (imroFiles.getLast()).getFileName(),
+                                                   imroFiles.size() + 1);
                     }
                 }
             }
@@ -2021,7 +2049,7 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
             {
                 probeEnableButton->setLabel ("DISABLED");
             }
-				stopAcquisition();
+            stopAcquisition();
         }
 
         probe->updateSettings (settings);

@@ -160,10 +160,10 @@ bool SimulatedBasestation::open()
                 headstages.add (new SimulatedHeadstage (this, i + 1, "NP1110", 48948211 + i));
                 break;
             case ProbeType::NP2_1:
-                headstages.add (new SimulatedHeadstage (this, i + 1, "NP2000", 58948291 + i));
+                headstages.add (new SimulatedHeadstage (this, i + 1, "NP2003", 58948291 + i));
                 break;
             case ProbeType::NP2_4:
-                headstages.add (new SimulatedHeadstage (this, i + 1, "NP2010", 68948291 + i));
+                headstages.add (new SimulatedHeadstage (this, i + 1, "NP2013", 68948291 + i));
                 break;
             case ProbeType::OPTO:
                 headstages.add (new SimulatedHeadstage (this, i + 1, "NP1300", 78948291 + i));
