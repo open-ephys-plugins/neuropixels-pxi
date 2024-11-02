@@ -119,19 +119,22 @@ bool Neuropixels_QuadBase::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    std::vector<std::vector<int>> blocks;
-
-    for (int shank = 0; shank < 4; shank++)
+    if (apView == nullptr)
     {
-        blocks.push_back ({}); // add a new block
+        std::vector<std::vector<int>> blocks;
 
-        for (int i = 0; i < 384; i++)
+        for (int shank = 0; shank < 4; shank++)
         {
-            blocks[shank].push_back (i + 384 * shank);
-        }
-    }
+            blocks.push_back ({}); // add a new block
 
-    apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks);
+            for (int i = 0; i < 384; i++)
+            {
+                blocks[shank].push_back (i + 384 * shank);
+            }
+        }
+
+        apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks);
+    }
 
     return errorCode == Neuropixels::SUCCESS;
 }
@@ -375,10 +378,6 @@ void Neuropixels_QuadBase::startAcquisition()
     {
         for (int shank = 0; shank < 4; shank++)
         {
-            apView->reset (shank);
-
-            quadBaseBuffers[shank]->clear();
-
             acquisitionThreads.add (
                 new AcquisitionThread (basestation->slot,
                                        headstage->port,
@@ -392,6 +391,12 @@ void Neuropixels_QuadBase::startAcquisition()
 
     for (int shank = 0; shank < 4; shank++)
     {
+        apView->reset (shank);
+
+        quadBaseBuffers[shank]->clear();
+
+        acquisitionThreads[shank]->buffer = quadBaseBuffers[shank];
+
         jassert (quadBaseBuffers[shank]->getNumSamples() == 0);
 
         acquisitionThreads[shank]->startThread();
@@ -512,13 +517,14 @@ void AcquisitionThread::run()
                 ap_timestamps[packetNum] = ap_timestamp++;
                 event_codes[packetNum] = eventCode;
             }
+
+            buffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
+
         }
         else if (errorCode != Neuropixels::SUCCESS)
         {
             std::cout << "readPackets error code: " << errorCode << " for Basestation " << slot << ", probe " << port << std::endl;
         }
-
-        buffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
 
         if (! passedOneSecond)
         {

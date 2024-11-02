@@ -42,6 +42,9 @@ public:
     /** Acquires data from the probe */
     void run() override; // acquire data
 
+    /** Pointer to data buffer */
+    DataBuffer* buffer;
+
 private:
 
     int SKIP;
@@ -74,7 +77,7 @@ private:
     int slot;
     int port;
     int dock;
-    DataBuffer* buffer;
+
     Probe* probe;
     bool invertSyncLine = false;
     ActivityView* apView;
