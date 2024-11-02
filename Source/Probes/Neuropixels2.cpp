@@ -30,13 +30,19 @@
 
 void Neuropixels2::getInfo()
 {
-    checkError(Neuropixels::readProbeSN (basestation->slot, headstage->port, dock, &info.serial_number), "readProbeSN");
+    checkError (Neuropixels::readProbeSN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          &info.serial_number),
+                "readProbeSN");
 
     char pn[MAXLEN];
-    checkError (Neuropixels::readProbePN (basestation->slot_c, headstage->port_c, dock, pn, MAXLEN), "readProbePN");
-
-    LOGC ("   Found probe part number: ", pn);
-    LOGC ("   Found probe serial number: ", info.serial_number);
+    checkError (Neuropixels::readProbePN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          pn,
+                                          MAXLEN),
+                "readProbePN");
 
     info.part_number = String (pn);
 }
@@ -540,7 +546,7 @@ void Neuropixels2::setAllGains()
 
 void Neuropixels2::setAllReferences()
 {
-    Neuropixels::channelreference_t refId;
+    Neuropixels::channelreference_t refId = Neuropixels::EXT_REF;
     int refElectrodeBank = 0;
     int shank = 0;
 
@@ -571,6 +577,21 @@ void Neuropixels2::setAllReferences()
     {
         refId = Neuropixels::TIP_REF;
         shank = 3;
+    }
+
+    if (type == ProbeType::NP2_4)
+    {
+        // disconnect the four shank switches first
+        for (int shank = 0; shank < 4; shank++)
+        {
+            Neuropixels::setReference (basestation->slot,
+                                       headstage->port,
+                                       dock,
+                                       0,
+                                       shank,
+                                       Neuropixels::NONE_REF,
+                                       0);
+        }
     }
 
     LOGC ("Setting reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", selectedRef);

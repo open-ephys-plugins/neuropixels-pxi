@@ -30,13 +30,19 @@
 
 void Neuropixels_QuadBase::getInfo()
 {
-    errorCode = Neuropixels::readProbeSN (basestation->slot, headstage->port, dock, &info.serial_number);
+    checkError (Neuropixels::readProbeSN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          &info.serial_number),
+                "readProbeSN");
 
     char pn[MAXLEN];
-    errorCode = Neuropixels::readProbePN (basestation->slot_c, headstage->port_c, dock, pn, MAXLEN);
-
-    LOGC ("   Found probe part number: ", pn);
-    LOGC ("   Found probe serial number: ", info.serial_number);
+    checkError (Neuropixels::readProbePN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          pn,
+                                          MAXLEN),
+                "readProbePN");
 
     info.part_number = String (pn);
 }
@@ -113,26 +119,29 @@ bool Neuropixels_QuadBase::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    std::vector<std::vector<int>> blocks;
-
-    for (int shank = 0; shank < 4; shank++)
+    if (apView == nullptr)
     {
-        blocks.push_back ({}); // add a new block
+        std::vector<std::vector<int>> blocks;
 
-        for (int i = 0; i < 384; i++)
+        for (int shank = 0; shank < 4; shank++)
         {
-            blocks[shank].push_back (i + 384 * shank);
-        }
-    }
+            blocks.push_back ({}); // add a new block
 
-    apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks);
+            for (int i = 0; i < 384; i++)
+            {
+                blocks[shank].push_back (i + 384 * shank);
+            }
+        }
+
+        apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks);
+    }
 
     return errorCode == Neuropixels::SUCCESS;
 }
 
 bool Neuropixels_QuadBase::close()
 {
-    errorCode = Neuropixels::closeProbe (basestation->slot, headstage->port, dock);
+    errorCode = checkError (Neuropixels::closeProbe (basestation->slot, headstage->port, dock), "closeProbe");
     LOGD ("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
     return errorCode == Neuropixels::SUCCESS;
@@ -140,7 +149,7 @@ bool Neuropixels_QuadBase::close()
 
 void Neuropixels_QuadBase::initialize (bool signalChainIsLoading)
 {
-    errorCode = Neuropixels::init (basestation->slot, headstage->port, dock);
+    errorCode = checkError (Neuropixels::init (basestation->slot, headstage->port, dock), "init");
     LOGD ("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 }
 
@@ -168,7 +177,7 @@ void Neuropixels_QuadBase::calibrate()
 
     LOGD ("Gain file: ", gainFile);
 
-    errorCode = Neuropixels::setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
+    errorCode = checkError (Neuropixels::setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8()), "setGainCalibration");
 
     if (errorCode == 0)
     {
@@ -179,7 +188,7 @@ void Neuropixels_QuadBase::calibrate()
         LOGD ("Unsuccessful gain calibration, failed with error code: ", errorCode);
     }
 
-    errorCode = Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false);
+    errorCode = checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
 
     if (! errorCode == Neuropixels::SUCCESS)
     {
@@ -190,7 +199,7 @@ void Neuropixels_QuadBase::calibrate()
         LOGD ("Successfully wrote probe config ");
     }
 
-    errorCode = Neuropixels::np_setHSLed (basestation->slot, headstage->port, false);
+    checkError (Neuropixels::np_setHSLed (basestation->slot, headstage->port, false), "setHSLed");
 
     isCalibrated = true;
 }
@@ -204,15 +213,19 @@ void Neuropixels_QuadBase::selectElectrodes()
 
     for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
     {
-        ec = Neuropixels::selectElectrode (basestation->slot,
-                                           headstage->port,
-                                           dock,
-                                           settings.selectedChannel[ch],
-                                           settings.selectedShank[ch],
-                                           settings.availableBanks.indexOf (settings.selectedBank[ch]));
-    }
+        errorCode = checkError (Neuropixels::selectElectrode (basestation->slot,
+                                                              headstage->port,
+                                                              dock,
+                                                              settings.selectedChannel[ch] + 384 * settings.selectedShank[ch],
+                                                              settings.selectedShank[ch],
+                                                              settings.availableBanks.indexOf (settings.selectedBank[ch])),
+                                "selectElectrode");
 
-    LOGD ("Updated electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
+        if (errorCode != Neuropixels::SUCCESS)
+        {
+            LOGD ("Failed to select electrode bank for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " channel: ", settings.selectedChannel[ch], " shank: ", settings.selectedShank[ch], " to ", settings.availableBanks.indexOf (settings.selectedBank[ch]));
+        }
+    }
 }
 
 Array<int> Neuropixels_QuadBase::selectElectrodeConfiguration (String config)
@@ -316,24 +329,47 @@ void Neuropixels_QuadBase::setAllReferences()
             refId = Neuropixels::EXT_REF;
     }
 
+    // disconnect the four shank switches first
+    for (int shank = 0; shank < 4; shank++)
+    {
+        checkError (Neuropixels::setReference (basestation->slot,
+                                               headstage->port,
+                                               dock,
+                                               0,
+                                               shank,
+                                               Neuropixels::NONE_REF,
+                                               0),
+                    "setReference");
+    }
+
+    // connect the actual references
     for (int shank = 0; shank < 4; shank++)
     {
         for (int channel = 0; channel < 384; channel++)
-            Neuropixels::setReference (basestation->slot,
-                                       headstage->port,
-                                       dock,
-                                       channel,
-                                       shank,
-                                       refId,
-                                       refElectrodeBank);
+        {
+            if (checkError (Neuropixels::setReference (basestation->slot,
+                                                       headstage->port,
+                                                       dock,
+                                                       channel + 384 * shank,
+                                                       shank,
+                                                       refId,
+                                                       refElectrodeBank),
+                            "setReference")
+                != Neuropixels::SUCCESS)
+            {
+                LOGD ("Failed to set reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " channel: ", channel, " shank: ", shank, " to ", refId);
+            }
+        }
     }
-
-    LOGD ("Updated reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", refId);
 }
 
 void Neuropixels_QuadBase::writeConfiguration()
 {
-    errorCode = Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false);
+    checkError (Neuropixels::writeProbeConfiguration (basestation->slot,
+                                                      headstage->port,
+                                                      dock,
+                                                      false),
+                "writeProbeConfiguration");
 }
 
 void Neuropixels_QuadBase::startAcquisition()
@@ -342,10 +378,6 @@ void Neuropixels_QuadBase::startAcquisition()
     {
         for (int shank = 0; shank < 4; shank++)
         {
-            apView->reset (shank);
-
-            quadBaseBuffers[shank]->clear();
-
             acquisitionThreads.add (
                 new AcquisitionThread (basestation->slot,
                                        headstage->port,
@@ -359,6 +391,13 @@ void Neuropixels_QuadBase::startAcquisition()
 
     for (int shank = 0; shank < 4; shank++)
     {
+
+        apView->reset (shank);
+
+        quadBaseBuffers[shank]->clear();
+
+        acquisitionThreads[shank]->buffer = quadBaseBuffers[shank];
+
         jassert (quadBaseBuffers[shank]->getNumSamples() == 0);
 
         acquisitionThreads[shank]->startThread();
@@ -479,13 +518,13 @@ void AcquisitionThread::run()
                 ap_timestamps[packetNum] = ap_timestamp++;
                 event_codes[packetNum] = eventCode;
             }
+
+            buffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
         }
         else if (errorCode != Neuropixels::SUCCESS)
         {
             std::cout << "readPackets error code: " << errorCode << " for Basestation " << slot << ", probe " << port << std::endl;
         }
-
-        buffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
 
         if (! passedOneSecond)
         {

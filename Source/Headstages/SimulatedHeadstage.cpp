@@ -45,8 +45,9 @@ SimulatedHeadstage::SimulatedHeadstage (Basestation* bs, int port, String PN, in
     probes.add (new SimulatedProbe (basestation, this, flexCables[0], 1, PN, SN));
     probes[0]->setStatus (SourceStatus::CONNECTING);
 
-    if (PN == "NP2000" || PN == "NP2010")
+    if (PN == "NP2003" || PN == "NP2004" || PN == "NP2013" || PN == "NP2014")
     {
+        // 2.0 headstage, add a placeholder for second dock
         probes.add (nullptr);
     }
 }

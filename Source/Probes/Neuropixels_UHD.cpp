@@ -30,10 +30,19 @@
 
 void Neuropixels_UHD::getInfo()
 {
-    errorCode = Neuropixels::readProbeSN (basestation->slot, headstage->port, dock, &info.serial_number);
+    checkError (Neuropixels::readProbeSN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          &info.serial_number),
+                "readProbeSN");
 
     char pn[MAXLEN];
-    errorCode = Neuropixels::readProbePN (basestation->slot, headstage->port, dock, pn, MAXLEN);
+    checkError (Neuropixels::readProbePN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          pn,
+                                          MAXLEN),
+                "readProbePN");
 
     info.part_number = String (pn);
 }
@@ -264,25 +273,26 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     {
         LOGC ("Selecting column pattern: ALL");
         // select columnar configuration
-        ec = Neuropixels::selectColumnPattern (
-            basestation->slot,
-            headstage->port,
-            dock,
-            Neuropixels::ALL
-
-        );
+        checkError (Neuropixels::selectColumnPattern (
+                        basestation->slot,
+                        headstage->port,
+                        dock,
+                        Neuropixels::ALL
+                        ),
+                    "selectColumnPattern - ALL");
     }
     else
     {
         LOGC ("Selecting column pattern: OUTER");
         // select columnar configuration
-        ec = Neuropixels::selectColumnPattern (
-            basestation->slot,
-            headstage->port,
-            dock,
-            Neuropixels::OUTER
+        checkError (Neuropixels::selectColumnPattern (
+                        basestation->slot,
+                        headstage->port,
+                        dock,
+                        Neuropixels::OUTER
 
-        );
+                        ),
+                    "selectColumnPattern - OUTER");
     }
 
     // Select all groups in a particular bank
@@ -292,12 +302,13 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select all groups at this bank index
         for (int group = 0; group < groupsPerBank; group++)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                index); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            index), // bank index
+                        "selectElectrodeGroup");
 
         return *electrodeConfigurations[index];
     }
@@ -307,39 +318,43 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G2, G6, G10, G14, G18, G22 from bank 0
         for (int group = 2; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                0); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            0), // bank index
+                        "selectElectrodeGroup");
 
         // Select G0, G4, G8, G12, G16, G20 from bank 1
         for (int group = 0; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                1); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            1), // bank index
+                        "selectElectrodeGroup");
 
         // Select G3, G7, G11, G15, G19, G23 from bank 2
         for (int group = 3; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                2); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            2), // bank index
+                        "selectElectrodeGroup");
 
         // Select G1, G5, G9, G13, G17, G21 from bank 3
         for (int group = 1; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                3); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            3), // bank index
+                        "selectElectrodeGroup");
 
         return *electrodeConfigurations[index];
     }
@@ -347,39 +362,43 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     {
         // Select G2, G6, G10, G14, G18, G22 from bank 0
         for (int group = 2; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                0); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            0), // bank index
+                        "selectElectrodeGroup");
 
         // Select G3, G7, G11, G15, G19, G23 from bank 0
         for (int group = 3; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                0); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            0), // bank index
+                        "selectElectrodeGroup");
 
         // Select G0, G4, G8, G12, G16, G20 from bank 1
         for (int group = 0; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                1); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            1), // bank index
+                        "selectElectrodeGroup");
 
         // Select G1, G5, G9, G13, G17, G21 from bank 1
         for (int group = 1; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                1); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            1), // bank index
+                        "selectElectrodeGroup");
 
         return *electrodeConfigurations[index];
     }
@@ -387,39 +406,43 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     {
         // Select G2, G6, G10, G14, G18, G22 from bank 1
         for (int group = 2; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                1); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            1), // bank index
+                        "selectElectrodeGroup");
 
         // Select G3, G7, G11, G15, G19, G23 from bank 1
         for (int group = 3; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                1); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            1), // bank index
+                        "selectElectrodeGroup");
 
         // Select G0, G4, G8, G12, G16, G20 from bank 0
         for (int group = 0; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                0); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            0), // bank index
+                        "selectElectrodeGroup");
 
         // Select G1, G5, G9, G13, G17, G21 from bank 0
         for (int group = 1; group < groupsPerBank; group += 4)
-            ec = Neuropixels::selectElectrodeGroup (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                group, // group number
-                0); // bank index
+            checkError (Neuropixels::selectElectrodeGroup (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            group, // group number
+                            0), // bank index
+                        "selectElectrodeGroup");
 
         return *electrodeConfigurations[index];
     }
@@ -457,12 +480,13 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
         {
             int G = start_group + group * 4;
 
-            ec = Neuropixels::selectElectrodeGroupMask (
-                basestation->slot, // slot
-                headstage->port, // port
-                dock, // dock
-                G, // group number
-                (Neuropixels::electrodebanks_t) (bank1 + bank2)); // bank mask
+            checkError (Neuropixels::selectElectrodeGroupMask (
+                            basestation->slot, // slot
+                            headstage->port, // port
+                            dock, // dock
+                            G, // group number
+                            (Neuropixels::electrodebanks_t) (bank1 + bank2)),
+                        "selectElectrodeGroupMask"); // bank mask
         }
     }
 
@@ -472,11 +496,12 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 void Neuropixels_UHD::setApFilterState()
 {
     for (int channel = 0; channel < 384; channel++)
-        Neuropixels::setAPCornerFrequency (basestation->slot,
+        checkError(Neuropixels::setAPCornerFrequency (basestation->slot,
                                            headstage->port,
                                            dock,
                                            channel,
-                                           ! settings.apFilterState); // true if disabled
+                                           ! settings.apFilterState), // true if disabled
+            "setAPCornerFrequency");
 }
 
 void Neuropixels_UHD::setAllGains()
@@ -485,7 +510,12 @@ void Neuropixels_UHD::setAllGains()
 
     for (int channel = 0; channel < 384; channel++)
     {
-        Neuropixels::setGain (basestation->slot, headstage->port, dock, channel, settings.apGainIndex, settings.lfpGainIndex);
+        checkError(Neuropixels::setGain (basestation->slot, 
+            headstage->port, 
+            dock, 
+            channel, 
+            settings.apGainIndex, 
+            settings.lfpGainIndex), "setGain");
     }
 }
 
@@ -518,7 +548,7 @@ void Neuropixels_UHD::setAllReferences()
     }
 
     for (int channel = 0; channel < 384; channel++)
-        Neuropixels::setReference (basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank);
+        checkError(Neuropixels::setReference (basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank), "setReference");
 }
 
 void Neuropixels_UHD::writeConfiguration()
@@ -526,7 +556,7 @@ void Neuropixels_UHD::writeConfiguration()
     if (basestation->isBusy())
         basestation->waitForThreadToExit();
 
-    errorCode = Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false);
+    errorCode = checkError(Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
 
     if (errorCode == Neuropixels::SUCCESS)
     {

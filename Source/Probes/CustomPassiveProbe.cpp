@@ -30,10 +30,19 @@
 
 void CustomPassiveProbe::getInfo()
 {
-    errorCode = Neuropixels::readProbeSN (basestation->slot, headstage->port, dock, &info.serial_number);
+    checkError (Neuropixels::readProbeSN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          &info.serial_number),
+                "readProbeSN");
 
     char pn[MAXLEN];
-    errorCode = Neuropixels::readProbePN (basestation->slot, headstage->port, dock, pn, MAXLEN);
+    checkError (Neuropixels::readProbePN (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          pn,
+                                          MAXLEN),
+                "readProbePN");
 
     info.part_number = String (pn);
 }
@@ -110,7 +119,10 @@ CustomPassiveProbe::CustomPassiveProbe (Basestation* bs, Headstage* hs, Flex* fl
 bool CustomPassiveProbe::open()
 {
     LOGC ("Opening probe...");
-    errorCode = Neuropixels::openProbe (basestation->slot, headstage->port, dock);
+    errorCode = checkError (Neuropixels::openProbe (basestation->slot,
+                                                    headstage->port,
+                                                    dock),
+                            "openProbe");
 
     LOGC ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
@@ -126,7 +138,10 @@ bool CustomPassiveProbe::open()
 
 bool CustomPassiveProbe::close()
 {
-    errorCode = Neuropixels::closeProbe (basestation->slot, headstage->port, dock);
+    errorCode = checkError (Neuropixels::closeProbe (basestation->slot,
+                                                     headstage->port,
+                                                     dock),
+                            "closeProbe");
     LOGD ("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
     return errorCode == Neuropixels::SUCCESS;
@@ -134,14 +149,21 @@ bool CustomPassiveProbe::close()
 
 void CustomPassiveProbe::initialize (bool signalChainIsLoading)
 {
-    errorCode = Neuropixels::init (basestation->slot, headstage->port, dock);
-    LOGD ("Neuropixels::init: errorCode: ", errorCode);
+    checkError (Neuropixels::init (basestation->slot,
+                                   headstage->port,
+                                   dock),
+                "init");
 
-    errorCode = Neuropixels::setOPMODE (basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
-    LOGD ("Neuropixels::setOPMODE: errorCode: ", errorCode);
+    checkError (Neuropixels::setOPMODE (basestation->slot,
+                                        headstage->port,
+                                        dock,
+                                        Neuropixels::RECORDING),
+                "setOpMode");
 
-    errorCode = Neuropixels::setHSLed (basestation->slot, headstage->port, false);
-    LOGDD ("Neuropixels::setHSLed: errorCode: ", errorCode);
+    checkError (Neuropixels::setHSLed (basestation->slot,
+                                       headstage->port,
+                                       false),
+                "setHSLed");
 }
 
 void CustomPassiveProbe::calibrate()
@@ -204,7 +226,12 @@ void CustomPassiveProbe::printSettings()
     int apGainIndex;
     int lfpGainIndex;
 
-    Neuropixels::getGain (basestation->slot, headstage->port, dock, 32, &apGainIndex, &lfpGainIndex);
+    Neuropixels::getGain (basestation->slot,
+                          headstage->port,
+                          dock,
+                          32,
+                          &apGainIndex,
+                          &lfpGainIndex);
 
     LOGD ("Current settings for probe on slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " AP=", settings.availableApGains[apGainIndex], " LFP=", settings.availableLfpGains[lfpGainIndex], " REF=", settings.availableReferences[settings.referenceIndex]);
 }
@@ -222,11 +249,12 @@ Array<int> CustomPassiveProbe::selectElectrodeConfiguration (String config)
 void CustomPassiveProbe::setApFilterState()
 {
     for (int channel = 0; channel < 384; channel++)
-        Neuropixels::setAPCornerFrequency (basestation->slot,
-                                           headstage->port,
-                                           dock,
-                                           channel,
-                                           ! settings.apFilterState); // true if disabled
+        checkError (Neuropixels::setAPCornerFrequency (basestation->slot,
+                                                       headstage->port,
+                                                       dock,
+                                                       channel,
+                                                       ! settings.apFilterState), // true if disabled
+                    "setAPCornerFrequency");
 }
 
 void CustomPassiveProbe::setAllGains()
@@ -235,7 +263,13 @@ void CustomPassiveProbe::setAllGains()
 
     for (int channel = 0; channel < 384; channel++)
     {
-        Neuropixels::setGain (basestation->slot, headstage->port, dock, channel, settings.apGainIndex, settings.lfpGainIndex);
+        checkError (Neuropixels::setGain (basestation->slot,
+                                          headstage->port,
+                                          dock,
+                                          channel,
+                                          settings.apGainIndex,
+                                          settings.lfpGainIndex),
+                    "setGain");
     }
 }
 
@@ -268,7 +302,14 @@ void CustomPassiveProbe::setAllReferences()
     }
 
     for (int channel = 0; channel < 384; channel++)
-        Neuropixels::setReference (basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank);
+        checkError (Neuropixels::setReference (basestation->slot,
+                                               headstage->port,
+                                               dock,
+                                               channel,
+                                               0,
+                                               refId,
+                                               refElectrodeBank),
+                    "setReference");
 }
 
 void CustomPassiveProbe::writeConfiguration()
@@ -276,7 +317,11 @@ void CustomPassiveProbe::writeConfiguration()
     if (basestation->isBusy())
         basestation->waitForThreadToExit();
 
-    errorCode = Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false);
+    errorCode = checkError (Neuropixels::writeProbeConfiguration (basestation->slot,
+                                                                  headstage->port,
+                                                                  dock,
+                                                                  false),
+                            "writeProbeConfiguration");
 
     if (errorCode == Neuropixels::SUCCESS)
     {
