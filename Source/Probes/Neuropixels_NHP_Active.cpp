@@ -133,7 +133,6 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active (Basestation* bs, Headstage* hs, 
 
 bool Neuropixels_NHP_Active::open()
 {
-    LOGC ("Opening probe...");
     errorCode = Neuropixels::openProbe (basestation->slot, headstage->port, dock);
     LOGD ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 

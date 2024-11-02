@@ -113,7 +113,7 @@ Neuropixels_QuadBase::Neuropixels_QuadBase (Basestation* bs, Headstage* hs, Flex
 bool Neuropixels_QuadBase::open()
 {
     errorCode = Neuropixels::openProbe (basestation->slot, headstage->port, dock);
-    LOGC ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+    LOGD ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
     ap_timestamp = 0;
     lfp_timestamp = 0;

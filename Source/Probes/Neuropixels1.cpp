@@ -123,10 +123,9 @@ Neuropixels1::Neuropixels1 (Basestation* bs, Headstage* hs, Flex* fl) : Probe (b
 
 bool Neuropixels1::open()
 {
-    LOGC ("Opening probe...");
     errorCode = Neuropixels::openProbe (basestation->slot, headstage->port, dock);
 
-    LOGC ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+    LOGD ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
     ap_timestamp = 0;
     lfp_timestamp = 0;

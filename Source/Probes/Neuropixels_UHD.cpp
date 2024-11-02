@@ -128,10 +128,9 @@ Neuropixels_UHD::Neuropixels_UHD (Basestation* bs, Headstage* hs, Flex* fl) : Pr
 
 bool Neuropixels_UHD::open()
 {
-    LOGC ("Opening probe...");
     errorCode = Neuropixels::openProbe (basestation->slot, headstage->port, dock);
 
-    LOGC ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+    LOGD ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
     ap_timestamp = 0;
     lfp_timestamp = 0;

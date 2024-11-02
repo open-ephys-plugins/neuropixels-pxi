@@ -118,13 +118,13 @@ CustomPassiveProbe::CustomPassiveProbe (Basestation* bs, Headstage* hs, Flex* fl
 
 bool CustomPassiveProbe::open()
 {
-    LOGC ("Opening probe...");
+
     errorCode = checkError (Neuropixels::openProbe (basestation->slot,
                                                     headstage->port,
                                                     dock),
                             "openProbe");
 
-    LOGC ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+    LOGD ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
     ap_timestamp = 0;
     lfp_timestamp = 0;
