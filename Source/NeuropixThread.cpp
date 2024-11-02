@@ -475,8 +475,6 @@ NeuropixThread::~NeuropixThread()
 
      LOGD ("NeuropixThread destructor.");
 
-     editor->uiLoader->waitForThreadToExit (-1);
-
     closeConnection();
 }
 

@@ -625,7 +625,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
         if (thread->type != ONEBOX)
         {
             mainSyncSelector->setVisible (true);
-            //addSyncChannelButton->setVisible (true);
+            addSyncChannelButton->setVisible (true);
             refreshButton->setVisible (true);
         }
 
@@ -634,6 +634,8 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
     }
     else
     {
+        syncFrequencyLabel->setVisible (false);
+        addSyncChannelButton->setVisible (false);
         desiredWidth = 250;
     }
 
@@ -777,7 +779,8 @@ void NeuropixEditor::comboBoxChanged (ComboBox* comboBox)
         if (asOutput)
         {
             thread->setSyncOutput (slotIndex);
-            syncFrequencyLabel->setVisible (true);
+            if (background->numBasestations > 0)
+                syncFrequencyLabel->setVisible (true);
             background->setFreqSelectAvailable (true);
         }
         else
@@ -1051,7 +1054,9 @@ void NeuropixEditor::loadVisualizerEditorParameters (XmlElement* xml)
             {
                 inputOutputSyncSelector->setSelectedItemIndex (1, dontSendNotification);
                 thread->setSyncOutput (mainSyncSlotIndex);
-                syncFrequencyLabel->setVisible (true);
+
+                if(background->numBasestations > 0)
+                    syncFrequencyLabel->setVisible (true);
                 background->setFreqSelectAvailable (true);
                 // syncFrequencySelector->setSelectedItemIndex (frequencyIndex, dontSendNotification);
                 thread->setSyncFrequency (mainSyncSlotIndex, frequencyIndex);
