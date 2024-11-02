@@ -1467,9 +1467,6 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
         return false;
     }
 
-    //if (electrodeConfigurationComboBox != 0)
-    //    electrodeConfigurationComboBox->setSelectedId(p.electrodeConfigurationIndex + 2, dontSendNotification);
-
     // update display
     if (apGainComboBox != 0)
         apGainComboBox->setSelectedId (p.apGainIndex + 1, dontSendNotification);
@@ -1533,6 +1530,9 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
             }
         }
     }
+
+    probe->updateNamingScheme (basestation->getNamingScheme());
+    updateInfoString();
 
     // apply settings in background thread
     if (shouldUpdateProbe)
@@ -1840,28 +1840,33 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                         String PN = xmlNode->getStringAttribute ("probe_part_number");
                         ProbeType type = ProbeType::NP1;
 
-                        if (PN.equalsIgnoreCase ("NP1010"))
+                        if (PN.equalsIgnoreCase ("NP1010") || PN.equalsIgnoreCase("NP1011") || PN.equalsIgnoreCase("NP1012") || PN.equalsIgnoreCase("NP1013")
+                            || PN.equalsIgnoreCase("NP1015") || PN.equalsIgnoreCase("NP1016"))
                             type = ProbeType::NHP10;
 
-                        else if (PN.equalsIgnoreCase ("NP1020") || PN.equalsIgnoreCase ("NP1021"))
+                        else if (PN.equalsIgnoreCase ("NP1020") || PN.equalsIgnoreCase ("NP1021") || PN.equalsIgnoreCase ("NP1022"))
                             type = ProbeType::NHP25;
 
-                        else if (PN.equalsIgnoreCase ("NP1030") || PN.equalsIgnoreCase ("NP1031"))
+                        else if (PN.equalsIgnoreCase ("NP1030") || PN.equalsIgnoreCase ("NP1031") || PN.equalsIgnoreCase("NP1032"))
                             type = ProbeType::NHP45;
 
                         else if (PN.equalsIgnoreCase ("NP1200") || PN.equalsIgnoreCase ("NP1210"))
                             type = ProbeType::NHP1;
 
-                        else if (PN.equalsIgnoreCase ("PRB2_1_2_0640_0") || PN.equalsIgnoreCase ("NP2000"))
+                        else if (PN.equalsIgnoreCase ("PRB2_1_2_0640_0") || PN.equalsIgnoreCase ("NP2000") || PN.equalsIgnoreCase ("NP2003") || PN.equalsIgnoreCase ("NP2004"))
                             type = ProbeType::NP2_1;
 
-                        else if (PN.equalsIgnoreCase ("PRB2_4_2_0640_0") || PN.equalsIgnoreCase ("NP2010"))
+                        else if (PN.equalsIgnoreCase ("PRB2_4_2_0640_0") || PN.equalsIgnoreCase ("NP2010") || PN.equalsIgnoreCase ("NP2013") || PN.equalsIgnoreCase ("NP2014"))
                             type = ProbeType::NP2_4;
 
-                        else if (PN.equalsIgnoreCase ("PRB_1_4_0480_1") || PN.equalsIgnoreCase ("PRB_1_4_0480_1_C"))
+                        else if (PN.equalsIgnoreCase ("NP2020"))
+                            type = ProbeType::QUAD_BASE;
+
+                        else if (PN.equalsIgnoreCase ("PRB_1_4_0480_1") || PN.equalsIgnoreCase ("PRB_1_4_0480_1_C") || PN.equalsIgnoreCase ("PRB_1_2_0480_2"))
                             type = ProbeType::NP1;
 
-                        else if (PN.equalsIgnoreCase ("NP1100"))
+                        else if (PN.equalsIgnoreCase ("NP1100") || PN.equalsIgnoreCase("NP1120") || PN.equalsIgnoreCase("NP1121") ||
+                            PN.equalsIgnoreCase("NP1122") || PN.equalsIgnoreCase("NP1123"))
                             type = ProbeType::UHD1;
 
                         else if (PN.equalsIgnoreCase ("NP1110"))
@@ -1949,11 +1954,14 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                                                   matchingNode->getIntAttribute ("ZoomOffset"));
 
             String customName = thread->getCustomProbeName (matchingNode->getStringAttribute ("probe_serial_number"));
+            LOGC ("Found custom name: ", customName);
 
             if (customName.length() > 0)
             {
                 probe->customName.probeSpecific = customName;
             }
+
+            probe->updateNamingScheme (basestation->getNamingScheme());
 
             settings.apGainIndex = matchingNode->getIntAttribute ("apGainIndex", 3);
             settings.lfpGainIndex = matchingNode->getIntAttribute ("lfpGainIndex", 2);
@@ -2019,6 +2027,8 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
         probe->updateSettings (settings);
 
         applyProbeSettings (settings, false);
+
+        updateInfoString();
     }
 }
 

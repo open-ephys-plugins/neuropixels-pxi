@@ -26,6 +26,7 @@
 #include "NeuropixCanvas.h"
 #include "NeuropixComponents.h"
 #include "NeuropixThread.h"
+#include "UI/NeuropixInterface.h"
 
 RefreshButton::RefreshButton() : Button ("Refresh")
 {
@@ -881,6 +882,15 @@ void NeuropixEditor::buttonClicked (Button* button)
             {
                 btn->setSourceStatus (SourceStatus::DISCONNECTED);
                 btn->stopTimer();
+            }
+
+            for (auto& settingsInterface : canvas->settingsInterfaces)
+            {
+                if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
+                {
+                    NeuropixInterface* ni = (NeuropixInterface*) settingsInterface;
+                    ni->probe = nullptr;
+                }
             }
 
             if (thread->getBasestations()[0]->type == BasestationType::SIMULATED)

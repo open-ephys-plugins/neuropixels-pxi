@@ -181,7 +181,7 @@ ProbeNameConfig::ProbeNameConfig (Basestation* bs_, NeuropixThread* thread_)
 
     int x, y;
 
-    for (int port = 4; port > 0; port--)
+    for (int port = 1; port < 5; port++)
     {
         for (int dock = 1; dock <= 2; dock++)
         {
@@ -234,7 +234,6 @@ ProbeNameConfig::ProbeNameConfig (Basestation* bs_, NeuropixThread* thread_)
 
 void ProbeNameConfig::update()
 {
-    LOGD ("Naming scheme: ", namingScheme);
 
     basestation->setNamingScheme (namingScheme);
 
@@ -245,9 +244,7 @@ void ProbeNameConfig::update()
 
     for (auto&& label : probeNames)
     {
-
         label->setColour (juce::Label::ColourIds::textColourId, juce::Colours::white);
-        
 
         if (namingScheme == PORT_SPECIFIC_NAMING)
         {
@@ -288,8 +285,6 @@ void ProbeNameConfig::update()
                     label->setText (label->customProbe, dontSendNotification);
                     label->setColour (juce::Label::ColourIds::outlineWhenEditingColourId, Colours::orange);
                     label->setColour (juce::Label::ColourIds::backgroundColourId, juce::Colour (130, 130, 130));
-                    label->setText (basestation->getCustomPortName (label->port, label->dock), dontSendNotification);
-
                     label->setEditable (true);
                     label->probe->displayName = label->customProbe;
                 }

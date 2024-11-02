@@ -1563,5 +1563,7 @@ String NeuropixThread::getCustomProbeName (String serialNumber)
 
 void NeuropixThread::setCustomProbeName (String serialNumber, String customName)
 {
+    LOGC ("Setting custom probe name for ", serialNumber, " to ", customName);
+
     customProbeNames[serialNumber] = customName;
 }
