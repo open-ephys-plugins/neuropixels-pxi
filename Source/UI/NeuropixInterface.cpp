@@ -773,7 +773,8 @@ void NeuropixInterface::setAnnotationLabel (String s, Colour c)
 
 void NeuropixInterface::buttonClicked (Button* button)
 {
-    if (button == probeEnableButton.get())
+
+    if (button == probeEnableButton.get() && !acquisitionIsActive)
     {
         probe->isEnabled = probeEnableButton->getToggleState();
 
@@ -1130,11 +1131,15 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
 
 void NeuropixInterface::startAcquisition()
 {
+
     bool enabledState = false;
     acquisitionIsActive = true;
 
     if (enableButton != nullptr)
         enableButton->setEnabled (enabledState);
+
+    if (probeEnableButton != nullptr)
+        probeEnableButton->setEnabled (enabledState);
 
     if (electrodeConfigurationComboBox != nullptr)
         electrodeConfigurationComboBox->setEnabled (enabledState);
@@ -1198,6 +1203,9 @@ void NeuropixInterface::stopAcquisition()
 
     if (enableButton != nullptr)
         enableButton->setEnabled (enabledState);
+
+    if (probeEnableButton != nullptr)
+        probeEnableButton->setEnabled (enabledState);
 
     if (electrodeConfigurationComboBox != nullptr)
         electrodeConfigurationComboBox->setEnabled (enabledState);
