@@ -1173,6 +1173,9 @@ void NeuropixInterface::startAcquisition()
     if (enableButton != nullptr)
         enableButton->setEnabled (enabledState);
 
+    if (probeEnableButton != nullptr)
+        probeEnableButton->setEnabled (enabledState);
+
     if (electrodeConfigurationComboBox != nullptr)
         electrodeConfigurationComboBox->setEnabled (enabledState);
 
@@ -1235,6 +1238,9 @@ void NeuropixInterface::stopAcquisition()
 
     if (enableButton != nullptr)
         enableButton->setEnabled (enabledState);
+
+    if (probeEnableButton != nullptr)
+        probeEnableButton->setEnabled (enabledState);
 
     if (electrodeConfigurationComboBox != nullptr)
         electrodeConfigurationComboBox->setEnabled (enabledState);

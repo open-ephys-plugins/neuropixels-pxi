@@ -241,7 +241,7 @@ void NeuropixCanvas::startAcquisition()
 {
     for (auto settingsInterface : settingsInterfaces)
     {
-        if (settingsInterface->dataSource != nullptr && settingsInterface->dataSource->isEnabled)
+        if (settingsInterface->dataSource != nullptr)
         {
             settingsInterface->startAcquisition();
         }
@@ -252,7 +252,7 @@ void NeuropixCanvas::stopAcquisition()
 {
     for (auto settingsInterface : settingsInterfaces)
     {
-        if (settingsInterface->dataSource != nullptr && settingsInterface->dataSource->isEnabled)
+        if (settingsInterface->dataSource != nullptr)
         {
             settingsInterface->stopAcquisition();
         }
