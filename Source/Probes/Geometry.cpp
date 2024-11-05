@@ -62,6 +62,7 @@ bool Geometry::forPartNumber (String PN,
         NHP1 (em, pm);
 
     else if (PN.equalsIgnoreCase ("PRB2_1_2_0640_0")
+             || PN.equalsIgnoreCase ("PRB2_1_4_0480_1")
              || PN.equalsIgnoreCase ("NP2000"))
         NP2 (1, 14, em, pm); // single shank, 14-bit ADC
 

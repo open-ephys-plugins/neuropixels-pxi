@@ -52,7 +52,7 @@ public:
         }
         else
         {
-            if (partNumber.equalsIgnoreCase ("PRB2_1_2_0640_0"))
+            if (partNumber.equalsIgnoreCase ("PRB2_1_2_0640_0") || partNumber.equalsIgnoreCase ("PRB2_1_4_0480_1"))
                 imroPartId = "21";
             else if (partNumber.equalsIgnoreCase ("PRB2_4_2_0640_0"))
                 imroPartId = "24";
