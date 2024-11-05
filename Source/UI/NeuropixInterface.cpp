@@ -1177,6 +1177,9 @@ void NeuropixInterface::startAcquisition()
     if (loadJsonButton != nullptr)
         loadJsonButton->setEnabled (enabledState);
 
+    if (loadImroComboBox != nullptr)
+        loadImroComboBox->setEnabled (enabledState);
+
     if (firmwareToggleButton != nullptr)
         firmwareToggleButton->setEnabled (enabledState);
 
@@ -1243,6 +1246,9 @@ void NeuropixInterface::stopAcquisition()
     if (loadJsonButton != nullptr)
         loadJsonButton->setEnabled (enabledState);
 
+    if (loadImroComboBox != nullptr)
+        loadImroComboBox->setEnabled (enabledState);
+
     if (firmwareToggleButton != nullptr)
         firmwareToggleButton->setEnabled (enabledState);
 
@@ -1258,38 +1264,7 @@ void NeuropixInterface::stopAcquisition()
     if (bscFirmwareButton != nullptr)
         bscFirmwareButton->setEnabled (enabledState);
 
-    //probeBrowser->stopTimer();
 }
-
-/*void NeuropixInterface::mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel)
-{
-
-    if (event.x > 100 && event.x < 350)
-    {
-
-        if (wheel.deltaY > 0)
-            zoomOffset += 2;
-        else
-            zoomOffset -= 2;
-
-        //std::cout << wheel.deltaY << " " << zoomOffset << std::endl;
-
-        if (zoomOffset < 0)
-        {
-            zoomOffset = 0;
-        }
-        else if (zoomOffset + 18 + zoomHeight > lowerBound)
-        {
-            zoomOffset = lowerBound - zoomHeight - 18;
-        }
-
-        repaint();
-    }
-    else {
-        canvas->mouseWheelMove(event, wheel);
-    }
-
-}*/
 
 void NeuropixInterface::paint (Graphics& g)
 {
