@@ -63,7 +63,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         mode = VisualizationMode::ENABLE_VIEW;
 
         probeBrowser = std::make_unique<ProbeBrowser> (this);
-        probeBrowser->setBounds (0, 0, 800, 600);
+        probeBrowser->setBounds (0, 0, 400, 550);
         addAndMakeVisible (probeBrowser.get());
 
         int currentHeight = 55;
