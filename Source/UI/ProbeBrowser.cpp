@@ -25,6 +25,8 @@
 
 ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
 {
+    tooltipWindow = std::make_unique <TooltipWindow> (parent, 300);
+
     cursorType = MouseCursor::NormalCursor;
 
     activityToView = ActivityToView::APVIEW;
@@ -227,9 +229,8 @@ void ProbeBrowser::mouseMove (const MouseEvent& event)
         {
             isOverElectrode = true;
             electrodeInfoString = getElectrodeInfoString (index);
+            tooltipWindow->displayTip (event.getScreenPosition(), electrodeInfoString);
         }
-
-        repaint();
     }
     else
     {
@@ -238,7 +239,7 @@ void ProbeBrowser::mouseMove (const MouseEvent& event)
         if (isOverChannelNew != isOverElectrode)
         {
             isOverElectrode = isOverChannelNew;
-            repaint();
+            tooltipWindow->hideTip();
         }
     }
 }
@@ -876,16 +877,6 @@ void ProbeBrowser::paint (Graphics& g)
     {
         g.setColour (Colours::white.withAlpha (0.5f));
         //g.drawRect(selectionBox);
-    }
-
-    if (isOverElectrode)
-    {
-        g.setColour (Colour (55, 55, 55));
-        g.setFont (15);
-        g.drawMultiLineText (electrodeInfoString,
-                             250 + shankOffset + 45,
-                             330,
-                             250);
     }
 }
 

@@ -99,6 +99,8 @@ private:
     Array<int> getElectrodesWithinBounds (int x, int y, int w, int h);
     String getElectrodeInfoString (int index);
 
+    std::unique_ptr<TooltipWindow> tooltipWindow;
+
     NeuropixInterface* parent;
 };
 
