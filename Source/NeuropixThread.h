@@ -82,9 +82,21 @@ public:
           neuropixThread (neuropixThread_),
           basestations (basestations_),
           type (type_),
-          api_v3 (api_v3_) {}
+          api_v3 (api_v3_) 
+    {
+        progressWindowLookAndFeel = std::make_unique<LookAndFeel_V4>();
+        progressWindowLookAndFeel->setColour (AlertWindow::backgroundColourId, Colour(0xffededed));
+        progressWindowLookAndFeel->setColour (AlertWindow::textColourId, Colours::black);
+        progressWindowLookAndFeel->setColour (AlertWindow::outlineColourId, Colour(0xff666666));
+        progressWindowLookAndFeel->setColour (ProgressBar::backgroundColourId, Colours::lightgrey);
+        progressWindowLookAndFeel->setColour (ProgressBar::foregroundColourId, Colours::orange);
+        getAlertWindow()->setLookAndFeel (progressWindowLookAndFeel.get());
+    }
 
-    ~Initializer() {}
+    ~Initializer() 
+    {
+        getAlertWindow()->setLookAndFeel(nullptr);
+    }
 
     void run() override;
 
@@ -93,6 +105,8 @@ private:
     OwnedArray<Basestation>& basestations;
     NeuropixAPIv3& api_v3;
     DeviceType type;
+
+    std::unique_ptr<LookAndFeel_V4> progressWindowLookAndFeel;
 };
 
 /**
