@@ -321,12 +321,13 @@ public:
 
     NeuropixCanvas* canvas;
 
+    std::unique_ptr<ComboBox> inputOutputSyncSelector;
+
 private:
     OwnedArray<UtilityButton> directoryButtons;
     OwnedArray<FifoMonitor> fifoMonitors;
 
     std::unique_ptr<ComboBox> mainSyncSelector;
-    std::unique_ptr<ComboBox> inputOutputSyncSelector;
     // std::unique_ptr<ComboBox> syncFrequencySelector;
     std::unique_ptr<Label> syncFrequencyLabel;
 

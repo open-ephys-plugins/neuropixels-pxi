@@ -378,6 +378,10 @@ void BackgroundLoaderWithProgressWindow::updateProbeMap()
             bs->close();
             bs->open();
 
+            // Restore sync state
+            if (editor->inputOutputSyncSelector->getSelectedItemIndex() == 0)
+                bs->setSyncAsInput();
+
             for (auto hs : bs->getHeadstages())
             {
                 if (hs != nullptr)
