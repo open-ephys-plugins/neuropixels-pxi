@@ -709,10 +709,13 @@ void NeuropixThread::setMainSync (int slotIndex)
     {
         for (int i = 0; i < basestations.size(); i++)
         {
-            if (i == slotIndex)
-                basestations[i]->setSyncAsInput();
-			else
-				basestations[i]->setSyncAsPassive();
+            if (basestations[i]->type == BasestationType::PXI)
+            {
+                if (i == slotIndex)
+                    basestations[i]->setSyncAsInput();
+                else
+                    basestations[i]->setSyncAsPassive();
+            }
 		}
     }
 }

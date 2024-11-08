@@ -151,6 +151,8 @@ bool OneBox::open()
         adcSource = std::make_unique<OneBoxADC> (this, dacSource.get());
     }
 
+    setSyncAsInput();
+
     syncFrequencies.clear();
     syncFrequencies.add (1);
 
@@ -283,8 +285,6 @@ void OneBox::initialize (bool signalChainIsLoading)
     {
 		LOGC ("OneBox initialized on slot ", slot);
 	}
-
-    setSyncAsInput();
 
 }
 
