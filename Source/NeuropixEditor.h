@@ -253,6 +253,9 @@ public:
 
     /** Updates the probe map */
     void updateProbeMap();
+
+private:
+    std::unique_ptr<LookAndFeel_V4> progressWindowLookAndFeel;
 };
 
 
