@@ -2,7 +2,7 @@
     ------------------------------------------------------------------
 
     This file is part of the Open Ephys GUI
-    Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+    Copyright (C) 2024 Open Ephys
 
     ------------------------------------------------------------------
 
@@ -20,97 +20,56 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
+
 #ifndef __ONEBOXSETTINGSINTERFACE_H_2C4C2D67__
 #define __ONEBOXSETTINGSINTERFACE_H_2C4C2D67__
 
 #include <VisualizerEditorHeaders.h>
 
-#include "SettingsInterface.h"
 #include "../NeuropixComponents.h"
 #include "../Probes/OneBoxADC.h"
+#include "SettingsInterface.h"
 
 class WavePlayer;
 class DataPlayer;
 class OneBoxDAC;
 
-enum AdcChannelStatus {
+enum AdcChannelStatus
+{
     AVAILABLE = 0,
     IN_USE = 1
 };
 
-
 class AdcChannelButton : public ToggleButton
 {
 public:
+    /** Constructor */
+    AdcChannelButton (int channel);
 
-    enum AdcInputRange {
-        PLUS_MINUS_TWO_PT_5_V = 1,
-        PLUS_MINUS_FIVE_V = 2,
-        PLUS_MINUS_TEN_V = 3
-    };
+    /** Called when channel is selected */
+    void setSelectedState (bool);
 
-    enum AdcThreshold {
-        ONE_V = 1,
-        THREE_V = 2
-    };
+    /** Sets whether the ADC is active*/
+    void setStatus (AdcChannelStatus status, int sharedChannel);
 
-    enum TriggerWavePlayer {
-        NO = 1,
-        YES = 2
-    };
+    /** Returns channel index*/
+    int getChannelIndex() { return channel; }
 
-    enum AvailableDacs {
-        NO_DAC = 1,
-        DAC0 = 2,
-        DAC1 = 3,
-        DAC2 = 4,
-        DAC3 = 5,
-        DAC4 = 6,
-        DAC5 = 7,
-        DAC6 = 8,
-        DAC7 = 9,
-        DAC8 = 10,
-        DAC9 = 11,
-        DAC10 = 12,
-        DAC11 = 13
-    };
+    /** Whether ADC channel is using the comparator*/
+    bool useAsDigitalInput = false;
 
-    enum AvailableAdcs {
-        NO_ADC = 1,
-        ADC0 = 2,
-        ADC1 = 3,
-        ADC2 = 4,
-        ADC3 = 5,
-        ADC4 = 6,
-        ADC5 = 7,
-        ADC6 = 8,
-        ADC7 = 9,
-        ADC8 = 10,
-        ADC9 = 11,
-        ADC10 = 12,
-        ADC11 = 13
-    };
-
-    AdcChannelButton(int channel);
-
-    void setSelectedState(bool);
-
-    void setStatus(AdcChannelStatus status, AvailableAdcs sharedChannel = NO_ADC);
-
-    int inputRange;
-    int threshold;
-    int triggerWavePlayer;
-    int mapToOutput;
-    int inputSharedBy;
-    int channel;
+    /** Whether ADC channel triggers the waveplayer */
+    bool triggersWaveplayer = false;
 
 private:
-    void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
+    void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown);
 
     AdcChannelStatus status;
+    
+    int channel;
+    int mapToOutput = -1;
 
-    bool selected;
-
+    bool selected = false;
 };
 
 /** 
@@ -118,16 +77,16 @@ private:
     User interface for the OneBox ADC/DAC channels
 
 */
-class OneBoxInterface : public SettingsInterface, 
-                     public ComboBox::Listener, 
-                     public Button::Listener
+class OneBoxInterface : public SettingsInterface,
+                        public ComboBox::Listener,
+                        public Button::Listener
 {
 public:
     /** Constructor */
-    OneBoxInterface(DataSource* dataSource_, 
-        NeuropixThread* thread_, 
-        NeuropixEditor* editor_, 
-        NeuropixCanvas* canvas_);
+    OneBoxInterface (DataSource* dataSource_,
+                     NeuropixThread* thread_,
+                     NeuropixEditor* editor_,
+                     NeuropixCanvas* canvas_);
 
     /** Destructor */
     ~OneBoxInterface();
@@ -139,51 +98,59 @@ public:
     void stopAcquisition() override;
 
     /** Not used */
-    bool applyProbeSettings(ProbeSettings, bool shouldUpdateProbe = true) override 
-    { 
-        return false; 
+    bool applyProbeSettings (ProbeSettings, bool shouldUpdateProbe = true) override
+    {
+        return false;
     }
 
     /** Save parameters */
-    void saveParameters(XmlElement* xml) override;
+    void saveParameters (XmlElement* xml) override;
 
     /** Load parameters */
-    void loadParameters(XmlElement* xml) override;
+    void loadParameters (XmlElement* xml) override;
 
     /** Draw the interface */
-    void paint(Graphics& g);
+    void paint (Graphics& g);
 
     /** Set channel as ADC or DAC */
-    void setChannelType(int chan, DataSourceType type);
+    void setChannelType (int chan, DataSourceType type);
 
     /** ComboBox callback */
-    void comboBoxChanged(ComboBox*);
+    void comboBoxChanged (ComboBox*);
 
     /** Button callback */
-    void buttonClicked(Button*);
+    void buttonClicked (Button*);
 
     /** DataSource method */
-    void updateInfoString() override { }
+    void updateInfoString() override {}
 
     /** Update combo boxes to reflect available channels */
     void updateAvailableChannels();
 
-private:
+    /** Sets the waveplayer trigger channel */
+    void setTriggerChannel (int triggerChannel);
 
+    /** Set a channel as a DAC (0-11) */
+    void setAsDac(int channel);
+
+    /** Set a channel as an ADC (0-11) */
+    void setAsAdc (int channel);
+
+private:
     OwnedArray<AdcChannelButton> channels;
     AdcChannelButton* selectedChannel;
 
-    ScopedPointer<ComboBox> rangeSelector;
-    ScopedPointer<ComboBox> thresholdSelector;
-    ScopedPointer<ComboBox> triggerSelector;
-    ScopedPointer<ComboBox> mappingSelector;
+    std::unique_ptr<ComboBox> rangeSelector;
+    std::unique_ptr<ComboBox> digitalInputSelector;
+    std::unique_ptr<ComboBox> thresholdSelector;
+    std::unique_ptr<ComboBox> triggerSelector;
+    std::unique_ptr<ComboBox> mappingSelector;
 
-    ScopedPointer<WavePlayer> wavePlayer;
-    ScopedPointer<DataPlayer> dataPlayer;
+    std::unique_ptr<WavePlayer> wavePlayer;
+    std::unique_ptr<DataPlayer> dataPlayer;
 
     OneBoxDAC* dac;
     OneBoxADC* adc;
-
 };
 
 #endif //__ONEBOXSETTINGSINTERFACE_H_2C4C2D67__

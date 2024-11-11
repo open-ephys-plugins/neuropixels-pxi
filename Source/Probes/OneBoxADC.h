@@ -1,23 +1,23 @@
 /*
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This file is part of the Open Ephys GUI
-Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+    This file is part of the Open Ephys GUI
+    Copyright (C) 2024 Open Ephys
 
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
@@ -26,13 +26,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../NeuropixComponents.h"
 
-#include "../API/v3/NeuropixAPI.h"
+#define MAXPACKETS 64
+#define NUM_ADCS 12
 
-# define SAMPLECOUNT 64
-# define NUM_ADCS 12
-
-class OneBoxDAC;
 class OneBoxInterface;
+class OneBoxDAC;
 
 /** 
 
@@ -45,70 +43,103 @@ class OneBoxInterface;
 class OneBoxADC : public DataSource
 {
 public:
+    /** Constructor */
+    OneBoxADC (Basestation*, OneBoxDAC*);
 
-	/** Constructor */
-	OneBoxADC(Basestation*);
+    /** Returns channel name */
+    String getName() { return "ADC"; }
 
-	/** Return info about part numbers, etc.; not currently used*/
-	void getInfo() override { }
+    /** Return info about part numbers, etc. -- not used*/
+    void getInfo() override {}
 
-	/** Open connection to the ADCs */
-	bool open() override { return true; }
+    /** Open connection to the ADCs -- not used */
+    bool open() override { return true; }
 
-	/** Close connection to the ADCs */
-	bool close() override { return true; }
+    /** Close connection to the ADCs -- not used */
+    bool close() override { return true; }
 
-	/** Initialize all channels as ADCs */
-	void initialize(bool signalChainIsLoading) override;
+    /** Initialize all channels as ADCs */
+    void initialize (bool signalChainIsLoading) override;
 
-	/** Sets range for all ADC channels */
-	void setAdcInputRange(AdcInputRange range);
+    /** Start data acquisition thread */
+    void startAcquisition() override;
 
-	/** Start data acquisition thread */
-	void startAcquisition() override;
+    /** Stop data acquisition thread */
+    void stopAcquisition() override;
 
-	/** Stop data acquisition thread */
-	void stopAcquisition() override;
+    /** Read packets and add to buffer */
+    void run() override; // acquire data
 
-	/** Read packets and add to buffer */
-	void run() override; // acquire data
+    /** Map an ADC to a DAC, or turn it back into an ADC */
+    void setAsOutput (int selected, int channel);
 
-	/** Set channel type to ADC or DAC */
-	void setChannelType(int chan, DataSourceType type);
+    /** Returns the connected DAC channel, or -1 if channel is an ADC */
+    int getOutputChannel (int channel);
 
-	/** Gets channel type array */
-	Array<DataSourceType> getChannelTypes() {return channelTypes;}
+    /** Gets names of available channels */
+    Array<int> getAvailableChannels (int sourceChannel);
 
-	/** Returns gain of each channel */
-	float getChannelGain(int chan);
+    /** Sets input range for ADC channels */
+    void setAdcInputRange (AdcInputRange range);
 
-	/** Returns channel name */
-	String getName() { return "ADC"; }
+    /** Returns input range of all channels */
+    AdcInputRange getAdcInputRange();
 
-	/** Channel scaling */
-	float bitVolts;
+    /** Returns gain of a particular channel (depends on ADC input range) */
+    float getChannelGain (int channel);
 
-	/** Sample number */
-	int64 timestamp;
+    /** Sets threshold for ADC channel */
+    void setAdcThresholdLevel (AdcThresholdLevel level, int channel);
 
-	/** Holds incoming samples*/
-	DataBuffer* sampleBuffer;
+    /** Returns threshold level of a particular channel */
+    AdcThresholdLevel getAdcThresholdLevel (int channel);
 
-	/** Pointer to DAC control */
-	OneBoxDAC* dac;
+    /** Sets ADC comparator state */
+    void setAdcComparatorState (AdcComparatorState state, int channel);
 
-	/** Pointer to OneBox UI*/
-	OneBoxInterface* ui;
+    /** Returns ADC comparator state for a particular channel */
+    AdcComparatorState getAdcComparatorState (int channel);
+
+    /** Sets waveplayer trigger state for a particular channel */
+    void setTriggersWaveplayer (bool shouldTrigger, int channel);
+
+    /** Returns waveplayer trigger state of a particular channel */
+    bool getTriggersWaveplayer (int channel);
+
+    /** Pointer to OneBox UI*/
+    OneBoxInterface* ui;
+
+    /** Pointer to DAC */
+    OneBoxDAC* dac;
 
 private:
+    /** Sample number for acquisition */
+    int64 sample_number;
 
-	/** Stores channel types (ADC or DAC) */
-	Array<DataSourceType> channelTypes;
+    /** Holds incoming samples*/
+    DataBuffer* sampleBuffer;
 
-	/** Neuropixels API error code*/
-	Neuropixels::NP_ErrorCode errorCode;
+    /** Stores output mapping */
+    Array<int> outputChannel;
+
+    /** Stores channel gains */
+    float bitVolts;
+
+    /** Stores channel input range */
+    AdcInputRange inputRange;
+
+    /** Stores whether channel is ADC or DAC */
+    bool isOutput[NUM_ADCS];
+
+    /** Stores channel trigger thresholds */
+    AdcThresholdLevel thresholdLevels[NUM_ADCS];
+
+    /** Indicates whether to convert analog signal to a digital input */
+    bool useAsDigitalInput[NUM_ADCS];
+
+    /** Stores WaveplayerTrigger state */
+    bool waveplayerTrigger[NUM_ADCS];
 
 };
 
-
-#endif  // __ONEBOX_ADC_H_2C4C2D67__
+#endif // __ONEBOX_ADC_H_2C4C2D67__

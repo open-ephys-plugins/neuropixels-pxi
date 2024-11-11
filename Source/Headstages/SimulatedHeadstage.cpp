@@ -1,23 +1,23 @@
 /*
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This file is part of the Open Ephys GUI
-Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+    This file is part of the Open Ephys GUI
+    Copyright (C) 2024 Open Ephys
 
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
@@ -26,32 +26,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void SimulatedHeadstage::getInfo()
 {
-	info.version = "SIM0.0";
-	info.part_number = "Simulated headstage";
+    info.version = "SIM0.0";
+    info.part_number = "Simulated headstage";
 }
-
 
 void SimulatedFlex::getInfo()
 {
-
-	info.version = "SIM0.0";
-	info.part_number = "Simulated flex";
+    info.version = "SIM0.0";
+    info.part_number = "Simulated flex";
 }
 
-
-SimulatedHeadstage::SimulatedHeadstage(Basestation* bs, int port, String PN, int SN) : Headstage(bs, port)
+SimulatedHeadstage::SimulatedHeadstage (Basestation* bs, int port, String PN, int SN) : Headstage (bs, port)
 {
+    getInfo();
 
-	getInfo();
-	
-	flexCables.add(new SimulatedFlex(this));
+    flexCables.add (new SimulatedFlex (this));
 
-	probes.add(new SimulatedProbe(basestation, this, flexCables[0], 1, PN, SN));
-	probes[0]->setStatus(SourceStatus::CONNECTING);
+    probes.add (new SimulatedProbe (basestation, this, flexCables[0], 1, PN, SN));
+    probes[0]->setStatus (SourceStatus::CONNECTING);
 
-	if (PN == "NP2000" || PN == "NP2010")
-	{
-		probes.add(nullptr);
-	}
-
+    if (PN == "NP2003" || PN == "NP2004" || PN == "NP2013" || PN == "NP2014")
+    {
+        // 2.0 headstage, add a placeholder for second dock
+        probes.add (nullptr);
+    }
 }

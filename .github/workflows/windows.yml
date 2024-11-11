@@ -10,19 +10,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2019]
+        os: [windows-latest]
     
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: setup
-      env: 
-        repo: open-ephys-gui
-        package: "open-ephys-lib"
       run: |
         cd ../..
         git clone https://github.com/open-ephys/plugin-GUI.git --branch main
         cd plugin-GUI/Build
-        cmake -G "Visual Studio 16 2019" -A x64 .. 
+        cmake -G "Visual Studio 17 2022" -A x64 .. 
         mkdir Release && cd Release
         curl -L https://openephysgui.jfrog.io/artifactory/Libraries/open-ephys-lib-v0.6.0.zip --output open-ephys-lib.zip 
         unzip open-ephys-lib.zip
@@ -30,7 +27,7 @@ jobs:
     - name: configure
       run: |
         cd Build
-        cmake -G "Visual Studio 16 2019" -A x64 .. 
+        cmake -G "Visual Studio 17 2022" -A x64 .. 
       shell: bash
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
