@@ -370,6 +370,11 @@ BackgroundLoaderWithProgressWindow::BackgroundLoaderWithProgressWindow (Neuropix
     getAlertWindow()->setLookAndFeel (progressWindowLookAndFeel.get());
 }
 
+BackgroundLoaderWithProgressWindow::~BackgroundLoaderWithProgressWindow()
+{
+    getAlertWindow()->setLookAndFeel (nullptr);
+}
+
 void BackgroundLoaderWithProgressWindow::updateProbeMap()
 {
     std::map<std::tuple<int, int, int>, std::pair<uint64, ProbeSettings>> updatedMap;

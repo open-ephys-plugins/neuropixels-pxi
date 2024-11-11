@@ -246,7 +246,7 @@ public:
     BackgroundLoaderWithProgressWindow (NeuropixThread* t, NeuropixEditor* e);
 
     /** Destructor */
-    ~BackgroundLoaderWithProgressWindow() {}
+    ~BackgroundLoaderWithProgressWindow();
 
     /** Runs the thread */
     void run();
