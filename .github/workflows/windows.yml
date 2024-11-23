@@ -34,7 +34,7 @@ jobs:
         cd plugin-GUI/Build
         cmake -G "Visual Studio 17 2022" -A x64 .. 
         mkdir Release && cd Release
-        curl -L https://openephysgui.jfrog.io/artifactory/Libraries/open-ephys-lib-$GUI_LIB_VERSION.zip --output open-ephys-lib.zip 
+        curl -L https://openephys.jfrog.io/artifactory/GUI-binaries/Libraries/open-ephys-lib-$GUI_LIB_VERSION.zip --output open-ephys-lib.zip
         unzip open-ephys-lib.zip
       shell: bash
     - name: configure
@@ -55,7 +55,7 @@ jobs:
     - name: deploy
       if: github.ref == 'refs/heads/testing-juce8'
       env:
-        artifactoryApiKey: ${{ secrets.artifactoryApiKey }}
+        ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
         build_dir: "Build/Release"
         package: NeuropixelsPXI-windows
       run: |
@@ -75,5 +75,5 @@ jobs:
         then
           powershell Compress-Archive -U -Path "shared" -DestinationPath ${zipfile}
         fi
-        curl -H "X-JFrog-Art-Api:$artifactoryApiKey" -T $zipfile "https://openephys.jfrog.io/artifactory/NeuropixelsPXI-plugin/windows/$zipfile"
+        curl -H "X-JFrog-Art-Api:$ARTIFACTORY_ACCESS_TOKEN" -T $zipfile "https://openephys.jfrog.io/artifactory/NeuropixelsPXI-plugin/windows/$zipfile"
       shell: bash
