@@ -574,8 +574,8 @@ void NeuropixThread::initializeBasestations (bool signalChainIsLoading)
         basestation->initialize (signalChainIsLoading); // prepares probes for acquisition; may be slow
     }
 
-    Neuropixels::setParameter (Neuropixels::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
-    Neuropixels::setParameter (Neuropixels::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
+    //Neuropixels::setParameter (Neuropixels::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
+    //Neuropixels::setParameter (Neuropixels::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
 
     initializationComplete = true;
 }
