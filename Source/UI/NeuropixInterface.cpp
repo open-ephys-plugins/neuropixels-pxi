@@ -1728,7 +1728,7 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
 
             String chId = "CH" + String (channel);
             if (probe->type == ProbeType::QUAD_BASE)
-                chId += ":" + String (shank);
+                chId += "_" + String (shank);
 
             channelNode->setAttribute (chId, chString);
             xposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].xpos + 250 * shank));
