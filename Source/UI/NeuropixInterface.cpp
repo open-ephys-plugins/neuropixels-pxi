@@ -1948,7 +1948,7 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                         {
                             settings.selectedChannel.add (i);
 
-                            String bankInfo = status->getStringAttribute ("CH" + String (i) + ":" + String (shank));
+                            String bankInfo = status->getStringAttribute ("CH" + String (i) + "_" + String (shank));
                             Bank bank = static_cast<Bank> (bankInfo.substring (0, 1).getIntValue());
 
                             settings.selectedBank.add (bank);
