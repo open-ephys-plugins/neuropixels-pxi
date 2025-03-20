@@ -1694,7 +1694,7 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
 
             String chId = "CH" + String (channel);
             if (probe->type == ProbeType::QUAD_BASE)
-                chId += ":" + String (shank);
+                chId += "_" + String (shank);
 
             channelNode->setAttribute (chId, chString);
             xposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].xpos + 250 * shank));
@@ -1915,7 +1915,7 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                         {
                             settings.selectedChannel.add (i);
 
-                            String bankInfo = status->getStringAttribute ("CH" + String (i) + ":" + String (shank));
+                            String bankInfo = status->getStringAttribute ("CH" + String (i) + "_" + String (shank));
                             Bank bank = static_cast<Bank> (bankInfo.substring (0, 1).getIntValue());
 
                             settings.selectedBank.add (bank);
