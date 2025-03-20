@@ -44,7 +44,7 @@ void OneBoxDAC::setWaveform (Array<float> samples)
 {
     Array<int16_t> samples_t;
 
-    LOGC ("Setting waveform samples: ", samples.size());
+    //LOGC ("Setting waveform samples: ", samples.size());
 
     for (auto sample : samples)
     {
@@ -67,9 +67,9 @@ void OneBoxDAC::setWaveform (Array<float> samples)
     for (int i = 0; i < 100; i++)
         samples_t.add (0);
 
-    checkError(Neuropixels::waveplayer_writeBuffer (basestation->slot, samples_t.getRawDataPointer(), samples_t.size()), "waveplayer_writeBuffer");
+    //checkError(Neuropixels::waveplayer_writeBuffer (basestation->slot, samples_t.getRawDataPointer(), samples_t.size()), "waveplayer_writeBuffer");
 
-    checkError(Neuropixels::waveplayer_arm (basestation->slot, true), "waveplayer_arm");
+    //checkError(Neuropixels::waveplayer_arm (basestation->slot, true), "waveplayer_arm");
 }
 
 void OneBoxDAC::playWaveform()
