@@ -716,6 +716,10 @@ void NeuropixThread::setMainSync (int slotIndex)
                 else
                     basestations[i]->setSyncAsPassive();
             }
+            else
+            {
+                basestations[i]->setSyncAsInput();
+            }
 		}
     }
 }
