@@ -28,42 +28,27 @@
 
 void Headstage_Custom384::getInfo()
 {
-    int version_major;
-    int version_minor;
+    errorCode = Neuropixels::getHeadstageHardwareID (basestation->slot,
+                                                     port,
+                                                     &info.hardwareID);
 
-    errorCode = Neuropixels::getHSVersion (basestation->slot, port, &version_major, &version_minor);
+    info.version = String (info.hardwareID.version_Major)
+                   + "." + String (info.hardwareID.version_Minor);
 
-    info.version = String (version_major) + "." + String (version_minor);
-
-    errorCode = Neuropixels::readHSSN (basestation->slot, port, &info.serial_number);
-
-    char pn[MAXLEN];
-    errorCode = Neuropixels::readHSPN (basestation->slot, port, pn, MAXLEN);
-
-    info.part_number = String (pn);
+    info.part_number = String (info.hardwareID.ProductNumber);
 }
 
 void Flex1_Custom::getInfo()
 {
-    int version_major;
-    int version_minor;
+    errorCode = Neuropixels::getFlexHardwareID (headstage->basestation->slot,
+                                                headstage->port,
+                                                dock,
+                                                &info.hardwareID);
 
-    errorCode = Neuropixels::getFlexVersion (headstage->basestation->slot,
-                                             headstage->port,
-                                             dock,
-                                             &version_major,
-                                             &version_minor);
+    info.version = String (info.hardwareID.version_Major)
+                   + "." + String (info.hardwareID.version_Minor);
 
-    info.version = String (version_major) + "." + String (version_minor);
-
-    char pn[MAXLEN];
-    errorCode = Neuropixels::readFlexPN (headstage->basestation->slot,
-                                         headstage->port,
-                                         dock,
-                                         pn,
-                                         MAXLEN);
-
-    info.part_number = String (pn);
+    info.part_number = String (info.hardwareID.ProductNumber);
 }
 
 Headstage_Custom384::Headstage_Custom384 (Basestation* bs_, int port) : Headstage (bs_, port)

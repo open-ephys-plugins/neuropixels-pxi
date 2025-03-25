@@ -30,21 +30,15 @@
 
 void Neuropixels_NHP_Active::getInfo()
 {
-    checkError (Neuropixels::readProbeSN (basestation->slot,
-                                          headstage->port,
-                                          dock,
-                                          &info.serial_number),
-                "readProbeSN");
+    errorCode = checkError(Neuropixels::getProbeHardwareID (headstage->basestation->slot,
+                                                headstage->port,
+                                                dock,
+                                                &info.hardwareID), "getProbeHardwareID");
 
-    char pn[MAXLEN];
-    checkError (Neuropixels::readProbePN (basestation->slot,
-                                          headstage->port,
-                                          dock,
-                                          pn,
-                                          MAXLEN),
-                "readProbePN");
-
-    info.part_number = String (pn);
+    info.version = String (info.hardwareID.version_Major)
+                   + "." + String (info.hardwareID.version_Minor);
+    info.part_number = String (info.hardwareID.ProductNumber);
+    info.serial_number = String (info.hardwareID.SerialNumber);
 }
 
 Neuropixels_NHP_Active::Neuropixels_NHP_Active (Basestation* bs, Headstage* hs, Flex* fl) : Probe (bs, hs, fl, 0)
@@ -53,7 +47,7 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active (Basestation* bs, Headstage* hs, 
 
     setStatus (SourceStatus::DISCONNECTED);
 
-    customName.probeSpecific = String (info.serial_number);
+    customName.probeSpecific = String (info.hardwareID.SerialNumber);
 
     Geometry::forPartNumber (info.part_number, electrodeMetadata, probeMetadata);
 
@@ -173,14 +167,14 @@ void Neuropixels_NHP_Active::calibrate()
 
     File baseDirectory = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
     File calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
-    File probeDirectory = calibrationDirectory.getChildFile (String (info.serial_number));
+    File probeDirectory = calibrationDirectory.getChildFile (info.serial_number);
 
     if (! probeDirectory.exists())
     {
         // check alternate location
         baseDirectory = CoreServices::getSavedStateDirectory();
         calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
-        probeDirectory = calibrationDirectory.getChildFile (String (info.serial_number));
+        probeDirectory = calibrationDirectory.getChildFile (info.serial_number);
     }
 
     if (! probeDirectory.exists())
@@ -189,8 +183,8 @@ void Neuropixels_NHP_Active::calibrate()
         return;
     }
 
-    String adcFile = probeDirectory.getChildFile (String (info.serial_number) + "_ADCCalibration.csv").getFullPathName();
-    String gainFile = probeDirectory.getChildFile (String (info.serial_number) + "_gainCalValues.csv").getFullPathName();
+    String adcFile = probeDirectory.getChildFile (info.serial_number + "_ADCCalibration.csv").getFullPathName();
+    String gainFile = probeDirectory.getChildFile (info.serial_number + "_gainCalValues.csv").getFullPathName();
     LOGDD ("ADC file: ", adcFile);
 
     errorCode = Neuropixels::setADCCalibration (basestation->slot, headstage->port, adcFile.toRawUTF8());

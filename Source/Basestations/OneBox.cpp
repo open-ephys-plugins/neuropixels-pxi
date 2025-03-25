@@ -42,7 +42,6 @@ void OneBox::getInfo()
     errorCode = Neuropixels::bs_getFirmwareInfo (slot, &firmwareInfo);
 
     info.boot_version = String (firmwareInfo.major) + "." + String (firmwareInfo.minor) + String (firmwareInfo.build);
-
     info.part_number = String (firmwareInfo.name);
 }
 
@@ -170,10 +169,10 @@ void OneBox::searchForProbes() {
 
         if (detected && errorCode == Neuropixels::SUCCESS)
         {
-            char pn[MAXLEN];
-            Neuropixels::readHSPN (slot, port, pn, MAXLEN);
+            Neuropixels::HardwareID hardwareID;
+            Neuropixels::getHeadstageHardwareID (slot, port, &hardwareID);
 
-            String hsPartNumber = String (pn);
+            String hsPartNumber = String (hardwareID.ProductNumber);
 
             LOGDD ("Got part #: ", hsPartNumber);
 
@@ -310,18 +309,18 @@ void OneBox::setSyncAsInput()
         LOGC ("Failed to clear SM_Output_StatusBit on slot ", slot, ", error code = ", errorCode);
     }
 
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA1);
+    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
-        LOGC ("Failed to clear SM_Output_SMA1 on slot ", slot, ", error code = ", errorCode);
+        LOGC ("Failed to clear SM_Output_SMA on slot ", slot, ", error code = ", errorCode);
     }
 
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA1, true);
+    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, true);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
-        LOGC ("Failed to connect SM_Output_StatusBit and SM_Input_SMA1 on slot ", slot, ", error code = ", errorCode);
+        LOGC ("Failed to connect SM_Output_StatusBit and SM_Input_SMA on slot ", slot, ", error code = ", errorCode);
     }
 }
 
@@ -341,7 +340,7 @@ void OneBox::setSyncAsOutput (int freqIndex)
         LOGC ("Failed to clear SM_Output_StatusBit on slot ", slot, ", error code = ", errorCode);
     }
 
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA1);
+    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -355,7 +354,7 @@ void OneBox::setSyncAsOutput (int freqIndex)
         LOGC ("Failed to connect SM_Output_StatusBit and SM_Input_SyncClk on slot ", slot, ", error code = ", errorCode);
     }
     
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA1, Neuropixels::SM_Input_SyncClk, true);
+    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true);
 
     if (errorCode != Neuropixels::SUCCESS)
     {

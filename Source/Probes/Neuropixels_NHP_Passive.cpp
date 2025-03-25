@@ -28,7 +28,7 @@
 
 void Neuropixels_NHP_Passive::getInfo()
 {
-    info.serial_number = 0;
+    info.serial_number = "UNKNOWN";
 
     info.part_number = "NP1200";
 }
