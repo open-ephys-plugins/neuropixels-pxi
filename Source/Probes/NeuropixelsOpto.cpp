@@ -39,7 +39,7 @@ void NeuropixelsOpto::getInfo()
     info.version = String (info.hardwareID.version_Major)
                    + "." + String (info.hardwareID.version_Minor);
     info.part_number = String (info.hardwareID.ProductNumber);
-    info.serial_number = String (info.hardwareID.SerialNumber);
+    info.serial_number = info.hardwareID.SerialNumber;
 }
 
 NeuropixelsOpto::NeuropixelsOpto (Basestation* bs, Headstage* hs, Flex* fl) : Probe (bs, hs, fl, 1)

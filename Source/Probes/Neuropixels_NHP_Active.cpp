@@ -38,7 +38,7 @@ void Neuropixels_NHP_Active::getInfo()
     info.version = String (info.hardwareID.version_Major)
                    + "." + String (info.hardwareID.version_Minor);
     info.part_number = String (info.hardwareID.ProductNumber);
-    info.serial_number = String (info.hardwareID.SerialNumber);
+    info.serial_number = info.hardwareID.SerialNumber;
 }
 
 Neuropixels_NHP_Active::Neuropixels_NHP_Active (Basestation* bs, Headstage* hs, Flex* fl) : Probe (bs, hs, fl, 0)
@@ -167,14 +167,14 @@ void Neuropixels_NHP_Active::calibrate()
 
     File baseDirectory = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
     File calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
-    File probeDirectory = calibrationDirectory.getChildFile (info.serial_number);
+    File probeDirectory = calibrationDirectory.getChildFile (String(info.serial_number));
 
     if (! probeDirectory.exists())
     {
         // check alternate location
         baseDirectory = CoreServices::getSavedStateDirectory();
         calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
-        probeDirectory = calibrationDirectory.getChildFile (info.serial_number);
+        probeDirectory = calibrationDirectory.getChildFile (String(info.serial_number));
     }
 
     if (! probeDirectory.exists())

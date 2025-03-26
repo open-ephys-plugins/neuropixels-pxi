@@ -58,7 +58,7 @@ struct ComponentInfo
 
     String boot_version = "UNKNOWN";
     String part_number = "UNKNOWN";
-    String serial_number = "UNKNOWN";
+    uint64_t serial_number = 0;
     String version = "UNKNOWN";
 };
 

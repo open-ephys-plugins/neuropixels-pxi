@@ -39,7 +39,7 @@ void Neuropixels2::getInfo()
     info.version = String (info.hardwareID.version_Major)
                    + "." + String (info.hardwareID.version_Minor);
     info.part_number = String (info.hardwareID.ProductNumber);
-    info.serial_number = String (info.hardwareID.SerialNumber);
+    info.serial_number = info.hardwareID.SerialNumber;
 }
 
 Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) : Probe (bs, hs, fl, dock)
