@@ -72,21 +72,21 @@ OneBox::OneBox (NeuropixThread* neuropixThread, int serial_number_) : Basestatio
 
     if (errorCode == Neuropixels::NO_SLOT)
     {
-        LOGD ("NO_SLOT error");
+        LOGC ("Opening OneBox: NO_SLOT error");
         return;
     }
     else if (errorCode == Neuropixels::IO_ERROR)
     {
-        LOGD ("IO_ERROR");
+        LOGC ("Opening OneBox: IO_ERROR");
         return;
     }
     else if (errorCode == Neuropixels::WRONG_SLOT)
     {
-        LOGD ("WRONG_SLOT error");
+        LOGC ("Opening OneBox: WRONG_SLOT error");
         return;
     }
 
-    LOGD ("Successfully mapped OneBox with serial number ", serial_number, " to slot ", next_slot, ", error code: ", errorCode);
+    LOGC ("Successfully mapped OneBox with serial number ", serial_number, " to slot ", next_slot, ", error code: ", errorCode);
 
     slot = next_slot;
     slot_c = next_slot;
@@ -134,7 +134,6 @@ bool OneBox::open()
         return false;
     }
 
-
     if (errorCode == Neuropixels::SUCCESS)
     {
         getInfo();
@@ -159,8 +158,8 @@ bool OneBox::open()
     return true;
 }
 
-void OneBox::searchForProbes() {
-
+void OneBox::searchForProbes()
+{
     probes.clear();
     headstages.clear();
 
@@ -244,7 +243,6 @@ void OneBox::searchForProbes() {
             headstages.add (nullptr);
         }
     }
-
 }
 
 Array<DataSource*> OneBox::getAdditionalDataSources()
@@ -257,7 +255,6 @@ Array<DataSource*> OneBox::getAdditionalDataSources()
 
 void OneBox::initialize (bool signalChainIsLoading)
 {
-
     LOGD ("Initializing OneBox on slot ", slot);
     Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
 
@@ -275,17 +272,16 @@ void OneBox::initialize (bool signalChainIsLoading)
     LOGD ("Initializing ADC source on slot ", slot);
     adcSource->initialize (signalChainIsLoading);
 
-    errorCode = checkError(Neuropixels::arm (slot), "arm slot " + String(slot));
+    errorCode = checkError (Neuropixels::arm (slot), "arm slot " + String (slot));
 
     if (errorCode != Neuropixels::SUCCESS)
     {
-		LOGC ("Failed to arm OneBox on slot ", slot, ", error code = ", errorCode);
-	}
+        LOGC ("Failed to arm OneBox on slot ", slot, ", error code = ", errorCode);
+    }
     else
     {
-		LOGC ("OneBox initialized on slot ", slot);
-	}
-
+        LOGC ("OneBox initialized on slot ", slot);
+    }
 }
 
 void OneBox::close()
@@ -296,8 +292,7 @@ void OneBox::close()
         checkError (Neuropixels::closeProbe (slot, probe->headstage->port, probe->dock), "closeProbe");
     }
 
-    checkError(Neuropixels::closeBS (slot), "closeBS slot " + String(slot));
-
+    checkError (Neuropixels::closeBS (slot), "closeBS slot " + String (slot));
 }
 
 void OneBox::setSyncAsInput()
@@ -350,12 +345,12 @@ void OneBox::setSyncAsOutput (int freqIndex)
     }
 
     errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, true);
-    
+
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC ("Failed to connect SM_Output_StatusBit and SM_Input_SyncClk on slot ", slot, ", error code = ", errorCode);
     }
-    
+
     errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA1, Neuropixels::SM_Input_SyncClk, true);
 
     if (errorCode != Neuropixels::SUCCESS)
@@ -386,7 +381,6 @@ float OneBox::getFillPercentage()
 
     for (int i = 0; i < getProbeCount(); i++)
     {
-
         if (probes[i]->fifoFillPercentage > perc)
             perc = probes[i]->fifoFillPercentage;
     }
@@ -423,7 +417,7 @@ void OneBox::startAcquisition()
     LOGD ("OneBox software trigger");
     checkError (Neuropixels::setSWTrigger (slot), "setSWTrigger slot " + String (slot));
     checkError (Neuropixels::arm (slot), "arm slot " + String (slot));
-    checkError(Neuropixels::setSWTrigger (slot));
+    checkError (Neuropixels::setSWTrigger (slot));
 
     if (errorCode != Neuropixels::SUCCESS)
     {

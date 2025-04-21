@@ -189,6 +189,32 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
     LOGD ("Setting debug level to 0");
     Neuropixels::np_dbg_setlevel (0);
 
+    if (type == ONEBOX)
+    {
+        Neuropixels::ftdi_driver_version_t currentFtdiDriverVersion;
+        Neuropixels::ftdi_driver_version_t requiredFtdiDriverVersion;
+        bool is_driver_present, is_version_ok;
+
+        Neuropixels::checkFtdiDriver (&requiredFtdiDriverVersion,
+                                      &currentFtdiDriverVersion,
+                                      &is_driver_present,
+                                      &is_version_ok);
+
+        LOGC ("Current FTDI driver version: ", currentFtdiDriverVersion.vmajor, ".", currentFtdiDriverVersion.vminor, ".", currentFtdiDriverVersion.vbuild);
+        LOGC ("Required FTDI driver version: ", requiredFtdiDriverVersion.vmajor, ".", requiredFtdiDriverVersion.vminor, ".", requiredFtdiDriverVersion.vbuild);
+        LOGC ("Driver present: ", is_driver_present);
+        LOGC ("Driver version OK: ", is_version_ok);
+
+        if (!is_version_ok)
+        {
+            AlertWindow::showMessageBox (AlertWindow::WarningIcon,
+                                        "FTDI driver version mismatch",
+                                        "The installed FTDI driver version is not compatible with the OneBox. \n\nPlease close the GUI, install driver version 1.3.0.10, and then restart the GUI.\n\nSee the Open Ephys GUI documentation site for installation instructions.",
+                                        "OK");
+        }
+    }
+    
+
     LOGD ("### NeuropixThread()");
     LOGD ("### basestation.size() = ", basestations.size());
     LOGD ("### Running initializer thread");
@@ -258,7 +284,6 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
 
             bsIndex++;
         }
-        
     }
 
     initializeProbes();
@@ -472,8 +497,7 @@ void NeuropixThread::updateStreamInfo (bool enabledStateChanged)
 
 NeuropixThread::~NeuropixThread()
 {
-
-     LOGD ("NeuropixThread destructor.");
+    LOGD ("NeuropixThread destructor.");
 
     closeConnection();
 }
@@ -566,7 +590,6 @@ void NeuropixThread::initialize (bool signalChainIsLoading)
 {
     editor->initialize (signalChainIsLoading);
 }
-
 
 void NeuropixThread::initializeBasestations (bool signalChainIsLoading)
 {
@@ -702,7 +725,6 @@ String NeuropixThread::getApiVersion()
 
 void NeuropixThread::setMainSync (int slotIndex)
 {
-
     LOGC ("NeuropixThread::setMainSync");
 
     if (foundInputSource() && slotIndex > -1)
@@ -720,13 +742,12 @@ void NeuropixThread::setMainSync (int slotIndex)
             {
                 basestations[i]->setSyncAsInput();
             }
-		}
+        }
     }
 }
 
 void NeuropixThread::setSyncOutput (int slotIndex)
 {
-
     LOGC ("NeuropixThread::setSyncOutput");
 
     if (foundInputSource() && slotIndex > -1)
@@ -734,7 +755,7 @@ void NeuropixThread::setSyncOutput (int slotIndex)
         for (int i = 0; i < basestations.size(); i++)
         {
             if (i == slotIndex)
-                basestations[i]->setSyncAsOutput(0);
+                basestations[i]->setSyncAsOutput (0);
             else
                 basestations[i]->setSyncAsPassive();
         }
