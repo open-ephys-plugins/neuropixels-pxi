@@ -78,16 +78,16 @@ Neuropixels_UHD::Neuropixels_UHD (Basestation* bs, Headstage* hs, Flex* fl) : Pr
         ap_sample_rate = 30000.0f;
 
         for (int i = 0; i < 16; i++)
-            availableElectrodeConfigurations.add ("8 x 48: Bank " + String (i));
-        availableElectrodeConfigurations.add ("1 x 384: Tip Half");
-        availableElectrodeConfigurations.add ("1 x 384: Base Half");
-        availableElectrodeConfigurations.add ("2 x 192");
-        availableElectrodeConfigurations.add ("4 x 96");
-        availableElectrodeConfigurations.add ("2 x 2 x 96");
+            availableElectrodeConfigurations.add ("8 x 48: Bank " + String (i)); // 0-15
+        availableElectrodeConfigurations.add ("1 x 384: Tip Half");              // 16
+        availableElectrodeConfigurations.add ("1 x 384: Base Half");             // 17
+        availableElectrodeConfigurations.add ("2 x 192");                        // 18
+        availableElectrodeConfigurations.add ("4 x 96");                         // 19
+        availableElectrodeConfigurations.add ("2 x 2 x 96");                     // 20
 
         settings.availableElectrodeConfigurations = availableElectrodeConfigurations;
 
-        settings.electrodeConfigurationIndex = 1; // 8 x 48: Bank 0
+        settings.electrodeConfigurationIndex = 0; // 8 x 48: Bank 0
 
         for (int i = 0; i < channel_count; i++)
         {
@@ -270,7 +270,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
     if (index < banksPerProbe || index > 17)
     {
-        LOGC ("Selecting column pattern: ALL");
+        LOGC ("Neuropixels UHD selecting column pattern: ALL");
         // select columnar configuration
         checkError (Neuropixels::selectColumnPattern (
                         basestation->slot,
@@ -282,7 +282,9 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     }
     else
     {
-        LOGC ("Selecting column pattern: OUTER");
+        // index = 16 or 17 (1 x 384 configurations)
+
+        LOGC ("Neuropixels UHD selecting column pattern: OUTER");
         // select columnar configuration
         checkError (Neuropixels::selectColumnPattern (
                         basestation->slot,
@@ -295,9 +297,9 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     }
 
     // Select all groups in a particular bank
-    if (index < banksPerProbe)
+    if (index < banksPerProbe) // 0-15
     {
-        LOGC ("Selecting bank: ", index);
+        LOGC ("Neuropixels UHD selecting bank: ", index);
 
         // Select all groups at this bank index
         for (int group = 0; group < groupsPerBank; group++)
@@ -311,9 +313,9 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         return *electrodeConfigurations[index];
     }
-    else if (index == 17) // 2 x 192
+    else if (index == 18) // 2 x 192
     {
-        LOGC ("Selecting 2 x 192 configuration");
+        LOGC ("Neuropixels UHD selecting 2 x 192 configuration");
 
         // Select G2, G6, G10, G14, G18, G22 from bank 0
         for (int group = 2; group < groupsPerBank; group += 4)
@@ -357,8 +359,11 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         return *electrodeConfigurations[index];
     }
-    else if (index == 18) // 4 x 96
+    else if (index == 19) // 4 x 96
     {
+
+        LOGC ("Neuropixels UHD selecting 4 x 96 configuration");
+
         // Select G2, G6, G10, G14, G18, G22 from bank 0
         for (int group = 2; group < groupsPerBank; group += 4)
             checkError (Neuropixels::selectElectrodeGroup (
@@ -401,8 +406,11 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         return *electrodeConfigurations[index];
     }
-    else if (index == 19) // 2 x 2 x 96
+    else if (index == 20) // 2 x 2 x 96
     {
+
+        LOGC ("Neuropixels UHD selecting 2 x 2 x 96 configuration");
+
         // Select G2, G6, G10, G14, G18, G22 from bank 1
         for (int group = 2; group < groupsPerBank; group += 4)
             checkError (Neuropixels::selectElectrodeGroup (
