@@ -424,8 +424,8 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         {
             imroFiles.add (filename.getFileNameWithoutExtension());
             imroLoadedFromFolder.add (true);
-            loadImroComboBox->addItem (File(imroFiles.getLast()).getFileName(), 
-                imroFiles.size() + 1);
+            loadImroComboBox->addItem (File (imroFiles.getLast()).getFileName(),
+                                       imroFiles.size() + 1);
         }
         loadImroComboBox->setSelectedId (1, dontSendNotification);
 
@@ -1298,7 +1298,6 @@ void NeuropixInterface::stopAcquisition()
 
     if (bscFirmwareButton != nullptr)
         bscFirmwareButton->setEnabled (enabledState);
-
 }
 
 void NeuropixInterface::paint (Graphics& g)
@@ -1631,157 +1630,180 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
     {
         LOGD ("Saving Neuropix display.");
 
-        XmlElement* xmlNode = xml->createNewChildElement ("NP_PROBE");
+        int numElectrodeGroups = probe->type == ProbeType::QUAD_BASE ? 4 : 1;
 
-        xmlNode->setAttribute ("slot", probe->basestation->slot);
-        xmlNode->setAttribute ("bs_firmware_version", probe->basestation->info.boot_version);
-        xmlNode->setAttribute ("bs_hardware_version", probe->basestation->info.version);
-        xmlNode->setAttribute ("bs_serial_number", String (probe->basestation->info.serial_number));
-        xmlNode->setAttribute ("bs_part_number", probe->basestation->info.part_number);
-
-        if (thread->type == PXI)
+        for (int electrodeGroupIndex = 0; electrodeGroupIndex < numElectrodeGroups; electrodeGroupIndex++)
         {
-            xmlNode->setAttribute ("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
-            xmlNode->setAttribute ("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
-            xmlNode->setAttribute ("bsc_serial_number", String (probe->basestation->basestationConnectBoard->info.serial_number));
-            xmlNode->setAttribute ("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
-        }
+            XmlElement* xmlNode = xml->createNewChildElement ("NP_PROBE");
 
-        xmlNode->setAttribute ("headstage_serial_number", String (probe->headstage->info.serial_number));
-        xmlNode->setAttribute ("headstage_part_number", probe->headstage->info.part_number);
+            xmlNode->setAttribute ("slot", probe->basestation->slot);
+            xmlNode->setAttribute ("bs_firmware_version", probe->basestation->info.boot_version);
+            xmlNode->setAttribute ("bs_hardware_version", probe->basestation->info.version);
+            xmlNode->setAttribute ("bs_serial_number", String (probe->basestation->info.serial_number));
+            xmlNode->setAttribute ("bs_part_number", probe->basestation->info.part_number);
 
-        xmlNode->setAttribute ("flex_version", probe->flex->info.version);
-        xmlNode->setAttribute ("flex_part_number", probe->headstage->info.part_number);
-
-        xmlNode->setAttribute ("port", probe->headstage->port);
-        xmlNode->setAttribute ("dock", probe->dock);
-        xmlNode->setAttribute ("probe_serial_number", String (probe->info.serial_number));
-        xmlNode->setAttribute ("probe_part_number", probe->info.part_number);
-        xmlNode->setAttribute ("probe_name", probe->name);
-        xmlNode->setAttribute ("num_adcs", probe->probeMetadata.num_adcs);
-        xmlNode->setAttribute ("custom_probe_name", probe->customName.probeSpecific);
-
-        xmlNode->setAttribute ("ZoomHeight", probeBrowser->getZoomHeight());
-        xmlNode->setAttribute ("ZoomOffset", probeBrowser->getZoomOffset());
-
-        if (apGainComboBox != nullptr)
-        {
-            xmlNode->setAttribute ("apGainValue", apGainComboBox->getText());
-            xmlNode->setAttribute ("apGainIndex", apGainComboBox->getSelectedId() - 1);
-        }
-
-        if (lfpGainComboBox != nullptr)
-        {
-            xmlNode->setAttribute ("lfpGainValue", lfpGainComboBox->getText());
-            xmlNode->setAttribute ("lfpGainIndex", lfpGainComboBox->getSelectedId() - 1);
-        }
-
-        if (electrodeConfigurationComboBox != nullptr)
-        {
-            if (electrodeConfigurationComboBox->getSelectedId() > 1)
+            if (thread->type == PXI)
             {
-                xmlNode->setAttribute ("electrodeConfigurationPreset", electrodeConfigurationComboBox->getText());
+                xmlNode->setAttribute ("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
+                xmlNode->setAttribute ("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
+                xmlNode->setAttribute ("bsc_serial_number", String (probe->basestation->basestationConnectBoard->info.serial_number));
+                xmlNode->setAttribute ("bsc_part_number", probe->basestation->basestationConnectBoard->info.part_number);
             }
-            else
-            {
-                xmlNode->setAttribute ("electrodeConfigurationPreset", "NONE");
-            }
-        }
 
-        if (referenceComboBox != nullptr)
-        {
-            if (referenceComboBox->getSelectedId() > 0)
-            {
-                xmlNode->setAttribute ("referenceChannel", referenceComboBox->getText());
-                xmlNode->setAttribute ("referenceChannelIndex", referenceComboBox->getSelectedId() - 1);
-            }
-            else
-            {
-                xmlNode->setAttribute ("referenceChannel", "Ext");
-                xmlNode->setAttribute ("referenceChannelIndex", 0);
-            }
-        }
+            xmlNode->setAttribute ("headstage_serial_number", String (probe->headstage->info.serial_number));
+            xmlNode->setAttribute ("headstage_part_number", probe->headstage->info.part_number);
 
-        if (filterComboBox != nullptr)
-        {
-            xmlNode->setAttribute ("filterCut", filterComboBox->getText());
-            xmlNode->setAttribute ("filterCutIndex", filterComboBox->getSelectedId());
-        }
+            xmlNode->setAttribute ("flex_version", probe->flex->info.version);
+            xmlNode->setAttribute ("flex_part_number", probe->headstage->info.part_number);
 
-        XmlElement* channelNode = xmlNode->createNewChildElement ("CHANNELS");
-        XmlElement* xposNode = xmlNode->createNewChildElement ("ELECTRODE_XPOS");
-        XmlElement* yposNode = xmlNode->createNewChildElement ("ELECTRODE_YPOS");
+            xmlNode->setAttribute ("port", probe->headstage->port);
+            xmlNode->setAttribute ("dock", probe->dock);
 
-        ProbeSettings p = getProbeSettings();
-
-        for (int i = 0; i < p.selectedChannel.size(); i++)
-        {
-            int bank = int (p.selectedBank[i]);
-            int shank = p.selectedShank[i];
-            int channel = p.selectedChannel[i];
-            int elec = p.selectedElectrode[i];
-
-            String chString = String (bank);
-
-            if (probe->type == ProbeType::NP2_4)
-                chString += ":" + String (shank);
-
-            String chId = "CH" + String (channel);
             if (probe->type == ProbeType::QUAD_BASE)
-                chId += "_" + String (shank);
-
-            channelNode->setAttribute (chId, chString);
-            xposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].xpos + 250 * shank));
-            yposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].ypos));
-        }
-
-        if (probe->emissionSiteMetadata.size() > 0)
-        {
-            XmlElement* emissionSiteNode = xmlNode->createNewChildElement ("EMISSION_SITES");
-
-            for (int i = 0; i < probe->emissionSiteMetadata.size(); i++)
             {
-                XmlElement* emissionSite = emissionSiteNode->createNewChildElement ("SITE");
-
-                EmissionSiteMetadata& metadata = probe->emissionSiteMetadata[i];
-
-                emissionSite->setAttribute ("WAVELENGTH", metadata.wavelength_nm);
-                emissionSite->setAttribute ("SHANK_INDEX", metadata.shank_index);
-                emissionSite->setAttribute ("XPOS", metadata.xpos);
-                emissionSite->setAttribute ("YPOS", metadata.ypos);
+                xmlNode->setAttribute ("shank", electrodeGroupIndex);
             }
-        }
+            xmlNode->setAttribute ("probe_serial_number", String (probe->info.serial_number));
+            xmlNode->setAttribute ("probe_part_number", probe->info.part_number);
+            xmlNode->setAttribute ("probe_name", probe->name);
+            xmlNode->setAttribute ("num_adcs", probe->probeMetadata.num_adcs);
+            xmlNode->setAttribute ("custom_probe_name", probe->customName.probeSpecific);
 
-        if (imroFiles.size() > 0)
-        {
-            XmlElement* imroFilesNode = xmlNode->createNewChildElement ("IMRO_FILES");
+            xmlNode->setAttribute ("ZoomHeight", probeBrowser->getZoomHeight());
+            xmlNode->setAttribute ("ZoomOffset", probeBrowser->getZoomOffset());
 
-            for (int i = 0; i < imroFiles.size(); i++)
+            if (apGainComboBox != nullptr)
             {
-                if (! imroLoadedFromFolder[i])
+                xmlNode->setAttribute ("apGainValue", apGainComboBox->getText());
+                xmlNode->setAttribute ("apGainIndex", apGainComboBox->getSelectedId() - 1);
+            }
+
+            if (lfpGainComboBox != nullptr)
+            {
+                xmlNode->setAttribute ("lfpGainValue", lfpGainComboBox->getText());
+                xmlNode->setAttribute ("lfpGainIndex", lfpGainComboBox->getSelectedId() - 1);
+            }
+
+            if (electrodeConfigurationComboBox != nullptr)
+            {
+                if (electrodeConfigurationComboBox->getSelectedId() > 1)
                 {
-                    XmlElement* imroFileNode = imroFilesNode->createNewChildElement ("FILE");
-                    imroFileNode->setAttribute ("PATH", imroFiles[i]);
+                    xmlNode->setAttribute ("electrodeConfigurationPreset", electrodeConfigurationComboBox->getText());
+                }
+                else
+                {
+                    xmlNode->setAttribute ("electrodeConfigurationPreset", "NONE");
                 }
             }
+
+            if (referenceComboBox != nullptr)
+            {
+                if (referenceComboBox->getSelectedId() > 0)
+                {
+                    xmlNode->setAttribute ("referenceChannel", referenceComboBox->getText());
+                    xmlNode->setAttribute ("referenceChannelIndex", referenceComboBox->getSelectedId() - 1);
+                }
+                else
+                {
+                    xmlNode->setAttribute ("referenceChannel", "Ext");
+                    xmlNode->setAttribute ("referenceChannelIndex", 0);
+                }
+            }
+
+            if (filterComboBox != nullptr)
+            {
+                xmlNode->setAttribute ("filterCut", filterComboBox->getText());
+                xmlNode->setAttribute ("filterCutIndex", filterComboBox->getSelectedId());
+            }
+
+            XmlElement* channelNode = xmlNode->createNewChildElement ("CHANNELS");
+            XmlElement* xposNode = xmlNode->createNewChildElement ("ELECTRODE_XPOS");
+            XmlElement* yposNode = xmlNode->createNewChildElement ("ELECTRODE_YPOS");
+
+            ProbeSettings p = getProbeSettings();
+
+            for (int i = 0; i < p.selectedChannel.size(); i++)
+            {
+                int bank = int (p.selectedBank[i]);
+                int shank = p.selectedShank[i];
+                int channel = p.selectedChannel[i];
+                int elec = p.selectedElectrode[i];
+
+                String chString = String (bank);
+
+                if (probe->type == ProbeType::NP2_4)
+                    chString += ":" + String (shank);
+
+                String chId = "CH" + String (channel);
+                if (probe->type == ProbeType::QUAD_BASE)
+                    chId += "_" + String (shank);
+
+                if (probe->type == ProbeType::QUAD_BASE)
+                {
+                    if (shank == electrodeGroupIndex)
+                    {
+                        channelNode->setAttribute (chId, chString);
+                        xposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].xpos + 250 * shank));
+                        yposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].ypos));
+                    }
+                }
+                else
+                {
+                    channelNode->setAttribute (chId, chString);
+                    xposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].xpos + 250 * shank));
+                    yposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].ypos));
+                }
+                
+            }
+
+            if (probe->emissionSiteMetadata.size() > 0)
+            {
+                XmlElement* emissionSiteNode = xmlNode->createNewChildElement ("EMISSION_SITES");
+
+                for (int i = 0; i < probe->emissionSiteMetadata.size(); i++)
+                {
+                    XmlElement* emissionSite = emissionSiteNode->createNewChildElement ("SITE");
+
+                    EmissionSiteMetadata& metadata = probe->emissionSiteMetadata[i];
+
+                    emissionSite->setAttribute ("WAVELENGTH", metadata.wavelength_nm);
+                    emissionSite->setAttribute ("SHANK_INDEX", metadata.shank_index);
+                    emissionSite->setAttribute ("XPOS", metadata.xpos);
+                    emissionSite->setAttribute ("YPOS", metadata.ypos);
+                }
+            }
+
+            if (imroFiles.size() > 0)
+            {
+                XmlElement* imroFilesNode = xmlNode->createNewChildElement ("IMRO_FILES");
+
+                for (int i = 0; i < imroFiles.size(); i++)
+                {
+                    if (! imroLoadedFromFolder[i])
+                    {
+                        XmlElement* imroFileNode = imroFilesNode->createNewChildElement ("FILE");
+                        imroFileNode->setAttribute ("PATH", imroFiles[i]);
+                    }
+                }
+            }
+
+            xmlNode->setAttribute ("visualizationMode", mode);
+            xmlNode->setAttribute ("activityToView", probeBrowser->activityToView);
+
+            // annotations
+            for (int i = 0; i < annotations.size(); i++)
+            {
+                Annotation& a = annotations.getReference (i);
+                XmlElement* annotationNode = xmlNode->createNewChildElement ("ANNOTATIONS");
+                annotationNode->setAttribute ("text", a.text);
+                annotationNode->setAttribute ("channel", a.electrodes[0]);
+                annotationNode->setAttribute ("R", a.colour.getRed());
+                annotationNode->setAttribute ("G", a.colour.getGreen());
+                annotationNode->setAttribute ("B", a.colour.getBlue());
+            }
+
+            xmlNode->setAttribute ("isEnabled", bool (probe->isEnabled));
         }
-
-        xmlNode->setAttribute ("visualizationMode", mode);
-        xmlNode->setAttribute ("activityToView", probeBrowser->activityToView);
-
-        // annotations
-        for (int i = 0; i < annotations.size(); i++)
-        {
-            Annotation& a = annotations.getReference (i);
-            XmlElement* annotationNode = xmlNode->createNewChildElement ("ANNOTATIONS");
-            annotationNode->setAttribute ("text", a.text);
-            annotationNode->setAttribute ("channel", a.electrodes[0]);
-            annotationNode->setAttribute ("R", a.colour.getRed());
-            annotationNode->setAttribute ("G", a.colour.getGreen());
-            annotationNode->setAttribute ("B", a.colour.getBlue());
-        }
-
-        xmlNode->setAttribute ("isEnabled", bool (probe->isEnabled));
     }
 }
 
@@ -1830,7 +1852,7 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
             }
         }
 
-        XmlElement* matchingNode = nullptr;
+        Array<XmlElement*> matchingNodes;
 
         // find by serial number
         forEachXmlChildElement (*xml, xmlNode)
@@ -1839,14 +1861,14 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
             {
                 if (xmlNode->getStringAttribute ("probe_serial_number").equalsIgnoreCase (mySerialNumber))
                 {
-                    matchingNode = xmlNode;
+                    matchingNodes.add (xmlNode);
                     break;
                 }
             }
         }
 
         // if not, search for matching port
-        if (matchingNode == nullptr)
+        if (matchingNodes.size() == 0)
         {
             forEachXmlChildElement (*xml, xmlNode)
             {
@@ -1890,7 +1912,7 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
 
                         if (type == probe->type)
                         {
-                            matchingNode = xmlNode;
+                            matchingNodes.add(xmlNode);
 
                             break;
                         }
@@ -1899,14 +1921,20 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
             }
         }
 
-        if (matchingNode != nullptr)
+        for (int nodeIndex = 0; nodeIndex < matchingNodes.size(); nodeIndex++)
         {
+            XmlElement* matchingNode = matchingNodes[nodeIndex];
+
             if (matchingNode->getChildByName ("CHANNELS"))
             {
-                settings.selectedBank.clear();
-                settings.selectedChannel.clear();
-                settings.selectedShank.clear();
-                settings.selectedElectrode.clear();
+
+                if (nodeIndex == 0)
+                {
+                    settings.selectedBank.clear();
+                    settings.selectedChannel.clear();
+                    settings.selectedShank.clear();
+                    settings.selectedElectrode.clear();
+                }
 
                 XmlElement* status = matchingNode->getChildByName ("CHANNELS");
 
@@ -1944,97 +1972,98 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                 {
                     for (int i = 0; i < 384; i++)
                     {
-                        for (int shank = 0; shank < 4; shank++)
+
+                        settings.selectedChannel.add (i);
+
+                        String bankInfo = status->getStringAttribute ("CH" + String (i) + "_" + String (nodeIndex));
+                        Bank bank = static_cast<Bank> (bankInfo.substring (0, 1).getIntValue());
+
+                        settings.selectedBank.add (bank);
+                        settings.selectedShank.add (nodeIndex);
+
+                        for (int j = 0; j < electrodeMetadata.size(); j++)
                         {
-                            settings.selectedChannel.add (i);
-
-                            String bankInfo = status->getStringAttribute ("CH" + String (i) + "_" + String (shank));
-                            Bank bank = static_cast<Bank> (bankInfo.substring (0, 1).getIntValue());
-
-                            settings.selectedBank.add (bank);
-                            settings.selectedShank.add (shank);
-
-                            for (int j = 0; j < electrodeMetadata.size(); j++)
+                            if (electrodeMetadata[j].channel == i && electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == nodeIndex)
                             {
-                                if (electrodeMetadata[j].channel == i && electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
-                                {
-                                    settings.selectedElectrode.add (j);
-                                }
+                                settings.selectedElectrode.add (j);
                             }
                         }
                     }
                 }
             }
 
-            probeBrowser->setZoomHeightAndOffset (matchingNode->getIntAttribute ("ZoomHeight"),
-                                                  matchingNode->getIntAttribute ("ZoomOffset"));
-
-            String customName = thread->getCustomProbeName (matchingNode->getStringAttribute ("probe_serial_number"));
-
-            if (customName.length() > 0)
+            if (nodeIndex == 0)
             {
-                probe->customName.probeSpecific = customName;
-            }
+                probeBrowser->setZoomHeightAndOffset (matchingNode->getIntAttribute ("ZoomHeight"),
+                                                      matchingNode->getIntAttribute ("ZoomOffset"));
 
-            settings.apGainIndex = matchingNode->getIntAttribute ("apGainIndex", 3);
-            settings.lfpGainIndex = matchingNode->getIntAttribute ("lfpGainIndex", 2);
-            settings.referenceIndex = matchingNode->getIntAttribute ("referenceChannelIndex", 0);
-            if (settings.referenceIndex >= referenceComboBox->getNumItems())
-                settings.referenceIndex = 0;
+                String customName = thread->getCustomProbeName (matchingNode->getStringAttribute ("probe_serial_number"));
 
-            String configurationName = matchingNode->getStringAttribute ("electrodeConfigurationPreset", "NONE");
-
-            for (int i = 0; i < electrodeConfigurationComboBox->getNumItems(); i++)
-            {
-                if (electrodeConfigurationComboBox->getItemText (i).equalsIgnoreCase (configurationName))
+                if (customName.length() > 0)
                 {
-                    electrodeConfigurationComboBox->setSelectedItemIndex (i, dontSendNotification);
-                    settings.electrodeConfigurationIndex = i - 1;
-
-                    break;
+                    probe->customName.probeSpecific = customName;
                 }
-            }
 
-            settings.apFilterState = matchingNode->getIntAttribute ("filterCutIndex", 1) == 1;
+                settings.apGainIndex = matchingNode->getIntAttribute ("apGainIndex", 3);
+                settings.lfpGainIndex = matchingNode->getIntAttribute ("lfpGainIndex", 2);
+                settings.referenceIndex = matchingNode->getIntAttribute ("referenceChannelIndex", 0);
+                if (settings.referenceIndex >= referenceComboBox->getNumItems())
+                    settings.referenceIndex = 0;
 
-            forEachXmlChildElement (*matchingNode, imroNode)
-            {
-                if (imroNode->hasTagName ("IMRO_FILES"))
+                String configurationName = matchingNode->getStringAttribute ("electrodeConfigurationPreset", "NONE");
+
+                for (int i = 0; i < electrodeConfigurationComboBox->getNumItems(); i++)
                 {
-                    forEachXmlChildElement (*imroNode, fileNode)
+                    if (electrodeConfigurationComboBox->getItemText (i).equalsIgnoreCase (configurationName))
                     {
-                        imroFiles.add (fileNode->getStringAttribute ("PATH"));
-                        imroLoadedFromFolder.add (false);
-                        loadImroComboBox->addItem (File (imroFiles.getLast()).getFileName(),
-                                                   imroFiles.size() + 1);
+                        electrodeConfigurationComboBox->setSelectedItemIndex (i, dontSendNotification);
+                        settings.electrodeConfigurationIndex = i - 1;
+
+                        break;
                     }
                 }
-            }
 
-            forEachXmlChildElement (*matchingNode, annotationNode)
-            {
-                if (annotationNode->hasTagName ("ANNOTATIONS"))
+                settings.apFilterState = matchingNode->getIntAttribute ("filterCutIndex", 1) == 1;
+
+                forEachXmlChildElement (*matchingNode, imroNode)
                 {
-                    Array<int> annotationChannels;
-                    annotationChannels.add (annotationNode->getIntAttribute ("electrode"));
-                    annotations.add (Annotation (annotationNode->getStringAttribute ("text"),
-                                                 annotationChannels,
-                                                 Colour (annotationNode->getIntAttribute ("R"),
-                                                         annotationNode->getIntAttribute ("G"),
-                                                         annotationNode->getIntAttribute ("B"))));
+                    if (imroNode->hasTagName ("IMRO_FILES"))
+                    {
+                        forEachXmlChildElement (*imroNode, fileNode)
+                        {
+                            imroFiles.add (fileNode->getStringAttribute ("PATH"));
+                            imroLoadedFromFolder.add (false);
+                            loadImroComboBox->addItem (File (imroFiles.getLast()).getFileName(),
+                                                       imroFiles.size() + 1);
+                        }
+                    }
                 }
-            }
 
-            probe->isEnabled = matchingNode->getBoolAttribute ("isEnabled", true);
-            probe->settings.isEnabled = probe->isEnabled;
-            probeEnableButton->setToggleState (probe->isEnabled, dontSendNotification);
-            if (probe->isEnabled)
-                probeEnableButton->setLabel ("ENABLED");
-            else
-            {
-                probeEnableButton->setLabel ("DISABLED");
+                forEachXmlChildElement (*matchingNode, annotationNode)
+                {
+                    if (annotationNode->hasTagName ("ANNOTATIONS"))
+                    {
+                        Array<int> annotationChannels;
+                        annotationChannels.add (annotationNode->getIntAttribute ("electrode"));
+                        annotations.add (Annotation (annotationNode->getStringAttribute ("text"),
+                                                     annotationChannels,
+                                                     Colour (annotationNode->getIntAttribute ("R"),
+                                                             annotationNode->getIntAttribute ("G"),
+                                                             annotationNode->getIntAttribute ("B"))));
+                    }
+                }
+
+                probe->isEnabled = matchingNode->getBoolAttribute ("isEnabled", true);
+                probe->settings.isEnabled = probe->isEnabled;
+                probeEnableButton->setToggleState (probe->isEnabled, dontSendNotification);
+                if (probe->isEnabled)
+                    probeEnableButton->setLabel ("ENABLED");
+                else
+                {
+                    probeEnableButton->setLabel ("DISABLED");
+                }
+                stopAcquisition();
             }
-            stopAcquisition();
         }
 
         probe->updateSettings (settings);
