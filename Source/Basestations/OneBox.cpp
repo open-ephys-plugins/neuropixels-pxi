@@ -151,6 +151,8 @@ bool OneBox::open()
         adcSource = std::make_unique<OneBoxADC> (this, dacSource.get());
     }
 
+    setSyncAsInput();
+
     syncFrequencies.clear();
     syncFrequencies.add (1);
 
@@ -274,8 +276,6 @@ void OneBox::initialize (bool signalChainIsLoading)
     adcSource->initialize (signalChainIsLoading);
 
     errorCode = checkError(Neuropixels::arm (slot), "arm slot " + String(slot));
-
-    setSyncAsInput();
 
     if (errorCode != Neuropixels::SUCCESS)
     {
