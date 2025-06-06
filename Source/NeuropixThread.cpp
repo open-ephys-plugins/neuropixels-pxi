@@ -83,6 +83,9 @@ void Initializer::run()
 
         for (int i = 0; i < count; i++)
         {
+            if (threadShouldExit())
+                break;
+
             int slotID;
 
             Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo (list[i].ID, &list[i]);
@@ -106,69 +109,86 @@ void Initializer::run()
                 LOGC ("  Opening device on slot ", slotID);
                 setStatusMessage ("Opening basestation on PXI slot " + String (slotID) + " (" + String (deviceNum) + "/" + String (countForType) + ")");
 
-                Basestation* bs = new PxiBasestation (neuropixThread, slotID);
-
-                if (bs->open()) //returns true if Basestation firmware >= 2.0
+                if (!threadShouldExit())
                 {
-                    int insertionIndex = 0;
+                    Basestation* bs = new PxiBasestation (neuropixThread, slotID);
 
-                    if (slotIDs.size() > 0)
+                    if (bs->open()) //returns true if Basestation firmware >= 2.0
                     {
-                        insertionIndex = slotIDs.size();
+                        int insertionIndex = 0;
 
-                        LOGC ("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex - 1]);
-
-                        while (insertionIndex > 0 && slotIDs[insertionIndex - 1] > slotID)
+                        if (slotIDs.size() > 0)
                         {
-                            LOGC ("Moving backward...");
-                            insertionIndex--;
+                            insertionIndex = slotIDs.size();
+
                             LOGC ("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex - 1]);
+
+                            while (insertionIndex > 0 && slotIDs[insertionIndex - 1] > slotID)
+                            {
+                                LOGC ("Moving backward...");
+                                insertionIndex--;
+                                LOGC ("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex - 1]);
+                            }
                         }
+
+                        LOGC ("Insertion index:", insertionIndex);
+
+                        basestations.insert (insertionIndex, bs);
+                        slotIDs.insert (insertionIndex, slotID);
+
+                        LOGC ("  Adding basestation");
+                        setStatusMessage ("Adding basestation found on PXI slot " + String (slotID));
                     }
-
-                    LOGC ("Insertion index:", insertionIndex);
-
-                    basestations.insert (insertionIndex, bs);
-                    slotIDs.insert (insertionIndex, slotID);
-
-                    LOGC ("  Adding basestation");
-                    setStatusMessage ("Adding basestation found on PXI slot " + String (slotID));
+                    else
+                    {
+                        LOGC ("  Could not open basestation");
+                        setStatusMessage ("Could not open basestation");
+                        delete bs;
+                    }
                 }
-                else
-                {
-                    LOGC ("  Could not open basestation");
-                    setStatusMessage ("Could not open basestation");
-                    delete bs;
-                }
+                
             }
             else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX)
             {
                 deviceNum++;
                 setStatusMessage ("Opening OneBox with serial number " + String (list[i].ID));
 
-                Basestation* bs = new OneBox (neuropixThread, list[i].ID);
-
-                if (bs->open())
+                if (!threadShouldExit())
                 {
-                    basestations.add (bs);
+                    Basestation* bs = new OneBox (neuropixThread, list[i].ID);
 
-                    if (! bs->getProbeCount())
-                        CoreServices::sendStatusMessage ("OneBox found, no probes connected.");
+                    if (bs->open())
+                    {
+                        basestations.add (bs);
 
-                    break; // prevent multiple OneBoxes from being opened
+                        if (! bs->getProbeCount())
+                            CoreServices::sendStatusMessage ("OneBox found, no probes connected.");
+
+                        break; // prevent multiple OneBoxes from being opened
+                    }
+                    else
+                    {
+                        LOGC ("  Could not open OneBox");
+                        setStatusMessage ("Could not open OneBox");
+                        delete bs;
+                    }
                 }
-                else
-                {
-                    LOGC ("  Could not open OneBox");
-                    setStatusMessage ("Could not open OneBox");
-                    delete bs;
-                }
+                
             }
             else
             {
                 LOGC ("   Slot ", slotID, " did not match desired platform.");
             }
         }
+    }
+}
+
+void Initializer::threadComplete(bool userPressedCancel)
+{
+    if (userPressedCancel)
+    {
+        LOGC ("User cancelled Neuropixels device scan.");
+        basestations.clear();
     }
 }
 
@@ -205,13 +225,24 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
         LOGC ("Driver present: ", is_driver_present);
         LOGC ("Driver version OK: ", is_version_ok);
 
-        if (!is_version_ok)
+        if (! is_driver_present)
         {
             AlertWindow::showMessageBox (AlertWindow::WarningIcon,
-                                        "FTDI driver version mismatch",
-                                        "The installed FTDI driver version is not compatible with the OneBox. \n\nPlease close the GUI, install driver version 1.3.0.10, and then restart the GUI.\n\nSee the Open Ephys GUI documentation site for installation instructions.",
-                                        "OK");
+                                         "OneBox not found, or it needs to be power cycled",
+                                         "No FTDI USB device was detected, which likely means your OneBox needs to be power cycled. Please close the GUI, turn your OneBox off and on, and then restart the GUI.\n\n",
+                                         "OK");
         }
+        else 
+        {
+            if (! is_version_ok)
+            {
+                AlertWindow::showMessageBox (AlertWindow::WarningIcon,
+                                             "FTDI driver version mismatch",
+                                             "The installed FTDI driver version is not compatible with the OneBox. \n\nPlease close the GUI, install driver version 1.3.0.10, and then restart the GUI.\n\nSee the Open Ephys GUI documentation site for installation instructions.",
+                                             "OK");
+            }
+        }
+
     }
     
 
