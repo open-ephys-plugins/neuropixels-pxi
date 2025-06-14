@@ -1,40 +1,30 @@
 name: Windows
 
-on: 
+on:
   push:
+    branches:
+      - '**' # Runs on push to any branch
+  pull_request:
+    branches:
+      - main # Runs on pull requests targeting the main branch
 
 jobs:
 
   build-windows:
 
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest]
-    
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    runs-on: windows-latest
+
     steps:
     - uses: actions/checkout@v4
-    - name: set env vars
-      run: |
-        if [ ${{github.ref_name}} == 'juce8' ]; then
-          echo "GUI_BRANCH=development-juce8" >> "$GITHUB_ENV"
-          echo "GUI_LIB_VERSION=v1.0.0-dev" >> "$GITHUB_ENV"
-        elif [ ${{github.ref_name}} == 'testing-juce8' ]; then
-          echo "GUI_BRANCH=testing-juce8" >> "$GITHUB_ENV"
-          echo "GUI_LIB_VERSION=v1.0.0-alpha" >> "$GITHUB_ENV"
-        else
-          echo "Invalid branch : ${{github.ref_name}}"
-          exit 1
-        fi
-      shell: bash
     - name: setup
       run: |
         cd ../..
-        git clone https://github.com/open-ephys/plugin-GUI.git --branch $GUI_BRANCH
+        git clone https://github.com/open-ephys/plugin-GUI.git --branch main --single-branch --depth 1
         cd plugin-GUI/Build
         cmake -G "Visual Studio 17 2022" -A x64 .. 
         mkdir Release && cd Release
-        curl -L https://openephys.jfrog.io/artifactory/GUI-binaries/Libraries/open-ephys-lib-$GUI_LIB_VERSION.zip --output open-ephys-lib.zip
+        curl -L https://openephys.jfrog.io/artifactory/GUI-binaries/Libraries/open-ephys-lib-v1.0.0.zip --output open-ephys-lib.zip
         unzip open-ephys-lib.zip
       shell: bash
     - name: configure
@@ -53,7 +43,7 @@ jobs:
 #    - name: test
 #      run: cd build && ctest
     - name: deploy
-      if: github.ref == 'refs/heads/testing-juce8'
+      if: github.ref == 'refs/heads/main'
       env:
         ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
         build_dir: "Build/Release"
