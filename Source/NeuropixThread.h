@@ -30,7 +30,7 @@
 
 #include "NeuropixComponents.h"
 
-#define PLUGIN_VERSION "1.0.1-dev"
+#define PLUGIN_VERSION "1.0.0"
 
 #define MINSTREAMBUFFERSIZE (1024 * 32)
 #define MAXSTREAMBUFFERSIZE (1024 * 1024 * 32)
@@ -78,7 +78,7 @@ public:
                  OwnedArray<Basestation>& basestations_,
                  DeviceType type_,
                  NeuropixAPIv3& api_v3_)
-        : ThreadWithProgressWindow ("Scanning for connected Neuropixels devices", true, false),
+        : ThreadWithProgressWindow ("Scanning for connected Neuropixels devices", true, true),
           neuropixThread (neuropixThread_),
           basestations (basestations_),
           type (type_),
@@ -87,6 +87,8 @@ public:
     ~Initializer() {}
 
     void run() override;
+
+    void threadComplete (bool userPressedCancel) override;
 
 private:
     NeuropixThread* neuropixThread;

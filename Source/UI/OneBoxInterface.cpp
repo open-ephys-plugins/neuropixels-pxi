@@ -279,20 +279,20 @@ void OneBoxInterface::buttonClicked (Button* button)
             //{
             //    triggerSelector->setVisible (false);
 			//}
-            triggerSelector->setSelectedId ((int) adc->getTriggersWaveplayer (selectedChannel->getChannelIndex()) + 1, dontSendNotification);
+            //triggerSelector->setSelectedId ((int) adc->getTriggersWaveplayer (selectedChannel->getChannelIndex()) + 1, dontSendNotification);
 
-            Array<int> availableChannels = adc->getAvailableChannels (selectedChannel->getChannelIndex());
+            //Array<int> availableChannels = adc->getAvailableChannels (selectedChannel->getChannelIndex());
 
-            mappingSelector->clear();
-            mappingSelector->addItem ("-", 1);
+            //mappingSelector->clear();
+            //mappingSelector->addItem ("-", 1);
 
-            for (int i = 0; i < availableChannels.size(); i++)
-            {
-                mappingSelector->addItem ("DAC" + String (availableChannels[i]), availableChannels[i] + 2);
-            }
+            //for (int i = 0; i < availableChannels.size(); i++)
+            //{
+            //    mappingSelector->addItem ("DAC" + String (availableChannels[i]), availableChannels[i] + 2);
+            //}
 
-            int outputChannel = adc->getOutputChannel (selectedChannel->getChannelIndex());
-            mappingSelector->setSelectedId (outputChannel + 2, dontSendNotification);
+            //int outputChannel = adc->getOutputChannel (selectedChannel->getChannelIndex());
+            //mappingSelector->setSelectedId (outputChannel + 2, dontSendNotification);
         }
         else
         {

@@ -38,13 +38,6 @@ OneBoxADC::OneBoxADC (Basestation* bs, OneBoxDAC* dac_) : DataSource (bs),
     sourceType = DataSourceType::ADC;
     status = SourceStatus::CONNECTED;
 
-    Neuropixels::ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_5V);
-    bitVolts = 5.0f / float (pow (2, 15));
-    inputRange = AdcInputRange::PLUSMINUS5V;
-}
-
-void OneBoxADC::initialize (bool signalChainIsLoading)
-{
     LOGD ("Initializing OneBoxADC");
 
     errorCode = Neuropixels::ADC_enableProbe (basestation->slot, true);
@@ -53,6 +46,8 @@ void OneBoxADC::initialize (bool signalChainIsLoading)
     {
         LOGD ("Error enabling ADCs: ", errorCode);
     }
+
+    setAdcInputRange (AdcInputRange::PLUSMINUS5V);
 
     for (int i = 0; i < channel_count; i++)
     {
@@ -65,6 +60,13 @@ void OneBoxADC::initialize (bool signalChainIsLoading)
         setAdcThresholdLevel (AdcThresholdLevel::ONE_VOLT, i);
         setAdcComparatorState (AdcComparatorState::COMPARATOR_OFF, i);
     }
+}
+
+void OneBoxADC::initialize (bool signalChainIsLoading)
+{
+    
+
+
 }
 
 void OneBoxADC::startAcquisition()

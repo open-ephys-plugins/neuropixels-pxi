@@ -34,31 +34,34 @@ bool Geometry::forPartNumber (String PN,
     if (PN.equalsIgnoreCase ("NP1010")
         || PN.equalsIgnoreCase ("NP1011")
         || PN.equalsIgnoreCase ("NP1012")
-        || PN.equalsIgnoreCase ("NP1013"))
-        NHP2 (10, true, false, em, pm); // staggered layout
+        || PN.equalsIgnoreCase ("NP1013")
+        || PN.equalsIgnoreCase ("NP1014"))
+        NHP2 (10, true, false, em, pm); // 10 mm, staggered layout
 
     else if (PN.equalsIgnoreCase ("NP1015"))
-        NHP2 (10, false, false, em, pm); // linear layout
+        NHP2 (10, false, false, em, pm); // 10 mm, linear layout
 
-    else if (PN.equalsIgnoreCase ("NP1016"))
-        NHP2 (10, false, true, em, pm); // linear layout, Sapiens version
+    else if (PN.equalsIgnoreCase ("NP1016")
+             || PN.equalsIgnoreCase ("NP1017"))
+        NHP2 (10, false, true, em, pm); // 10 mm, linear layout, Sapiens version
 
-    else if (PN.equalsIgnoreCase ("NP1020") 
-        || PN.equalsIgnoreCase ("NP1021"))
-        NHP2 (25, true, false, em, pm); // staggered layout
+    else if (PN.equalsIgnoreCase ("NP1020")
+             || PN.equalsIgnoreCase ("NP1021"))
+        NHP2 (25, true, false, em, pm); // 25 mm, staggered layout
 
     else if (PN.equalsIgnoreCase ("NP1022"))
-        NHP2 (25, false, false, em, pm); // linear layout
+        NHP2 (25, false, false, em, pm); // 25 mm, linear layout
 
-    else if (PN.equalsIgnoreCase ("NP1030") 
-        || PN.equalsIgnoreCase ("NP1031"))
-        NHP2 (45, true, false, em, pm); // staggered layout
+    else if (PN.equalsIgnoreCase ("NP1030")
+             || PN.equalsIgnoreCase ("NP1031"))
+        NHP2 (45, true, false, em, pm); // 45 mm, staggered layout
 
-    else if (PN.equalsIgnoreCase ("NP1032"))
-        NHP2 (45, false, false, em, pm); // linear layout
+    else if (PN.equalsIgnoreCase ("NP1032")
+             || PN.equalsIgnoreCase ("NP1033"))
+        NHP2 (45, false, false, em, pm); // 45 mm, linear layout
 
-    else if (PN.equalsIgnoreCase ("NP1200") 
-        || PN.equalsIgnoreCase ("NP1210"))
+    else if (PN.equalsIgnoreCase ("NP1200")
+             || PN.equalsIgnoreCase ("NP1210"))
         NHP1 (em, pm);
 
     else if (PN.equalsIgnoreCase ("PRB2_1_2_0640_0")
@@ -101,7 +104,7 @@ bool Geometry::forPartNumber (String PN,
     else if (PN.equalsIgnoreCase ("NP1110"))
         UHDActive (em, pm); // UHD2 - switchable, 8 cols, 6 um spacing
 
-    else if (PN.equalsIgnoreCase ("NP2020"))
+    else if (PN.equalsIgnoreCase ("NP2020") || PN.equalsIgnoreCase ("NP2021"))
         QuadBase (em, pm);
 
     else
@@ -260,7 +263,7 @@ void Geometry::NP2 (int shank_count, int adc_bits, Array<ElectrodeMetadata>& ele
         metadata.shank = i / probeMetadata.electrodes_per_shank;
         metadata.shank_local_index = i % probeMetadata.electrodes_per_shank;
 
-        metadata.xpos = i % 2 * 32.0f + 8.0f;
+        metadata.xpos = i % 2 * 32.0f + 27.0f;
         metadata.ypos = (metadata.shank_local_index - (metadata.shank_local_index % 2)) * 7.5f;
         metadata.site_width = 12;
 
@@ -627,13 +630,13 @@ void Geometry::NHP2 (int length,
 
     Array<float> xpositions;
 
-    if (siteLayout) // staggered
+    if (siteLayout) // staggered (NP1010, NP1011, NP1012, NP1013, NP1014, NP1020, NP1021, NP1030, NP1031)
         xpositions = { 27.0f, 59.0f, 11.0f, 43.0f };
-    else // straight
+    else // linear
     {
-        if (length == 10)
+        if (length == 10) // (NP1015, NP1016, NP1017)
             xpositions = { 27.0f, 59.0f, 27.0f, 59.0f };
-        else
+        else // (NP1022, NP1032, NP1033)
             xpositions = { 11.0f, 114.0f, 11.0f, 114.0f };
     }
 
@@ -687,16 +690,29 @@ void Geometry::UHDPassive (int numColumns,
 
     probeMetadata.type = ProbeType::UHD1;
 
-    if (numColumns == 8 && siteSpacing == 6.0f)
+    float xOffset = 0;
+
+    if (numColumns == 8 && siteSpacing == 6.0f) // NP1100
         probeMetadata.name = "Neuropixels Ultra (Phase 1)";
-    if (numColumns == 2 && siteSpacing == 4.5f)
+    if (numColumns == 2 && siteSpacing == 4.5f) // NP1120
         probeMetadata.name = "Neuropixels Ultra (Phase 3, Type 1)";
-    if (numColumns == 1 && siteSpacing == 3.0f)
+    if (numColumns == 1 && siteSpacing == 3.0f) // NP1121
         probeMetadata.name = "Neuropixels Ultra (Phase 3, Type 2)";
-    if (numColumns == 16 && siteSpacing == 3.0f)
+    if (numColumns == 16 && siteSpacing == 3.0f) // NP1122
         probeMetadata.name = "Neuropixels Ultra (Phase 3, Type 3)";
-    if (numColumns == 12 && siteSpacing == 4.5f)
+    if (numColumns == 12 && siteSpacing == 4.5f) // NP1123
         probeMetadata.name = "Neuropixels Ultra (Phase 3, Type 4)";
+
+    if (numColumns == 8 && siteSpacing == 6.0f) // NP1100
+        xOffset = 14;
+    if (numColumns == 2 && siteSpacing == 4.5f) // NP1120
+        xOffset = 6.75;
+    if (numColumns == 1 && siteSpacing == 3.0f) // NP1121
+        xOffset = 6.25;
+    if (numColumns == 16 && siteSpacing == 3.0f) // NP1122
+        xOffset = 12.5;
+    if (numColumns == 12 && siteSpacing == 4.5f) // NP1123
+        xOffset = 10.25;
 
     probeMetadata.switchable = false;
 
@@ -725,7 +741,7 @@ void Geometry::UHDPassive (int numColumns,
         metadata.shank = 0;
         metadata.shank_local_index = i;
         metadata.global_index = i;
-        metadata.xpos = i % numColumns * siteSpacing + 2 * siteSpacing;
+        metadata.xpos = i % numColumns * siteSpacing + 2 * siteSpacing + xOffset;
         metadata.ypos = (i - (i % numColumns)) * siteSpacing / numColumns;
         metadata.column_index = i % numColumns;
         metadata.row_index = i / numColumns;
@@ -6930,7 +6946,7 @@ void Geometry::UHDActive (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.global_index = i;
         metadata.column_index = column_order[i % numColumns];
         metadata.row_index = i / numColumns;
-        metadata.xpos = metadata.column_index * siteSpacing;
+        metadata.xpos = metadata.column_index * siteSpacing + 15.5;
         metadata.ypos = (i - (i % numColumns)) * siteSpacing / numColumns;
         metadata.site_width = siteSpacing - 1;
 
@@ -7104,7 +7120,7 @@ void Geometry::QuadBase (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.shank = i / probeMetadata.electrodes_per_shank;
         metadata.shank_local_index = i % probeMetadata.electrodes_per_shank;
 
-        metadata.xpos = i % 2 * 32.0f + 8.0f;
+        metadata.xpos = i % 2 * 32.0f + 27.0f;
         metadata.ypos = (metadata.shank_local_index - (metadata.shank_local_index % 2)) * 7.5f;
         metadata.site_width = 12;
 
