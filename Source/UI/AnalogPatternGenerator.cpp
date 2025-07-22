@@ -1,24 +1,23 @@
-
 /*
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This file is part of the Open Ephys GUI
-Copyright (C) 2021 Allen Institute for Brain Science and Open Ephys
+    This file is part of the Open Ephys GUI
+    Copyright (C) 2024 Open Ephys
 
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
@@ -27,557 +26,536 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "AnalogPatternGenerator.h"
 #include "WavePlayer.h"
 
-#define MAX_SAMPLES 10000
+#define MAX_SAMPLES 16777000
 #define PI 3.14159265
 
-AnalogPatternGenerator::AnalogPatternGenerator(WavePlayer* wv_, Pattern* pattern_) : wv(wv_), pattern(pattern_)
+AnalogPatternGenerator::AnalogPatternGenerator (WavePlayer* wv_, Pattern* pattern_) : wv (wv_),
+                                                                                      pattern (pattern_)
 {
-	editable = true;
-
-
+    editable = true;
 }
 
 AnalogPatternGenerator::~AnalogPatternGenerator()
 {
-
 }
 
-template<typename T>
-EditableTextInput<T>::EditableTextInput(String mainlabelText,
-	String unitsLabelText,
-	T minValue_,
-	T maxValue_,
-	T defaultValue,
-	AnalogPatternGenerator* apg_
-) : minValue(minValue_), maxValue(maxValue_), apg(apg_)
+template <typename T>
+EditableTextInput<T>::EditableTextInput (String mainlabelText,
+                                         String unitsLabelText,
+                                         T minValue_,
+                                         T maxValue_,
+                                         T defaultValue,
+                                         AnalogPatternGenerator* apg_) : minValue (minValue_),
+                                                                         maxValue (maxValue_),
+                                                                         apg (apg_)
 {
-	mainLabel = new Label("Main Label", mainlabelText);
-	mainLabel->setFont(Font("Small Text", 12, Font::plain));
-	mainLabel->setBounds(0, 0, 100, 20);
-	mainLabel->setColour(Label::textColourId, Colours::white);
-	mainLabel->setJustificationType(Justification::centredRight);
-	addAndMakeVisible(mainLabel);
+    mainLabel = std::make_unique<Label> ("Main Label", mainlabelText);
+    mainLabel->setFont (Font ("Small Text", 12, Font::plain));
+    mainLabel->setBounds (0, 0, 100, 20);
+    mainLabel->setColour (Label::textColourId, Colours::white);
+    mainLabel->setJustificationType (Justification::centredRight);
+    addAndMakeVisible (mainLabel.get());
 
-	unitsLabel = new Label("Units Label", unitsLabelText);
-	unitsLabel->setFont(Font("Small Text", 12, Font::plain));
-	unitsLabel->setBounds(150, 0, 30, 20);
-	unitsLabel->setColour(Label::textColourId, Colours::white);
-	addAndMakeVisible(unitsLabel);
+    unitsLabel = std::make_unique<Label> ("Units Label", unitsLabelText);
+    unitsLabel->setFont (Font ("Small Text", 12, Font::plain));
+    unitsLabel->setBounds (150, 0, 30, 20);
+    unitsLabel->setColour (Label::textColourId, Colours::white);
+    addAndMakeVisible (unitsLabel.get());
 
-	inputBox = new Label("Input Box", String(defaultValue));
-	inputBox->setFont(Font("Small Text", 12, Font::plain));
-	inputBox->setBounds(100, 0, 50, 20);
-	inputBox->setColour(Label::backgroundColourId, Colours::lightgrey);
-	inputBox->setColour(Label::textColourId, Colours::darkgrey);
-	inputBox->addListener(this);
-	inputBox->setEditable(true);
-	addAndMakeVisible(inputBox);
+    inputBox = std::make_unique<Label> ("Input Box", String (defaultValue));
+    inputBox->setFont (Font ("Small Text", 12, Font::plain));
+    inputBox->setBounds (100, 0, 50, 20);
+    inputBox->setColour (Label::backgroundColourId, Colours::lightgrey);
+    inputBox->setColour (Label::textColourId, Colours::darkgrey);
+    inputBox->addListener (this);
+    inputBox->setEditable (true);
+    addAndMakeVisible (inputBox.get());
 
-	lastValue = defaultValue;
+    lastValue = defaultValue;
 }
 
-template<typename T>
+template <typename T>
 EditableTextInput<T>::~EditableTextInput()
 {
-
 }
 
 template<>
-void EditableTextInput<int>::labelTextChanged(Label* label)
+void EditableTextInput<int>::labelTextChanged (Label* label)
 {
-	String labelString = label->getText();
+    String labelString = label->getText();
 
-	if (!labelString.containsOnly("0123456789.- "))
-	{
-		inputBox->setText(String(lastValue), dontSendNotification);
-		return;
-	}
+    if (! labelString.containsOnly ("0123456789.- "))
+    {
+        inputBox->setText (String (lastValue), dontSendNotification);
+        return;
+    }
 
-	int value = labelString.getIntValue();
+    int value = labelString.getIntValue();
 
-	if (value < minValue)
-	{
-		inputBox->setText(String(minValue), dontSendNotification);
-		return;
-	}
-	else if (value > maxValue)
-	{
-		inputBox->setText(String(maxValue), dontSendNotification);
-		return;
-	}
-	else {
+    if (value < minValue)
+    {
+        inputBox->setText (String (minValue), dontSendNotification);
+        return;
+    }
+    else if (value > maxValue)
+    {
+        inputBox->setText (String (maxValue), dontSendNotification);
+        return;
+    }
+    else
+    {
+        inputBox->setText (String (value), dontSendNotification);
+        lastValue = value;
+    }
 
-		inputBox->setText(String(value), dontSendNotification);
-		lastValue = value;
-	}
-
-	apg->updatePattern();
+    apg->updatePattern();
 }
 
 template<>
-void EditableTextInput<float>::labelTextChanged(Label* label)
+void EditableTextInput<float>::labelTextChanged (Label* label)
 {
-	String labelString = label->getText();
+    String labelString = label->getText();
 
-	if (!labelString.containsOnly("0123456789.- "))
-	{
-		inputBox->setText(String(lastValue), dontSendNotification);
-		return;
-	}
+    if (! labelString.containsOnly ("0123456789.- "))
+    {
+        inputBox->setText (String (lastValue), dontSendNotification);
+        return;
+    }
 
-	
-	float value = labelString.getFloatValue();
+    float value = labelString.getFloatValue();
 
-	if (value < minValue)
-	{
-		inputBox->setText(String(minValue), dontSendNotification);
-		return;
-	}
-	else if (value > maxValue)
-	{
-		inputBox->setText(String(maxValue), dontSendNotification);
-		return;
-	}
-	else {
+    if (value < minValue)
+    {
+        inputBox->setText (String (minValue), dontSendNotification);
+        return;
+    }
+    else if (value > maxValue)
+    {
+        inputBox->setText (String (maxValue), dontSendNotification);
+        return;
+    }
+    else
+    {
+        lastValue = value;
+    }
 
-		lastValue = value;
-	}
-
-
-	apg->updatePattern();
+    apg->updatePattern();
 }
 
 template<>
 float EditableTextInput<float>::getValue()
 {
-	return inputBox->getText().getFloatValue();
+    return inputBox->getText().getFloatValue();
 }
 
 template<>
 int EditableTextInput<int>::getValue()
 {
-	return inputBox->getText().getIntValue();
-
+    return inputBox->getText().getIntValue();
 }
 
-template<typename T>
-void EditableTextInput<T>::setValue(T value)
+template <typename T>
+void EditableTextInput<T>::setValue (T value)
 {
-	inputBox->setText(String(value), dontSendNotification);
+    inputBox->setText (String (value), dontSendNotification);
 }
 
-
-PulsePatternGenerator::PulsePatternGenerator(WavePlayer* wv_, Pattern* pattern_) : AnalogPatternGenerator(wv_, pattern_)
+PulsePatternGenerator::PulsePatternGenerator (WavePlayer* wv_, Pattern* pattern_) : AnalogPatternGenerator (wv_, pattern_)
 {
-	setSize(190, 190);
+    setSize (190, 190);
 
-	onDuration = new EditableTextInput<int>("On duration:",
-		"ms",
-		0,
-		10000,
-		100,
-		this);
+    onDuration = std::make_unique<EditableTextInput<int>> ("On duration:",
+                                                           "ms",
+                                                           0,
+                                                           10000,
+                                                           100,
+                                                           this);
 
-	onDuration->setBounds(10, 10, 180, 20);
-	addAndMakeVisible(onDuration);
+    onDuration->setBounds (10, 10, 180, 20);
+    addAndMakeVisible (onDuration.get());
 
-	offDuration = new EditableTextInput<int>("Off duration:",
-		"ms",
-		0,
-		10000,
-		100,
-		this);
+    offDuration = std::make_unique<EditableTextInput<int>> ("Off duration:",
+                                                            "ms",
+                                                            0,
+                                                            10000,
+                                                            100,
+                                                            this);
 
-	offDuration->setBounds(10, 35, 180, 20);
-	addAndMakeVisible(offDuration);
+    offDuration->setBounds (10, 35, 180, 20);
+    addAndMakeVisible (offDuration.get());
 
-	delayDuration = new EditableTextInput<int>("Delay:",
-		"ms",
-		0,
-		10000,
-		100,
-		this);
+    delayDuration = std::make_unique<EditableTextInput<int>> ("Delay:",
+                                                              "ms",
+                                                              0,
+                                                              10000,
+                                                              100,
+                                                              this);
 
-	delayDuration->setBounds(10, 60, 180, 20);
-	addAndMakeVisible(delayDuration);
+    delayDuration->setBounds (10, 60, 180, 20);
+    addAndMakeVisible (delayDuration.get());
 
-	repeatNumber = new EditableTextInput<int>("Num repeats:",
-		"x",
-		0,
-		100,
-		1,
-		this);
+    repeatNumber = std::make_unique<EditableTextInput<int>> ("Num repeats:",
+                                                             "x",
+                                                             0,
+                                                             100,
+                                                             1,
+                                                             this);
 
-	repeatNumber->setBounds(10, 85, 180, 20);
-	addAndMakeVisible(repeatNumber);
+    repeatNumber->setBounds (10, 85, 180, 20);
+    addAndMakeVisible (repeatNumber.get());
 
-	rampOnDuration = new EditableTextInput<int>("Ramp on:",
-		"ms",
-		0,
-		100,
-		0,
-		this);
+    rampOnDuration = std::make_unique<EditableTextInput<int>> ("Ramp on:",
+                                                               "ms",
+                                                               0,
+                                                               100,
+                                                               0,
+                                                               this);
 
-	rampOnDuration->setBounds(10, 110, 180, 20);
-	addAndMakeVisible(rampOnDuration);
+    rampOnDuration->setBounds (10, 110, 180, 20);
+    addAndMakeVisible (rampOnDuration.get());
 
-	rampOffDuration = new EditableTextInput<int>("Ramp off:",
-		"ms",
-		0,
-		100,
-		0,
-		this);
+    rampOffDuration = std::make_unique<EditableTextInput<int>> ("Ramp off:",
+                                                                "ms",
+                                                                0,
+                                                                100,
+                                                                0,
+                                                                this);
 
-	rampOffDuration->setBounds(10, 135, 180, 20);
-	addAndMakeVisible(rampOffDuration);
+    rampOffDuration->setBounds (10, 135, 180, 20);
+    addAndMakeVisible (rampOffDuration.get());
 
-	maxVoltage = new EditableTextInput<float>("Max voltage:",
-		"V",
-		0.0f,
-		5.0f,
-		5.0f,
-		this);
+    maxVoltage = std::make_unique<EditableTextInput<float>> ("Max voltage:",
+                                                             "V",
+                                                             0.0f,
+                                                             5.0f,
+                                                             5.0f,
+                                                             this);
 
-	maxVoltage->setBounds(10, 160, 180, 20);
-	addAndMakeVisible(maxVoltage);
+    maxVoltage->setBounds (10, 160, 180, 20);
+    addAndMakeVisible (maxVoltage.get());
 
-	setState(pattern);
-
+    setState (pattern);
 }
 
 PulsePatternGenerator::~PulsePatternGenerator()
 {
-
 }
 
 void PulsePatternGenerator::updatePattern()
 {
-	pattern->pulse.onDuration = onDuration->getValue();
-	pattern->pulse.offDuration = offDuration->getValue();
+    pattern->pulse.onDuration = onDuration->getValue();
+    pattern->pulse.offDuration = offDuration->getValue();
 
-	pattern->pulse.rampOnDuration = rampOnDuration->getValue();
-	pattern->pulse.rampOffDuration = rampOffDuration->getValue();
+    pattern->pulse.rampOnDuration = rampOnDuration->getValue();
+    pattern->pulse.rampOffDuration = rampOffDuration->getValue();
 
-	pattern->pulse.repeatNumber = repeatNumber->getValue();
+    pattern->pulse.repeatNumber = repeatNumber->getValue();
 
-	pattern->pulse.delayDuration = delayDuration->getValue();
-	pattern->pulse.maxVoltage = maxVoltage->getValue();
+    pattern->pulse.delayDuration = delayDuration->getValue();
+    pattern->pulse.maxVoltage = maxVoltage->getValue();
 
-	pattern->patternType = PatternType::pulse;
+    pattern->patternType = PatternType::pulse;
 
-	buildWaveform();
+    buildWaveform();
 
-	wv->updateWaveform();
+    wv->updateWaveform();
 }
 
 void PulsePatternGenerator::buildWaveform()
 {
+    pattern->patternType = PatternType::pulse;
+    pattern->maxVoltage = pattern->pulse.maxVoltage;
+    pattern->samples.clear();
 
-	pattern->patternType = PatternType::pulse;
-	pattern->maxVoltage = pattern->pulse.maxVoltage;
-	pattern->samples.clear();
+    float sampleRate = wv->getSampleRate();
+    pattern->sampleRate = sampleRate;
 
-	float sampleRate = wv->getSampleRate();
-	pattern->sampleRate = sampleRate;
+    float numDelaySamples = sampleRate * float (pattern->pulse.delayDuration) / 1000;
+    float numOnRampSamples = sampleRate * float (pattern->pulse.rampOnDuration) / 1000;
+    float numOffRampSamples = sampleRate * float (pattern->pulse.rampOffDuration) / 1000;
+    float numOnSamples = sampleRate * float (pattern->pulse.onDuration) / 1000;
+    float numOffSamples = sampleRate * float (pattern->pulse.offDuration) / 1000;
 
-	float numDelaySamples = sampleRate * float(pattern->pulse.delayDuration) / 1000;
-	float numOnRampSamples = sampleRate * float(pattern->pulse.rampOnDuration) / 1000;
-	float numOffRampSamples = sampleRate * float(pattern->pulse.rampOffDuration) / 1000;
-	float numOnSamples = sampleRate * float(pattern->pulse.onDuration) / 1000;
-	float numOffSamples = sampleRate * float(pattern->pulse.offDuration) / 1000;
+    Array<float> samples;
 
-	Array<float> samples;
+    float rampOffStart = numOnSamples - numOffRampSamples;
+    float maxVoltage = pattern->pulse.maxVoltage;
 
-	float rampOffStart = numOnSamples - numOffRampSamples;
-	float maxVoltage = pattern->pulse.maxVoltage;
+    for (float i = 0; i < numOnSamples; i++)
+    {
+        if (i < numOnRampSamples)
+        {
+            samples.add (i / numOnRampSamples * maxVoltage);
+        }
+        else if (i > rampOffStart)
+        {
+            samples.add ((1 - (i - rampOffStart) / numOffRampSamples) * maxVoltage);
+        }
+        else
+        {
+            samples.add (maxVoltage);
+        }
+    }
 
-	for (float i = 0; i < numOnSamples; i++)
-	{
-		if (i < numOnRampSamples)
-		{
-			samples.add(i / numOnRampSamples * maxVoltage);
-		}
-		else if (i > rampOffStart)
-		{
-			samples.add((1 - (i - rampOffStart) / numOffRampSamples) * maxVoltage);
-		}
-		else {
-			samples.add(maxVoltage);
-		}
-	}
+    for (float i = 0; i < numOffSamples; i++)
+    {
+        samples.add (0);
+    }
 
-	for (float i = 0; i < numOffSamples; i++)
-	{
-		samples.add(0);
-	}
+    samples.add (0);
 
-	samples.add(0);
+    for (float i = 0; i < numDelaySamples; i++)
+        pattern->samples.add (0);
 
-	for (float i = 0; i < numDelaySamples; i++)
-		pattern->samples.add(0);
-
-	for (int r = 0; r < pattern->pulse.repeatNumber; r++)
-	{
-		for (int i = 0; i < samples.size(); i++)
-		{
-			pattern->samples.add(samples[i]);
-		}
-	}
-				
+    for (int r = 0; r < pattern->pulse.repeatNumber; r++)
+    {
+        for (int i = 0; i < samples.size(); i++)
+        {
+            pattern->samples.add (samples[i]);
+        }
+    }
 }
 
-void PulsePatternGenerator::setState(Pattern* pattern)
+void PulsePatternGenerator::setState (Pattern* pattern)
 {
-	onDuration->setValue(pattern->pulse.onDuration);
-	offDuration->setValue(pattern->pulse.offDuration);
-	rampOnDuration->setValue(pattern->pulse.rampOnDuration);
-	rampOffDuration->setValue(pattern->pulse.rampOffDuration);
-	repeatNumber->setValue(pattern->pulse.repeatNumber);
+    onDuration->setValue (pattern->pulse.onDuration);
+    offDuration->setValue (pattern->pulse.offDuration);
+    rampOnDuration->setValue (pattern->pulse.rampOnDuration);
+    rampOffDuration->setValue (pattern->pulse.rampOffDuration);
+    repeatNumber->setValue (pattern->pulse.repeatNumber);
 
-	delayDuration->setValue(pattern->pulse.delayDuration);
-	maxVoltage->setValue(pattern->pulse.maxVoltage);
+    delayDuration->setValue (pattern->pulse.delayDuration);
+    maxVoltage->setValue (pattern->pulse.maxVoltage);
 }
 
-SinePatternGenerator::SinePatternGenerator(WavePlayer* wv_, Pattern* pattern_) : AnalogPatternGenerator(wv_, pattern_)
+SinePatternGenerator::SinePatternGenerator (WavePlayer* wv_, Pattern* pattern_) : AnalogPatternGenerator (wv_, pattern_)
 {
-	setSize(190, 120);
+    setSize (190, 120);
 
-	frequency = new EditableTextInput<int>("Frequency:",
-		"Hz",
-		1,
-		1000,
-		5,
-		this);
+    frequency = std::make_unique<EditableTextInput<int>> ("Frequency:",
+                                                          "Hz",
+                                                          1,
+                                                          1000,
+                                                          5,
+                                                          this);
 
-	frequency->setBounds(10, 10, 180, 20);
-	addAndMakeVisible(frequency);
+    frequency->setBounds (10, 10, 180, 20);
+    addAndMakeVisible (frequency.get());
 
-	cycles = new EditableTextInput<int>("Num cycles:",
-		"",
-		1,
-		10000,
-		5,
-		this);
+    cycles = std::make_unique<EditableTextInput<int>> ("Num cycles:",
+                                                       "",
+                                                       1,
+                                                       10000,
+                                                       5,
+                                                       this);
 
-	cycles->setBounds(10, 35, 180, 20);
-	addAndMakeVisible(cycles);
+    cycles->setBounds (10, 35, 180, 20);
+    addAndMakeVisible (cycles.get());
 
-	delay = new EditableTextInput<int>("Delay:",
-		"ms",
-		0,
-		10000,
-		100,
-		this);
+    delay = std::make_unique<EditableTextInput<int>> ("Delay:",
+                                                      "ms",
+                                                      0,
+                                                      10000,
+                                                      100,
+                                                      this);
 
-	delay->setBounds(10, 60, 180, 20);
-	addAndMakeVisible(delay);
+    delay->setBounds (10, 60, 180, 20);
+    addAndMakeVisible (delay.get());
 
-	maxVoltage = new EditableTextInput<float>("Max voltage:",
-		"V",
-		0.0f,
-		5.0f,
-		5.0f,
-		this);
+    maxVoltage = std::make_unique<EditableTextInput<float>> ("Max voltage:",
+                                                             "V",
+                                                             0.0f,
+                                                             5.0f,
+                                                             5.0f,
+                                                             this);
 
-	maxVoltage->setBounds(10, 85, 180, 20);
-	addAndMakeVisible(maxVoltage);
+    maxVoltage->setBounds (10, 85, 180, 20);
+    addAndMakeVisible (maxVoltage.get());
 
-	setState(pattern);
-
+    setState (pattern);
 }
 
 SinePatternGenerator::~SinePatternGenerator()
 {
-
 }
 
 void SinePatternGenerator::updatePattern()
 {
-	pattern->sine.frequency = frequency->getValue();
-	pattern->sine.cycles = cycles->getValue();
-	pattern->sine.delayDuration = delay->getValue();
-	pattern->sine.maxVoltage = maxVoltage->getValue();
+    pattern->sine.frequency = frequency->getValue();
+    pattern->sine.cycles = cycles->getValue();
+    pattern->sine.delayDuration = delay->getValue();
+    pattern->sine.maxVoltage = maxVoltage->getValue();
 
-	pattern->patternType = PatternType::sine;
+    pattern->patternType = PatternType::sine;
 
-	buildWaveform();
+    buildWaveform();
 
-	wv->updateWaveform();
-		
+    wv->updateWaveform();
 }
 
-void SinePatternGenerator::setState(Pattern* pattern)
+void SinePatternGenerator::setState (Pattern* pattern)
 {
-
-	frequency->setValue(pattern->sine.frequency);
-	delay->setValue(pattern->sine.delayDuration);
-	maxVoltage->setValue(pattern->sine.maxVoltage);
-	cycles->setValue(pattern->sine.cycles);
+    frequency->setValue (pattern->sine.frequency);
+    delay->setValue (pattern->sine.delayDuration);
+    maxVoltage->setValue (pattern->sine.maxVoltage);
+    cycles->setValue (pattern->sine.cycles);
 }
-
 
 void SinePatternGenerator::buildWaveform()
 {
+    pattern->maxVoltage = pattern->sine.maxVoltage;
+    pattern->samples.clear();
 
-	pattern->maxVoltage = pattern->sine.maxVoltage;
-	pattern->samples.clear();
+    float sampleRate = wv->getSampleRate();
+    pattern->sampleRate = sampleRate;
 
-	float sampleRate = wv->getSampleRate();
-	pattern->sampleRate = sampleRate;
+    float maxVoltage = pattern->maxVoltage;
 
-	float maxVoltage = pattern->maxVoltage;
+    float numDelaySamples = sampleRate * float (pattern->sine.delayDuration) / 1000;
 
-	float numDelaySamples = sampleRate * float(pattern->sine.delayDuration) / 1000;
+    float totalTime = float (pattern->sine.cycles) / float (pattern->sine.frequency);
 
-	float totalTime = float(pattern->sine.cycles) / float(pattern->sine.frequency);
+    Array<float> times;
 
-	Array<float> times;
+    for (int i = 0; i < int (sampleRate * totalTime); i++)
+        times.add (float (i) / sampleRate);
 
-	for (int i = 0; i < int(sampleRate * totalTime); i++)
-		times.add(float(i) / sampleRate);
+    for (float i = 0; i < numDelaySamples; i++)
+        pattern->samples.add (0);
 
-	for (float i = 0; i < numDelaySamples; i++)
-		pattern->samples.add(0);
+    for (int i = 0; i < times.size(); i++) // range(len(samples)) :
+        pattern->samples.add ((2 - (cos (2 * PI * float (pattern->sine.frequency) * times[i]) + 1)) / 2 * maxVoltage);
 
-	for (int i = 0; i < times.size(); i++) // range(len(samples)) :
-		pattern->samples.add((2 - (cos(2 * PI * float(pattern->sine.frequency) * times[i]) + 1)) / 2 * maxVoltage);
+    pattern->samples.add (0);
 
-	pattern->samples.add(0);
-
-	pattern->patternType = PatternType::sine;
-
+    pattern->patternType = PatternType::sine;
 }
 
-CustomPatternGenerator::CustomPatternGenerator(WavePlayer* wv_, Pattern* pattern_) : AnalogPatternGenerator(wv_, pattern_)
+CustomPatternGenerator::CustomPatternGenerator (WavePlayer* wv_, Pattern* pattern_) : AnalogPatternGenerator (wv_, pattern_)
 {
-	setSize(280, 250);
+    setSize (280, 250);
 
-	TextEditor::LengthAndCharacterRestriction* inputFilter = 
-		new TextEditor::LengthAndCharacterRestriction(-1, "-0123456789,. ");
+    TextEditor::LengthAndCharacterRestriction* inputFilter =
+        new TextEditor::LengthAndCharacterRestriction (-1, "-0123456789,. ");
 
-	mainLabel = new Label("Main Label", "Enter voltage values separated by commas:");
-	mainLabel->setBounds(10, 2, 260, 20);
-	mainLabel->setColour(Label::textColourId, Colours::grey);
-	mainLabel->setJustificationType(Justification::centredLeft);
-	addAndMakeVisible(mainLabel);
+    mainLabel = std::make_unique<Label> ("Main Label", "Enter voltage values separated by commas:");
+    mainLabel->setBounds (10, 2, 260, 20);
+    mainLabel->setColour (Label::textColourId, Colours::grey);
+    mainLabel->setJustificationType (Justification::centredLeft);
+    addAndMakeVisible (mainLabel.get());
 
-	textEditor = new TextEditor();
-	textEditor->setBounds(10, 25, 260, 215);
-	textEditor->addListener(this);
-	textEditor->setMultiLine(true);
-	textEditor->setColour(TextEditor::ColourIds::textColourId, Colours::white);
-	textEditor->setColour(TextEditor::ColourIds::backgroundColourId, Colours::darkgrey);
-	textEditor->setInputFilter(inputFilter, true);
-	addAndMakeVisible(textEditor);
+    textEditor = std::make_unique<TextEditor>();
+    textEditor->setBounds (10, 25, 260, 215);
+    textEditor->addListener (this);
+    textEditor->setMultiLine (true);
+    textEditor->setColour (TextEditor::ColourIds::textColourId, Colours::white);
+    textEditor->setColour (TextEditor::ColourIds::backgroundColourId, Colours::darkgrey);
+    textEditor->setInputFilter (inputFilter, true);
+    addAndMakeVisible (textEditor.get());
 
-	setState(pattern);
+    setState (pattern);
 }
-
-/*void CustomPatternGenerator::keyPressed(KeyPress& key)
-{
-	/*if (key.getTextCharacter() == 'c' && key.getModifiers().ctrlModifier)
-	{
-		textEditor->copyToClipboard();
-	}
-	else if (key.getTextCharacter() == 'p' && key.getModifiers().ctrlModifier)
-	{
-		textEditor->pasteFromClipboard();
-*/
-
 
 CustomPatternGenerator::~CustomPatternGenerator()
 {
-
 }
 
-void CustomPatternGenerator::textEditorReturnKeyPressed(TextEditor& editor)
+void CustomPatternGenerator::textEditorReturnKeyPressed (TextEditor& editor)
 {
-	updatePattern();
+    updatePattern();
 }
 
 void CustomPatternGenerator::updatePattern()
 {
-	String text = textEditor->getText();
 
-	int startLoc = 0;
-	int commaLoc = text.indexOf(",");
-	int endLoc = commaLoc;
+    LOGD ("CustomPatternGenerator::updatePattern()");
 
-	pattern->custom.samples.clear();
+    String text = textEditor->getText();
 
-	for (int i = 0; i < MAX_SAMPLES; i++)
-	{
-		//std::cout << "Start: " << startLoc << ", end: " << endLoc << ", comma: " << commaLoc << std::endl;
+    int startLoc = 0;
+    int commaLoc = text.indexOf (",");
+    int endLoc = commaLoc;
 
-		String substring = text.substring(startLoc, endLoc);
+    pattern->custom.samples.clear();
 
-		if (substring.length() > 0)
-			pattern->custom.samples.add(constrainVoltage(substring.getFloatValue()));
+    for (int i = 0; i < MAX_SAMPLES; i++)
+    {
+        //std::cout << "Start: " << startLoc << ", end: " << endLoc << ", comma: " << commaLoc << std::endl;
 
-		//std::cout << "Value: " << substring.getFloatValue() << std::endl;
+        String substring = text.substring (startLoc, endLoc);
 
-		startLoc = endLoc + 1;
-		commaLoc = text.substring(startLoc).indexOf(",");
-		endLoc = startLoc + commaLoc;
+        if (substring.length() > 0)
+            pattern->custom.samples.add (constrainVoltage (substring.getFloatValue()));
 
-		if (commaLoc < 0)
-		{
-			endLoc = text.length();
-			//std::cout << "Start: " << startLoc << ", end: " << endLoc << ", comma: " << commaLoc << std::endl;
-			String substring = text.substring(startLoc, endLoc);
+        //std::cout << "Value: " << substring.getFloatValue() << std::endl;
 
-			if (substring.length() > 0)
-				pattern->custom.samples.add(constrainVoltage(substring.getFloatValue()));
+        startLoc = endLoc + 1;
+        commaLoc = text.substring (startLoc).indexOf (",");
+        endLoc = startLoc + commaLoc;
 
-			//std::cout << "Value: " << substring.getFloatValue() << std::endl;
-			break;
-		}
-				
+        if (commaLoc < 0)
+        {
+            endLoc = text.length();
+            //std::cout << "Start: " << startLoc << ", end: " << endLoc << ", comma: " << commaLoc << std::endl;
+            String substring = text.substring (startLoc, endLoc);
 
-		//std::cout << "Start: " << startLoc << ", end: " << endLoc << ", comma: " << commaLoc << std::endl;
-	}
+            if (substring.length() > 0)
+                pattern->custom.samples.add (constrainVoltage (substring.getFloatValue()));
 
-	maxVoltage = 0;
+            //std::cout << "Value: " << substring.getFloatValue() << std::endl;
+            break;
+        }
 
-	for (int i = 0; i < pattern->custom.samples.size(); i++)
-	{
-		if (pattern->custom.samples[i] > maxVoltage)
-			maxVoltage = pattern->custom.samples[i];
-	}
+        //std::cout << "Start: " << startLoc << ", end: " << endLoc << ", comma: " << commaLoc << std::endl;
+    }
 
-	setState(pattern);
+    maxVoltage = 0;
+
+    for (int i = 0; i < pattern->custom.samples.size(); i++)
+    {
+        if (pattern->custom.samples[i] > maxVoltage)
+            maxVoltage = pattern->custom.samples[i];
+    }
+
+    setState (pattern);
+    buildWaveform();
+
+    wv->updateWaveform();
 }
 
-float CustomPatternGenerator::constrainVoltage(float input, float min, float max)
+float CustomPatternGenerator::constrainVoltage (float input, float min, float max)
 {
-	if (input < min)
-		return min;
-	else if (input > max)
-		return max;
-	else
-		return input;
+    if (input < min)
+        return min;
+    else if (input > max)
+        return max;
+    else
+        return input;
 }
 
-void CustomPatternGenerator::setState(Pattern* pattern)
+void CustomPatternGenerator::setState (Pattern* pattern)
 {
-	String text = "";
 
-	for (int i = 0; i < pattern->custom.samples.size(); i++)
-	{
-		text += String(pattern->custom.samples[i]);
-		text += ",";
-	}
+    LOGD ("CustomPatternGenerator::setState()");
 
-	text = text.upToLastOccurrenceOf(",", false, true);
+    String text = "";
 
-	textEditor->setText(text);
+    for (int i = 0; i < pattern->custom.samples.size(); i++)
+    {
+        text += String (pattern->custom.samples[i]);
+        text += ",";
+    }
+
+    text = text.upToLastOccurrenceOf (",", false, true);
+
+    textEditor->setText (text);
+
+   
 }
 
 void CustomPatternGenerator::buildWaveform()
 {
-
-	pattern->maxVoltage = maxVoltage;
-	pattern->samples = pattern->custom.samples;
-	pattern->patternType = PatternType::custom;
+    pattern->maxVoltage = maxVoltage;
+    pattern->samples = pattern->custom.samples;
+    pattern->patternType = PatternType::custom;
 }
-

@@ -1,23 +1,23 @@
 /*
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This file is part of the Open Ephys GUI
-Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+    This file is part of the Open Ephys GUI
+    Copyright (C) 2024 Open Ephys
 
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
@@ -26,49 +26,68 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../NeuropixComponents.h"
 
-#include "../API/v3/NeuropixAPI.h"
-
 class OneBoxADC;
 
+/**
+
+	Interface for OneBox DAC channels
+
+	Each DAC line is shared with an ADC, and must be 
+	enabled in order to be used.
+
+*/
 class OneBoxDAC : public DataSource
 {
 public:
-	OneBoxDAC(Basestation*);
+    /** Constructor */
+    OneBoxDAC (Basestation*);
 
-	void getInfo() override;
+    /** Returns name of data source */
+    String getName() { return "DAC"; }
 
-	bool open() override;
-	bool close() override;
+    /** Return info about part numbers, etc. -- not used*/
+    void getInfo() override {}
 
-	void initialize(bool signalChainIsLoading) override;
+    /** Open connection to the DACs -- not used */
+    bool open() override { return true; }
 
-	void startAcquisition() override;
-	void stopAcquisition() override;
+    /** Close connection to the DACs -- not used */
+    bool close() override { return true; }
 
-	void run() override; // acquire data
+    /** Initialize DAC settings */
+    void initialize (bool signalChainIsLoading) override;
 
-	void playWaveform();
-	void stopWaveform();
+    /** Called when acquisition starts -- not used */
+    void startAcquisition() override {}
 
-	void setWaveform(Array<float> samples);
+    /** Called when acquisition stops -- not used */
+    void stopAcquisition() override {}
 
-	void configureDataPlayer(int DACChannel, int portID, int dockID, int channelnr, int sourceType);
+    /** Adds data to buffer (not used) */
+    void run() override {}
 
-	void disableOutput(int chan);
-	void enableOutput(int chan);
+    /** Sets WavePlayer waveform */
+    void setWaveform (Array<float> samples);
 
-	String getName() { return "DAC"; }
+    /** Plays cued waveform */
+    void playWaveform();
 
-	Neuropixels::NP_ErrorCode errorCode;
+    /** Stops WavePlayer */
+    void stopWaveform();
 
-	float bitVolts;
+    /** Maps DataPlayer to a headstage channel */
+    void configureDataPlayer (int DACChannel,
+                              int portID,
+                              int dockID,
+                              int channel,
+                              int sourceType);
 
-	int64 timestamp;
+    /** Enables DAC output channel */
+    void disableOutput (int chan);
 
-	OneBoxADC* adc;
-	Basestation* bs;
+    /** Disables DAC output channel */
+    void enableOutput (int chan);
 
 };
 
-
-#endif  // __ONEBOX_ADC_H_2C4C2D67__
+#endif // __ONEBOX_DAC_H_2C4C2D67__

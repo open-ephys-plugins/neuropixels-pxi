@@ -1,23 +1,23 @@
 /*
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This file is part of the Open Ephys GUI
-Copyright (C) 2020 Allen Institute for Brain Science and Open Ephys
+    This file is part of the Open Ephys GUI
+    Copyright (C) 2024 Open Ephys
 
-------------------------------------------------------------------
+    ------------------------------------------------------------------
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
@@ -28,18 +28,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 
-#include "API/v1/NeuropixAPI.h"
-#include "API/v3/NeuropixAPI.h"
+#include "API/NeuropixAPI.h"
 
 #include "UI/ActivityView.h"
 #include "UI/ProbeNameConfig.h"
 
-# define SAMPLECOUNT 64
-# define MAX_HEADSTAGE_CLK_SAMPLE 3221225475
-# define MAX_ALLOWABLE_TIMESTAMP_JUMP 4
+#define SAMPLECOUNT 64
+#define MAX_HEADSTAGE_CLK_SAMPLE 3221225475
+#define MAX_ALLOWABLE_TIMESTAMP_JUMP 4
 
 #define MAXPACKETS 64
-
 
 class BasestationConnectBoard;
 class Flex;
@@ -50,236 +48,305 @@ class NeuropixInterface;
 
 struct ComponentInfo
 {
-	String version = "UNKNOWN";
-	uint64_t serial_number = 0;
-	int SN = 0;
-	String part_number = "";
-	String boot_version = "";
+    String version = "UNKNOWN";
+    uint64_t serial_number = 0;
+    int SN = 0;
+    String part_number = "";
+    String boot_version = "";
 };
 
 enum DeviceType
 {
-	PXI,
-	ONEBOX
+    PXI,
+    ONEBOX
 };
 
-enum class DataSourceType {
-	PROBE,
-	ADC,
-	DAC,
-	NONE
+enum class DataSourceType
+{
+    PROBE,
+    ADC,
+    DAC,
+    NONE
 };
 
-enum class BasestationType {
-	V1,
-	V3,
-	OPTO,
-	ONEBOX,
-	SIMULATED
+enum class BasestationType
+{
+    PXI,
+    OPTO,
+    ONEBOX,
+    SIMULATED
 };
 
-enum class ProbeType {
-	NONE = 1,
-	NP1,
-	NHP10,
-	NHP25,
-	NHP45,
-	NHP1,
-	UHD1,
-	UHD2,
-	NP2_1,
-	NP2_4,
-	OPTO
+enum class ProbeType
+{
+    NONE = 1,
+    NP1,
+    NHP10,
+    NHP25,
+    NHP45,
+    NHP1,
+    UHD1,
+    UHD2,
+    NP2_1,
+    NP2_4,
+    OPTO,
+    QUAD_BASE
 };
 
-enum class SourceStatus {
-	DISCONNECTED, //There is no communication between probe and computer
-	CONNECTING,   //Computer has detected the probe and is attempting to connect
-	CONNECTED,    //Computer has established a valid connection with probe
-	UPDATING,	  //The probe is currently updating its settings
-	ACQUIRING,    //The probe is currently streaming data to computer
-	RECORDING,    //The probe is recording the streaming data
-};
-
-enum class Bank {
-	NONE = -1,
-	A = 0,
-	B = 1,
-	C = 2,
-	D = 3,
-	E = 4,
-	F = 5,
-	G = 6,
-	H = 7,
-	I = 8,
-	J = 9,
-	K = 10,
-	L = 11,
-	M = 12,
-	OFF = 255 //used in v1 API
-};
-
-enum class ElectrodeStatus {
-	CONNECTED,
-	DISCONNECTED
-};
-
-enum class ElectrodeType {
-	ELECTRODE,
-	REFERENCE
-};
-
-enum class BIST {
-	EMPTY = 0,
-	SIGNAL = 1,
-	NOISE = 2,
-	PSB = 3,
-	SR = 4,
-	EEPROM = 5,
-	I2C = 6,
-	SERDES = 7,
-	HB = 8,
-	BS = 9
-};
-
-enum class FirmwareType {
-	BS_FIRMWARE,
-	BSC_FIRMWARE
-};
-
-enum class AdcInputRange {
-	PLUSMINUS2PT5V = 0,
-	PLUSMINUS5V = 1,
-	PLUSMINUS10V = 2
-};
-
-struct ProbeMetadata {
-	int shank_count;
-	int electrodes_per_shank;
-	int num_adcs;
-	Path shankOutline;
-	int columns_per_shank;
-	int rows_per_shank;
-	ProbeType type;
-	String name;
-	Array<Bank> availableBanks;
-	bool switchable;
-};
-
-struct ElectrodeMetadata {
-	int global_index;
-	int shank_local_index;
-	int shank;
-	int column_index;
-	int channel;
-	int row_index;
-	float xpos; // position on shank, in microns
-	float ypos; // position on shank, in microns
-	float site_width; // in microns
-	Bank bank;
-	ElectrodeStatus status;
-	ElectrodeType type;
-	bool isSelected;
-	Colour colour;
-};
-
-struct EmissionSiteMetadata {
-	int global_index;
-	int shank_index;
-	float xpos; // position on shank, in microns
-	float ypos; // position on shank, in microns
-	bool isSelected;
-	float wavelength_nm;
-};
-
-
-struct ProbeSettings {
-
-	Array<String> availableElectrodeConfigurations;
-	Array<float> availableApGains; // Available AP gain values for each channel (if any)
-	Array<float> availableLfpGains; // Available LFP gain values for each channel (if any)
-	Array<String> availableReferences; // reference types
-	Array<Bank> availableBanks; // bank inds
-
-	int electrodeConfigurationIndex; //UHD probes only
-	int apGainIndex;
-	int lfpGainIndex;
-	int referenceIndex;
-	bool apFilterState;
-
-	Array<Bank> selectedBank;    // size = channels
-	Array<int> selectedShank;    // size = channels
-	Array<int> selectedChannel;  // size = channels
-	Array<int> selectedElectrode; // size = channels
-
-	void clearElectrodeSelection() {
-		selectedBank.clear();
-		selectedShank.clear();
-		selectedChannel.clear();
-		selectedElectrode.clear();
+static std::string probeTypeToString(const ProbeType type)
+{
+    switch (type)
+    {
+	case ProbeType::NP1:
+		return "Neuropixels 1.0";
+	case ProbeType::NHP10:
+		return "Neuropixels NHP 10 mm";
+	case ProbeType::NHP25:
+		return "Neuropixels NHP 25 mm";
+	case ProbeType::NHP45:
+		return "Neuropixels NHP 45 mm";
+	case ProbeType::NHP1:
+		return "Neuropixels NHP Passive";
+	case ProbeType::UHD1:
+		return "Neuropixels UHD (Fixed)";
+	case ProbeType::UHD2:
+		return "Neuropixels UHD (Switchable)";
+	case ProbeType::NP2_1:
+		return "Neuropixels 2.0 Single Shank";
+	case ProbeType::NP2_4:
+		return "Neuropixels 2.0 Multi Shank";
+	case ProbeType::OPTO:
+		return "Neuropixels Opto";
+	case ProbeType::QUAD_BASE:
+		return "Neuropixels 2.0 Quad Base";
+	default:
+		return "Unknown";
 	}
+}
 
-	ProbeType probeType;
+enum class SourceStatus
+{
+    DISCONNECTED, //There is no communication between probe and computer
+    CONNECTING, //Computer has detected the probe and is attempting to connect
+    CONNECTED, //Computer has established a valid connection with probe
+    UPDATING, //The probe is currently updating its settings
+    ACQUIRING, //The probe is currently streaming data to computer
+    RECORDING, //The probe is recording the streaming data
+    DISABLED //The probe is connected but disabled during acquisition
+};
 
-	Probe* probe; // pointer to the probe
+enum class Bank
+{
+    NONE = -1,
+    A = 0,
+    B = 1,
+    C = 2,
+    D = 3,
+    E = 4,
+    F = 5,
+    G = 6,
+    H = 7,
+    I = 8,
+    J = 9,
+    K = 10,
+    L = 11,
+    M = 12,
+    A1 = 13, // used for quad base
+    A2 = 14,
+    A3 = 15,
+    A4 = 16,
+    B1 = 17,
+    B2 = 18,
+    B3 = 19,
+    B4 = 20,
+    C1 = 21,
+    C2 = 22,
+    C3 = 23,
+    C4 = 24,
+    D1 = 25,
+    D2 = 26,
+    D3 = 27,
+    D4 = 28,
+    OFF = 255 //used in v1 API
+};
+
+enum class ElectrodeStatus
+{
+    CONNECTED,
+    DISCONNECTED
+};
+
+enum class ElectrodeType
+{
+    ELECTRODE,
+    REFERENCE
+};
+
+enum class BIST
+{
+    EMPTY = 0,
+    SIGNAL = 1,
+    NOISE = 2,
+    PSB = 3,
+    SR = 4,
+    EEPROM = 5,
+    I2C = 6,
+    SERDES = 7,
+    HB = 8,
+    BS = 9
+};
+
+enum class FirmwareType
+{
+    BS_FIRMWARE,
+    BSC_FIRMWARE
+};
+
+enum class AdcComparatorState
+{
+    COMPARATOR_OFF = 1,
+    COMPARATOR_ON = 2
+};
+
+enum class AdcInputRange
+{
+    PLUSMINUS2PT5V = 1,
+    PLUSMINUS5V = 2,
+    PLUSMINUS10V = 3
+};
+
+enum class AdcThresholdLevel
+{
+    ONE_VOLT = 1,
+    THREE_VOLTS = 2
+};
+
+struct ProbeMetadata
+{
+    int shank_count;
+    int electrodes_per_shank;
+    int num_adcs;
+    int adc_bits;
+    Path shankOutline;
+    int columns_per_shank;
+    int rows_per_shank;
+    ProbeType type;
+    String name;
+    Array<Bank> availableBanks;
+    bool switchable;
+};
+
+struct ElectrodeMetadata
+{
+    int global_index;
+    int shank_local_index;
+    int shank;
+    int column_index;
+    int channel;
+    int row_index;
+    float xpos; // position on shank, in microns
+    float ypos; // position on shank, in microns
+    float site_width; // in microns
+    Bank bank;
+    ElectrodeStatus status;
+    ElectrodeType type;
+    bool isSelected;
+    Colour colour;
+};
+
+struct EmissionSiteMetadata
+{
+    int global_index;
+    int shank_index;
+    float xpos; // position on shank, in microns
+    float ypos; // position on shank, in microns
+    bool isSelected;
+    float wavelength_nm;
+};
+
+struct ProbeSettings
+{
+    Array<String> availableElectrodeConfigurations;
+    Array<float> availableApGains; // Available AP gain values for each channel (if any)
+    Array<float> availableLfpGains; // Available LFP gain values for each channel (if any)
+    Array<String> availableReferences; // reference types
+    Array<Bank> availableBanks; // bank inds
+
+    int electrodeConfigurationIndex; //UHD probes only
+    int apGainIndex;
+    int lfpGainIndex;
+    int referenceIndex;
+    bool apFilterState;
+
+    Array<Bank> selectedBank; // size = channels
+    Array<int> selectedShank; // size = channels
+    Array<int> selectedChannel; // size = channels
+    Array<int> selectedElectrode; // size = channels
+
+    void clearElectrodeSelection()
+    {
+        selectedBank.clear();
+        selectedShank.clear();
+        selectedChannel.clear();
+        selectedElectrode.clear();
+    }
+
+    ProbeType probeType;
+
+    Probe* probe; // pointer to the probe
+
+    bool isEnabled = true;
 };
 
 /** Base class for all Neuropixels components, which must implement the "getInfo" method */
 class NeuropixComponent
 {
 public:
-	NeuropixComponent() { }
+    /** Constructor */
+    NeuropixComponent() {}
 
-	ComponentInfo info;
+    /** Pure virtual method for getting component info */
+    virtual void getInfo() = 0;
 
-	virtual void getInfo() = 0;
-};
+    /** Holds component info */
+    ComponentInfo info;
 
-/** Holds info about APIv1, as well as a boolean value to indicate whether or not it is being used*/
-class NeuropixAPIv1 : public NeuropixComponent
-{
-public:
-	NeuropixAPIv1()
-	{
-		getInfo();
-		isActive = false;
-	}
+    /** Checks error messages */
+    Neuropixels::NP_ErrorCode checkError (Neuropixels::NP_ErrorCode error, const String& function = "")
+    {
+        if (error != Neuropixels::SUCCESS)
+        {
+            LOGE (function, ": ", Neuropixels::getErrorMessage (error));
+        }
 
-	void getInfo() override {
+        return error;
+    }
 
-		unsigned char version_major;
-		unsigned char version_minor;
-		np::getAPIVersion(&version_major, &version_minor);
-
-		info.version = String(version_major) + "." + String(version_minor);
-	}
-
-	bool isActive;
+    /** Holds error codes*/
+    Neuropixels::NP_ErrorCode errorCode;
 };
 
 /** Holds info about APIv3, as well as a boolean value to indicate whether or not it is being used*/
 class NeuropixAPIv3 : public NeuropixComponent
 {
 public:
+    NeuropixAPIv3()
+    {
+        getInfo();
+        isActive = false;
+    }
 
-	NeuropixAPIv3()
-	{
-		getInfo();
-		isActive = false;
-	}
+    void getInfo() override
+    {
+        int version_major;
+        int version_minor;
+        Neuropixels::getAPIVersion (&version_major, &version_minor);
 
-	void getInfo() override {
+        info.version = String (version_major) + "." + String (version_minor);
+    }
 
-		int version_major;
-		int version_minor;
-		Neuropixels::getAPIVersion(&version_major, &version_minor);
-
-		info.version = String(version_major) + "." + String(version_minor);
-	}
-
-	bool isActive;
+    bool isActive;
 };
-
 
 /** 
 	
@@ -293,61 +360,64 @@ public:
 class DataSource : public NeuropixComponent, public Thread
 {
 public:
+    /** Constructor */
+    DataSource (Basestation* bs_) : NeuropixComponent(),
+                                    Thread ("DataSourceThread")
+    {
+        basestation = bs_;
+    }
 
-	/** Constructor */
-	DataSource(Basestation* bs_) : NeuropixComponent(), Thread("DataSourceThread")
-	{
-		basestation = bs_;
-	}
+    // --------- PURE VIRTUAL METHODS --------- //
 
-	// --------- PURE VIRTUAL METHODS --------- //
+    /** Opens the connection to the data source */
+    virtual bool open() = 0;
 
-	/** Opens the connection to the data source */
-	virtual bool open() = 0;
+    /** Closes the connection to the data source */
+    virtual bool close() = 0;
 
-	/** Closes the connection to the data source */
-	virtual bool close() = 0;
+    /** Prepares for data acquisition */
+    virtual void initialize (bool signalChainIsLoading) = 0;
 
-	/** Prepares for data acquisition */
-	virtual void initialize(bool signalChainIsLoading) = 0;
+    /** Starts data streaming */
+    virtual void startAcquisition() = 0;
 
-	/** Starts data streaming */
-	virtual void startAcquisition() = 0;
+    /** Stops data streaming */
+    virtual void stopAcquisition() = 0;
 
-	/** Stops data streaming */
-	virtual void stopAcquisition() = 0;
+    /** Returns the name of the data source */
+    virtual String getName() = 0;
 
-	/** Returns the name of the data source */
-	virtual String getName() = 0;
+    // --------- GET / SET METHODS  --------- //
 
-	// --------- GET / SET METHODS  --------- //
+    /** Sets the status (CONNECTING, CONNECTED, etc.) */
+    void setStatus (SourceStatus status_)
+    {
+        status = status_;
+    }
 
-	/** Sets the status (CONNECTING, CONNECTED, etc.) */
-	void setStatus(SourceStatus status_) {
-		status = status_;
-	}
+    /** Gets the status of this source */
+    SourceStatus getStatus()
+    {
+        return status;
+    }
 
-	/** Gets the status of this source */
-	SourceStatus getStatus() {
-		return status;
-	}
+    /** Basestation for this source */
+    Basestation* basestation;
 
-	/** Basestation for this source */
-	Basestation* basestation;
+    /** Properties of this data source */
+    int channel_count;
+    float sample_rate;
+    DataSourceType sourceType;
 
-	/** Properties of this data source */
-	int channel_count;
-	float sample_rate;
-	DataSourceType sourceType;
+    /** The data buffer used by this source */
+    DataBuffer* apBuffer;
 
-	/** The data buffer used by this source */
-	DataBuffer* apBuffer;
+    /** Flags if the the data source is enabled */
+    bool isEnabled = true;
 
 protected:
-	SourceStatus status;
-
+    SourceStatus status;
 };
-
 
 /** 
 
@@ -357,159 +427,160 @@ protected:
 class Probe : public DataSource
 {
 public:
+    /** Constructor */
+    Probe (Basestation*,
+           Headstage*,
+           Flex*,
+           int dock);
 
-	/** Constructor */
-	Probe(Basestation*, 
-		Headstage*,
-		Flex*, 
-		int dock);
+    // --------- PURE VIRTUAL METHODS --------- //
 
-	// --------- PURE VIRTUAL METHODS --------- //
+    /** Returns true if the probe generates a separate stream for LFP data */
+    virtual bool generatesLfpData() = 0;
 
-	/** Returns true if the probe generates a separate stream for LFP data */
-	virtual bool generatesLfpData() = 0;
+    /** Returns true if the probe has a selectable AP filter cut */
+    virtual bool hasApFilterSwitch() = 0;
 
-	/** Returns true if the probe has a selectable AP filter cut */
-	virtual bool hasApFilterSwitch() = 0;
+    /** Used to select channels. Returns the currently active electrodes*/
+    virtual void selectElectrodes() = 0;
 
-	/** Used to select channels. Returns the currently active electrodes*/
-	virtual void selectElectrodes() = 0;
+    /** Returns selected electrodes for a named preset electrode configuration*/
+    virtual Array<int> selectElectrodeConfiguration (String config) = 0;
 
-	/** Returns selected electrodes for a named preset electrode configuration*/
-	virtual Array<int> selectElectrodeConfiguration(String config) = 0;
+    /** Used to set references (same for all channels).*/
+    virtual void setAllReferences() = 0;
 
-	/** Used to set references (same for all channels).*/
-	virtual void setAllReferences() = 0;
+    /** Used to set gains (same for all channels).*/
+    virtual void setAllGains() = 0;
 
-	/** Used to set gains (same for all channels).*/
-	virtual void setAllGains() = 0;
+    /** Used to set AP filter cut (if available).*/
+    virtual void setApFilterState() = 0;
 
-	/** Used to set AP filter cut (if available).*/
-	virtual void setApFilterState() = 0;
+    /** Writes probe configuration after calling setAllReferences / setAllGains / selectElectrodes */
+    virtual void writeConfiguration() = 0;
 
-	/** Writes probe configuration after calling setAllReferences / setAllGains / selectElectrodes */
-	virtual void writeConfiguration() = 0;
+    /** Applies calibration info from a file.*/
+    virtual void calibrate() = 0;
 
-	/** Applies calibration info from a file.*/
-	virtual void calibrate() = 0;
+    /** Runs a built-in self-test for a specified port */
+    virtual bool runBist (BIST bistType) = 0;
 
-	/** Runs a built-in self-test for a specified port */
-	virtual bool runBist(BIST bistType) = 0;
+    /** Main loop -- copies data from the probe into a DataBuffer object */
+    virtual void run() = 0;
 
-	/** Main loop -- copies data from the probe into a DataBuffer object */
-	virtual void run() = 0;
+    // ---------------------------------------- //
 
-	// ---------------------------------------- //
+    String getName() { return displayName; }
 
-	String getName() { return displayName; }
+    Headstage* headstage; // owned by Basestation
+    Flex* flex; // owned by Headstage
 
-	Headstage* headstage; // owned by Basestation
-	Flex* flex; // owned by Headstage
+    bool isValid = true; //True if the PN is supported by the API
+    bool invertSyncLine = false;
 
-	bool isValid = true; //True if the PN is supported by the API
-	bool invertSyncLine = false;
+    bool isCalibrated = false;
+    bool calibrationWarningShown;
 
-	bool isCalibrated = false;
-	bool calibrationWarningShown;
+    int port;
+    int dock;
 
-	int port;
-	int dock;
-	
-	/** Separate buffer for LFP data */
-	DataBuffer* lfpBuffer;
+    /** Separate buffer for LFP data */
+    DataBuffer* lfpBuffer;
 
-	float ap_sample_rate;
-	float lfp_sample_rate;
+    /** Additional buffers for quad base probe */
+    Array<DataBuffer*> quadBaseBuffers;
 
-	float ap_offsets[384][100];
-	float lfp_offsets[384][100];
+    float ap_sample_rate;
+    float lfp_sample_rate;
 
-	double timestamp_s[12 * MAXPACKETS];
+    float ap_offsets[384][100];
+    float lfp_offsets[384][100];
 
-	int64 ap_timestamp;
-	int64 lfp_timestamp;
+    double timestamp_s[12 * MAXPACKETS];
 
-	Array<ElectrodeMetadata> electrodeMetadata;
-	Array<EmissionSiteMetadata> emissionSiteMetadata;
-	ProbeMetadata probeMetadata;
+    int64 ap_timestamp;
+    int64 lfp_timestamp;
 
-	ProbeSettings settings;
+    Array<ElectrodeMetadata> electrodeMetadata;
+    Array<EmissionSiteMetadata> emissionSiteMetadata;
+    ProbeMetadata probeMetadata;
 
-	Path shankOutline;
-	
-	NeuropixInterface* ui;
+    ProbeSettings settings;
 
-	/** Updates the settings object for this probe */
-	void updateSettings(ProbeSettings p)
-	{
-		settings = p;
-	}
+    Path shankOutline;
 
-	/** Updates the naming scheme */
-	void updateNamingScheme(ProbeNameConfig::NamingScheme scheme);
+    NeuropixInterface* ui;
 
-	void updateOffsets(float* samples, int64 timestamp, bool isApBand);
+    /** Updates the settings object for this probe */
+    void updateSettings (ProbeSettings p)
+    {
+        settings = p;
+    }
 
-	int ap_offset_counter = 0;
-	int lfp_offset_counter = 0;
+    /** Updates the naming scheme */
+    void updateNamingScheme (ProbeNameConfig::NamingScheme scheme);
 
-	ProbeType type;
-	
-	int electrode_count;
-	float ap_band_sample_rate;
-	float lfp_band_sample_rate;
+    void updateOffsets (float* samples, int64 timestamp, bool isApBand);
 
-	int buffer_size;
+    int ap_offset_counter = 0;
+    int lfp_offset_counter = 0;
 
-	float fifoFillPercentage;
+    ProbeType type;
 
-	/* Stores the generic probe model name e.g. Neuripixels 2.0 - Single Shank */
-	String name;
+    int electrode_count;
+    float ap_band_sample_rate;
+    float lfp_band_sample_rate;
 
-	/* Stores the name assigned to the probe/streams (default is autoName) */
-	String displayName;
+    int buffer_size;
 
-	/** Stores the index of the first (AP) data stream */
-	int streamIndex;
+    float fifoFillPercentage;
 
-	/* Stores port-specific and probe-specific names */
-	struct CustomNames {
-		String automatic;
-		String streamSpecific;
-		String portSpecific;
-		String probeSpecific;
-	};
-	
-	CustomNames customName;
+    /* Stores the generic probe model name e.g. Neuripixels 2.0 - Single Shank */
+    String name;
 
-	ProbeNameConfig::NamingScheme namingScheme;
+    /* Stores the name assigned to the probe/streams (default is autoName) */
+    String displayName;
 
-	void sendSyncAsContinuousChannel(bool shouldSend) {
-		sendSync = shouldSend;
-	}
+    /** Stores the index of the first (AP) data stream */
+    int streamIndex;
 
-	bool sendSync = false;
+    /* Stores port-specific and probe-specific names */
+    struct CustomNames
+    {
+        String automatic;
+        String streamSpecific;
+        String portSpecific;
+        String probeSpecific;
+    };
 
-	uint32_t last_npx_timestamp;
-	bool passedOneSecond;
+    CustomNames customName;
 
-	const float* getPeakToPeakValues(ActivityToView currentView = ActivityToView::APVIEW)
-	{
-		if (currentView == ActivityToView::APVIEW)
-			return apView->getPeakToPeakValues();
-		else
-			return lfpView->getPeakToPeakValues();
-	}
+    ProbeNameConfig::NamingScheme namingScheme;
+
+    void sendSyncAsContinuousChannel (bool shouldSend)
+    {
+        sendSync = shouldSend;
+    }
+
+    bool sendSync = false;
+
+    uint32_t last_npx_timestamp;
+    bool passedOneSecond;
+
+    const float* getPeakToPeakValues (ActivityToView currentView = ActivityToView::APVIEW)
+    {
+        if (currentView == ActivityToView::APVIEW)
+            return apView->getPeakToPeakValues();
+        else
+            return lfpView->getPeakToPeakValues();
+    }
 
 protected:
+    std::unique_ptr<ActivityView> apView;
+    std::unique_ptr<ActivityView> lfpView;
 
-	ScopedPointer<ActivityView> apView;
-	ScopedPointer<ActivityView> lfpView;
-
-	uint64 eventCode;
-	Array<int> gains; // available gain values
-
-
+    uint64 eventCode;
+    Array<int> gains; // available gain values
 };
 
 class Basestation;
@@ -517,324 +588,323 @@ class Basestation;
 class FirmwareUpdater : public ThreadWithProgressWindow
 {
 public:
+    /** Constructor */
+    FirmwareUpdater (Basestation* basestation, File firmwareFile, FirmwareType type);
 
-	/** Constructor */
-	FirmwareUpdater(Basestation* basestation, File firmwareFile, FirmwareType type);
+    /** Destructor */
+    ~FirmwareUpdater() {}
 
-	/** Destructor */
-	~FirmwareUpdater() {}
+    /** Thread for firmware update */
+    void run() override;
 
-	/** Thread for firmware update */
-	void run() override;
+    /** Callback to update progress bar*/
+    static int firmwareUpdateCallback (size_t bytes)
+    {
+        currentThread->setProgress (float (bytes) / totalFirmwareBytes);
 
-	/** Callback to update progress bar*/
-	static int firmwareUpdateCallback(size_t bytes)
-	{
-		currentThread->setProgress(float(bytes) / totalFirmwareBytes);
+        return 1;
+    }
 
-		return 1;
-	}
+    static FirmwareUpdater* currentThread;
+    static float totalFirmwareBytes;
 
-	static FirmwareUpdater* currentThread;
-	static float totalFirmwareBytes;
-
-	Basestation* basestation;
-	FirmwareType firmwareType;
-	String firmwareFilePath;
-
+    Basestation* basestation;
+    FirmwareType firmwareType;
+    String firmwareFilePath;
 };
 
-/** Represents a PXI basestation card */
+/** Represents a data acquisition device */
 class Basestation : public NeuropixComponent
 {
 public:
+    /** Constructor -- Sets the slot values. */
+    Basestation (NeuropixThread* neuropixThread_, int slot_) : NeuropixComponent()
+    {
+        probesInitialized = false;
+        neuropixThread = neuropixThread_;
+        slot = slot_;
+        slot_c = (unsigned char) slot_;
 
-	/** Constructor -- Sets the slot values. */
-	Basestation(NeuropixThread* neuropixThread_, int slot_) : NeuropixComponent() {
-		probesInitialized = false;
-		neuropixThread = neuropixThread_;
-		slot = slot_;
-		slot_c = (unsigned char) slot_;
+        bsFirmwarePath = "";
+        bscFirmwarePath = "";
 
-		bsFirmwarePath = "";
-		bscFirmwarePath = "";
+        for (int p = 0; p < 4; p++)
+        {
+            for (int d = 0; d < 2; d++)
+            {
+                customPortNames.add ("slot" + String (slot) + "-port" + String (p + 1) + "-" + String (d + 1));
+            }
+        }
+    }
 
-		for (int p = 0; p < 4; p++)
-		{
-			for (int d = 0; d < 2; d++)
-			{
-				customPortNames.add("slot" + String(slot) + "-port" + String(p+1) + "-" + String(d+1));
-			}
-		}
-	}
+    /** Destructor */
+    virtual ~Basestation() {}
 
-	/** Destructor */
-	virtual ~Basestation() {}
+    // --------- PURE VIRTUAL METHODS --------- //
 
-	// --------- PURE VIRTUAL METHODS --------- //
+    /** Opens the connection and retrieves info about available components; should be fast */
+    /** Returns false if the API version does not match */
+    virtual bool open() = 0;
 
-	/** Opens the connection and retrieves info about available components; should be fast */
-	/** Returns false if the API version does not match */
-	virtual bool open() = 0;
+    /** Closes the connection */
+    virtual void close() = 0;
 
-	/** Closes the connection */
-	virtual void close() = 0;
+    /** Initializes all components for acquisition; may inclue some delays */
+    virtual void initialize (bool signalChainIsLoading) = 0;
 
-	/** Initializes all components for acquisition; may inclue some delays */
-	virtual void initialize(bool signalChainIsLoading) = 0;
+    /** Searches for probes connected to this basestion */
+    virtual void searchForProbes() = 0;
 
-	/** Sets the sync channel as an "input" (for external sync) */
-	virtual void setSyncAsInput() = 0;
+    /** Sets the sync channel as an "input" (for external sync) */
+    virtual void setSyncAsInput() = 0;
 
-	/** Sets the sync channel as an "output" (and specifies the frequency index) */
-	virtual void setSyncAsOutput(int freqIndex) = 0;
+    /** Sets the sync channel as an "output" (and specifies the frequency index) */
+    virtual void setSyncAsOutput (int freqIndex) = 0;
 
-	/** Returns an array of available sync frequencies for this basestation */
-	virtual Array<int> getSyncFrequencies() = 0;
+    /** Sets the sync channel to inherit from the PXI backplane */
+    virtual void setSyncAsPassive() = 0;
 
-	/** Starts data streaming */
-	virtual void startAcquisition() = 0;
+    /** Returns an array of available sync frequencies for this basestation */
+    virtual Array<int> getSyncFrequencies() = 0;
 
-	/** Stops data streaming */
-	virtual void stopAcquisition() = 0;
+    /** Starts data streaming */
+    virtual void startAcquisition() = 0;
 
-	/** Returns the percentage of the FIFO buffer that is filled */
-	virtual float getFillPercentage() = 0;
+    /** Stops data streaming */
+    virtual void stopAcquisition() = 0;
 
-	/** Returns the total number of probes connected to this basestation */
-	virtual int getProbeCount() = 0;
+    /** Returns the percentage of the FIFO buffer that is filled */
+    virtual float getFillPercentage() = 0;
 
-	// ----------- OTHER METHODS ----------- //
+    /** Returns the total number of probes connected to this basestation */
+    virtual int getProbeCount() = 0;
 
-	/** Launches FirmwareUpdater to update the BSC firmware */
-	void updateBscFirmware(File file);
+    // ----------- OTHER METHODS ----------- //
 
-	/** Launches FirmwareUpdater to update the BS firmware */
-	void updateBsFirmware(File file);
+    /** Launches FirmwareUpdater to update the BSC firmware */
+    void updateBscFirmware (File file);
 
-	/** Checks the status of any initialization threads */
-	virtual bool isBusy() { return false;  }
+    /** Launches FirmwareUpdater to update the BS firmware */
+    void updateBsFirmware (File file);
 
-	/** Waits for initialization threads to exit */
-	virtual void waitForThreadToExit() { }
+    /** Checks the status of any initialization threads */
+    virtual bool isBusy() { return false; }
 
-	/** Returns an array of headstages connected to this basestation
+    /** Waits for initialization threads to exit */
+    virtual void waitForThreadToExit() {}
+
+    /** Checks that firmware version matches what's expected by the plugin */
+    virtual void checkFirmwareVersion() {}
+
+    /** Returns an array of headstages connected to this basestation
 		(can include null values for disconnected headstages) */
-	Array<Headstage*> getHeadstages() {
+    Array<Headstage*> getHeadstages()
+    {
+        Array<Headstage*> headstage_array;
 
-		Array<Headstage*> headstage_array;
+        for (auto h : headstages)
+        {
+            headstage_array.add (h);
+        }
 
-		for (auto h : headstages)
-		{
-			headstage_array.add(h);
-		}
+        return headstage_array;
+    }
 
-		return headstage_array;
-	}
+    virtual Array<DataSource*> getAdditionalDataSources()
+    {
+        return Array<DataSource*>();
+    }
 
-	virtual Array<DataSource*> getAdditionalDataSources() {
+    /** Returns an array of probes connected to this basestation (cannot include null values) */
+    Array<Probe*> getProbes()
+    {
+        return probes;
+    }
 
-		return Array<DataSource*>();
+    /** Informs all probes to add the sync channel value to the continuous buffer */
+    void sendSyncAsContinuousChannel (bool shouldSend)
+    {
+        for (auto probe : getProbes())
+        {
+            probe->sendSyncAsContinuousChannel (shouldSend);
+        }
+    }
 
-	}
+    /** Sets saving directory for NPX files (not used) */
+    void setSavingDirectory (File directory)
+    {
+        savingDirectory = directory;
+    }
 
-	/** Returns an array of probes connected to this basestation (cannot include null values) */
-	Array<Probe*> getProbes()
-	{
-		return probes;
-	}
+    /** Gets the saving directory for NPX files (not used) */
+    File getSavingDirectory()
+    {
+        return savingDirectory;
+    }
 
-	/** Informs all probes to add the sync channel value to the continuous buffer */
-	void sendSyncAsContinuousChannel(bool shouldSend) {
+    /** Sets the naming scheme for all probes in this basestation */
+    void setNamingScheme (ProbeNameConfig::NamingScheme namingScheme_)
+    {
+        namingScheme = namingScheme_;
+        for (auto p : probes)
+            p->updateNamingScheme (namingScheme);
+    }
 
-		for (auto probe : getProbes())
-		{
-			probe->sendSyncAsContinuousChannel(shouldSend);
-		}
-	}
+    /** Returns the naming scheme for this basestation */
+    ProbeNameConfig::NamingScheme getNamingScheme()
+    {
+        return namingScheme;
+    }
 
-	/** Sets saving directory for NPX files (not used) */
-	void setSavingDirectory(File directory) {
-		savingDirectory = directory;
-	}
+    BasestationType type;
 
-	/** Gets the saving directory for NPX files (not used) */
-	File getSavingDirectory() {
-		return savingDirectory;
-	}
+    unsigned char slot_c;
+    int slot;
 
-	/** Sets the naming scheme for all probes in this basestation */
-	void setNamingScheme(ProbeNameConfig::NamingScheme namingScheme_) {
-		namingScheme = namingScheme_;
-		for (auto p : probes)
-			p->updateNamingScheme(namingScheme);
-	}
+    std::unique_ptr<BasestationConnectBoard> basestationConnectBoard;
 
-	/** Returns the naming scheme for this basestation */
-	ProbeNameConfig::NamingScheme getNamingScheme() {
-		return namingScheme;
-	}
+    OwnedArray<Headstage> headstages;
+    Array<Probe*> probes;
 
-	BasestationType type;
+    String getCustomPortName (int port, int dock)
+    {
+        if (dock == 0)
+        {
+            return customPortNames[(port - 1) * 2];
+        }
+        else
+        {
+            return customPortNames[(port - 1) * 2 + (dock - 1)];
+        }
+    }
+    void setCustomPortName (String name, int port, int dock)
+    {
+        if (dock == 0)
+        {
+            customPortNames.set ((port - 1) * 2, name);
+        }
+        else
+        {
+            customPortNames.set ((port - 1) * 2 + (dock - 1), name);
+        }
+    }
 
-	unsigned char slot_c;
-	int slot;
-
-	ScopedPointer<BasestationConnectBoard> basestationConnectBoard;
-
-	OwnedArray<Headstage> headstages;
-	Array<Probe*> probes;
-	
-	String getCustomPortName(int port, int dock) {
-
-		if (dock == 0)
-		{
-			return customPortNames[(port - 1) * 2];
-		}
-		else {
-			return customPortNames[(port - 1) * 2 + (dock - 1)];
-		}
-		
-	}
-	void setCustomPortName(String name, int port, int dock) {
-
-		if (dock == 0)
-		{
-			customPortNames.set((port - 1) * 2, name);
-		}
-		else {
-			customPortNames.set((port - 1) * 2 + (dock - 1), name);
-		}
-		
-	}
-
-	NeuropixThread* neuropixThread; // Probes can access this via Basestation pointer
+    NeuropixThread* neuropixThread; // Probes can access this via Basestation pointer
 
 protected:
+    bool probesInitialized;
+    Array<int> syncFrequencies;
+    File savingDirectory;
+    ProbeNameConfig::NamingScheme namingScheme = ProbeNameConfig::NamingScheme::AUTO_NAMING;
 
-	bool probesInitialized;
-	Array<int> syncFrequencies;
-	File savingDirectory;
-	ProbeNameConfig::NamingScheme namingScheme = ProbeNameConfig::NamingScheme::AUTO_NAMING;
+    StringArray customPortNames;
 
-	StringArray customPortNames;
-	
-	String bscFirmwarePath;
-	String bsFirmwarePath;
+    String bscFirmwarePath;
+    String bsFirmwarePath;
 };
 
 /** Represents a basestation connect board */
 class BasestationConnectBoard : public NeuropixComponent
 {
 public:
-	BasestationConnectBoard(Basestation* bs_) : NeuropixComponent() {
-		basestation = bs_;
-	}
+    BasestationConnectBoard (Basestation* bs_) : NeuropixComponent()
+    {
+        basestation = bs_;
+    }
 
-	Basestation* basestation;
+    Basestation* basestation;
 };
 
 /** Represents a Headstage Test Module */
 class HeadstageTestModule : public NeuropixComponent
 {
 public:
+    /** Constructor */
+    HeadstageTestModule (Basestation* bs_, Headstage* hs_) : NeuropixComponent()
+    {
+        basestation = bs_;
+        headstage = hs_;
+    }
 
-	/** Constructor */
-	HeadstageTestModule(Basestation* bs_, Headstage* hs_) : NeuropixComponent()
-	{
-		basestation = bs_;
-		headstage = hs_;
-	}
+    /** Run all available headstage tests */
+    virtual void runAll() = 0;
 
-	/** Run all available headstage tests */
-	virtual void runAll() = 0;
-
-	/** Show test results */
-	virtual void showResults() = 0;
+    /** Show test results */
+    virtual void showResults() = 0;
 
 private:
-	Basestation* basestation;
-	Headstage* headstage;
-
+    Basestation* basestation;
+    Headstage* headstage;
 };
-
-
 
 /** Represents a Neuropixels headstage of any type */
 class Headstage : public NeuropixComponent
 {
 public:
+    /** Constructor */
+    Headstage (Basestation* bs_, int port_) : NeuropixComponent()
+    {
+        basestation = bs_;
+        port_c = (signed char) port_;
+        port = port_;
+    }
 
-	/** Constructor */
-	Headstage(Basestation* bs_, int port_) : NeuropixComponent() {
-		basestation = bs_;
-		port_c = (signed char) port_;
-		port = port_;
-	}
+    /** Returns all probes connected to this headstage */
+    Array<Probe*> getProbes()
+    {
+        Array<Probe*> probe_array;
 
-	/** Returns all probes connected to this headstage */
-	Array<Probe*> getProbes() {
+        for (auto p : probes)
+        {
+            probe_array.add (p);
+        }
 
-		Array<Probe*> probe_array;
+        return probe_array;
+    }
 
-		for (auto p : probes)
-		{
-			probe_array.add(p);
-		}
+    /** Returns all flex cables connected to this headstage */
+    Array<Flex*> getFlexCables()
+    {
+        Array<Flex*> flex_array;
 
-		return probe_array;
-	}
+        for (auto f : flexCables)
+        {
+            flex_array.add (f);
+        }
 
-	/** Returns all flex cables connected to this headstage */
-	Array<Flex*> getFlexCables()
-	{
-		Array<Flex*> flex_array;
+        return flex_array;
+    }
 
-		for (auto f : flexCables)
-		{
-			flex_array.add(f);
-		}
+    signed char port_c;
+    int port;
 
-		return flex_array;
-	}
-	
-	signed char port_c;
-	int port;
+    OwnedArray<Probe> probes;
+    OwnedArray<Flex> flexCables;
 
-	OwnedArray<Probe> probes;
-	OwnedArray<Flex> flexCables;
+    HeadstageTestModule* testModule;
 
-	HeadstageTestModule* testModule;
+    Basestation* basestation;
 
-	Basestation* basestation;
+    // ** Returns true if headstage test module is available */
+    virtual bool hasTestModule() = 0;
 
-	// ** Returns true if headstage test module is available */
-	virtual bool hasTestModule() = 0;
-
-	// ** Runs the headstage test module and shows the results in a pop-window */
-	virtual void runTestModule() = 0;
+    // ** Runs the headstage test module and shows the results in a pop-window */
+    virtual void runTestModule() = 0;
 };
 
 /** Represents a Neuropixels flex cable */
 class Flex : public NeuropixComponent
 {
 public:
+    /** Constructor */
+    Flex (Headstage* hs_, int dock_)
+    {
+        headstage = hs_;
+        dock = dock_;
+    }
 
-	/** Constructor */
-	Flex(Headstage* hs_, int dock_)
-	{
-		headstage = hs_;
-		dock = dock_;
-	}
-
-	Headstage* headstage;
-	int dock;
+    Headstage* headstage;
+    int dock;
 };
 
-
-#ifndef _WIN32
-#define Sleep(x) std::this_thread::sleep_for(std::chrono::milliseconds{x})
-#endif
-
-
-#endif  // __NEUROPIXCOMPONENTS_H_2C4C2D67__
+#endif // __NEUROPIXCOMPONENTS_H_2C4C2D67__
