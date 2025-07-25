@@ -32,21 +32,16 @@
 
 void CustomPassiveProbe::getInfo()
 {
-    checkError (Neuropixels::readProbeSN (basestation->slot,
-                                          headstage->port,
-                                          dock,
-                                          &info.serial_number),
-                "readProbeSN");
+    errorCode = checkError (Neuropixels::getProbeHardwareID (headstage->basestation->slot,
+                                                             headstage->port,
+                                                             dock,
+                                                             &info.hardwareID),
+                            "getProbeHardwareID");
 
-    char pn[MAXLEN];
-    checkError (Neuropixels::readProbePN (basestation->slot,
-                                          headstage->port,
-                                          dock,
-                                          pn,
-                                          MAXLEN),
-                "readProbePN");
-
-    info.part_number = String (pn);
+    info.version = String (info.hardwareID.version_Major)
+                   + "." + String (info.hardwareID.version_Minor);
+    info.part_number = String (info.hardwareID.ProductNumber);
+    info.serial_number = info.hardwareID.SerialNumber;
 }
 
 CustomPassiveProbe::CustomPassiveProbe (Basestation* bs, Headstage* hs, Flex* fl) : Probe (bs, hs, fl, 1)

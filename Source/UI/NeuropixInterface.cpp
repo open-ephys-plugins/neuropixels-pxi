@@ -1863,6 +1863,7 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
             {
                 if (xmlNode->getStringAttribute ("probe_serial_number").equalsIgnoreCase (mySerialNumber))
                 {
+                    LOGC ("Found matching serial number: ", mySerialNumber);
                     matchingNodes.add (xmlNode);
                 }
             }
