@@ -218,7 +218,7 @@ void NeuropixelsOpto::calibrate()
 
     LOGDD ("Optical calibration file: ", adcFile);
 
-    errorCode = Neuropixels::np_setOpticalCalibration (basestation->slot, headstage->port, dock, opticalFile.toRawUTF8());
+    errorCode = Neuropixels::setOpticalCalibration (basestation->slot, headstage->port, dock, opticalFile.toRawUTF8());
 
     if (errorCode == 0)
     {
@@ -235,7 +235,7 @@ void NeuropixelsOpto::calibrate()
 
 void NeuropixelsOpto::setEmissionSite (Neuropixels::wavelength_t wavelength, int site)
 {
-    errorCode = Neuropixels::np_setEmissionSite (basestation->slot, headstage->port, dock, wavelength, site);
+    errorCode = Neuropixels::setEmissionSite (basestation->slot, headstage->port, dock, wavelength, site);
 
     if (errorCode == 0)
     {

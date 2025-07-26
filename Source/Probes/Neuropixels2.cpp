@@ -220,7 +220,7 @@ void Neuropixels2::calibrate()
         LOGD ("Successfully wrote probe config ");
     }
 
-    checkError(Neuropixels::np_setHSLed (basestation->slot, headstage->port, false), "np_setHSLed");
+    checkError(Neuropixels::setHSLed (basestation->slot, headstage->port, false), "np_setHSLed");
 
   
 }

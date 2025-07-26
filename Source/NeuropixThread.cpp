@@ -207,7 +207,7 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
     LOGC ("Scanning for devices...");
 
     LOGD ("Setting debug level to 0");
-    Neuropixels::np_dbg_setlevel (0);
+    Neuropixels::dbg_setlevel (0);
 
     if (type == ONEBOX)
     {
