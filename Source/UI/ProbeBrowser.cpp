@@ -429,8 +429,8 @@ String ProbeBrowser::getElectrodeInfoString (int index)
             a += " NONE";
     }
 
-    a += ", Channel ";
-    a += String (parent->electrodeMetadata[index].channel + 1);
+    a += ", CH";
+    a += String (parent->electrodeMetadata[index].channel);
 
     a += "\nY Position: ";
     a += String (parent->electrodeMetadata[index].ypos);
