@@ -448,6 +448,8 @@ void AcquisitionThread::run()
     last_npx_timestamp = 0;
     passedOneSecond = false;
 
+    bool syncBitStatus = true;
+
     SKIP = probe->sendSync ? 385 : 384;
 
     LOGD ("  Starting thread for shank ", shank);
@@ -473,6 +475,7 @@ void AcquisitionThread::run()
         {
             for (int packetNum = 0; packetNum < count; packetNum++)
             {
+
                 eventCode = packetInfo[packetNum].Status >> 6;
 
                 if (invertSyncLine)
@@ -492,6 +495,49 @@ void AcquisitionThread::run()
 
                         probe->basestation->neuropixThread->sendBroadcastMessage (msg);
                     }
+                }
+
+                if ((packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_SYNC) && syncBitStatus)
+                {
+                    String msg = "NPX PACKET SYNC " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    syncBitStatus = false;
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_COUNT)
+                {
+                    String msg = "NPX PACKET COUNT ERROR on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_SERDES)
+                {
+                    String msg = "NPX SERDES ERROR on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_LOCK)
+                {
+                    String msg = "NPX LOCK ERROR on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_POP)
+                {
+                    String msg = "NPX FIFO OVERFLOW (POP) on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_SYNC)
+                {
+                    String msg = "NPX SYNC ERROR on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
                 }
 
                 last_npx_timestamp = npx_timestamp;
