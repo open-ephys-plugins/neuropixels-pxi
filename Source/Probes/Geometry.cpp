@@ -767,11 +767,11 @@ void Geometry::UHDActive (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.switchable = false;
 
     Path path;
-    path.startNewSubPath (27, 23);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 10, 542);
-    path.lineTo (27 + 20, 514);
-    path.lineTo (27 + 20, 23);
+    path.startNewSubPath (21, 23);
+    path.lineTo (21, 514);
+    path.lineTo (21 + 10, 542);
+    path.lineTo (21 + 20, 514);
+    path.lineTo (21 + 20, 23);
     path.closeSubPath();
 
     int numRows = 768;
