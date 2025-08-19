@@ -612,6 +612,7 @@ void NeuropixInterface::updateInfoString()
         infoString += "Basestation connect board";
         infoString += "\n Hardware version: " + basestation->basestationConnectBoard->info.version;
         infoString += "\n Firmware version: " + basestation->basestationConnectBoard->info.boot_version;
+        infoString += "\n Serial number: " + String(basestation->basestationConnectBoard->info.serial_number);
         infoString += "\n";
         infoString += "\n";
     }

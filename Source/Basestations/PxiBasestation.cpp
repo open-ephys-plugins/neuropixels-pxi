@@ -53,6 +53,7 @@ void BasestationConnectBoard_v3::getInfo()
 
     info.version = String (info.hardwareID.version_Major) 
         + "." + String (info.hardwareID.version_Minor);
+    info.serial_number = info.hardwareID.SerialNumber;
 
     Neuropixels::firmware_Info firmwareInfo;
     Neuropixels::bsc_getFirmwareInfo (basestation->slot, &firmwareInfo);
