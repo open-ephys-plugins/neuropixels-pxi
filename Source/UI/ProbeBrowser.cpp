@@ -23,9 +23,81 @@
 
 #include "ProbeBrowser.h"
 
+// Convert Bank enum to a short String label
+static String bankToString (Bank b)
+{
+    switch (b)
+    {
+        case Bank::A:
+            return "A";
+        case Bank::A1:
+            return "A1";
+        case Bank::A2:
+            return "A2";
+        case Bank::A3:
+            return "A3";
+        case Bank::A4:
+            return "A4";
+        case Bank::B:
+            return "B";
+        case Bank::B1:
+            return "B1";
+        case Bank::B2:
+            return "B2";
+        case Bank::B3:
+            return "B3";
+        case Bank::B4:
+            return "B4";
+        case Bank::C:
+            return "C";
+        case Bank::C1:
+            return "C1";
+        case Bank::C2:
+            return "C2";
+        case Bank::C3:
+            return "C3";
+        case Bank::C4:
+            return "C4";
+        case Bank::D:
+            return "D";
+        case Bank::D1:
+            return "D1";
+        case Bank::D2:
+            return "D2";
+        case Bank::D3:
+            return "D3";
+        case Bank::D4:
+            return "D4";
+        case Bank::E:
+            return "E";
+        case Bank::F:
+            return "F";
+        case Bank::G:
+            return "G";
+        case Bank::H:
+            return "H";
+        case Bank::I:
+            return "I";
+        case Bank::J:
+            return "J";
+        case Bank::K:
+            return "K";
+        case Bank::L:
+            return "L";
+        case Bank::M:
+            return "M";
+        case Bank::OFF:
+            return "OFF";
+        case Bank::NONE:
+            return "NONE";
+        default:
+            return "NONE";
+    }
+}
+
 ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
 {
-    tooltipWindow = std::make_unique <TooltipWindow> (parent, 300);
+    tooltipWindow = std::make_unique<TooltipWindow> (parent, 300);
 
     cursorType = MouseCursor::NormalCursor;
 
@@ -48,7 +120,11 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
     isSelectionActive = false;
     isOverElectrode = false;
 
+    selectionBox = Rectangle<int> (0, 0, 0, 0);
+
     // PROBE SPECIFIC DRAWING SETTINGS
+
+    // Set default values
     minZoomHeight = 40;
     maxZoomHeight = 120;
     pixelHeight = 1;
@@ -57,7 +133,9 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
 
     shankPath = Path (parent->probe->shankOutline);
 
-    if (parent->probeMetadata.columns_per_shank == 8)
+    // Adjust settings based on columns per shank
+    const int columns = parent->probeMetadata.columns_per_shank;
+    if (columns == 8)
     {
         maxZoomHeight = 450;
         minZoomHeight = 300;
@@ -65,7 +143,7 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
         pixelHeight = 10;
         zoomOffset = 0;
     }
-    else if (parent->probeMetadata.columns_per_shank > 8)
+    else if (columns > 8)
     {
         maxZoomHeight = 520;
         minZoomHeight = 520;
@@ -74,33 +152,34 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
         zoomOffset = 0;
     }
 
-    if (parent->probeMetadata.rows_per_shank > 650)
+    // Adjust settings based on rows per shank
+    const int rows = parent->probeMetadata.rows_per_shank;
+    if (rows > 1400)
+    {
+        maxZoomHeight = 30;
+        minZoomHeight = 5;
+        defaultZoomHeight = 20;
+    }
+    else if (rows > 650)
     {
         maxZoomHeight = 60;
         minZoomHeight = 10;
         defaultZoomHeight = 30;
     }
 
-    if (parent->probeMetadata.rows_per_shank > 1400)
-    {
-        maxZoomHeight = 30;
-        minZoomHeight = 5;
-        defaultZoomHeight = 20;
-    }
-
+    // Adjust default zoom height for 4-shank probes
     if (parent->probeMetadata.shank_count == 4)
     {
         defaultZoomHeight = 80;
     }
 
-    // ALSO CONFIGURE CHANNEL JUMP
-    if (parent->probeMetadata.electrodes_per_shank < 500)
+    // Configure channel label skip based on electrodes per shank
+    const int electrodes = parent->probeMetadata.electrodes_per_shank;
+    if (electrodes < 500)
         channelLabelSkip = 50;
-    else if (parent->probeMetadata.electrodes_per_shank >= 500
-             && parent->probeMetadata.electrodes_per_shank < 1500)
+    else if (electrodes < 1500)
         channelLabelSkip = 100;
-    else if (parent->probeMetadata.electrodes_per_shank >= 1500
-             && parent->probeMetadata.electrodes_per_shank < 3000)
+    else if (electrodes < 3000)
         channelLabelSkip = 200;
     else
         channelLabelSkip = 500;
@@ -110,37 +189,26 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
     zoomHeight = defaultZoomHeight; // number of rows
     lowerBound = 530; // bottom of interface
 
-    disconnectedColours[Bank::NONE] = Colour (0, 0, 0);
-    disconnectedColours[Bank::OFF] = Colour (0, 0, 0);
-    disconnectedColours[Bank::A] = Colour (180, 180, 180);
-    disconnectedColours[Bank::A1] = Colour (180, 180, 180);
-    disconnectedColours[Bank::A1] = Colour (180, 180, 180);
-    disconnectedColours[Bank::A1] = Colour (180, 180, 180);
-    disconnectedColours[Bank::A1] = Colour (180, 180, 180);
-    disconnectedColours[Bank::B] = Colour (160, 160, 160);
-    disconnectedColours[Bank::B1] = Colour (160, 160, 160);
-    disconnectedColours[Bank::B2] = Colour (160, 160, 160);
-    disconnectedColours[Bank::B3] = Colour (160, 160, 160);
-    disconnectedColours[Bank::B4] = Colour (160, 160, 160);
-    disconnectedColours[Bank::C] = Colour (140, 140, 140);
-    disconnectedColours[Bank::C1] = Colour (140, 140, 140);
-    disconnectedColours[Bank::C2] = Colour (140, 140, 140);
-    disconnectedColours[Bank::C3] = Colour (140, 140, 140);
-    disconnectedColours[Bank::C4] = Colour (140, 140, 140);
-    disconnectedColours[Bank::D] = Colour (120, 120, 120);
-    disconnectedColours[Bank::D1] = Colour (120, 120, 120);
-    disconnectedColours[Bank::D2] = Colour (120, 120, 120);
-    disconnectedColours[Bank::D3] = Colour (120, 120, 120);
-    disconnectedColours[Bank::D4] = Colour (120, 120, 120);
-    disconnectedColours[Bank::E] = Colour (180, 180, 180);
-    disconnectedColours[Bank::F] = Colour (160, 160, 160);
-    disconnectedColours[Bank::G] = Colour (140, 140, 140);
-    disconnectedColours[Bank::H] = Colour (120, 120, 120);
-    disconnectedColours[Bank::I] = Colour (180, 180, 180);
-    disconnectedColours[Bank::J] = Colour (160, 160, 160);
-    disconnectedColours[Bank::K] = Colour (140, 140, 140);
-    disconnectedColours[Bank::L] = Colour (120, 120, 120);
-    disconnectedColours[Bank::M] = Colour (180, 180, 180);
+    // Initialize with default black for undefined/disabled banks
+    disconnectedColours[Bank::NONE] = Colours::black;
+    disconnectedColours[Bank::OFF] = Colours::black;
+
+    // Group bank colours
+    const Colour groupAColour (180, 180, 180); // lighter grey
+    const Colour groupBColour (160, 160, 160); // medium-light grey
+    const Colour groupCColour (140, 140, 140); // medium grey
+    const Colour groupDColour (120, 120, 120); // darker grey
+
+    auto setGroupColours = [this] (Colour c, std::initializer_list<Bank> banks)
+    {
+        for (auto b : banks)
+            disconnectedColours[b] = c;
+    };
+
+    setGroupColours (groupAColour, { Bank::A, Bank::A1, Bank::A2, Bank::A3, Bank::A4, Bank::E, Bank::I, Bank::M });
+    setGroupColours (groupBColour, { Bank::B, Bank::B1, Bank::B2, Bank::B3, Bank::B4, Bank::F, Bank::J });
+    setGroupColours (groupCColour, { Bank::C, Bank::C1, Bank::C2, Bank::C3, Bank::C4, Bank::G, Bank::K });
+    setGroupColours (groupDColour, { Bank::D, Bank::D1, Bank::D2, Bank::D3, Bank::D4, Bank::H, Bank::L });
 
     dragZoneWidth = 10;
 }
@@ -151,79 +219,48 @@ ProbeBrowser::~ProbeBrowser()
 
 void ProbeBrowser::mouseMove (const MouseEvent& event)
 {
-    float y = event.y;
-    float x = event.x;
+    const float y = event.y;
+    const float x = event.x;
 
-    //std::cout << x << " " << y << std::endl;
+    const bool inZoomY = (y > lowerBound - zoomOffset - zoomHeight - dragZoneWidth / 2)
+                         && (y < lowerBound - zoomOffset + dragZoneWidth / 2);
+    const bool inZoomX = (x > 9) && (x < 54 + shankOffset);
+    const bool isOverZoomRegionNew = inZoomY && inZoomX;
 
-    bool isOverZoomRegionNew = false;
-    bool isOverUpperBorderNew = false;
-    bool isOverLowerBorderNew = false;
+    const bool isOverUpperBorderNew = isOverZoomRegionNew
+                                      && (y > lowerBound - zoomHeight - zoomOffset - dragZoneWidth / 2)
+                                      && (y < lowerBound - zoomHeight - zoomOffset + dragZoneWidth / 2);
 
-    // check for move into zoom region
-    if ((y > lowerBound - zoomOffset - zoomHeight - dragZoneWidth / 2)
-        && (y < lowerBound - zoomOffset + dragZoneWidth / 2)
-        && (x > 9)
-        && (x < 54 + shankOffset))
-    {
-        isOverZoomRegionNew = true;
-    }
-    else
-    {
-        isOverZoomRegionNew = false;
-    }
-
-    // check for move over upper border or lower border
-    if (isOverZoomRegionNew)
-    {
-        if (y > lowerBound - zoomHeight - zoomOffset - dragZoneWidth / 2
-            && y < lowerBound - zoomHeight - zoomOffset + dragZoneWidth / 2)
-        {
-            isOverUpperBorderNew = true;
-        }
-        else if (y > lowerBound - zoomOffset - dragZoneWidth / 2
-                 && y < lowerBound - zoomOffset + dragZoneWidth / 2)
-        {
-            isOverLowerBorderNew = true;
-        }
-        else
-        {
-            isOverUpperBorderNew = false;
-            isOverLowerBorderNew = false;
-        }
-    }
+    const bool isOverLowerBorderNew = isOverZoomRegionNew
+                                      && (y > lowerBound - zoomOffset - dragZoneWidth / 2)
+                                      && (y < lowerBound - zoomOffset + dragZoneWidth / 2);
 
     // update cursor type
-    if (isOverZoomRegionNew != isOverZoomRegion || isOverLowerBorderNew != isOverLowerBorder || isOverUpperBorderNew != isOverUpperBorder)
+    if (isOverZoomRegionNew != isOverZoomRegion
+        || isOverLowerBorderNew != isOverLowerBorder
+        || isOverUpperBorderNew != isOverUpperBorder)
     {
         isOverZoomRegion = isOverZoomRegionNew;
         isOverUpperBorder = isOverUpperBorderNew;
         isOverLowerBorder = isOverLowerBorderNew;
 
         if (! isOverZoomRegion)
-        {
             cursorType = MouseCursor::NormalCursor;
-        }
+        else if (isOverUpperBorder)
+            cursorType = MouseCursor::TopEdgeResizeCursor;
+        else if (isOverLowerBorder)
+            cursorType = MouseCursor::BottomEdgeResizeCursor;
         else
-        {
-            if (isOverUpperBorder)
-                cursorType = MouseCursor::TopEdgeResizeCursor;
-            else if (isOverLowerBorder)
-                cursorType = MouseCursor::BottomEdgeResizeCursor;
-            else
-                cursorType = MouseCursor::NormalCursor;
-        }
+            cursorType = MouseCursor::DraggingHandCursor;
 
         repaint();
     }
 
     // check for movement over electrode
-    if ((x > leftEdge) // in electrode selection region
-        && (x < rightEdge)
-        && (y < lowerBound)
-        && (y > 18))
+    if ((x > leftEdge) && (x < rightEdge)
+        && (y < lowerBound + 16) && (y > 16))
     {
-        int index = getNearestElectrode (x, y);
+        const int index = getNearestElectrode (event.x, event.y);
 
         if (index > -1)
         {
@@ -232,36 +269,31 @@ void ProbeBrowser::mouseMove (const MouseEvent& event)
             tooltipWindow->displayTip (event.getScreenPosition(), electrodeInfoString);
         }
     }
-    else
+    else if (isOverElectrode)
     {
-        bool isOverChannelNew = false;
-
-        if (isOverChannelNew != isOverElectrode)
-        {
-            isOverElectrode = isOverChannelNew;
-            tooltipWindow->hideTip();
-        }
+        isOverElectrode = false;
+        tooltipWindow->hideTip();
     }
 }
 
 int ProbeBrowser::getNearestElectrode (int x, int y)
 {
-    int row = (lowerBound - y) / electrodeHeight + zoomAreaMinRow + 1;
+    int row = static_cast<int> (std::floor (((lowerBound + 14 - electrodeHeight - y) / electrodeHeight) + zoomAreaMinRow + 1));
 
-    int shankWidth = electrodeHeight * parent->probeMetadata.columns_per_shank;
-    int totalWidth = shankWidth * parent->probeMetadata.shank_count + shankWidth * (parent->probeMetadata.shank_count - 1);
+    float shankWidth = electrodeHeight * parent->probeMetadata.columns_per_shank;
+    float totalWidth = shankWidth * parent->probeMetadata.shank_count + shankWidth * (parent->probeMetadata.shank_count - 1);
 
     int shank = 0;
     int column = -1;
 
     for (shank = 0; shank < parent->probeMetadata.shank_count; shank++)
     {
-        int leftEdge = 220 + shankOffset - totalWidth / 2 + shankWidth * 2 * shank;
-        int rightEdge = leftEdge + shankWidth;
+        const float shankLeftEdge = 220 + shankOffset - totalWidth / 2 + shankWidth * 2 * shank;
+        const float shankRightEdge = shankLeftEdge + shankWidth;
 
-        if (x >= leftEdge && x <= rightEdge)
+        if (x >= shankLeftEdge && x <= shankRightEdge)
         {
-            column = (x - leftEdge) / electrodeHeight;
+            column = (x - shankLeftEdge) / electrodeHeight;
             break;
         }
     }
@@ -284,11 +316,10 @@ int ProbeBrowser::getNearestElectrode (int x, int y)
 
 Array<int> ProbeBrowser::getElectrodesWithinBounds (int x, int y, int w, int h)
 {
-    int startrow = (lowerBound - y - h) / electrodeHeight + zoomAreaMinRow + 1;
-    int endrow = (lowerBound - y) / electrodeHeight + zoomAreaMinRow + 1;
+    int startrow = static_cast<int> (std::ceil ((lowerBound - y - h) / electrodeHeight) + zoomAreaMinRow + 1);
+    int endrow = static_cast<int> (std::floor ((lowerBound - y) / electrodeHeight) + zoomAreaMinRow + 1);
 
-    int shankWidth = electrodeHeight * parent->probeMetadata.columns_per_shank;
-    int totalWidth = shankWidth * parent->probeMetadata.shank_count + shankWidth * (parent->probeMetadata.shank_count - 1);
+    float shankWidth = electrodeHeight * parent->probeMetadata.columns_per_shank;
 
     Array<int> selectedColumns;
 
@@ -331,144 +362,43 @@ Array<int> ProbeBrowser::getElectrodesWithinBounds (int x, int y, int w, int h)
 String ProbeBrowser::getElectrodeInfoString (int index)
 {
     String a;
-    a += "Electrode ";
-    a += String (parent->electrodeMetadata[index].global_index + 1);
+    a << "Electrode " << String (parent->electrodeMetadata[index].global_index + 1);
+    a << "\nBank " << bankToString (parent->electrodeMetadata[index].bank);
 
-    a += "\nBank ";
+    a << ", Channel " << String (parent->electrodeMetadata[index].channel + 1);
 
-    switch (parent->electrodeMetadata[index].bank)
-    {
-        case Bank::A:
-            a += "A";
-            break;
-        case Bank::A1:
-            a += "A1";
-            break;
-        case Bank::A2:
-            a += "A2";
-            break;
-        case Bank::A3:
-            a += "A3";
-            break;
-        case Bank::A4:
-            a += "A4";
-            break;
-        case Bank::B:
-            a += "B";
-            break;
-        case Bank::B1:
-            a += "B1";
-            break;
-        case Bank::B2:
-            a += "B2";
-            break;
-        case Bank::B3:
-            a += "B3";
-            break;
-        case Bank::B4:
-            a += "B4";
-            break;
-        case Bank::C:
-            a += "C";
-            break;
-        case Bank::C1:
-            a += "C1";
-            break;
-        case Bank::C2:
-            a += "C2";
-            break;
-        case Bank::C3:
-            a += "C3";
-            break;
-        case Bank::C4:
-            a += "C4";
-            break;
-        case Bank::D:
-            a += "D";
-            break;
-        case Bank::D1:
-            a += "D1";
-            break;
-        case Bank::D2:
-            a += "D2";
-            break;
-        case Bank::D3:
-            a += "D3";
-            break;
-        case Bank::D4:
-            a += "D4";
-            break;
-        case Bank::E:
-            a += "E";
-            break;
-        case Bank::F:
-            a += "F";
-            break;
-        case Bank::G:
-            a += "G";
-            break;
-        case Bank::H:
-            a += "H";
-            break;
-        case Bank::I:
-            a += "I";
-            break;
-        case Bank::J:
-            a += "J";
-            break;
-        case Bank::K:
-            a += "K";
-            break;
-        case Bank::L:
-            a += "L";
-            break;
-        case Bank::M:
-            a += "M";
-            break;
-        default:
-            a += " NONE";
-    }
+    a << "\nY Position: " << String (parent->electrodeMetadata[index].ypos);
 
-    a += ", Channel ";
-    a += String (parent->electrodeMetadata[index].channel + 1);
-
-    a += "\nY Position: ";
-    a += String (parent->electrodeMetadata[index].ypos);
-
-    a += "\nType: ";
+    a << "\nType: ";
 
     if (parent->electrodeMetadata[index].type == ElectrodeType::REFERENCE)
     {
-        a += "REFERENCE";
+        a << "REFERENCE";
     }
     else
     {
-        a += "SIGNAL";
-
-        a += "\nEnabled: ";
+        a << "SIGNAL";
+        a << "\nEnabled: ";
 
         if (parent->electrodeMetadata[index].status == ElectrodeStatus::CONNECTED)
-            a += "YES";
+            a << "YES";
         else
-            a += "NO";
+            a << "NO";
     }
 
     if (parent->apGainComboBox != nullptr)
     {
-        a += "\nAP Gain: ";
-        a += String (parent->apGainComboBox->getText());
+        a << "\nAP Gain: " << String (parent->apGainComboBox->getText());
     }
 
     if (parent->lfpGainComboBox != nullptr)
     {
-        a += "\nLFP Gain: ";
-        a += String (parent->lfpGainComboBox->getText());
+        a << "\nLFP Gain: " << String (parent->lfpGainComboBox->getText());
     }
 
     if (parent->referenceComboBox != nullptr)
     {
-        a += "\nReference: ";
-        a += String (parent->referenceComboBox->getText());
+        a << "\nReference: " << String (parent->referenceComboBox->getText());
     }
 
     return a;
@@ -488,181 +418,167 @@ void ProbeBrowser::mouseDown (const MouseEvent& event)
     initialOffset = zoomOffset;
     initialHeight = zoomHeight;
 
-    //std::cout << event.x << std::endl;
-
     if (! event.mods.isRightButtonDown())
     {
-        if (event.x > 150 && event.x < 400)
-        {
-            if (! event.mods.isShiftDown())
-            {
-                for (int i = 0; i < parent->electrodeMetadata.size(); i++)
-                    parent->electrodeMetadata.getReference (i).isSelected = false;
-            }
-
-            if (event.x > leftEdge && event.x < rightEdge)
-            {
-                int chan = getNearestElectrode (event.x, event.y);
-
-                //std::cout << chan << std::endl;
-
-                if (chan >= 0 && chan < parent->electrodeMetadata.size())
-                {
-                    parent->electrodeMetadata.getReference (chan).isSelected = true;
-                }
-            }
-            repaint();
-        }
+        handleLeftMouseDown (event);
     }
     else
     {
-        if (event.x > 225 + 10 && event.x < 225 + 150)
+        handleRightMouseDown (event);
+    }
+}
+
+void ProbeBrowser::handleLeftMouseDown (const MouseEvent& event)
+{
+    if (event.x > 150 && event.x < 400)
+    {
+        if (! event.mods.isShiftDown())
         {
-            int currentAnnotationNum = 0;
+            for (int i = 0; i < parent->electrodeMetadata.size(); i++)
+                parent->electrodeMetadata.getReference (i).isSelected = false;
+        }
 
-            for (int i = 0; i < parent->annotations.size(); i++)
+        if (event.x > leftEdge && event.x < rightEdge)
+        {
+            int chan = getNearestElectrode (event.x, event.y);
+            if (chan >= 0 && chan < parent->electrodeMetadata.size())
             {
-                Annotation& a = parent->annotations.getReference (i);
-                float yLoc = a.currentYLoc;
-
-                if (float (event.y) < yLoc && float (event.y) > yLoc - 12)
-                {
-                    currentAnnotationNum = i;
-                    break;
-                }
-                else
-                {
-                    currentAnnotationNum = -1;
-                }
+                parent->electrodeMetadata.getReference (chan).isSelected = true;
             }
+        }
+        repaint();
+    }
+}
 
-            if (currentAnnotationNum > -1)
+void ProbeBrowser::handleRightMouseDown (const MouseEvent& event)
+{
+    if (event.x > 225 + 10 && event.x < 225 + 150)
+    {
+        int currentAnnotationNum = -1;
+        for (int i = 0; i < parent->annotations.size(); i++)
+        {
+            Annotation& a = parent->annotations.getReference (i);
+            float yLoc = a.currentYLoc;
+            if (float (event.y) < yLoc && float (event.y) > yLoc - 12)
             {
-                PopupMenu annotationMenu;
-
-                annotationMenu.addItem (1, "Delete annotation", true);
-
-                const int result = annotationMenu.show();
-
-                switch (result)
-                {
-                    case 0:
-                        break;
-                    case 1:
-                        parent->annotations.removeRange (currentAnnotationNum, 1);
-                        repaint();
-                        break;
-                    default:
-
-                        break;
-                }
+                currentAnnotationNum = i;
+                break;
             }
         }
 
-        // if (event.x > 225 - channelHeight && event.x < 225 + channelHeight)
-        // {
-        //  PopupMenu annotationMenu;
+        if (currentAnnotationNum > -1)
+        {
+            PopupMenu annotationMenu;
+            annotationMenu.addItem (1, "Delete annotation", true);
+            const int result = annotationMenu.show();
 
-        //        annotationMenu.addItem(1, "Add annotation", true);
-        //  const int result = annotationMenu.show();
-
-        //        switch (result)
-        //        {
-        //            case 1:
-        //                std::cout << "Annotate!" << std::endl;
-        //                break;
-        //            default:
-        //             break;
-        //  }
-        // }
+            if (result == 1)
+            {
+                parent->annotations.removeRange (currentAnnotationNum, 1);
+                repaint();
+            }
+        }
     }
+    // Uncomment and implement if annotation adding is needed
+    // if (event.x > 225 - channelHeight && event.x < 225 + channelHeight)
+    // {
+    //     PopupMenu annotationMenu;
+    //     annotationMenu.addItem(1, "Add annotation", true);
+    //     const int result = annotationMenu.show();
+    //     if (result == 1)
+    //     {
+    //         // Handle annotation addition
+    //     }
+    // }
 }
 
 void ProbeBrowser::mouseDrag (const MouseEvent& event)
 {
     if (isOverZoomRegion)
     {
-        if (isOverUpperBorder)
-        {
-            zoomHeight = initialHeight - event.getDistanceFromDragStartY();
-
-            if (zoomHeight > lowerBound - zoomOffset - 15)
-                zoomHeight = lowerBound - zoomOffset - 15;
-        }
-        else if (isOverLowerBorder)
-        {
-            zoomOffset = initialOffset - event.getDistanceFromDragStartY();
-
-            if (zoomOffset < 0)
-            {
-                zoomOffset = 0;
-            }
-            else
-            {
-                zoomHeight = initialHeight + event.getDistanceFromDragStartY();
-            }
-        }
-        else
-        {
-            zoomOffset = initialOffset - event.getDistanceFromDragStartY();
-
-            if (zoomOffset < 0)
-            {
-                zoomOffset = 0;
-            }
-        }
-        //std::cout << zoomOffset << std::endl;
+        handleZoomDrag (event);
     }
     else if (event.x > 150 && event.x < 450)
     {
-        int w = event.getDistanceFromDragStartX();
-        int h = event.getDistanceFromDragStartY();
-        int x = event.getMouseDownX();
-        int y = event.getMouseDownY();
-
-        if (w < 0)
-        {
-            x = x + w;
-            w = -w;
-        }
-
-        if (h < 0)
-        {
-            y = y + h;
-            h = -h;
-        }
-
-        //        selectionBox = Rectangle<int>(x, y, w, h);
-        isSelectionActive = true;
-
-        //if (x < 225)
-        //{
-        //int chanStart = getNearestRow(224, y + h) - 1;
-        // int chanEnd = getNearestRow(224, y);
-
-        Array<int> inBounds = getElectrodesWithinBounds (x, y, w, h);
-
-        //std::cout << chanStart << " " << chanEnd << std::endl;
-
-        if (x < rightEdge)
-        {
-            for (int i = 0; i < parent->electrodeMetadata.size(); i++)
-            {
-                if (inBounds.indexOf (i) > -1)
-                {
-                    parent->electrodeMetadata.getReference (i).isSelected = true;
-                }
-                else
-                {
-                    if (! event.mods.isShiftDown())
-                        parent->electrodeMetadata.getReference (i).isSelected = false;
-                }
-            }
-        }
-
-        repaint();
+        handleSelectionDrag (event);
     }
 
+    clampZoomValues();
+    repaint();
+}
+
+void ProbeBrowser::handleZoomDrag (const MouseEvent& event)
+{
+    if (isOverUpperBorder)
+    {
+        zoomHeight = initialHeight - event.getDistanceFromDragStartY();
+        if (zoomHeight > lowerBound - zoomOffset - 15)
+            zoomHeight = lowerBound - zoomOffset - 15;
+    }
+    else if (isOverLowerBorder)
+    {
+        zoomOffset = initialOffset - event.getDistanceFromDragStartY();
+        if (zoomOffset < 0)
+        {
+            zoomOffset = 0;
+        }
+        else
+        {
+            zoomHeight = initialHeight + event.getDistanceFromDragStartY();
+        }
+    }
+    else
+    {
+        zoomOffset = initialOffset - event.getDistanceFromDragStartY();
+        if (zoomOffset < 0)
+        {
+            zoomOffset = 0;
+        }
+    }
+}
+
+void ProbeBrowser::handleSelectionDrag (const MouseEvent& event)
+{
+    int w = event.getDistanceFromDragStartX();
+    int h = event.getDistanceFromDragStartY();
+    int x = event.getMouseDownX();
+    int y = event.getMouseDownY();
+
+    if (w < 0)
+    {
+        x = x + w;
+        w = -w;
+    }
+    if (h < 0)
+    {
+        y = y + h;
+        h = -h;
+    }
+
+    selectionBox = Rectangle<int> (x, y, w, h);
+    isSelectionActive = true;
+
+    Array<int> inBounds = getElectrodesWithinBounds (x, y, w, h);
+
+    if (x < rightEdge)
+    {
+        for (int i = 0; i < parent->electrodeMetadata.size(); i++)
+        {
+            if (inBounds.indexOf (i) > -1)
+            {
+                parent->electrodeMetadata.getReference (i).isSelected = true;
+            }
+            else
+            {
+                if (! event.mods.isShiftDown())
+                    parent->electrodeMetadata.getReference (i).isSelected = false;
+            }
+        }
+    }
+}
+
+void ProbeBrowser::clampZoomValues()
+{
     if (zoomHeight < minZoomHeight)
         zoomHeight = minZoomHeight;
     if (zoomHeight > maxZoomHeight)
@@ -672,8 +588,6 @@ void ProbeBrowser::mouseDrag (const MouseEvent& event)
         zoomOffset = lowerBound - zoomHeight - 15;
     else if (zoomOffset < 0)
         zoomOffset = 0;
-
-    repaint();
 }
 
 void ProbeBrowser::mouseWheelMove (const MouseEvent& event, const MouseWheelDetails& wheel)
@@ -685,8 +599,8 @@ void ProbeBrowser::mouseWheelMove (const MouseEvent& event, const MouseWheelDeta
         else
             zoomOffset -= 2;
 
-        if (zoomOffset > lowerBound - zoomHeight - 15)
-            zoomOffset = lowerBound - zoomHeight - 15;
+        if (zoomOffset > lowerBound - zoomHeight - 16)
+            zoomOffset = lowerBound - zoomHeight - 16;
         else if (zoomOffset < 0)
             zoomOffset = 0;
 
@@ -703,71 +617,50 @@ MouseCursor ProbeBrowser::getMouseCursor()
 
 void ProbeBrowser::paint (Graphics& g)
 {
-    int LEFT_BORDER = 30;
-    int TOP_BORDER = 33;
-    int SHANK_HEIGHT = 480;
-    int INTERSHANK_DISTANCE = 30;
+    const int LEFT_BORDER = parent->probeMetadata.columns_per_shank >= 8 ? 23 : 30;
+    const int TOP_BORDER = 33;
+    const int SHANK_HEIGHT = 480;
+    const int INTERSHANK_DISTANCE = 30;
 
-    // draw zoomed-out channels channels
-
+    // Draw zoomed-out channels
     int channelSpan = SHANK_HEIGHT;
-    int pixelGap = 2;
+    int pixelGap = (parent->probeMetadata.columns_per_shank > 8) ? 1 : 2;
 
-    if (parent->probeMetadata.columns_per_shank > 8)
-    {
-        pixelGap = 1;
-    }
-
-    for (int i = 0; i < parent->electrodeMetadata.size(); i++)
+    // Draw all electrodes in zoomed-out view
+    for (int i = 0; i < parent->electrodeMetadata.size(); ++i)
     {
         g.setColour (getElectrodeColour (i).withAlpha (0.5f));
+        int col = parent->electrodeMetadata[i].column_index;
+        int shank = parent->electrodeMetadata[i].shank;
+        int row = parent->electrodeMetadata[i].row_index;
 
-        for (int px = 0; px < pixelHeight; px++)
-            g.fillRect (
-                LEFT_BORDER
-                    + parent->electrodeMetadata[i].column_index
-                          * pixelGap
-                    + parent->electrodeMetadata[i].shank
-                          * INTERSHANK_DISTANCE,
-                TOP_BORDER
-                    + channelSpan
-                    - int (float (parent->electrodeMetadata[i].row_index)
-                           * float (channelSpan)
-                           / float (parent->probeMetadata.rows_per_shank))
-                    - px,
-                1,
-                1);
+        for (int px = 0; px < pixelHeight; ++px)
+        {
+            int x = LEFT_BORDER + col * pixelGap + shank * INTERSHANK_DISTANCE;
+            int y = TOP_BORDER + channelSpan
+                    - int (float (row) * float (channelSpan) / float (parent->probeMetadata.rows_per_shank))
+                    - px;
+            g.fillRect (x, y, 1, 1);
+        }
     }
 
-    // channel 1 = pixel 513
-    // channel 960 = pixel 33
-    // 480 pixels for 960 channels
-
-    // draw channel numbers
-
+    // Draw channel numbers and tick marks
     g.setColour (findColour (ThemeColours::defaultText));
     g.setFont (12);
 
     int ch = 0;
-
     int ch_interval = SHANK_HEIGHT * channelLabelSkip / parent->probeMetadata.electrodes_per_shank;
+    shankOffset = INTERSHANK_DISTANCE * (parent->probeMetadata.shank_count - 1);
 
-    // draw mark for every N channels
-
-    //int WWW = 10;
-
-    shankOffset = INTERSHANK_DISTANCE * (parent->probeMetadata.shank_count - 1); // +WWW;
     for (int i = TOP_BORDER + channelSpan; i > TOP_BORDER; i -= ch_interval)
     {
         g.drawLine (6, i, 18, i);
         g.drawLine (44 + shankOffset, i, 54 + shankOffset, i);
-        g.drawText (String (ch), 59 + shankOffset, int (i) - 6, 100, 12, Justification::left, false);
+        g.drawText (String (ch), 59 + shankOffset, i - 6, 100, 12, Justification::left, false);
         ch += channelLabelSkip;
     }
 
-    // g.drawLine(220 + shankOffset, 0, 220 + shankOffset, getHeight());
-
-    // draw top channel
+    // Draw top channel tick and label
     g.drawLine (6, TOP_BORDER, 18, TOP_BORDER);
     g.drawLine (44 + shankOffset, TOP_BORDER, 54 + shankOffset, TOP_BORDER);
     g.drawText (String (parent->probeMetadata.electrodes_per_shank),
@@ -778,47 +671,41 @@ void ProbeBrowser::paint (Graphics& g)
                 Justification::left,
                 false);
 
-    // draw shank outline
+    // Draw shank outlines
     g.setColour (findColour (ThemeColours::outline).withAlpha (0.75f));
-
-    for (int i = 0; i < parent->probeMetadata.shank_count; i++)
+    for (int i = 0; i < parent->probeMetadata.shank_count; ++i)
     {
-        Path shankPath = parent->probeMetadata.shankOutline;
-        shankPath.applyTransform (AffineTransform::translation (INTERSHANK_DISTANCE * i, 0.0f));
-        g.strokePath (shankPath, PathStrokeType (1.0));
+        Path outline = parent->probeMetadata.shankOutline;
+        outline.applyTransform (AffineTransform::translation (INTERSHANK_DISTANCE * i, 0.0f));
+        g.strokePath (outline, PathStrokeType (1.0));
     }
 
-    // draw zoomed channels
-    float miniRowHeight = float (channelSpan) / float (parent->probeMetadata.rows_per_shank); // pixels per row
-
-    float lowestRow = (zoomOffset - 17) / miniRowHeight;
+    // Calculate zoomed area parameters
+    float miniRowHeight = float (channelSpan) / float (parent->probeMetadata.rows_per_shank);
+    float lowestRow = (zoomOffset - 16) / miniRowHeight;
     float highestRow = lowestRow + (zoomHeight / miniRowHeight);
-
-    zoomAreaMinRow = int (lowestRow);
+    zoomAreaMinRow = static_cast<int> (std::ceil (lowestRow));
 
     if (parent->probeMetadata.columns_per_shank > 8)
-    {
         electrodeHeight = jmin (lowerBound / (highestRow - lowestRow), 12.0f);
-    }
     else
-    {
         electrodeHeight = lowerBound / (highestRow - lowestRow);
-    }
 
-    //std::cout << "Lowest row: " << lowestRow << ", highest row: " << highestRow << std::endl;
-    //std::cout << "Zoom offset: " << zoomOffset << ", Zoom height: " << zoomHeight << std::endl;
+    highestRow = zoomAreaMinRow + (zoomHeight / miniRowHeight);
 
-    for (int i = 0; i < parent->electrodeMetadata.size(); i++)
+    // Draw zoomed-in electrodes
+    for (int i = 0; i < parent->electrodeMetadata.size(); ++i)
     {
-        if (parent->electrodeMetadata[i].row_index >= int (lowestRow)
-            && parent->electrodeMetadata[i].row_index < int (highestRow))
+        int row = parent->electrodeMetadata[i].row_index;
+        if (row >= static_cast<int> (std::ceil (lowestRow)) && row < static_cast<int> (std::floor (highestRow)))
         {
+            int col = parent->electrodeMetadata[i].column_index;
+            int shank = parent->electrodeMetadata[i].shank;
             float xLoc = 220 + shankOffset - electrodeHeight * parent->probeMetadata.columns_per_shank / 2
-                         + electrodeHeight * parent->electrodeMetadata[i].column_index + parent->electrodeMetadata[i].shank * electrodeHeight * 4
+                         + electrodeHeight * col + shank * electrodeHeight * 4
                          - (parent->probeMetadata.shank_count / 2 * electrodeHeight * 3);
-            float yLoc = lowerBound - ((parent->electrodeMetadata[i].row_index - int (lowestRow)) * electrodeHeight);
-
-            //std::cout << "Drawing electrode " << i << ", X: " << xLoc << ", Y:" << yLoc << std::endl;
+            float yLoc = lowerBound - ((row - static_cast<int> (std::ceil (lowestRow))) * electrodeHeight)
+                         + 15 - electrodeHeight;
 
             if (parent->electrodeMetadata[i].isSelected)
             {
@@ -827,28 +714,14 @@ void ProbeBrowser::paint (Graphics& g)
             }
 
             g.setColour (getElectrodeColour (i));
-
             g.fillRect (xLoc + 1, yLoc + 1, electrodeHeight - 2, electrodeHeight - 2);
         }
     }
 
-    // draw annotations
-    //drawAnnotations(g);
-
-    // draw borders around zoom area
-
-    // g.setColour(Colours::darkgrey.withAlpha(0.7f));
-    // g.fillRect(25, 0, 25 + shankOffset, lowerBound - zoomOffset - zoomHeight);
-    // g.fillRect(25, lowerBound - zoomOffset, 25 + shankOffset, zoomOffset + 10);
-
-    // g.setColour(Colours::darkgrey);
-    // g.fillRect(100, 0, 250 + shankOffset, 20);
-    // g.fillRect(100, lowerBound + 14, 250 + shankOffset, 100);
-
-    if (isOverZoomRegion)
-        g.setColour (findColour (ThemeColours::outline));
-    else
-        g.setColour (findColour (ThemeColours::outline).withAlpha (0.5f));
+    // Draw zoom area borders
+    g.setColour (isOverZoomRegion
+                     ? findColour (ThemeColours::outline)
+                     : findColour (ThemeColours::outline).withAlpha (0.5f));
 
     Path upperBorder;
     upperBorder.startNewSubPath (5, lowerBound - zoomOffset - zoomHeight);
@@ -865,18 +738,19 @@ void ProbeBrowser::paint (Graphics& g)
     g.strokePath (upperBorder, PathStrokeType (2.0));
     g.strokePath (lowerBorder, PathStrokeType (2.0));
 
-    // draw selection zone
-
-    int shankWidth = electrodeHeight * parent->probeMetadata.columns_per_shank;
-    int totalWidth = shankWidth * parent->probeMetadata.shank_count + shankWidth * (parent->probeMetadata.shank_count - 1);
+    // Calculate selection area edges
+    float shankWidth = electrodeHeight * parent->probeMetadata.columns_per_shank;
+    float totalWidth = shankWidth * parent->probeMetadata.shank_count
+                       + shankWidth * (parent->probeMetadata.shank_count - 1);
 
     leftEdge = 220 + shankOffset - totalWidth / 2;
     rightEdge = 220 + shankOffset + totalWidth / 2;
 
+    // Draw selection rectangle if active
     if (isSelectionActive)
     {
-        g.setColour (Colours::white.withAlpha (0.5f));
-        //g.drawRect(selectionBox);
+        g.setColour (findColour (ThemeColours::componentBackground).contrasting().withAlpha (0.5f));
+        g.drawRect (selectionBox);
     }
 }
 
@@ -1001,6 +875,9 @@ Colour ProbeBrowser::getElectrodeColour (int i)
                 return Colours::grey;
             }
         }
+
+        // Fallback colour for unexpected mode values
+        return Colours::grey;
     }
 }
 
@@ -1040,9 +917,20 @@ int ProbeBrowser::getZoomOffset()
 
 void ProbeBrowser::setZoomHeightAndOffset (int newHeight, int newOffset)
 {
-    if (newHeight >= minZoomHeight && newHeight <= maxZoomHeight)
-    {
-        zoomHeight = newHeight;
-        zoomOffset = 0;
-    }
+    // Clamp height to allowed range
+    if (newHeight < minZoomHeight)
+        newHeight = minZoomHeight;
+    if (newHeight > maxZoomHeight)
+        newHeight = maxZoomHeight;
+
+    zoomHeight = newHeight;
+
+    // Clamp offset to valid range given the new height
+    const int maxOffset = jmax (0, lowerBound - zoomHeight - 15);
+    if (newOffset < 0)
+        newOffset = 0;
+    if (newOffset > maxOffset)
+        newOffset = maxOffset;
+
+    zoomOffset = newOffset;
 }
