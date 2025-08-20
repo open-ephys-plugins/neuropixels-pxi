@@ -162,8 +162,8 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
     }
     else if (rows > 650)
     {
-        maxZoomHeight = 60;
-        minZoomHeight = 10;
+        maxZoomHeight = columns >= 8 ? 100 : 60;
+        minZoomHeight = columns >= 8 ? 20 : 10;
         defaultZoomHeight = 30;
     }
 
@@ -745,6 +745,49 @@ void ProbeBrowser::paint (Graphics& g)
 
     leftEdge = 220 + shankOffset - totalWidth / 2;
     rightEdge = 220 + shankOffset + totalWidth / 2;
+
+    // Draw bank ticks/labels in the zoom area: compute each bank's bottom visible row
+    const int bankCount = parent->probeMetadata.availableBanks.size();
+    if (bankCount > 1)
+    {
+        g.setColour (findColour (ThemeColours::defaultText));
+        g.setFont (FontOptions (15.0f));
+
+        for (int bi = 0; bi < bankCount; ++bi)
+        {
+            Bank b = parent->probeMetadata.availableBanks[bi];
+            if (b == Bank::OFF || b == Bank::NONE)
+                continue;
+
+            int minRow = std::numeric_limits<int>::max();
+            int maxRow = std::numeric_limits<int>::min();
+
+            for (int ei = 0; ei < parent->electrodeMetadata.size(); ++ei)
+            {
+                if (parent->electrodeMetadata[ei].bank == b)
+                {
+                    minRow = jmin (minRow, parent->electrodeMetadata[ei].row_index);
+                    maxRow = jmax (maxRow, parent->electrodeMetadata[ei].row_index);
+                }
+            }
+
+            if (minRow > maxRow)
+                continue; // no electrodes for this bank
+
+            // If the bank's rows fall within the current zoom window, draw a tick at the bank's lowest visible row
+            int visibleLowestRow = jmax (minRow, zoomAreaMinRow);
+
+            // Map the visibleLowestRow to zoomed-in Y coordinate
+            float y = lowerBound - ((visibleLowestRow - zoomAreaMinRow) * electrodeHeight) + 15;
+
+            if (visibleLowestRow > maxRow || y < 16)
+                continue; // bank not visible in this zoom
+
+            // Draw small horizontal tick and label near the zoomed-in electrodes
+            g.drawLine (leftEdge - electrodeHeight, y, rightEdge + electrodeHeight, y);
+            g.drawText (bankToString (b), leftEdge - electrodeHeight - 25, (int) y - 8, 15, 16, Justification::left, false);
+        }
+    }
 
     // Draw selection rectangle if active
     if (isSelectionActive)
