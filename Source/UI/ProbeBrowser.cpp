@@ -789,6 +789,74 @@ void ProbeBrowser::paint (Graphics& g)
         }
     }
 
+    // Draw depth ticks/labels on a dynamic grid size (µm) depending on zoom level.
+    // Only draw ticks whose mapped Y falls inside the current zoom area.
+    // Compute global min/max ypos across the entire probe (all electrodes)
+    float globalMinYpos = parent->electrodeMetadata.getFirst().ypos;
+    float globalMaxYpos = parent->electrodeMetadata.getLast().ypos;
+
+    if (globalMinYpos <= globalMaxYpos)
+    {
+        // Total number of rows on shank (used to convert normalized depth -> row index)
+        const float totalRows = static_cast<float> (parent->probeMetadata.rows_per_shank);
+
+        // Determine grid spacing (start at 100 µm, increase if pixels per tick are too small)
+        const float probeDepth = globalMaxYpos - globalMinYpos;
+
+        // pixels covered by a 100 µm step
+        float pixelsPer100 = 0.0f;
+        if (probeDepth > 0.0f)
+            pixelsPer100 = (100.0f / probeDepth) * (totalRows - 1.0f) * electrodeHeight;
+
+        // choose grid size (µm) to keep at least minPixelSpacing between ticks
+        const float minPixelSpacing = 40.0f; // minimum pixels between ticks to avoid clutter
+        int grid = 100;
+        const int maxGrid = 5000;
+        while (pixelsPer100 * (grid / 100.0f) < minPixelSpacing && grid < maxGrid)
+            grid *= 2;
+
+        // Range of ticks (round to 'grid' µm)
+        int tickStart = static_cast<int> (std::floor (globalMinYpos / (float) grid) * grid);
+        int tickEnd = static_cast<int> (std::ceil (globalMaxYpos / (float) grid) * grid);
+
+        // use lower alpha so ticks are less visually dominant
+        g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.40f));
+        g.setFont (FontOptions (12.0f));
+
+        const float tickLength = jmin (12.0f, electrodeHeight);
+        const float tickXStart = leftEdge - tickLength - 2.0f; // starting X for ticks just left of the electrode area
+
+        for (int depth = tickStart; depth <= tickEnd; depth += grid)
+        {
+            if (depth == 0)
+                continue;
+
+            // normalized position along probe (0..1)
+            float t = (globalMaxYpos == globalMinYpos)
+                          ? 0.0f
+                          : (float) (depth - globalMinYpos) / (globalMaxYpos - globalMinYpos);
+
+            // convert to a fractional row (0..totalRows)
+            float rowFloat = t * (totalRows - 1.0f);
+
+            // Map fractional row into the zoomed pixel coordinate system used for electrodes
+            float y = lowerBound - ((rowFloat - zoomAreaMinRow) * electrodeHeight) + 15;
+
+            // Only draw if inside visible region
+            if (y < 16 || y > lowerBound)
+                continue;
+
+            // draw a short tick to the left of the electrode area
+            g.drawLine (tickXStart, y, tickXStart + tickLength, y);
+
+            // draw the label to the left of the tick, right-justified
+            String label = String (depth) + " µm";
+            int labelWidth = 64;
+            int labelX = static_cast<int> (tickXStart - labelWidth - 2.0f);
+            g.drawText (label, labelX, (int) y - 8, labelWidth, 16, Justification::right, false);
+        }
+    }
+
     // Draw selection rectangle if active
     if (isSelectionActive)
     {
