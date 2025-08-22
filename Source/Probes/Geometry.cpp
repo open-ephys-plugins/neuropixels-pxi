@@ -145,11 +145,11 @@ void Geometry::NP1 (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.name = "Neuropixels 1.0";
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = 1;
@@ -232,11 +232,11 @@ void Geometry::NP2 (int shank_count, int adc_bits, Array<ElectrodeMetadata>& ele
     probeMetadata.adc_bits = adc_bits;
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = shank_count;
@@ -519,11 +519,11 @@ void Geometry::NHP1 (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.name = "Neuropixels NHP - Passive";
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = 1;
@@ -592,11 +592,11 @@ void Geometry::NHP2 (int length,
     }
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     if (length == 10)
@@ -717,11 +717,11 @@ void Geometry::UHDPassive (int numColumns,
     probeMetadata.switchable = false;
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 10, 542);
-    path.lineTo (27 + 20, 514);
-    path.lineTo (27 + 20, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 10, 542);
+    path.lineTo (67 + 20, 514);
+    path.lineTo (67 + 20, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = 1;
@@ -767,11 +767,11 @@ void Geometry::UHDActive (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.switchable = false;
 
     Path path;
-    path.startNewSubPath (21, 23);
-    path.lineTo (21, 514);
-    path.lineTo (21 + 10, 542);
-    path.lineTo (21 + 20, 514);
-    path.lineTo (21 + 20, 23);
+    path.startNewSubPath (61, 23);
+    path.lineTo (61, 514);
+    path.lineTo (61 + 10, 542);
+    path.lineTo (61 + 20, 514);
+    path.lineTo (61 + 20, 23);
     path.closeSubPath();
 
     int numRows = 768;
@@ -6977,11 +6977,11 @@ void Geometry::OPTO (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.name = "Neuropixels Opto";
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = 1;
@@ -7076,11 +7076,11 @@ void Geometry::QuadBase (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.name = "Neuropixels 2.0 Quad Base";
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = shank_count;
