@@ -481,7 +481,10 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bscFirmwareButton.get());
 
-    bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String (BSC_FIRMWARE_FILENAME) + ") : ");
+    if(basestation->type == BasestationType::OPTO)
+        bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String (OPTO_BSC_FIRMWARE_FILENAME) + ") : ");
+    else
+        bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String (BSC_FIRMWARE_FILENAME) + ") : ");
     bscFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
     bscFirmwareLabel->setBounds (550, verticalOffset + 43, 500, 20);
 
@@ -505,7 +508,10 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bsFirmwareButton.get());
 
-    bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String (BS_FIRMWARE_FILENAME) + "): ");
+    if (basestation->type == BasestationType::OPTO)
+        bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String (OPTO_BS_FIRMWARE_FILENAME) + "): ");
+    else
+        bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String (BS_FIRMWARE_FILENAME) + "): ");
     bsFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
     bsFirmwareLabel->setBounds (550, verticalOffset + 113, 500, 20);
 
@@ -681,7 +687,21 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
         {
             if (comboBox->getSelectedId() == 1)
             {
-                FileChooser fileChooser ("Select a QBSC .bin file to load.", File(), "QBSC*.bin");
+                String dialogBoxTitle;
+                String filePatternsAllowed;
+
+                if (basestation->type == BasestationType::OPTO)
+                {
+                    dialogBoxTitle = "Select an OPTO_QBSC .bin file to load.";
+                    filePatternsAllowed = OPTO_BSC_FIRMWARE_FILENAME;
+                }
+                else
+                {
+                    dialogBoxTitle = "Select a QBSC .bin file to load.";
+                    filePatternsAllowed = BSC_FIRMWARE_FILENAME;
+                }
+
+                FileChooser fileChooser (dialogBoxTitle, File(), filePatternsAllowed);
 
                 if (fileChooser.browseForFileToOpen())
                 {
@@ -698,7 +718,21 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
         {
             if (comboBox->getSelectedId() == 1)
             {
-                FileChooser fileChooser ("Select a BS .bin file to load.", File(), "BS*.bin");
+                String dialogBoxTitle;
+                String filePatternsAllowed;
+
+                if (basestation->type == BasestationType::OPTO)
+                {
+                    dialogBoxTitle = "Select a BS .bin file to load.";
+                    filePatternsAllowed = OPTO_BS_FIRMWARE_FILENAME;
+                }
+                else
+                {
+                    dialogBoxTitle = "Select a BS .bin file to load.";
+                    filePatternsAllowed = BS_FIRMWARE_FILENAME;
+                }
+
+                FileChooser fileChooser (dialogBoxTitle, File(), filePatternsAllowed);
 
                 if (fileChooser.browseForFileToOpen())
                 {

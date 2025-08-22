@@ -80,7 +80,17 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 
     Neuropixels::NP_ErrorCode errorCode = Neuropixels::openPort (slot, port);
 
+    if (errorCode != Neuropixels::SUCCESS)
+    {
+        LOGE ("Neuropixels::openPort slot ", slot, " port ", port, ": ", Neuropixels::getErrorMessage (errorCode));
+    }
+
     errorCode = Neuropixels::detectHeadStage (slot, port, &detected); // check for headstage on port
+
+    if (errorCode != Neuropixels::SUCCESS)
+    {
+        LOGE ("Neuropixels::detectHeadStage slot ", slot, " port ", port, ": ", Neuropixels::getErrorMessage (errorCode));
+    }
 
     if (detected && errorCode == Neuropixels::SUCCESS)
     {
@@ -171,27 +181,61 @@ bool PxiBasestation::open()
 
         basestationConnectBoard = std::make_unique<BasestationConnectBoard_v3> (this);
 
-        //Confirm v3 basestation by BS version 2.0 or greater.
-        LOGC ("  BS firmware: ", info.boot_version);
-        if (std::stod ((info.boot_version.toStdString())) < 2.0)
-            return false;
-
-        invertOutput = false;
-
-        if (! info.boot_version.equalsIgnoreCase (BS_FIRMWARE_VERSION))
+        // Confirm v3 basestation by BS version 2.0 or greater.
+        // If it's less than 2.0, it requires an older API 
+        LOGC ("BS firmware: ", info.boot_version);
+        if (info.boot_version.getFloatValue() < 2.0)
         {
-            LOGC ("Found basestation firmware version ", info.boot_version);
-            LOGC ("Required version is ", BS_FIRMWARE_VERSION);
+            return false;
+        }
+            
 
-            return true;
+        // Check for opto basestation
+        LOGC ("BSC firmware: ", basestationConnectBoard->info.boot_version);
+        if (basestationConnectBoard->info.boot_version == OPTO_BSC_FIRMWARE_VERSION)
+        {
+            LOGC ("  Detected opto basestation connect board on slot ", slot);
+            type = BasestationType::OPTO;
+
+            if (info.boot_version != OPTO_BS_FIRMWARE_VERSION)
+            {
+                LOGC ("Found basestation firmware version ", info.boot_version);
+                LOGC ("Required version is ", OPTO_BS_FIRMWARE_VERSION);
+                return true; // return early to indicate that the firmware needs to be upgraded
+            }
         }
 
-        if (! basestationConnectBoard->info.boot_version.equalsIgnoreCase (BSC_FIRMWARE_VERSION))
+        // Check for original opto basestation connect board
+        if (basestationConnectBoard->info.boot_version == ORIGINAL_OPTO_BSC_FIRMWARE_VERSION)
         {
-            LOGC ("Found basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
-            LOGC ("Required version is ", BSC_FIRMWARE_VERSION);
+            LOGC ("  Detected opto basestation connect board on slot ", slot);
+            type = BasestationType::OPTO;
+            return true; // return early to indicate that the firmware needs to be upgraded
+        }
 
-            return true;
+        if (basestationConnectBoard->info.boot_version == BSC_FIRMWARE_VERSION)
+        {
+            type = BasestationType::PXI; // PXI basestation connect board
+            LOGC ("  Detected standard basestation connect board on slot ", slot);
+
+            if (! info.boot_version.equalsIgnoreCase (BS_FIRMWARE_VERSION))
+            {
+                LOGC ("Found basestation firmware version ", info.boot_version);
+                LOGC ("Required version is ", BS_FIRMWARE_VERSION);
+
+                return true; // return early to indicate that the firmware needs to be upgraded
+            }
+        }
+        else
+        {
+            if (type != BasestationType::OPTO)
+            {
+                LOGC ("Found standard basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
+                LOGC ("Required version is ", BSC_FIRMWARE_VERSION);
+                type = BasestationType::PXI;
+
+                return true; // return early to indicate that the firmware needs to be upgraded
+            }
         }
 
         LOGC ("    Searching for probes...");
@@ -243,9 +287,6 @@ void PxiBasestation::searchForProbes()
                 {
                     //check if probe serial number already exists
                     probes.add (probe);
-
-                    if (probe->info.part_number.equalsIgnoreCase ("NP1300"))
-                        type = BasestationType::OPTO;
                 }
             }
         }
@@ -350,31 +391,64 @@ void PxiBasestation::close()
 
 void PxiBasestation::checkFirmwareVersion()
 {
-    if (! info.boot_version.equalsIgnoreCase (BS_FIRMWARE_VERSION))
+
+    if (type == BasestationType::OPTO)
     {
-        LOGC ("Found basestation firmware version ", info.boot_version);
+        if (! info.boot_version.equalsIgnoreCase (OPTO_BS_FIRMWARE_VERSION))
+        {
+            LOGC ("Found opto basestation firmware version ", info.boot_version);
 
-        // show popup notification window
-        String message = "The basestation on slot " + String (slot) + " has firmware version " + info.boot_version;
-        message += ", but version " + String (BS_FIRMWARE_VERSION) + " is required for this plugin. ";
-        message += "This is contained in the file named " + String (BS_FIRMWARE_FILENAME) + ". ";
-        message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update. ";
+            // show popup notification window
+            String message = "The Opto basestation on slot " + String (slot) + " has firmware version " + info.boot_version;
+            message += ", but version " + String (OPTO_BS_FIRMWARE_VERSION) + " is required for this plugin. ";
+            message += "This is contained in the file named " + String (OPTO_BS_FIRMWARE_FILENAME) + ". ";
+            message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update. ";
 
-        AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation firmware on slot " + String (slot), message, "OK");
+            AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated Opto basestation firmware on slot " + String (slot), message, "OK");
+        }
+
+        if (! basestationConnectBoard->info.boot_version.equalsIgnoreCase (OPTO_BSC_FIRMWARE_VERSION))
+        {
+            LOGC ("Found Opto basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
+
+            // show popup notification window
+            String message = "The Opto basestation on slot " + String (slot) + " has basestation firmware version " + basestationConnectBoard->info.boot_version;
+            message += ", but version " + String (OPTO_BSC_FIRMWARE_VERSION) + " is required for this plugin. ";
+            message += "This is contained in the file named " + String (OPTO_BSC_FIRMWARE_FILENAME) + ". ";
+            message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
+
+            AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated Opto basestation connect board firmware on slot " + String (slot), message, "OK");
+        }
+    }
+    else // standard PXI basestation
+    {
+        if (! info.boot_version.equalsIgnoreCase (BS_FIRMWARE_VERSION))
+        {
+            LOGC ("Found basestation firmware version ", info.boot_version);
+
+            // show popup notification window
+            String message = "The basestation on slot " + String (slot) + " has firmware version " + info.boot_version;
+            message += ", but version " + String (BS_FIRMWARE_VERSION) + " is required for this plugin. ";
+            message += "This is contained in the file named " + String (BS_FIRMWARE_FILENAME) + ". ";
+            message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update. ";
+
+            AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation firmware on slot " + String (slot), message, "OK");
+        }
+
+        if (! basestationConnectBoard->info.boot_version.equalsIgnoreCase (BSC_FIRMWARE_VERSION))
+        {
+            LOGC ("Found basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
+
+            // show popup notification window
+            String message = "The basestation on slot " + String (slot) + " has basestation firmware version " + basestationConnectBoard->info.boot_version;
+            message += ", but version " + String (BSC_FIRMWARE_VERSION) + " is required for this plugin. ";
+            message += "This is contained in the file named " + String (BSC_FIRMWARE_FILENAME) + ". ";
+            message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
+
+            AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String (slot), message, "OK");
+        }
     }
 
-    if (! basestationConnectBoard->info.boot_version.equalsIgnoreCase (BSC_FIRMWARE_VERSION))
-    {
-        LOGC ("Found basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
-
-        // show popup notification window
-        String message = "The basestation on slot " + String (slot) + " has basestation firmware version " + basestationConnectBoard->info.boot_version;
-        message += ", but version " + String (BSC_FIRMWARE_VERSION) + " is required for this plugin. ";
-        message += "This is contained in the file named " + String (BSC_FIRMWARE_FILENAME) + ". ";
-        message += "Please see the Neuropixels PXI page on the Open Ephys GUI documentation site for information on how to perform a firmware update.";
-
-        AlertWindow::showMessageBox (AlertWindow::AlertIconType::WarningIcon, "Outdated basestation connect board firmware on slot " + String (slot), message, "OK");
-    }
 }
 
 bool PxiBasestation::isBusy()

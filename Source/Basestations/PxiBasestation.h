@@ -31,9 +31,13 @@
 
 #define BS_FIRMWARE_VERSION "3.0226"
 #define BSC_FIRMWARE_VERSION "4.0233"
-#define OPTO_BSC_FIRMWARE_VERSION "4.017"
 #define BS_FIRMWARE_FILENAME "BS_FPGA_B226.bin"
 #define BSC_FIRMWARE_FILENAME "QBSC_FPGA_B233.bin"
+
+#define OPTO_BS_FIRMWARE_VERSION "2.0169"
+#define OPTO_BSC_FIRMWARE_VERSION "4.017"
+#define ORIGINAL_OPTO_BSC_FIRMWARE_VERSION "1.02"
+#define OPTO_BS_FIRMWARE_FILENAME "BS_FPGA_B169.bin"
 #define OPTO_BSC_FIRMWARE_FILENAME "OPTO_QBSC_FPGA_B17.bin"
 
 /* 
@@ -167,7 +171,7 @@ private:
 
     std::unique_ptr<ArmBasestation> armBasestation;
 
-    bool invertOutput;
+    bool invertOutput = false;
 };
 
 class BasestationConnectBoard_v3 : public BasestationConnectBoard
