@@ -324,8 +324,8 @@ int ProbeBrowser::getNearestElectrode (int x, int y)
 
 Array<int> ProbeBrowser::getElectrodesWithinBounds (int x, int y, int w, int h)
 {
-    int startrow = static_cast<int> (std::ceil ((lowerBound - y - h) / electrodeHeight) + zoomAreaMinRow + 1);
-    int endrow = static_cast<int> (std::floor ((lowerBound - y) / electrodeHeight) + zoomAreaMinRow + 1);
+    int startrow = static_cast<int> (std::ceil (((lowerBound + 15 - electrodeHeight - (y + h)) / electrodeHeight) + zoomAreaMinRow + 1));
+    int endrow = static_cast<int> (std::floor (((lowerBound + 15 - electrodeHeight - y) / electrodeHeight) + zoomAreaMinRow));
 
     float shankWidth = electrodeHeight * parent->probeMetadata.columns_per_shank;
 
