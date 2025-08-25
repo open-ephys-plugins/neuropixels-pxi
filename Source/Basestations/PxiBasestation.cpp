@@ -266,6 +266,13 @@ void PxiBasestation::searchForProbes()
 
         portCheckers.add (new PortChecker (slot, port, this));
         threadPool.addJob (portCheckers.getLast(), false);
+
+        if (type == BasestationType::OPTO)
+        {
+            // Opto basestation can't handle parallel port scanning
+            while (threadPool.getNumJobs() > 0)
+                std::this_thread::sleep_for (std::chrono::milliseconds (100));
+        }
     }
 
     while (threadPool.getNumJobs() > 0)

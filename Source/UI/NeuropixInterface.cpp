@@ -1339,7 +1339,8 @@ void NeuropixInterface::paint (Graphics& g)
 {
     if (probe != nullptr)
     {
-        drawLegend (g);
+        if (probe->info.part_number != "NP1300") // Neuropixels Opto
+            drawLegend (g);
 
         g.setColour (findColour (ThemeColours::componentParentBackground).withAlpha (0.5f));
         g.fillRoundedRectangle (30, 600, 290, 145, 8.0f);
