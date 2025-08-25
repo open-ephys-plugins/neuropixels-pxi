@@ -28,13 +28,22 @@
 
 #include "NeuropixInterface.h"
 
+/** 
+
+    Interactive graphical interface for viewing and selecting probe electrodes
+
+*/
 class ProbeBrowser : public Component,
                      public Timer
 {
 public:
+    /** Constructor */
     ProbeBrowser (NeuropixInterface*);
+
+    /** Destructor */
     virtual ~ProbeBrowser();
 
+    // Mouse interaction methods
     void mouseMove (const MouseEvent& event);
     void mouseDown (const MouseEvent& event);
     void mouseDrag (const MouseEvent& event);
@@ -43,15 +52,18 @@ public:
 
     MouseCursor getMouseCursor();
 
+    /** Timer callback for updating activity visualization */
     void timerCallback();
 
+    /** Main paint method */
     void paint (Graphics& g);
 
+    /** Draw annotation overlays */
     void drawAnnotations (Graphics& g);
 
+    // Zoom control methods
     int getZoomHeight();
     int getZoomOffset();
-
     void setZoomHeightAndOffset (int, int);
 
     ActivityToView activityToView;
@@ -70,6 +82,8 @@ private:
     bool isOverElectrode;
     bool isSelectionActive;
 
+    Rectangle<int> selectionBox;
+
     int initialOffset;
     int initialHeight;
     int lowerBound;
@@ -78,10 +92,11 @@ private:
     int minZoomHeight;
     int maxZoomHeight;
     int shankOffset;
-    int leftEdge;
-    int rightEdge;
     int channelLabelSkip;
     int pixelHeight;
+
+    float leftEdge;
+    float rightEdge;
 
     int lowestElectrode;
     int highestElectrode;
@@ -94,10 +109,17 @@ private:
 
     String electrodeInfoString;
 
+    // Helper methods
     Colour getElectrodeColour (int index);
     int getNearestElectrode (int x, int y);
     Array<int> getElectrodesWithinBounds (int x, int y, int w, int h);
     String getElectrodeInfoString (int index);
+
+    void handleLeftMouseDown (const MouseEvent& event);
+    void handleRightMouseDown (const MouseEvent& event);
+    void handleZoomDrag (const MouseEvent& event);
+    void handleSelectionDrag (const MouseEvent& event);
+    void clampZoomValues();
 
     std::unique_ptr<TooltipWindow> tooltipWindow;
 
