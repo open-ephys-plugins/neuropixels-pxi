@@ -15,3 +15,6 @@ Builds/*/*
 .DS_Store
 
 .vscode
+
+/Build
+/build

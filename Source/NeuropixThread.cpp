@@ -22,11 +22,13 @@
 */
 
 #include "NeuropixThread.h"
+#include "NeuropixComponents.h"
 #include "NeuropixEditor.h"
 
 #include "Basestations/OneBox.h"
 #include "Basestations/PxiBasestation.h"
 #include "Basestations/SimulatedBasestation.h"
+#include "Basestations/XDAQ.h"
 #include "Probes/OneBoxADC.h"
 
 #include "UI/NeuropixInterface.h"
@@ -170,6 +172,27 @@ void Initializer::run()
                     {
                         LOGC ("  Could not open OneBox");
                         setStatusMessage ("Could not open OneBox");
+                        delete bs;
+                    }
+                }
+            }
+            else if ((list[i].platformid == Neuropixels::NPPlatform_ALL) && (type == DeviceType::XDAQ)){
+                deviceNum++;
+                LOGC ("  Opening XDAQ on slot ", slotID);
+                setStatusMessage ("Opening XDAQ with serial number " + String ::toHexString(list[i].ID));
+
+                if (! threadShouldExit())
+                {
+                    auto bs = new XDAQ_BS(neuropixThread, slotID);
+
+                    if (bs->open())
+                    {
+                        basestations.add(bs);
+                    }
+                    else
+                    {
+                        LOGC ("  Could not open XDAQ");
+                        setStatusMessage ("Could not open XDAQ");
                         delete bs;
                     }
                 }

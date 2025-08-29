@@ -64,8 +64,9 @@ struct ComponentInfo
 
 enum DeviceType
 {
-    PXI,
-    ONEBOX
+	PXI,
+	ONEBOX,
+	XDAQ
 };
 
 enum class DataSourceType
@@ -81,6 +82,7 @@ enum class BasestationType
     PXI,
     OPTO,
     ONEBOX,
+    XDAQ,
     SIMULATED
 };
 
@@ -311,6 +313,7 @@ class NeuropixComponent
 public:
     /** Constructor */
     NeuropixComponent() {}
+    virtual ~NeuropixComponent() = default;
 
     /** Pure virtual method for getting component info */
     virtual void getInfo() = 0;

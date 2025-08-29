@@ -24,6 +24,7 @@
 #include <PluginInfo.h>
 
 #include "OneBoxThread.h"
+#include "XDAQThread.h"
 #include "PXIThread.h"
 
 #include <string>
@@ -35,13 +36,16 @@
 #endif
 
 using namespace Plugin;
-#define NUM_PLUGINS 2
+#define NUM_PLUGINS 1
 
 extern "C" EXPORT void getLibInfo (Plugin::LibraryInfo* info)
 {
+     const static auto version =
+        (std::to_string(PLUGIN_VERSION_MAJOR) + "." + std::to_string(PLUGIN_VERSION_MINOR) + "." +
+         std::to_string(PLUGIN_VERSION_PATCH));
     info->apiVersion = PLUGIN_API_VER;
-    info->name = "Neuropix-PXI";
-    info->libVersion = PLUGIN_VERSION;
+    info->name = "XDAQ-NP";
+    info->libVersion = version.c_str();
     info->numPlugins = NUM_PLUGINS;
 }
 
@@ -51,13 +55,8 @@ extern "C" EXPORT int getPluginInfo (int index, Plugin::PluginInfo* info)
     {
         case 0:
             info->type = Plugin::Type::DATA_THREAD;
-            info->dataThread.name = "Neuropix-PXI";
-            info->dataThread.creator = &createDataThread<PxiThread>;
-            break;
-        case 1:
-            info->type = Plugin::Type::DATA_THREAD;
-            info->dataThread.name = "OneBox";
-            info->dataThread.creator = &createDataThread<OneBoxThread>;
+            info->dataThread.name = "XDAQ-NP";
+            info->dataThread.creator = &createDataThread<XDAQThread>;
             break;
         default:
             return -1;

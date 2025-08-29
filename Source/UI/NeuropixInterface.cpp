@@ -607,7 +607,7 @@ void NeuropixInterface::updateInfoString()
     infoString += "\n";
     infoString += "\n";
 
-    if (basestation->type != BasestationType::ONEBOX)
+    if (basestation->type == BasestationType::PXI)
     {
         infoString += "Basestation connect board";
         infoString += "\n Hardware version: " + basestation->basestationConnectBoard->info.version;
@@ -1644,7 +1644,7 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
             xmlNode->setAttribute ("bs_serial_number", String (probe->basestation->info.serial_number));
             xmlNode->setAttribute ("bs_part_number", probe->basestation->info.part_number);
 
-            if (thread->type == PXI)
+            if (thread->type != DeviceType::ONEBOX)
             {
                 xmlNode->setAttribute ("bsc_firmware_version", probe->basestation->basestationConnectBoard->info.boot_version);
                 xmlNode->setAttribute ("bsc_hardware_version", probe->basestation->basestationConnectBoard->info.version);
