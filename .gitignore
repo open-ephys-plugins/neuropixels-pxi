@@ -17,4 +17,6 @@ Builds/*/*
 .vscode
 
 /Build
-/build
+/build*
+/CMakeUserPresets.json
+/.clangd

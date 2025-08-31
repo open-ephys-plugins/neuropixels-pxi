@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.25.0)
 cmake_policy(SET CMP0087 NEW)
 if (NOT DEFINED GUI_BASE_DIR)
 	if (DEFINED ENV{GUI_BASE_DIR})
@@ -28,7 +28,6 @@ set(SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Source)
 file(GLOB_RECURSE SRC_FILES LIST_DIRECTORIES false "${SOURCE_PATH}/*.cpp" "${SOURCE_PATH}/*.h")
 set(GUI_COMMONLIB_DIR ${GUI_BASE_DIR}/installed_libs)
 
-#set(CONFIGURATION_FOLDER $<$<CONFIG:Debug>:Debug>$<$<NOT:$<CONFIG:Debug>>:Release>)
 set(CONFIGURATION_FOLDER $<$<CONFIG:Debug>:Debug>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:Release>:Release> )
 
 list(APPEND CMAKE_PREFIX_PATH ${GUI_COMMONLIB_DIR} ${GUI_COMMONLIB_DIR}/${CONFIGURATION_FOLDER})
@@ -50,34 +49,18 @@ target_include_directories(${PLUGIN_NAME} PUBLIC ${GUI_BASE_DIR}/JuceLibraryCode
 
 set(GUI_BIN_DIR ${GUI_BASE_DIR}/Build/${CONFIGURATION_FOLDER})
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	# find_package(XDAQ_NPAPI REQUIRED)
-endif()
-
-
 #Libraries and compiler options
 if(MSVC)
 	target_link_libraries(${PLUGIN_NAME} ${GUI_BIN_DIR}/open-ephys.lib)
 	target_compile_options(${PLUGIN_NAME} PRIVATE /sdl- /W0)
-	
-	install(TARGETS ${PLUGIN_NAME} RUNTIME DESTINATION ${GUI_BIN_DIR}/plugins  CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
-	install(FILES $<TARGET_PDB_FILE:${PLUGIN_NAME}> DESTINATION  ${GUI_BIN_DIR}/plugins OPTIONAL)
-
-	set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../libs)
 elseif(LINUX)
 	target_link_libraries(${PLUGIN_NAME} PRIVATE GL X11 Xext Xinerama asound dl freetype pthread rt)
 	set_property(TARGET ${PLUGIN_NAME} APPEND_STRING PROPERTY LINK_FLAGS
 		"-fvisibility=hidden -fPIC -rdynamic -Wl,-rpath,'$$ORIGIN/../shared'")
 	target_compile_options(${PLUGIN_NAME} PRIVATE -fPIC -rdynamic)
-	
-	install(TARGETS ${PLUGIN_NAME} LIBRARY DESTINATION ${GUI_BIN_DIR}/plugins)
 elseif(APPLE)
 	set_target_properties(${PLUGIN_NAME} PROPERTIES BUNDLE TRUE)
-	set_property(TARGET ${PLUGIN_NAME} APPEND_STRING PROPERTY LINK_FLAGS
-	"-undefined dynamic_lookup -rpath @loader_path/../../../../shared")
-
-	install(TARGETS ${PLUGIN_NAME} DESTINATION $ENV{HOME}/Library/Application\ Support/open-ephys/plugins-api8)
-	set(CMAKE_PREFIX_PATH /opt/local)
+	target_link_options(${PLUGIN_NAME} PRIVATE -undefined dynamic_lookup)
 endif()
 
 #create filters for vs and xcode
@@ -90,11 +73,8 @@ foreach( src_file IN ITEMS ${SRC_FILES})
 endforeach()
 
 
-set(NEUROPIX_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/API)
-target_include_directories(${PLUGIN_NAME} PRIVATE ${NEUROPIX_INCLUDE_DIR})
-
-find_package(XDAQ_NPAPI REQUIRED)
-target_link_libraries(${PLUGIN_NAME} PRIVATE xdaq::np::XDAQ_NPAPI)
+find_package(libxdaqnp REQUIRED)
+target_link_libraries(${PLUGIN_NAME} PRIVATE xdaq::xdaq_npapi)
 
 
 set(PLUGIN_INSTALL_DIR plugins CACHE STRING "Plugin installation directory")
@@ -136,33 +116,31 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	set(CPACK_PACKAGE_INSTALL_DIRECTORY "")
 	include(CPACK)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+	set_target_properties(${PLUGIN_NAME} PROPERTIES
+		XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+		XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED NO
+		BUILD_WITH_INSTALL_RPATH TRUE
+		INSTALL_RPATH "@loader_path/../Frameworks"
+	)
 	install(TARGETS ${PLUGIN_NAME}
 		LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 		RUNTIME DESTINATION ${PLUGIN_INSTALL_DIR}
 	)
-	install(DIRECTORY ${XDAQ_DEVICE_MANAGER_DIR}
-		DESTINATION ${PLUGIN_INSTALL_DIR}/${PLUGIN_NAME}.bundle/Contents/PlugIns
+	install(IMPORTED_RUNTIME_ARTIFACTS xdaq::xdaq_npapi
+		LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}/${PLUGIN_NAME}.bundle/Contents/Frameworks
+		RUNTIME DESTINATION ${PLUGIN_INSTALL_DIR}/${PLUGIN_NAME}.bundle/Contents/Frameworks
 	)
-	install(DIRECTORY ${XDAQ_RESOURCES_DIR}
-		DESTINATION ${PLUGIN_INSTALL_DIR}/${PLUGIN_NAME}.bundle/Contents/PlugIns
-	)
-	set(CPACK_GENERATOR "DragNDrop")
-	set(CPACK_DMG_DISABLE_APPLICATIONS_SYMLINK ON)
-    set(CPACK_PRE_BUILD_SCRIPTS "${CMAKE_SOURCE_DIR}/cmake/codesign.cmake")
-	include(CPACK)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set_target_properties(${PLUGIN_NAME} PROPERTIES
 		BUILD_WITH_INSTALL_RPATH TRUE
 		INSTALL_RPATH "$ORIGIN/../shared/${PLUGIN_NAME}"
 	)
 
-	install(DIRECTORY ${XDAQ_DEVICE_MANAGER_DIR} DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME})
-	install(DIRECTORY ${XDAQ_RESOURCES_DIR} DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME})
 	install(TARGETS ${PLUGIN_NAME}
 		LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 		RUNTIME DESTINATION ${PLUGIN_INSTALL_DIR}
 	)
-	install(IMPORTED_RUNTIME_ARTIFACTS xdaq::np::XDAQ_NPAPI
+	install(IMPORTED_RUNTIME_ARTIFACTS xdaq::xdaq_npapi
 		LIBRARY DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME}
 		RUNTIME DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME}
 	)

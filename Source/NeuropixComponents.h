@@ -627,6 +627,18 @@ public:
     String firmwareFilePath;
 };
 
+/** Represents a basestation connect board */
+class BasestationConnectBoard : public NeuropixComponent
+{
+public:
+    BasestationConnectBoard (Basestation* bs_) : NeuropixComponent()
+    {
+        basestation = bs_;
+    }
+
+    Basestation* basestation;
+};
+
 /** Represents a data acquisition device */
 class Basestation : public NeuropixComponent
 {
@@ -817,17 +829,6 @@ protected:
     String bsFirmwarePath;
 };
 
-/** Represents a basestation connect board */
-class BasestationConnectBoard : public NeuropixComponent
-{
-public:
-    BasestationConnectBoard (Basestation* bs_) : NeuropixComponent()
-    {
-        basestation = bs_;
-    }
-
-    Basestation* basestation;
-};
 
 /** Represents a Headstage Test Module */
 class HeadstageTestModule : public NeuropixComponent
