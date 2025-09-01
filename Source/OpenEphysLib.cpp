@@ -32,7 +32,7 @@
 #include <Windows.h>
 #define EXPORT __declspec (dllexport)
 #else
-#define EXPORT
+#define EXPORT __attribute__((visibility("default")))
 #endif
 
 using namespace Plugin;
