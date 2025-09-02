@@ -186,7 +186,8 @@ bool PxiBasestation::open()
         LOGC ("BS firmware: ", info.boot_version);
         if (info.boot_version.getFloatValue() < 2.0)
         {
-            return false;
+            LOGC ("  Detected v1 basestation firmware on slot ", slot);
+            return true;
         }
             
 
