@@ -242,8 +242,8 @@ bool SimulatedProbe::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = std::make_unique<ActivityView> (384, 3000);
-    lfpView = std::make_unique<ActivityView> (384, 250);
+    apView = std::make_unique<ActivityView> (384, 3000, std::vector<std::vector<int>>(), true);
+    lfpView = std::make_unique<ActivityView> (384, 250, std::vector<std::vector<int>>(), true);
 
     return true;
 }
@@ -812,12 +812,12 @@ void SimulatedProbe::run()
                 {
                     apSamples[j * (12 * MAXPACKETS) + i + (packetNum * 12)] = (simulatedData.ap_band[ap_timestamp % 3000] + float (j * 2) - ap_offsets[j][0])
                                                                               * (float ((ap_timestamp + j * 78) % 60000) / 60000.0f);
-                    apView->addSample (apSamples[j * (12 * MAXPACKETS) + i + (packetNum * 12)], j);
+                    // apView->addSample (apSamples[j * (12 * MAXPACKETS) + i + (packetNum * 12)], j);
 
                     if (i == 0)
                     {
                         lfpSamples[(j * MAXPACKETS) + packetNum] = simulatedData.lfp_band[lfp_timestamp % 250] * float (j % 24) / 24.0f - lfp_offsets[j][0];
-                        lfpView->addSample (lfpSamples[(j * MAXPACKETS) + packetNum], j);
+                        // lfpView->addSample (lfpSamples[(j * MAXPACKETS) + packetNum], j);
                     }
                 }
 
@@ -845,9 +845,13 @@ void SimulatedProbe::run()
         }
 
         apBuffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, 12 * MAXPACKETS);
+        apView->addToBuffer (apSamples, 12 * MAXPACKETS);
 
         if (generatesLfpData())
+        {
             lfpBuffer->addToBuffer (lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, MAXPACKETS);
+            lfpView->addToBuffer (lfpSamples, MAXPACKETS);
+        }
 
         if (ap_offsets[0][0] == 0)
         {

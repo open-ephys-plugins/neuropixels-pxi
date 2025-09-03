@@ -128,7 +128,7 @@ bool Neuropixels_QuadBase::open()
             }
         }
 
-        apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks);
+        apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks, true);
     }
 
     return errorCode == Neuropixels::SUCCESS;
@@ -547,7 +547,7 @@ void AcquisitionThread::run()
                     apSamples[packetNum + count * j] =
                         float (data[packetNum * shank_channel_count + j]) / 4096.0f / 100.0f * 1000000.0f; // convert to microvolts
 
-                    apView->addSample (apSamples[packetNum + count * j], j + shank * 384, shank);
+                    // apView->addSample (apSamples[packetNum + count * j], j + shank * 384, shank);
                 }
 
                 if (sendSync)
@@ -559,8 +559,20 @@ void AcquisitionThread::run()
                 event_codes[packetNum] = eventCode;
             }
 
-            buffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
+            // int64 startTime = 0;
+            // if (shank == 0)
+            // {
+            //     startTime = juce::Time::getHighResolutionTicks();
+            // }
 
+            buffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
+            apView->addToBuffer (apSamples, count, shank);
+
+            // if (shank == 0 && startTime != 0)
+            // {
+            //     float elapsedTime =  Time::highResolutionTicksToSeconds (juce::Time::getHighResolutionTicks() - startTime) * 1000.0f; // elapsed time in milliseconds
+            //     LOGC ("Elapsed time for first AP packet: " + String (elapsedTime) + " ms");
+            // }
         }
         else if (errorCode != Neuropixels::SUCCESS)
         {

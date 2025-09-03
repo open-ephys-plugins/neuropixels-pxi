@@ -253,7 +253,15 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         activityViewLabel->setBounds (496, currentHeight - 20, 180, 20);
         addAndMakeVisible (activityViewLabel.get());
 
-        currentHeight += 55;
+        activityViewFilterButton = std::make_unique<UtilityButton> ("BP FILTER");
+        activityViewFilterButton->addListener (this);
+        activityViewFilterButton->setTooltip ("View bandpass filtered signal");
+        activityViewFilterButton->setClickingTogglesState (true);
+        activityViewFilterButton->setToggleState (true, dontSendNotification);
+        activityViewFilterButton->setBounds (500, currentHeight + 24, 70, 18);
+        addAndMakeVisible (activityViewFilterButton.get());
+
+        currentHeight += 80;
 
         if (probe->info.part_number == "NP1300") // Neuropixels Opto
         {
@@ -481,7 +489,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addChildComponent (bscFirmwareButton.get());
 
-    if(basestation->type == BasestationType::OPTO)
+    if (basestation->type == BasestationType::OPTO)
         bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String (OPTO_BSC_FIRMWARE_FILENAME) + ") : ");
     else
         bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String (BSC_FIRMWARE_FILENAME) + ") : ");
@@ -885,6 +893,10 @@ void NeuropixInterface::buttonClicked (Button* button)
             probeBrowser->startTimer (100);
 
         repaint();
+    }
+    else if (button == activityViewFilterButton.get())
+    {
+        probe->setActivityViewFilterState (activityViewFilterButton->getToggleState());
     }
     else if (button == enableButton.get())
     {
@@ -1355,7 +1367,7 @@ void NeuropixInterface::drawLegend (Graphics& g)
     g.setFont (15);
 
     int xOffset = 500;
-    int yOffset = 440;
+    int yOffset = 465;
 
     switch (mode)
     {

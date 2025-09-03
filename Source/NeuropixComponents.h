@@ -48,8 +48,7 @@ class NeuropixInterface;
 
 struct ComponentInfo
 {
-    Neuropixels::HardwareID hardwareID
-    {
+    Neuropixels::HardwareID hardwareID {
         0, // SerialNumber
         "", // ProductNumber
         "", // version_major
@@ -353,7 +352,6 @@ public:
         info.version = String (version_major) + "."
                        + String (version_minor) + "."
                        + String (version_patch);
-
     }
 
     bool isActive;
@@ -584,6 +582,15 @@ public:
             return apView->getPeakToPeakValues();
         else
             return lfpView->getPeakToPeakValues();
+    }
+
+    void setActivityViewFilterState (bool shouldFilter)
+    {
+        if (apView)
+            apView->setBandpassFilterEnabled (shouldFilter);
+
+        if (lfpView)
+            lfpView->setBandpassFilterEnabled (shouldFilter);
     }
 
 protected:

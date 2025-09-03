@@ -125,8 +125,8 @@ bool CustomPassiveProbe::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = std::make_unique<ActivityView> (384, 3000);
-    lfpView = std::make_unique<ActivityView> (384, 250);
+    apView = std::make_unique<ActivityView> (384, 3000, std::vector<std::vector<int>>(), true);
+    lfpView = std::make_unique<ActivityView> (384, 250, std::vector<std::vector<int>>(), true);
 
     return errorCode == Neuropixels::SUCCESS;
 }
@@ -405,7 +405,7 @@ void CustomPassiveProbe::run()
                                 / settings.availableApGains[settings.apGainIndex]
                             - ap_offsets[j][0]; // convert to microvolts
 
-                        apView->addSample (apSamples[j + i * SKIP + packetNum * 12 * SKIP], j);
+                        // apView->addSample (apSamples[j + i * SKIP + packetNum * 12 * SKIP], j);
 
                         if (i == 0)
                         {
@@ -414,7 +414,7 @@ void CustomPassiveProbe::run()
                                     / settings.availableLfpGains[settings.lfpGainIndex]
                                 - lfp_offsets[j][0]; // convert to microvolts
 
-                            lfpView->addSample (lfpSamples[j + packetNum * SKIP], j);
+                            // lfpView->addSample (lfpSamples[j + packetNum * SKIP], j);
                         }
                     }
 
@@ -433,7 +433,9 @@ void CustomPassiveProbe::run()
             }
 
             apBuffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, 12 * count);
+            apView->addToBuffer (apSamples, 12 * count);
             lfpBuffer->addToBuffer (lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, count);
+            lfpView->addToBuffer (lfpSamples, count);
 
             if (ap_offsets[0][0] == 0)
             {

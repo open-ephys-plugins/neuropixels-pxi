@@ -152,7 +152,7 @@ bool Neuropixels2::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = std::make_unique<ActivityView> (384, 3000);
+    apView = std::make_unique<ActivityView> (384, 3000, std::vector<std::vector<int>>(), true);
 
     return errorCode == Neuropixels::SUCCESS;
 }
@@ -686,7 +686,7 @@ void Neuropixels2::run()
                     apSamples[j * count + packetNum] =
                         float (data[packetNum * 384 + j]) / bitScaling / amplifierGain * 1000000.0f; // convert to microvolts
 
-                    apView->addSample (apSamples[(j * count) + packetNum], j);
+                    // apView->addSample (apSamples[(j * count) + packetNum], j);
                 }
 
                 ap_timestamps[packetNum] = ap_timestamp++;
@@ -697,6 +697,7 @@ void Neuropixels2::run()
             }
 
             apBuffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
+            apView->addToBuffer (apSamples, count);
         }
         else if (errorCode != Neuropixels::SUCCESS)
         {
