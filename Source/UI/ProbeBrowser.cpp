@@ -1004,7 +1004,7 @@ Colour ProbeBrowser::getElectrodeColour (int i)
 
 void ProbeBrowser::timerCallback()
 {
-    if (parent->mode != VisualizationMode::ACTIVITY_VIEW)
+    if (parent->mode != VisualizationMode::ACTIVITY_VIEW || ! isShowing())
         return;
 
     const float* peakToPeakValues = parent->probe->getPeakToPeakValues (activityToView);
