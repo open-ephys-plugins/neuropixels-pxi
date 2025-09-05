@@ -1,0 +1,105 @@
+name: Build XDAQ-Neuropixels plugin
+
+on:
+    workflow_dispatch:
+    workflow_call:
+
+jobs:
+    build:
+        strategy:
+            matrix:
+                include:
+                    - os: windows-2022
+                      arch: x64
+                      base_name: windows-x86_64
+                    - os: macos-15
+                      arch: arm64
+                      base_name: mac-arm64
+                    - os: macos-15
+                      arch: x64
+                      base_name: mac-x86_64
+                    - os: ubuntu-22.04
+                      arch: x64
+                      base_name: linux-x86_64
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - name: Install build system
+              run: pipx install conan ninja
+
+            - name: Setup Compiler (Windows)
+              uses: ilammy/msvc-dev-cmd@v1
+              if: matrix.os == 'windows-2022'
+
+            - name: Setup Compiler (MacOS)
+              if: matrix.os == 'macos-15'
+              run: |
+                  echo "CC=$(brew --prefix llvm@18)/bin/clang" >> $GITHUB_ENV
+                  echo "CXX=$(brew --prefix llvm@18)/bin/clang++" >> $GITHUB_ENV
+
+            - name: Setup Compiler and dependencies (Ubuntu 22.04)
+              if: matrix.os == 'ubuntu-22.04'
+              run: |
+                sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+                sudo apt-get update -y
+                sudo apt-get install -y freeglut3-dev libfreetype*-dev libxinerama-dev libxcursor-dev libasound2-dev libxrandr-dev libcurl4-openssl-dev
+                sudo apt-get install -y gcc-13 g++-13
+                echo "CC=gcc-13" >> $GITHUB_ENV
+                echo "CXX=g++-13" >> $GITHUB_ENV
+
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: conan cache
+              id: conan_cache
+              uses: actions/cache@v4
+              with:
+                  path: ~/.conan2
+                  key: conan-${{ matrix.os }}-${{ matrix.arch }}
+
+            - name: Clone submodules and setup Conan
+              run: |
+                  conan config install .github/conan_profiles/${{ matrix.os }}-${{ matrix.arch }} -tf profiles
+                  git submodule update --init --recursive
+                  conan create libxdaq-dist --profile:all ${{ matrix.os }}-${{ matrix.arch }} -s build_type=Release --build=missing
+                  conan create Resources/xdaq_npapi --profile:all ${{ matrix.os }}-${{ matrix.arch }} -s build_type=Release --build=missing
+
+            - name: Configure plugin-GUI
+              run: |
+                  cmake -G"Ninja Multi-Config" -S plugin-GUI -B plugin-GUI/Build
+
+            - name: Get plugin-GUI commit hash
+              id: plugin_gui_hash
+              shell: bash
+              run: echo "commit=$(git -C plugin-GUI rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+            - name: open-ephys.lib cache
+              if: matrix.os == 'windows-2022'
+              id: open-ephys_lib_cache
+              uses: actions/cache@v4
+              with:
+                  path: plugin-GUI/Build/Release/open-ephys.lib
+                  key: open-ephys-lib-${{ matrix.os }}-${{ matrix.arch }}-${{ steps.plugin_gui_hash.outputs.commit }}
+
+            - name: Build plugin-GUI
+              if: matrix.os == 'windows-2022' && steps.open-ephys_lib_cache.outputs.cache-hit != 'true'
+              run: |
+                  cmake --build plugin-GUI/Build --config Release --target open-ephys
+
+            - name: Build XDAQ-Neuropixels
+              run: |
+                  conan install . --build=missing --profile:all ${{ matrix.os }}-${{ matrix.arch }} -s build_type=Release
+                  cmake -S . -B build/Release --preset conan-release -DCMAKE_INSTALL_PREFIX=install -DGUI_BASE_DIR=plugin-GUI
+                  cmake --build build/Release --preset conan-release --target install
+
+            - name: zip
+              shell: bash
+              run: |
+                  7z a ${{ matrix.base_name }}.zip ./install/*
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ matrix.base_name }}
+                  path: ${{ matrix.base_name }}.zip
