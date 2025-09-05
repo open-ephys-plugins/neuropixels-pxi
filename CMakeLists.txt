@@ -9,7 +9,7 @@ if (NOT DEFINED GUI_BASE_DIR)
 endif()
 get_filename_component(GUI_BASE_DIR ${GUI_BASE_DIR} ABSOLUTE)
 
-set(PLUGIN_NAME XDAQ-OE-NP)
+set(PLUGIN_NAME XDAQ-Neuropixels)
 project(${PLUGIN_NAME} VERSION 0.1.0 LANGUAGES CXX)
 
 set(GUI_COMMONLIB_DIR ${GUI_BASE_DIR}/installed_libs)
@@ -44,8 +44,13 @@ target_compile_features(${PLUGIN_NAME} PUBLIC cxx_auto_type cxx_generalized_init
 target_include_directories(${PLUGIN_NAME} PUBLIC ${GUI_BASE_DIR}/JuceLibraryCode ${GUI_BASE_DIR}/JuceLibraryCode/modules ${GUI_BASE_DIR}/Plugins/Headers ${GUI_COMMONLIB_DIR}/include)
 
 #Libraries and compiler options
+find_package(fmt REQUIRED)
 find_package(libxdaqnp REQUIRED)
-target_link_libraries(${PLUGIN_NAME} PRIVATE xdaq::xdaq_npapi)
+find_package(xdaq REQUIRED)
+target_link_libraries(${PLUGIN_NAME} PRIVATE
+	fmt::fmt
+	xdaq::xdaq_npapi
+)
 
 set_target_properties(${PLUGIN_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
@@ -92,6 +97,10 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 		LIBRARY DESTINATION ${SHARED_INSTALL_DIR}
 		RUNTIME DESTINATION ${SHARED_INSTALL_DIR}
 	)
+	install(IMPORTED_RUNTIME_ARTIFACTS xdaq::thor_device_manager
+		LIBRARY DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME}/device_managers
+		RUNTIME DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME}/device_managers
+	)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
 	set_target_properties(${PLUGIN_NAME} PROPERTIES
 		BUILD_WITH_INSTALL_RPATH TRUE
@@ -101,6 +110,10 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
 		LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}/${PLUGIN_NAME}.bundle/Contents/Frameworks
 		RUNTIME DESTINATION ${PLUGIN_INSTALL_DIR}/${PLUGIN_NAME}.bundle/Contents/Frameworks
 	)
+	install(IMPORTED_RUNTIME_ARTIFACTS xdaq::thor_device_manager
+		LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}/${PLUGIN_NAME}.bundle/Contents/Frameworks/device_managers
+		RUNTIME DESTINATION ${PLUGIN_INSTALL_DIR}/${PLUGIN_NAME}.bundle/Contents/Frameworks/device_managers
+	)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set_target_properties(${PLUGIN_NAME} PROPERTIES
 		BUILD_WITH_INSTALL_RPATH TRUE
@@ -109,6 +122,10 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	install(IMPORTED_RUNTIME_ARTIFACTS xdaq::xdaq_npapi
 		LIBRARY DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME}
 		RUNTIME DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME}
+	)
+	install(IMPORTED_RUNTIME_ARTIFACTS xdaq::thor_device_manager
+		LIBRARY DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME}/device_managers
+		RUNTIME DESTINATION ${SHARED_INSTALL_DIR}/${PLUGIN_NAME}/device_managers
 	)
 endif()
 

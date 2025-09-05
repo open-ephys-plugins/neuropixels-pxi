@@ -44,7 +44,7 @@ extern "C" EXPORT void getLibInfo (Plugin::LibraryInfo* info)
         (std::to_string(PLUGIN_VERSION_MAJOR) + "." + std::to_string(PLUGIN_VERSION_MINOR) + "." +
          std::to_string(PLUGIN_VERSION_PATCH));
     info->apiVersion = PLUGIN_API_VER;
-    info->name = "XDAQ-NP";
+    info->name = "XDAQ-Neuropixels";
     info->libVersion = version.c_str();
     info->numPlugins = NUM_PLUGINS;
 }
@@ -55,7 +55,7 @@ extern "C" EXPORT int getPluginInfo (int index, Plugin::PluginInfo* info)
     {
         case 0:
             info->type = Plugin::Type::DATA_THREAD;
-            info->dataThread.name = "XDAQ-NP";
+            info->dataThread.name = "XDAQ-Neuropixels";
             info->dataThread.creator = &createDataThread<XDAQThread>;
             break;
         default:

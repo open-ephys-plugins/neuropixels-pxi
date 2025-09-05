@@ -5,7 +5,7 @@ from conan.tools.files import get, copy
 
 class libxdaqnp(ConanFile):
     name = "libxdaqnp"
-    version = "0.2.0"
+    version = "0.3.1"
     settings = "os", "compiler", "build_type", "arch"
     build_policy = "missing"
 
@@ -14,6 +14,7 @@ class libxdaqnp(ConanFile):
 
     def requirements(self):
         self.requires("fmt/10.2.1")
+        self.requires("libxdaq/0.5.0")
         self.requires("spdlog/1.13.0")
 
     def configure(self):

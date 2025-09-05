@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "API/NeuropixAPI.h"
+#include <NeuropixAPI.hpp>
 
 #include "UI/ActivityView.h"
 #include "UI/ProbeNameConfig.h"

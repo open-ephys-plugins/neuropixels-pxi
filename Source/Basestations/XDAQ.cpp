@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "XDAQ.h"
-#include <mutex>
+#include <fmt/format.h>
 
 #include "../Headstages/Headstage1.h"
 #include "../Headstages/Headstage2.h"
@@ -36,7 +36,7 @@ void XDAQ_BS::getInfo()
 
     errorCode = Neuropixels::bs_getFirmwareInfo (slot, &firmwareInfo);
 
-    info.boot_version = String (firmwareInfo.major) + "." + String (firmwareInfo.minor) + String (firmwareInfo.build);
+    info.boot_version = String (fmt::format ("{}/{}/{}", firmwareInfo.major, firmwareInfo.minor, firmwareInfo.build));
 
     info.part_number = String (firmwareInfo.name);
 }
@@ -235,7 +235,6 @@ void XDAQ_BS::initialize (bool signalChainIsLoading)
     {
         LOGC ("XDAQ initialized on slot ", slot);
     }
-
 }
 
 // bool XDAQ::np_initialize() {

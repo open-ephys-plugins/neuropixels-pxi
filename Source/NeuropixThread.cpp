@@ -33,6 +33,7 @@
 
 #include "UI/NeuropixInterface.h"
 
+#include <filesystem>
 #include <vector>
 #include <thread>
 
@@ -56,8 +57,28 @@ std::unique_ptr<GenericEditor> NeuropixThread::createEditor (SourceNode* sn)
 void Initializer::run()
 {
     setProgress (-1); // endless moving progress bar
-
-    Neuropixels::scanBS();
+    namespace fs = std::filesystem;
+#if defined(OS_MACOS)
+    auto sharedDir =
+        fs::path(CoreServices::getSavedStateDirectory().getFullPathName().toStdString());
+    fs::path pluginDir = sharedDir / "plugins";
+    if (!fs::exists(pluginDir)) {
+        pluginDir = sharedDir / ("plugins-api" + std::to_string(PLUGIN_API_VER));
+        if (!fs::exists(pluginDir)) throw std::runtime_error("Shared directory not found");
+    }
+    auto device_manager_dir = pluginDir / "XDAQ-Neuropixels.bundle" / "Contents" / "Frameworks" / "device_managers";
+#else
+    auto sharedDir =
+        fs::path(CoreServices::getSavedStateDirectory().getFullPathName().toStdString());
+    if (fs::exists(sharedDir / "shared"))
+        sharedDir = sharedDir / "shared";
+    else {
+        sharedDir = sharedDir / ("shared-api" + std::to_string(PLUGIN_API_VER));
+        if (!fs::exists(sharedDir)) throw std::runtime_error("Shared directory not found");
+    }
+    auto device_manager_dir = sharedDir / "XDAQ-Neuropixels" / "device_managers";
+#endif
+    Neuropixels::scanBS(device_manager_dir.c_str());
     Neuropixels::basestationID list[16];
     int count = getDeviceList (&list[0], 16);
 

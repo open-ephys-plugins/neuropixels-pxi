@@ -604,6 +604,7 @@ void NeuropixInterface::updateInfoString()
 
     infoString += "Basestation";
     infoString += "\n Firmware version: " + basestation->info.boot_version;
+    infoString += "\n Part number: " + basestation->info.part_number;
     infoString += "\n";
     infoString += "\n";
 
