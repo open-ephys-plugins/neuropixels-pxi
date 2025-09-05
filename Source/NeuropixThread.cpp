@@ -78,7 +78,7 @@ void Initializer::run()
     }
     auto device_manager_dir = sharedDir / "XDAQ-Neuropixels" / "device_managers";
 #endif
-    Neuropixels::scanBS(device_manager_dir.c_str());
+    Neuropixels::scanBS(device_manager_dir.generic_string().c_str());
     Neuropixels::basestationID list[16];
     int count = getDeviceList (&list[0], 16);
 
@@ -1014,6 +1014,7 @@ ProbeNameConfig::NamingScheme NeuropixThread::getNamingSchemeForSlot (int slot)
     for (auto bs : getBasestations())
         if (bs->slot == slot)
             return bs->getNamingScheme();
+    return ProbeNameConfig::AUTO_NAMING;
 }
 
 /** Stops data transfer.*/

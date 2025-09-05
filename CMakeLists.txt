@@ -29,8 +29,6 @@ endif()
 
 target_compile_definitions(${PLUGIN_NAME} PRIVATE
     OEPLUGIN
-    $<$<PLATFORM_ID:Windows>:JUCE_API=__declspec(dllimport)>
-    $<$<PLATFORM_ID:Windows>:_CRT_SECURE_NO_WARNINGS>
     $<$<PLATFORM_ID:Linux>:JUCE_DISABLE_NATIVE_FILECHOOSERS=1>
     $<$<CONFIG:Debug>:DEBUG=1>
     $<$<CONFIG:Debug>:_DEBUG=1>
@@ -54,6 +52,8 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE
 
 set_target_properties(${PLUGIN_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+	target_compile_definitions(${PLUGIN_NAME} PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+	target_compile_definitions(${PLUGIN_NAME} PRIVATE "JUCE_API=__declspec(dllimport)")
 	target_link_libraries(${PLUGIN_NAME} PRIVATE
 		${GUI_BASE_DIR}/Build/${CONFIGURATION_FOLDER}/open-ephys.lib
 	)
