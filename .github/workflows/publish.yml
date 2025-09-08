@@ -1,0 +1,194 @@
+name: Publish XDAQ-Neuropixels
+
+on:
+    workflow_dispatch:
+    push:
+        tags:
+            - "xdaq-v*"
+
+jobs:
+    build:
+        uses: ./.github/workflows/build.yml
+
+    merge_macos:
+        runs-on: macos-15
+        needs: build
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Download all artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: dist
+
+            - name: Merge macOS universal bundle
+              run: |
+                  set -e
+                  mkdir dist/output
+
+                  if [[ ! -f dist/mac-arm64/mac-arm64.zip || ! -f dist/mac-x86_64/mac-x86_64.zip ]]; then
+                      echo "Missing mac-arm64.zip or mac-x86_64.zip"
+                      exit 1
+                  fi
+                  unzip -q dist/mac-arm64/mac-arm64.zip -d dist/mac-arm64
+                  unzip -q dist/mac-x86_64/mac-x86_64.zip -d dist/mac-x86_64
+
+                  ./Resources/merge_universal.sh \
+                      dist/mac-arm64/plugins/XDAQ-Neuropixels.bundle \
+                      dist/mac-x86_64/plugins/XDAQ-Neuropixels.bundle \
+                      dist/mac-universal/plugins/XDAQ-Neuropixels.bundle
+
+            - name: Sign and Notarize macOS universal bundle
+              env:
+                  MACOS_CERTIFICATE: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+                  MACOS_CERTIFICATE_PWD: ${{ secrets.BUILD_CERTIFICATE_PWD }}
+                  MACOS_CERTIFICATE_NAME: ${{ secrets.BUILD_CERTIFICATE_NAME }}
+                  MACOS_CI_KEYCHAIN_PWD: ${{ secrets.PROD_MACOS_CI_KEYCHAIN_PWD }}
+                  PROD_MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
+                  PROD_MACOS_NOTARIZATION_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
+                  PROD_MACOS_NOTARIZATION_PWD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
+              run: |
+                  set -e
+
+                  echo "Creating keychain"
+                  security create-keychain -p $MACOS_CI_KEYCHAIN_PWD build.keychain
+                  security default-keychain -s build.keychain
+                  echo "Unlocking keychain"
+                  security unlock-keychain -p $MACOS_CI_KEYCHAIN_PWD build.keychain
+
+                  echo "Importing certificate"
+                  echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+                  security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+                  security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_CI_KEYCHAIN_PWD build.keychain
+
+                  echo "Signing the bundle"
+                  codesign --deep --force --strict --verbose --timestamp \
+                    --sign "$MACOS_CERTIFICATE_NAME" dist/mac-universal/plugins/XDAQ-Neuropixels.bundle
+                  echo "Verifying the signed bundle"
+                  codesign --verify --verbose=2 dist/mac-universal/plugins/XDAQ-Neuropixels.bundle
+
+                  echo "Creating notarization profile"
+                  xcrun notarytool store-credentials "notarytool-profile" \
+                    --apple-id "$PROD_MACOS_NOTARIZATION_APPLE_ID" \
+                    --team-id "$PROD_MACOS_NOTARIZATION_TEAM_ID" \
+                    --password "$PROD_MACOS_NOTARIZATION_PWD"
+
+                  echo "Submitting for notarization"                  
+                  ditto -c -k --keepParent \
+                    dist/mac-universal/plugins/XDAQ-Neuropixels.bundle \
+                    dist/mac-universal/XDAQ-Neuropixels.bundle.zip
+                  xcrun notarytool submit dist/mac-universal/XDAQ-Neuropixels.bundle.zip \
+                    --keychain-profile "notarytool-profile" --wait
+
+                  echo "Checking signed bundle"
+                  codesign --verify --verbose=2 \
+                    dist/mac-universal/plugins/XDAQ-Neuropixels.bundle
+
+                  echo "Stapling the bundle"
+                  xcrun stapler staple dist/mac-universal/plugins/XDAQ-Neuropixels.bundle
+
+                  echo "Checking signed bundle"
+                  codesign --verify --verbose=2 \
+                    dist/mac-universal/plugins/XDAQ-Neuropixels.bundle
+
+                  spctl -a -vvv dist/mac-universal/plugins/XDAQ-Neuropixels.bundle
+
+                  ditto -c -k --keepParent --rsrc --extattr dist/mac-universal/plugins dist/mac-universal.zip
+
+                  echo "Unzipping the final archive to another folder for verification"
+                  ditto -x -k dist/mac-universal.zip dist/mac-universal-verify
+
+                  codesign --verify --verbose=2 \
+                    dist/mac-universal-verify/plugins/XDAQ-Neuropixels.bundle
+
+                  spctl -a -vvv dist/mac-universal-verify/plugins/XDAQ-Neuropixels.bundle
+
+            - name: Upload merged macOS bundle
+              uses: actions/upload-artifact@v4
+              with:
+                  name: mac-universal
+                  path: dist/mac-universal.zip
+
+    publish:
+        runs-on: ubuntu-24.04
+        needs: [merge_macos]
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Extract API Version
+              run: |
+                  set -e
+                  git submodule update --init
+                  echo PLUGIN_API=$(grep plugin-GUI/Source/Processors/PluginManager/OpenEphysPlugin.h \
+                    -e '#define PLUGIN_API_VER' | \
+                    sed -E 's/^#define[[:space:]]+PLUGIN_API_VER[[:space:]]+([0-9]+)/\1/') >> $GITHUB_ENV
+
+            - name: Download all artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: dist
+
+            - name: Flatten dist folder
+              run: |
+                  find dist -name '*.zip' -exec mv {} dist/ \;
+                  find dist -mindepth 1 -type d -exec rm -rf {} +
+                  ls -la dist
+
+            - name: Upload to Artifactory
+              run: |
+                  set -e
+
+                  # Ensure this is a tag in the form xdaq-v*
+                  ref="${{ github.ref_name }}"
+                  if [[ "$ref" != xdaq-v* ]]; then
+                      echo "Not a release tag: $ref"
+                      ref="xdaq-v0.0.0"  # Default to a dummy version if not a valid tag
+                  fi
+
+                  upload_tag="${ref#xdaq-v}"
+                  api_ver="$PLUGIN_API"
+
+                  if [[ -z dist/windows-x86_64 ]]; then
+                        echo "Missing dist/windows-x86_64"
+                        exit 1
+                  fi
+                  win_new_name="XDAQ-Neuropixels-windows_${upload_tag}-API${api_ver}.zip"
+                  mv dist/windows-x86_64.zip dist/$win_new_name
+                  echo "Created: dist/$win_new_name"
+
+                  if [[ -z dist/mac-universal ]]; then
+                        echo "Missing dist/mac-universal"
+                        exit 1
+                  fi
+                  mac_new_name="XDAQ-Neuropixels-mac_${upload_tag}-API${api_ver}.zip"
+                  mv dist/mac-universal.zip dist/$mac_new_name
+                  echo "Created: dist/$mac_new_name"
+
+                  if [[ -z dist/linux-x86_64 ]]; then
+                          echo "Missing dist/linux-x86_64"
+                          exit 1
+                  fi
+                  linux_new_name="XDAQ-Neuropixels-linux_${upload_tag}-API${api_ver}.zip"
+                  mv dist/linux-x86_64.zip dist/$linux_new_name
+                  echo "Created: dist/$linux_new_name"
+
+                  if [[ -z "${{ secrets.ARTIFACTORY_ACCESS_TOKEN  }}" ]]; then
+                      echo "No Artifactory API key set, skipping upload"
+                      exit 0
+                  fi
+
+                  curl -H "X-JFrog-Art-Api:${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}" -T "dist/$win_new_name" \
+                    "https://openephys.jfrog.io/artifactory/XDAQ-Neuropixels-plugin/windows/$win_new_name"
+                  curl -H "X-JFrog-Art-Api:${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}" -T "dist/$mac_new_name" \
+                    "https://openephys.jfrog.io/artifactory/XDAQ-Neuropixels-plugin/mac/$mac_new_name"
+                  curl -H "X-JFrog-Art-Api:${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}" -T "dist/$linux_new_name" \
+                    "https://openephys.jfrog.io/artifactory/XDAQ-Neuropixels-plugin/linux/$linux_new_name"
+
+            - name: Upload dist folder
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dist
+                  path: dist
