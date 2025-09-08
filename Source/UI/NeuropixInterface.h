@@ -184,6 +184,7 @@ private:
     std::unique_ptr<UtilityButton> bankViewButton;
     std::unique_ptr<UtilityButton> activityViewButton;
     std::unique_ptr<UtilityButton> activityViewFilterButton;
+    std::unique_ptr<UtilityButton> activityViewCARButton;
 
     std::unique_ptr<UtilityButton> annotationButton;
     std::unique_ptr<UtilityButton> bistButton;

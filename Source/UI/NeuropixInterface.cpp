@@ -261,7 +261,15 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         activityViewFilterButton->setBounds (500, currentHeight + 24, 70, 18);
         addAndMakeVisible (activityViewFilterButton.get());
 
-        currentHeight += 80;
+        activityViewCARButton = std::make_unique<UtilityButton> ("CAR");
+        activityViewCARButton->addListener (this);
+        activityViewCARButton->setTooltip ("View common average referenced signal");
+        activityViewCARButton->setClickingTogglesState (true);
+        activityViewCARButton->setToggleState (true, dontSendNotification);
+        activityViewCARButton->setBounds (500, currentHeight + 44, 70, 18);
+        addAndMakeVisible (activityViewCARButton.get());
+
+        currentHeight += 105;
 
         if (probe->info.part_number == "NP1300") // Neuropixels Opto
         {
@@ -897,6 +905,10 @@ void NeuropixInterface::buttonClicked (Button* button)
     else if (button == activityViewFilterButton.get())
     {
         probe->setActivityViewFilterState (activityViewFilterButton->getToggleState());
+    }
+    else if (button == activityViewCARButton.get())
+    {
+        probe->setActivityViewCARState (activityViewCARButton->getToggleState());
     }
     else if (button == enableButton.get())
     {

@@ -46,12 +46,14 @@ Helper class for viewing real-time activity across the probe.
 class ActivityView
 {
 public:
-    ActivityView (int numChannels, int updateInterval, std::vector<std::vector<int>> blocks = {}, bool filterEnabled = false);
+    ActivityView (int numChannels, int updateInterval, std::vector<std::vector<int>> blocks = {}, int numAdcs = 0);
     ~ActivityView() {};
 
     const float* getPeakToPeakValues();
 
     void setBandpassFilterEnabled (bool enabled);
+
+    void setCommonAverageReferencingEnabled (bool enabled);
 
     void addToBuffer (float* samples, int numSamples, int blockIndex = 0);
 
@@ -59,6 +61,8 @@ public:
 
 private:
     void calculatePeakToPeakValues();
+
+    void applyCommonAverageReferencing (AudioBuffer<float>& buffer, int blockIndex, int numSamples);
 
     // Thread synchronization
     CriticalSection bufferMutex;
@@ -83,6 +87,12 @@ private:
     // Bandpass filter state
     bool filterEnabled;
     Array<Dsp::Filter*> filters;
+
+    // Common average referencing state
+    bool carEnabled;
+    int numAdcs;
+    std::vector<std::vector<int>> adcGroups; // Maps global channel index to ADC group index
+    std::vector<AudioBuffer<float>> adcBuffers; // One AudioBuffer per block, channels = ADC groups
 
     // 300 Hz low-pass filter
     const float lowCut = 300.0f;

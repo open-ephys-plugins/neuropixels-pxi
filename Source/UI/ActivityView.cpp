@@ -29,12 +29,14 @@ Helper class for viewing real-time activity across the probe.
 
 */
 
-ActivityView::ActivityView (int numChannels, int updateInterval_, std::vector<std::vector<int>> blocks_, bool filterEnabled_)
+ActivityView::ActivityView (int numChannels, int updateInterval_, std::vector<std::vector<int>> blocks_, int numAdcs)
     : numChannels (numChannels),
       updateInterval (updateInterval_),
-      filterEnabled (filterEnabled_),
+      filterEnabled (true), // Default to enabled
+      carEnabled (true),
       bufferIndex (0),
-      needsUpdate (false)
+      needsUpdate (false),
+      numAdcs (numAdcs)
 {
     if (blocks_.empty())
     {
@@ -90,6 +92,55 @@ ActivityView::ActivityView (int numChannels, int updateInterval_, std::vector<st
 
         filters.getLast()->setParams (params);
     }
+
+    // Initialize ADC grouping for CAR
+    if (numAdcs == 32) // Neuropixels 1.0
+    {
+        // Create ADC buffers for each block (12 ADC groups each)
+        adcGroups.resize (blocks.size());
+        adcBuffers.resize (blocks.size());
+
+        for (int blockIndex = 0; blockIndex < blocks.size(); ++blockIndex)
+        {
+            for (int i = 0; i < blocks[blockIndex].size(); i++)
+            {
+                adcGroups[blockIndex].push_back ((i / 2) % 12);
+            }
+            adcBuffers[blockIndex].setSize (12, updateInterval * 2);
+            adcBuffers[blockIndex].clear();
+        }
+    }
+    else if (numAdcs == 24) // Neuropixels 2.0
+    {
+        // Create ADC buffers for each block (16 ADC groups each)
+        adcGroups.resize (blocks.size());
+        adcBuffers.resize (blocks.size());
+
+        for (int blockIndex = 0; blockIndex < blocks.size(); ++blockIndex)
+        {
+            for (int i = 0; i < blocks[blockIndex].size(); i++)
+            {
+                adcGroups[blockIndex].push_back ((i / 2) % 16);
+            }
+            adcBuffers[blockIndex].setSize (16, updateInterval * 2);
+            adcBuffers[blockIndex].clear();
+        }
+    }
+    else
+    {
+        // Default to simple CAR for unknown probe types (numAdcs = 0));
+
+        // Create single ADC group per block
+        adcGroups.resize (blocks.size());
+        adcBuffers.resize (blocks.size());
+
+        for (int blockIndex = 0; blockIndex < blocks.size(); ++blockIndex)
+        {
+            adcGroups[blockIndex].resize (blocks[blockIndex].size(), 0);
+            adcBuffers[blockIndex].setSize (1, updateInterval * 2);
+            adcBuffers[blockIndex].clear();
+        }
+    }
 }
 
 const float* ActivityView::getPeakToPeakValues()
@@ -102,6 +153,12 @@ void ActivityView::setBandpassFilterEnabled (bool enabled)
 {
     const ScopedLock lock (bufferMutex);
     filterEnabled = enabled;
+}
+
+void ActivityView::setCommonAverageReferencingEnabled (bool enabled)
+{
+    const ScopedLock lock (bufferMutex);
+    carEnabled = enabled;
 }
 
 void ActivityView::addToBuffer (float* samples, int numSamples, int blockIndex)
@@ -193,6 +250,12 @@ void ActivityView::calculatePeakToPeakValues()
 
         abstractFifos[blockIndex]->finishedRead (numItems);
 
+        // Apply common average referencing if enabled (before filtering and analysis)
+        if (carEnabled)
+        {
+            applyCommonAverageReferencing (filteredBuffers[blockIndex], blockIndex, numItems);
+        }
+
         for (int chanIdx = 0; chanIdx < blocks[blockIndex].size(); ++chanIdx)
         {
             int globalChan = blocks[blockIndex][chanIdx];
@@ -207,6 +270,83 @@ void ActivityView::calculatePeakToPeakValues()
 
             Range<float> minMax = filteredBuffers[blockIndex].findMinMax (chanIdx, 0, numItems);
             peakToPeakValues[globalChan] = minMax.getEnd() - minMax.getStart();
+        }
+    }
+}
+
+void ActivityView::applyCommonAverageReferencing (AudioBuffer<float>& buffer, int blockIndex, int numSamples)
+{
+    if (numAdcs == 0 || adcGroups.empty() || adcBuffers.empty() || blockIndex >= adcBuffers.size())
+    {
+        // Fallback to simple CAR if ADC information is not available
+        int numChannels = blocks[blockIndex].size();
+
+        for (int sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
+        {
+            float commonAverage = 0.0f;
+
+            for (int chanIdx = 0; chanIdx < numChannels; ++chanIdx)
+            {
+                commonAverage += buffer.getSample (chanIdx, sampleIndex);
+            }
+
+            commonAverage /= numChannels;
+
+            for (int chanIdx = 0; chanIdx < numChannels; ++chanIdx)
+            {
+                float currentSample = buffer.getSample (chanIdx, sampleIndex);
+                buffer.setSample (chanIdx, sampleIndex, currentSample - commonAverage);
+            }
+        }
+        return;
+    }
+
+    // ADC-aware CAR
+    int numChannelsInBlock = blocks[blockIndex].size();
+    int numAdcGroups = adcBuffers[blockIndex].getNumChannels();
+
+    // Clear ADC buffers and reset counts for this block
+    adcBuffers[blockIndex].clear (0, numSamples);
+
+    // Sum samples by ADC group
+    for (int chanIdx = 0; chanIdx < numChannelsInBlock; ++chanIdx)
+    {
+        int adcGroup = adcGroups[blockIndex][chanIdx];
+        if (adcGroup < numAdcGroups)
+        {
+            adcBuffers[blockIndex].addFrom (adcGroup, // destChan
+                                            0, // destStartSample
+                                            buffer, // source
+                                            chanIdx, // sourceChan
+                                            0, // sourceStartSample
+                                            numSamples); // numSamples
+        }
+    }
+
+    float count = static_cast<float> (numAdcs);
+
+    // Calculate averages for each ADC group
+    for (int g = 0; g < numAdcGroups; ++g)
+    {
+        adcBuffers[blockIndex].applyGain (g, // channel
+                                          0, // startSample
+                                          numSamples, // numSamples
+                                          1.0f / count); // gain
+    }
+
+    // Subtract ADC group averages from channels
+    for (int chanIdx = 0; chanIdx < numChannelsInBlock; ++chanIdx)
+    {
+        int adcGroup = adcGroups[blockIndex][chanIdx];
+        if (adcGroup < numAdcGroups)
+        {
+            buffer.addFrom (chanIdx, // destChan
+                            0, // destStartSample
+                            adcBuffers[blockIndex], // source
+                            adcGroup, // sourceChan
+                            0, // sourceStartSample
+                            numSamples, // numSamples
+                            -1.0f); // gain
         }
     }
 }

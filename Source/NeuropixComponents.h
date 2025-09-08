@@ -593,6 +593,15 @@ public:
             lfpView->setBandpassFilterEnabled (shouldFilter);
     }
 
+    void setActivityViewCARState (bool shouldUseCar)
+    {
+        if (apView)
+            apView->setCommonAverageReferencingEnabled (shouldUseCar);
+
+        if (lfpView)
+            lfpView->setCommonAverageReferencingEnabled (shouldUseCar);
+    }
+
 protected:
     std::unique_ptr<ActivityView> apView;
     std::unique_ptr<ActivityView> lfpView;

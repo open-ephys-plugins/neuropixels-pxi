@@ -128,7 +128,7 @@ bool Neuropixels_QuadBase::open()
             }
         }
 
-        apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks, true);
+        apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks, probeMetadata.num_adcs);
     }
 
     return errorCode == Neuropixels::SUCCESS;
