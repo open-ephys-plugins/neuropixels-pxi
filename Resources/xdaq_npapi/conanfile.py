@@ -5,7 +5,7 @@ from conan.tools.files import get, copy
 
 class libxdaqnp(ConanFile):
     name = "libxdaqnp"
-    version = "0.3.1"
+    version = "0.3.3"
     settings = "os", "compiler", "build_type", "arch"
     build_policy = "missing"
 
