@@ -1379,7 +1379,7 @@ void NeuropixInterface::drawLegend (Graphics& g)
     g.setFont (15);
 
     int xOffset = 500;
-    int yOffset = 465;
+    int yOffset = 485;
 
     switch (mode)
     {
@@ -1400,7 +1400,7 @@ void NeuropixInterface::drawLegend (Graphics& g)
             g.setColour (Colours::yellow);
             g.fillRect (xOffset + 10, yOffset + 10, 15, 15);
 
-            g.setColour (Colours::grey);
+            g.setColour (Colour (180, 180, 180));
             g.fillRect (xOffset + 10, yOffset + 30, 15, 15);
 
             if (probe->type == ProbeType::NP2_1 || probe->type == ProbeType::NP2_4)
