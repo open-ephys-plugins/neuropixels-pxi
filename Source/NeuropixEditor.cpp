@@ -559,8 +559,17 @@ NeuropixEditor::~NeuropixEditor()
 
 }
 
+constexpr static auto get_visualizer_name(DeviceType t){
+    if (t == ONEBOX)
+        return "OneBox";
+    else if (t == XDAQ)
+        return "XDAQ-Neuropixels";
+    else
+        return "Neuropix PXI";
+}
+
 NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
-    : VisualizerEditor (parentNode, t->type == ONEBOX ? "OneBox" : "Neuropix PXI")
+    : VisualizerEditor (parentNode, get_visualizer_name(t->type))
 {
     canvas = nullptr;
 
