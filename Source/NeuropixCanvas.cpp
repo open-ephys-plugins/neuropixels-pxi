@@ -27,6 +27,7 @@
 #include "NeuropixThread.h"
 #include "UI/NeuropixInterface.h"
 #include "UI/OneBoxInterface.h"
+#include "UI/SurveyInterface.h"
 
 SettingsUpdater* SettingsUpdater::currentThread = nullptr;
 
@@ -58,6 +59,12 @@ void CustomTabComponent::currentTabChanged (int newCurrentTabIndex, const String
 {
     if (isTopLevel)
     {
+        if (newCurrentTabName.containsIgnoreCase ("Survey"))
+        {
+            editor->selectSource (nullptr);
+            return;
+        }
+
         TabbedComponent* currentTab = (TabbedComponent*) getCurrentContentComponent();
 
         if (currentTab != nullptr)
@@ -101,7 +108,7 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
                                       basestationTab,
                                       true);
 
-         LOGC ("Adding tab for ", String (" Slot " + String (basestation->slot) + " "));
+        LOGC ("Adding tab for ", String (" Slot " + String (basestation->slot) + " "));
 
         basestationTab->setTabBarDepth (26);
         basestationTab->setIndent (0); // gap to leave around the edge
@@ -113,12 +120,29 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
         populateSourceTabs (basestation, basestationTab, topLevelTabNumber);
     }
 
+    // Add a top-level Survey tab first
+    if (availableBasestations.size() > 0 && thread->getProbes().size() > 0)
+    {
+        SurveyInterface* surveyInterface = new SurveyInterface (thread, editor, this);
+        settingsInterfaces.add ((SettingsInterface*) surveyInterface);
+        topLevelTabComponent->addTab (String (" Survey "),
+                                      findColour (ThemeColours::componentBackground).darker (0.2f),
+                                      surveyInterface->viewport.get(),
+                                      false);
+
+        topLevelTabIndex.add (topLevelTabNumber);
+
+        dataSources.add (nullptr);
+
+        topLevelTabNumber += 1;
+    }
+
     topLevelTabComponent->setCurrentTabIndex (topLevelTabNumber - 1);
 
     savedSettings.probeType = ProbeType::NONE;
 }
 
-void NeuropixCanvas::populateSourceTabs(Basestation* basestation, CustomTabComponent* basestationTab, int &topLevelTabNumber)
+void NeuropixCanvas::populateSourceTabs (Basestation* basestation, CustomTabComponent* basestationTab, int& topLevelTabNumber)
 {
     int probeCount = basestation->getProbes().size();
 
@@ -135,7 +159,7 @@ void NeuropixCanvas::populateSourceTabs(Basestation* basestation, CustomTabCompo
             NeuropixInterface* neuropixInterface = new NeuropixInterface (source, thread, editor, this);
             settingsInterfaces.add ((SettingsInterface*) neuropixInterface);
 
-            LOGD("### Setting tab name: ", source->getName());
+            LOGD ("### Setting tab name: ", source->getName());
 
             basestationTab->addTab (" " + source->getName() + " ",
                                     findColour (ThemeColours::componentBackground),
@@ -210,6 +234,9 @@ void NeuropixCanvas::updateSettings()
 
     for (int i = 0; i < topLevelTabComponent->getNumTabs(); i++)
     {
+        if (topLevelTabComponent->getTabNames()[i].containsIgnoreCase ("Survey"))
+            continue;
+
         CustomTabComponent* t = (CustomTabComponent*) topLevelTabComponent->getTabContentComponent (i);
 
         for (int j = 0; j < t->getNumTabs(); j++)
