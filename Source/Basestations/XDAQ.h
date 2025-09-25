@@ -32,7 +32,7 @@ class XDAQ_BS : public Basestation
 {
 public:
     /** Constructor */
-    XDAQ_BS (NeuropixThread*, int slot);
+    XDAQ_BS (NeuropixThread*, int serial_number);
 
     /** Destructor */
     ~XDAQ_BS();

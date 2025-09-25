@@ -197,14 +197,14 @@ void Initializer::run()
                     }
                 }
             }
-            else if ((list[i].platformid == Neuropixels::NPPlatform_ALL) && (type == DeviceType::XDAQ)){
+            else if ((list[i].platformid == Neuropixels::NPPlatform_USB) && (type == DeviceType::XDAQ)){
                 deviceNum++;
                 LOGC ("  Opening XDAQ on slot ", slotID);
                 setStatusMessage ("Opening XDAQ with serial number " + String ::toHexString(list[i].ID));
 
                 if (! threadShouldExit())
                 {
-                    auto bs = new XDAQ_BS(neuropixThread, slotID);
+                    auto bs = new XDAQ_BS(neuropixThread, list[i].ID);
 
                     if (bs->open())
                     {

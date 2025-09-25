@@ -41,11 +41,23 @@ void XDAQ_BS::getInfo()
     info.part_number = String (firmwareInfo.name);
 }
 
-XDAQ_BS::XDAQ_BS (NeuropixThread* neuropixThread, int slot) : Basestation (neuropixThread, slot)
+XDAQ_BS::XDAQ_BS (NeuropixThread* neuropixThread, int serial_number) : Basestation (neuropixThread, -1)
 {
     type = BasestationType::XDAQ;
-
-    slot_c = slot;
+    for (int next_slot = 1; next_slot < 16; ++next_slot)
+    {
+        errorCode = Neuropixels::mapBS (serial_number, next_slot);
+        if (errorCode != Neuropixels::SUCCESS)
+            continue;
+        slot_c = slot = next_slot;
+        LOGD ("Successfully mapped XDAQ with serial number ", serial_number, " to slot ", next_slot);
+        break;
+    }
+    if (slot == -1)
+    {
+        LOGE ("Failed to map XDAQ with serial number ", serial_number);
+        return;
+    }
 
     customPortNames.clear();
 
@@ -131,7 +143,12 @@ void XDAQ_BS::searchForProbes()
         if (detected && errorCode == Neuropixels::SUCCESS)
         {
             Neuropixels::HardwareID hardwareID;
-            Neuropixels::getHeadstageHardwareID (slot, port, &hardwareID);
+            if (auto r = Neuropixels::getHeadstageHardwareID (slot, port, &hardwareID); r != Neuropixels::SUCCESS)
+            {
+                LOGE ("Failed to get headstage hardware ID on slot ", slot, ", port ", port, ", error code: ", r);
+                headstages.add (nullptr);
+                continue;
+            }
 
             String hsPartNumber = String (hardwareID.ProductNumber);
 
