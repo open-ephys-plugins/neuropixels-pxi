@@ -26,6 +26,7 @@
 
 #include <DspLib.h>
 #include <VisualizerEditorHeaders.h>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <unordered_map>
@@ -46,7 +47,11 @@ Helper class for viewing real-time activity across the probe.
 class ActivityView
 {
 public:
-    ActivityView (int numChannels, int updateInterval, std::vector<std::vector<int>> blocks = {}, int numAdcs = 0);
+    ActivityView (int numChannels,
+                  int updateInterval,
+                  std::vector<std::vector<int>> blocks = {},
+                  int numAdcs = 0,
+                  int totalElectrodes = -1);
     ~ActivityView() {};
 
     const float* getPeakToPeakValues();
@@ -59,6 +64,12 @@ public:
 
     void reset (int blockIndex = 0);
 
+    void setChannelToElectrodeMapping (const std::vector<int>& mapping);
+
+    void setSurveyMode (bool enabled, bool reset = true);
+
+    void resetSurveyData();
+
 private:
     void calculatePeakToPeakValues();
 
@@ -68,6 +79,7 @@ private:
     CriticalSection bufferMutex;
 
     int numChannels;
+    int totalElectrodes;
     std::vector<float> peakToPeakValues;
 
     // JUCE AudioBuffers for sample storage - one per block
@@ -81,6 +93,7 @@ private:
     bool needsUpdate;
 
     std::vector<std::vector<int>> blocks;
+    std::vector<int> channelToElectrode;
     std::vector<int> counters;
     int updateInterval;
 
@@ -93,6 +106,11 @@ private:
     int numAdcs;
     std::vector<std::vector<int>> adcGroups; // Maps global channel index to ADC group index
     std::vector<AudioBuffer<float>> adcBuffers; // One AudioBuffer per block, channels = ADC groups
+
+    // Survey averaging state
+    bool surveyMode;
+    std::vector<double> surveyAccumulation;
+    std::vector<uint64_t> surveySampleCount;
 
     // 300 Hz low-pass filter
     const float lowCut = 300.0f;

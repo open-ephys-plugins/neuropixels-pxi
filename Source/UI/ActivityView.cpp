@@ -23,20 +23,28 @@
 
 #include "ActivityView.h"
 
+#include <algorithm>
+
 /**
 
 Helper class for viewing real-time activity across the probe.
 
 */
 
-ActivityView::ActivityView (int numChannels, int updateInterval_, std::vector<std::vector<int>> blocks_, int numAdcs)
-    : numChannels (numChannels),
+ActivityView::ActivityView (int numChannels_,
+                            int updateInterval_,
+                            std::vector<std::vector<int>> blocks_,
+                            int numAdcs_,
+                            int totalElectrodes_)
+    : numChannels (numChannels_),
+      totalElectrodes (totalElectrodes_ > 0 ? totalElectrodes_ : numChannels_),
       updateInterval (updateInterval_),
-      filterEnabled (true), // Default to enabled
+      filterEnabled (true),
       carEnabled (true),
       bufferIndex (0),
       needsUpdate (false),
-      numAdcs (numAdcs)
+      numAdcs (numAdcs_),
+      surveyMode (false)
 {
     if (blocks_.empty())
     {
@@ -52,7 +60,16 @@ ActivityView::ActivityView (int numChannels, int updateInterval_, std::vector<st
         blocks = blocks_;
     }
 
-    peakToPeakValues.resize (numChannels, 0.0f);
+    peakToPeakValues.assign (totalElectrodes, 0.0f);
+    channelToElectrode.resize (numChannels, -1);
+    for (int i = 0; i < numChannels; ++i)
+    {
+        if (i < totalElectrodes)
+            channelToElectrode[i] = i;
+    }
+
+    surveyAccumulation.assign (totalElectrodes, 0.0);
+    surveySampleCount.assign (totalElectrodes, 0);
 
     // Initialize the sample buffers and FIFOs for each block
     sampleBuffers.resize (blocks.size());
@@ -198,9 +215,22 @@ void ActivityView::reset (int blockIndex)
 
     if (blockIndex < blocks.size())
     {
-        for (auto ch : blocks[blockIndex])
+        for (auto channelId : blocks[blockIndex])
         {
-            peakToPeakValues[ch] = 0.0f;
+            if (! isPositiveAndBelow (channelId, (int) channelToElectrode.size()))
+                continue;
+
+            const int electrodeIdx = channelToElectrode[(size_t) channelId];
+
+            if (! isPositiveAndBelow (electrodeIdx, (int) peakToPeakValues.size()))
+                continue;
+
+            peakToPeakValues[(size_t) electrodeIdx] = 0.0f;
+            if (isPositiveAndBelow (electrodeIdx, (int) surveyAccumulation.size()))
+            {
+                surveyAccumulation[(size_t) electrodeIdx] = 0.0;
+                surveySampleCount[(size_t) electrodeIdx] = 0;
+            }
         }
 
         counters[blockIndex] = 0;
@@ -213,14 +243,47 @@ void ActivityView::reset (int blockIndex)
     needsUpdate = false;
 }
 
+void ActivityView::setChannelToElectrodeMapping (const std::vector<int>& mapping)
+{
+    const ScopedLock lock (bufferMutex);
+
+    if ((int) mapping.size() != numChannels)
+        return;
+
+    channelToElectrode = mapping;
+}
+
+void ActivityView::setSurveyMode (bool enabled, bool reset)
+{
+    const ScopedLock lock (bufferMutex);
+    surveyMode = enabled;
+
+    if (reset)
+        resetSurveyData();
+}
+
+void ActivityView::resetSurveyData()
+{
+    std::fill (surveyAccumulation.begin(), surveyAccumulation.end(), 0.0);
+    std::fill (surveySampleCount.begin(), surveySampleCount.end(), 0);
+}
+
 void ActivityView::calculatePeakToPeakValues()
 {
+    const ScopedLock lock (bufferMutex);
+
     for (int blockIndex = 0; blockIndex < blocks.size(); ++blockIndex)
     {
         int numReady = abstractFifos[blockIndex]->getNumReady();
         int numItems = jmin (numReady, updateInterval);
         int startIndex1, blockSize1, startIndex2, blockSize2;
         abstractFifos[blockIndex]->prepareToRead (numItems, startIndex1, blockSize1, startIndex2, blockSize2);
+
+        if (numItems <= 0)
+        {
+            abstractFifos[blockIndex]->finishedRead (numItems);
+            continue;
+        }
 
         if (blockSize1 > 0)
         {
@@ -260,8 +323,11 @@ void ActivityView::calculatePeakToPeakValues()
         {
             int globalChan = blocks[blockIndex][chanIdx];
 
+            if (! isPositiveAndBelow (globalChan, numChannels))
+                continue;
+
             // Apply bandpass filter if enabled
-            if (filterEnabled)
+            if (filterEnabled && isPositiveAndBelow (globalChan, filters.size()))
             {
                 float* channelData = filteredBuffers[blockIndex].getWritePointer (chanIdx);
 
@@ -269,7 +335,27 @@ void ActivityView::calculatePeakToPeakValues()
             }
 
             Range<float> minMax = filteredBuffers[blockIndex].findMinMax (chanIdx, 0, numItems);
-            peakToPeakValues[globalChan] = minMax.getEnd() - minMax.getStart();
+            const float amplitude = minMax.getEnd() - minMax.getStart();
+
+            int electrodeIdx = -1;
+            if (isPositiveAndBelow (globalChan, (int) channelToElectrode.size()))
+                electrodeIdx = channelToElectrode[(size_t) globalChan];
+
+            if (! isPositiveAndBelow (electrodeIdx, (int) peakToPeakValues.size()))
+                continue;
+
+            if (surveyMode && isPositiveAndBelow (electrodeIdx, (int) surveyAccumulation.size()))
+            {
+                surveyAccumulation[(size_t) electrodeIdx] += amplitude;
+                surveySampleCount[(size_t) electrodeIdx] += 1;
+
+                const double count = static_cast<double> (surveySampleCount[(size_t) electrodeIdx]);
+                peakToPeakValues[(size_t) electrodeIdx] = count > 0.0 ? (float) (surveyAccumulation[(size_t) electrodeIdx] / count) : amplitude;
+            }
+            else
+            {
+                peakToPeakValues[(size_t) electrodeIdx] = amplitude;
+            }
         }
     }
 }

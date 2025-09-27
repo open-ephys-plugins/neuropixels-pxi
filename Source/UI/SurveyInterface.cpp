@@ -387,33 +387,27 @@ void SurveyRunner::run()
                 while (editor->uiLoader->isThreadRunning() && ! threadShouldExit())
                     Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 10);
 
+                // Prepare activity views for survey averaging and start acquisition
+                probe->setActivityViewSurveyMode (true, ActivityToView::APVIEW);
+                if (probe->generatesLfpData())
+                    probe->setActivityViewSurveyMode (true, ActivityToView::LFPVIEW);
+
                 // Start acquisition for this window
                 thread->startAcquisition();
 
                 // Reset activity views and allow a short settle to avoid mixing prior config data
-                // probe->resetActivityViews();
                 Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 300);
 
                 // Collect P2P over the requested window; sample at ~10 Hz (for both AP and LFP if available)
                 const double startMs = Time::getMillisecondCounterHiRes();
                 const double durationMs = secondsPer * 1000.0;
-                int samples = 0;
-                std::vector<double> accumAP (probe->channel_count, 0.0);
-                std::vector<double> accumLFP (probe->channel_count, 0.0);
-
                 while ((Time::getMillisecondCounterHiRes() - startMs) < durationMs && ! threadShouldExit())
                 {
-                    const float* p2pAP = probe->getPeakToPeakValues (ActivityToView::APVIEW);
-                    if (p2pAP != nullptr)
-                        for (int i = 0; i < probe->channel_count; ++i)
-                            accumAP[i] += p2pAP[i];
+                    probe->getPeakToPeakValues (ActivityToView::APVIEW);
 
-                    const float* p2pLFP = probe->getPeakToPeakValues (ActivityToView::LFPVIEW);
-                    if (p2pLFP != nullptr)
-                        for (int i = 0; i < probe->channel_count; ++i)
-                            accumLFP[i] += p2pLFP[i];
+                    if (probe->generatesLfpData())
+                        probe->getPeakToPeakValues (ActivityToView::LFPVIEW);
 
-                    samples++;
                     Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 100); // ~10 Hz
                 }
 
@@ -421,20 +415,41 @@ void SurveyRunner::run()
                 thread->stopAcquisition();
                 Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 100);
 
-                // Average and store back into the ActivityViews for immediate visualization
-                if (samples > 0)
-                {
-                    HeapBlock<float> averagedAP (probe->channel_count);
-                    HeapBlock<float> averagedLFP (probe->channel_count);
-                    for (int i = 0; i < probe->channel_count; ++i)
-                    {
-                        averagedAP[i] = (float) (accumAP[i] / (double) samples);
-                        averagedLFP[i] = (float) (accumLFP[i] / (double) samples);
-                    }
+                const int electrodeCount = probe->electrodeMetadata.size();
 
-                    // probe->setActivityViewPeakToPeak (averagedAP.getData(), probe->channel_count, ActivityToView::APVIEW);
-                    // probe->setActivityViewPeakToPeak (averagedLFP.getData(), probe->channel_count, ActivityToView::LFPVIEW);
+                HeapBlock<float> averagedAP (electrodeCount);
+                const float* apAverages = probe->getPeakToPeakValues (ActivityToView::APVIEW);
+                if (apAverages != nullptr)
+                {
+                    for (int i = 0; i < electrodeCount; ++i)
+                        averagedAP[i] = apAverages[i];
                 }
+                else
+                {
+                    for (int i = 0; i < electrodeCount; ++i)
+                        averagedAP[i] = 0.0f;
+                }
+
+                HeapBlock<float> averagedLFP;
+                if (probe->generatesLfpData())
+                {
+                    averagedLFP.malloc ((size_t) electrodeCount);
+                    const float* lfpAverages = probe->getPeakToPeakValues (ActivityToView::LFPVIEW);
+                    if (lfpAverages != nullptr)
+                    {
+                        for (int i = 0; i < electrodeCount; ++i)
+                            averagedLFP[i] = lfpAverages[i];
+                    }
+                    else
+                    {
+                        for (int i = 0; i < electrodeCount; ++i)
+                            averagedLFP[i] = 0.0f;
+                    }
+                }
+
+                probe->setActivityViewSurveyMode (false, ActivityToView::APVIEW, false);
+                if (probe->generatesLfpData())
+                    probe->setActivityViewSurveyMode (false, ActivityToView::LFPVIEW, false);
 
                 completed++;
                 setStatusMessage ("Surveying " + probe->getName() + ": bank " + String ((int) bank) + ", shank " + String (sh + 1));
@@ -539,7 +554,7 @@ void SurveyInterface::refreshProbeList()
             r.availableBanks.add (b);
         }
 
-        r.shankCount = jmax (1, p->probeMetadata.shank_count);
+        r.shankCount = p->type == ProbeType::QUAD_BASE ? 1 : jmax (1, p->probeMetadata.shank_count);
         rows.add (r);
     }
     if (table)
@@ -659,7 +674,7 @@ Component* SurveyInterface::refreshComponentForCell (int rowNumber, int columnId
             btn->setTooltip ("Select shanks");
         }
 
-        btn->setEnabled (rows.getReference (rowNumber).shankCount > 1);
+        btn->setEnabled (r.shankCount > 1);
         btn->setButtonText (shanksSummary (r.chosenShanks, r.shankCount));
         btn->onClick = [this, rowNumber, btn]()
         {

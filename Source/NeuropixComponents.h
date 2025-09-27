@@ -27,6 +27,7 @@
 #include <DataThreadHeaders.h>
 #include <stdio.h>
 #include <string.h>
+#include <vector>
 
 #include "API/NeuropixAPI.h"
 
@@ -524,6 +525,7 @@ public:
     void updateSettings (ProbeSettings p)
     {
         settings = p;
+        refreshActivityViewMapping();
     }
 
     /** Updates the naming scheme */
@@ -602,9 +604,41 @@ public:
             lfpView->setCommonAverageReferencingEnabled (shouldUseCar);
     }
 
+    void setActivityViewSurveyMode (bool enabled, ActivityToView view, bool reset = true)
+    {
+        if (view == ActivityToView::APVIEW)
+        {
+            if (apView)
+                apView->setSurveyMode (enabled, reset);
+        }
+        else if (view == ActivityToView::LFPVIEW)
+        {
+            if (lfpView)
+                lfpView->setSurveyMode (enabled, reset);
+        }
+    }
+
 protected:
     std::unique_ptr<ActivityView> apView;
     std::unique_ptr<ActivityView> lfpView;
+
+    void refreshActivityViewMapping()
+    {
+        if (settings.selectedElectrode.size() != channel_count)
+            return;
+
+        std::vector<int> mapping;
+        mapping.reserve ((size_t) channel_count);
+
+        for (int i = 0; i < channel_count; ++i)
+            mapping.push_back (settings.selectedElectrode[i]);
+
+        if (apView)
+            apView->setChannelToElectrodeMapping (mapping);
+
+        if (lfpView)
+            lfpView->setChannelToElectrodeMapping (mapping);
+    }
 
     uint64 eventCode;
     Array<int> gains; // available gain values

@@ -105,8 +105,10 @@ bool Neuropixels_NHP_Passive::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = std::make_unique<ActivityView> (128, 3000, std::vector<std::vector<int>>(), probeMetadata.num_adcs);
-    lfpView = std::make_unique<ActivityView> (128, 250, std::vector<std::vector<int>>(), probeMetadata.num_adcs);
+    apView = std::make_unique<ActivityView> (128, 3000, std::vector<std::vector<int>>(), probeMetadata.num_adcs, electrodeMetadata.size());
+    lfpView = std::make_unique<ActivityView> (128, 250, std::vector<std::vector<int>>(), probeMetadata.num_adcs, electrodeMetadata.size());
+
+    refreshActivityViewMapping();
 
     return errorCode == Neuropixels::SUCCESS;
 }

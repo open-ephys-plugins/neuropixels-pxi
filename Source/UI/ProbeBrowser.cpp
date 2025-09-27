@@ -1009,17 +1009,22 @@ void ProbeBrowser::timerCallback()
 
     const float* peakToPeakValues = parent->probe->getPeakToPeakValues (activityToView);
 
-    for (int i = 0; i < parent->electrodeMetadata.size(); i++)
+    if (peakToPeakValues == nullptr)
+        return;
+
+    const int electrodeCount = parent->electrodeMetadata.size();
+
+    for (int i = 0; i < electrodeCount; i++)
     {
         if (parent->electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
         {
-            int channelNumber = parent->electrodeMetadata[i].channel;
+            const int electrodeIdx = parent->electrodeMetadata[i].global_index;
 
-            if (parent->probe->type == ProbeType::QUAD_BASE)
-                channelNumber += parent->electrodeMetadata[i].shank * 384;
+            if (! isPositiveAndBelow (electrodeIdx, electrodeCount))
+                continue;
 
             parent->electrodeMetadata.getReference (i).colour =
-                ColourScheme::getColourForNormalizedValue (peakToPeakValues[channelNumber] / maxPeakToPeakAmplitude);
+                ColourScheme::getColourForNormalizedValue (peakToPeakValues[electrodeIdx] / maxPeakToPeakAmplitude);
         }
     }
 
