@@ -968,7 +968,7 @@ void ProbeBrowser::paint (Graphics& g)
             if (parent->electrodeMetadata[i].isSelected)
             {
                 g.setColour (findColour (ThemeColours::componentBackground).contrasting());
-                g.fillRect (xLoc, yLoc, electrodeHeight, electrodeHeight);
+                g.drawRect (xLoc, yLoc, electrodeHeight, electrodeHeight);
             }
 
             g.setColour (getElectrodeColour (i));
@@ -1200,7 +1200,10 @@ Colour ProbeBrowser::getElectrodeColour (int i)
         }
         else
         {
-            return parent->electrodeMetadata.getReference (i).colour.withAlpha (0.4f);
+            if (CoreServices::getAcquisitionStatus())
+                return Colour (160, 160, 160);
+            else
+                return parent->electrodeMetadata.getReference (i).colour.withAlpha (0.4f);
         }
     }
     else if (parent->electrodeMetadata[i].status == ElectrodeStatus::DISCONNECTED) // not available
@@ -1246,7 +1249,7 @@ Colour ProbeBrowser::getElectrodeColour (int i)
         }
 
         // Fallback colour for unexpected mode values
-        return Colours::grey;
+        return Colour (160, 160, 160);
     }
 }
 
