@@ -395,6 +395,9 @@ void NeuropixelsOpto::writeConfiguration()
 
 void NeuropixelsOpto::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     ap_timestamp = 0;
     lfp_timestamp = 0;
     //std::cout << "... and clearing buffers" << std::endl;

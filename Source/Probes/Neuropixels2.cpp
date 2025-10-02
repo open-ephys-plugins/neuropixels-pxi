@@ -619,6 +619,9 @@ void Neuropixels2::writeConfiguration()
 
 void Neuropixels2::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     ap_timestamp = 0;
     apBuffer->clear();
 

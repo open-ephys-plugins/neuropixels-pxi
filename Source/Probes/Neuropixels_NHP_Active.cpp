@@ -30,10 +30,11 @@
 
 void Neuropixels_NHP_Active::getInfo()
 {
-    errorCode = checkError(Neuropixels::getProbeHardwareID (headstage->basestation->slot,
-                                                headstage->port,
-                                                dock,
-                                                &info.hardwareID), "getProbeHardwareID");
+    errorCode = checkError (Neuropixels::getProbeHardwareID (headstage->basestation->slot,
+                                                             headstage->port,
+                                                             dock,
+                                                             &info.hardwareID),
+                            "getProbeHardwareID");
 
     info.version = String (info.hardwareID.version_Major)
                    + "." + String (info.hardwareID.version_Minor);
@@ -169,14 +170,14 @@ void Neuropixels_NHP_Active::calibrate()
 
     File baseDirectory = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
     File calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
-    File probeDirectory = calibrationDirectory.getChildFile (String(info.serial_number));
+    File probeDirectory = calibrationDirectory.getChildFile (String (info.serial_number));
 
     if (! probeDirectory.exists())
     {
         // check alternate location
         baseDirectory = CoreServices::getSavedStateDirectory();
         calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
-        probeDirectory = calibrationDirectory.getChildFile (String(info.serial_number));
+        probeDirectory = calibrationDirectory.getChildFile (String (info.serial_number));
     }
 
     if (! probeDirectory.exists())
@@ -422,6 +423,9 @@ void Neuropixels_NHP_Active::writeConfiguration()
 
 void Neuropixels_NHP_Active::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     ap_timestamp = 0;
     lfp_timestamp = 0;
 

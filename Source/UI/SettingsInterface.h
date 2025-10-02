@@ -64,7 +64,9 @@ public:
         if (getWidth() > 1012)
             contentWidth = getWidth() - 12;
 
-        viewport->getViewedComponent()->setSize (contentWidth, 820);
+        int contentHeight = getHeight() > 820 ? getHeight() : 820;
+
+        viewport->getViewedComponent()->setSize (contentWidth, contentHeight);
     }
 
     void paint (Graphics& g) override
@@ -92,6 +94,7 @@ public:
         PROBE_SETTINGS_INTERFACE,
         ONEBOX_SETTINGS_INTERFACE,
         BASESTATION_SETTINGS_INTERFACE,
+        SURVEY_SETTINGS_INTERFACE,
         UNKNOWN_SETTINGS_INTERFACE
     };
 

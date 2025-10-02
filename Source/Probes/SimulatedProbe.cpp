@@ -772,6 +772,9 @@ void SimulatedProbe::writeConfiguration()
 
 void SimulatedProbe::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     ap_timestamp = 0;
     lfp_timestamp = 0;
     apBuffer->clear();

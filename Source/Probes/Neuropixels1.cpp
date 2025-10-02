@@ -358,6 +358,9 @@ void Neuropixels1::writeConfiguration()
 
 void Neuropixels1::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     ap_timestamp = 0;
     lfp_timestamp = 0;
 

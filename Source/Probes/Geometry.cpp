@@ -182,7 +182,7 @@ void Geometry::NP1 (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.column_index = i % 2;
         metadata.row_index = i / 2;
         metadata.isSelected = false;
-        metadata.colour = Colours::lightgrey;
+        metadata.colour = Colour (160, 160, 160);
 
         if (i < 384)
         {
@@ -271,6 +271,7 @@ void Geometry::NP2 (int shank_count, int adc_bits, Array<ElectrodeMetadata>& ele
         metadata.row_index = metadata.shank_local_index / 2;
 
         metadata.isSelected = false;
+        metadata.colour = Colour (160, 160, 160);
 
         if (shank_count == 1)
         {
@@ -561,6 +562,7 @@ void Geometry::NHP1 (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.status = ElectrodeStatus::CONNECTED;
 
         metadata.isSelected = false;
+        metadata.colour = Colour (160, 160, 160);
 
         electrodeMetadata.add (metadata);
     }
@@ -677,6 +679,8 @@ void Geometry::NHP2 (int length,
             metadata.type = ElectrodeType::ELECTRODE;
         }
 
+        metadata.colour = Colour (160, 160, 160);
+
         electrodeMetadata.add (metadata);
     }
 }
@@ -753,6 +757,8 @@ void Geometry::UHDPassive (int numColumns,
         metadata.type = ElectrodeType::ELECTRODE;
 
         metadata.isSelected = false;
+
+        metadata.colour = Colour (160, 160, 160);
 
         electrodeMetadata.add (metadata);
     }
@@ -6965,6 +6971,8 @@ void Geometry::UHDActive (Array<ElectrodeMetadata>& electrodeMetadata,
 
         metadata.isSelected = false;
 
+        metadata.colour = Colour (160, 160, 160);
+
         electrodeMetadata.add (metadata);
     }
 }
@@ -7014,7 +7022,7 @@ void Geometry::OPTO (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.column_index = i % 2;
         metadata.row_index = i / 2;
         metadata.isSelected = false;
-        metadata.colour = Colours::lightgrey;
+        metadata.colour = Colour (160, 160, 160);
 
         if (i < 384)
         {
@@ -7218,6 +7226,8 @@ void Geometry::QuadBase (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.channel = metadata.shank_local_index % 384;
 
         metadata.type = ElectrodeType::ELECTRODE; // disable internal reference
+
+        metadata.colour = Colour (160, 160, 160);
 
         electrodeMetadata.add (metadata);
     }

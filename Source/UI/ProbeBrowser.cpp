@@ -23,6 +23,9 @@
 
 #include "ProbeBrowser.h"
 
+#include <cstdlib>
+#include <limits>
+
 namespace
 {
 constexpr int TOP_BORDER = 33;
@@ -221,12 +224,35 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
     dragZoneWidth = 10;
 }
 
+void ProbeBrowser::setDisplayMode (DisplayMode mode)
+{
+    if (displayMode == mode)
+        return;
+
+    displayMode = mode;
+
+    const bool interactive = (displayMode == DisplayMode::Interactive);
+    setInterceptsMouseClicks (interactive, interactive);
+    setWantsKeyboardFocus (interactive);
+
+    if (! interactive)
+        cursorType = MouseCursor::NormalCursor;
+
+    repaint();
+}
+
 ProbeBrowser::~ProbeBrowser()
 {
 }
 
 void ProbeBrowser::mouseMove (const MouseEvent& event)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+    {
+        cursorType = MouseCursor::NormalCursor;
+        return;
+    }
+
     const float y = event.y;
     const float x = event.x;
 
@@ -367,6 +393,29 @@ Array<int> ProbeBrowser::getElectrodesWithinBounds (int x, int y, int w, int h)
     return inds;
 }
 
+int ProbeBrowser::findElectrodeIndexForRow (int row) const
+{
+    if (parent == nullptr || parent->electrodeMetadata.isEmpty())
+        return -1;
+
+    int bestIndex = -1;
+    int bestDiff = std::numeric_limits<int>::max();
+
+    for (int i = 0; i < parent->electrodeMetadata.size(); ++i)
+    {
+        const int diff = std::abs (parent->electrodeMetadata[i].row_index - row);
+        if (diff < bestDiff)
+        {
+            bestDiff = diff;
+            bestIndex = i;
+            if (diff == 0)
+                break;
+        }
+    }
+
+    return bestIndex;
+}
+
 String ProbeBrowser::getElectrodeInfoString (int index)
 {
     String a;
@@ -414,6 +463,9 @@ String ProbeBrowser::getElectrodeInfoString (int index)
 
 void ProbeBrowser::mouseUp (const MouseEvent& event)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+        return;
+
     if (isSelectionActive)
     {
         isSelectionActive = false;
@@ -423,6 +475,9 @@ void ProbeBrowser::mouseUp (const MouseEvent& event)
 
 void ProbeBrowser::mouseDown (const MouseEvent& event)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+        return;
+
     initialOffset = zoomOffset;
     initialHeight = zoomHeight;
 
@@ -438,6 +493,9 @@ void ProbeBrowser::mouseDown (const MouseEvent& event)
 
 void ProbeBrowser::handleLeftMouseDown (const MouseEvent& event)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+        return;
+
     if (event.x > 190 && event.x < 440)
     {
         if (! event.mods.isShiftDown())
@@ -460,6 +518,9 @@ void ProbeBrowser::handleLeftMouseDown (const MouseEvent& event)
 
 void ProbeBrowser::handleRightMouseDown (const MouseEvent& event)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+        return;
+
     if (event.x > 265 + 10 && event.x < 265 + 150)
     {
         int currentAnnotationNum = -1;
@@ -502,6 +563,9 @@ void ProbeBrowser::handleRightMouseDown (const MouseEvent& event)
 
 void ProbeBrowser::mouseDrag (const MouseEvent& event)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+        return;
+
     if (isOverZoomRegion)
     {
         handleZoomDrag (event);
@@ -517,6 +581,9 @@ void ProbeBrowser::mouseDrag (const MouseEvent& event)
 
 void ProbeBrowser::handleZoomDrag (const MouseEvent& event)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+        return;
+
     int yDist = event.getDistanceFromDragStartY();
 
     if (isOverUpperBorder)
@@ -549,6 +616,9 @@ void ProbeBrowser::handleZoomDrag (const MouseEvent& event)
 
 void ProbeBrowser::handleSelectionDrag (const MouseEvent& event)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+        return;
+
     int w = event.getDistanceFromDragStartX();
     int h = event.getDistanceFromDragStartY();
     int x = event.getMouseDownX();
@@ -602,6 +672,9 @@ void ProbeBrowser::clampZoomValues()
 
 void ProbeBrowser::mouseWheelMove (const MouseEvent& event, const MouseWheelDetails& wheel)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+        return;
+
     if (event.x > 140 && event.x < 490)
     {
         if (wheel.deltaY > 0)
@@ -620,13 +693,188 @@ void ProbeBrowser::mouseWheelMove (const MouseEvent& event, const MouseWheelDeta
 
 MouseCursor ProbeBrowser::getMouseCursor()
 {
-    MouseCursor c = MouseCursor (cursorType);
+    if (displayMode == DisplayMode::OverviewOnly)
+        return MouseCursor (MouseCursor::NormalCursor);
 
-    return c;
+    return MouseCursor (cursorType);
+}
+
+void ProbeBrowser::paintOverview (Graphics& g)
+{
+    if (parent == nullptr || parent->probe == nullptr || parent->electrodeMetadata.isEmpty())
+        return;
+
+    const Rectangle<float> outerBounds = getLocalBounds().toFloat();
+    auto panelColour = findColour (ThemeColours::componentBackground);
+    g.setColour (panelColour);
+    g.fillRoundedRectangle (outerBounds, 6.0f);
+
+    const float padding = 16.0f;
+    Rectangle<float> content = outerBounds.reduced (padding);
+    if (content.getWidth() <= 0.0f || content.getHeight() <= 0.0f)
+        return;
+
+    const float verticalPadding = 20.0f;
+    constexpr float shankGap = 20.0f;
+    constexpr float electrodePixelWidth = 20.0f;
+
+    const float axisTrimWidth = 70.0f;
+    const float bankTrimWidth = 70.0f;
+
+    Rectangle<float> electrodeArea = content.withTrimmedLeft (axisTrimWidth)
+                                         .withTrimmedRight (bankTrimWidth)
+                                         .withTrimmedTop (verticalPadding)
+                                         .withTrimmedBottom (verticalPadding);
+
+    if (electrodeArea.getWidth() <= 0.0f || electrodeArea.getHeight() <= 0.0f)
+        return;
+
+    const int shankCount = jmax (1, parent->probeMetadata.shank_count);
+    const int columns = jmax (1, parent->probeMetadata.columns_per_shank);
+    const int rows = jmax (1, parent->probeMetadata.rows_per_shank);
+
+    const float layoutShankWidth = columns * electrodePixelWidth;
+    const float layoutWidth = shankCount * layoutShankWidth + jmax (0, shankCount - 1) * shankGap;
+
+    float layoutLeft = electrodeArea.getX();
+    if (layoutWidth < electrodeArea.getWidth())
+        layoutLeft = electrodeArea.getX() + (electrodeArea.getWidth() - layoutWidth) * 0.5f;
+
+    const float maxLayoutLeft = electrodeArea.getRight() - layoutWidth;
+    if (layoutLeft > maxLayoutLeft)
+        layoutLeft = maxLayoutLeft;
+    layoutLeft = jmax (layoutLeft, electrodeArea.getX());
+
+    Rectangle<float> layoutArea (layoutLeft, electrodeArea.getY(), layoutWidth, electrodeArea.getHeight());
+
+    // // Probe background area
+    // Rectangle<float> backgroundArea = layoutArea;
+    // backgroundArea.expand (8.0f, 8.0f);
+    // backgroundArea.setLeft (jmax (backgroundArea.getX(), electrodeArea.getX()));
+    // backgroundArea.setRight (jmin (backgroundArea.getRight(), electrodeArea.getRight()));
+
+    // // Probe background
+    // g.setColour (findColour (ThemeColours::componentBackground));
+    // g.fillRoundedRectangle (backgroundArea, 4.0f);
+
+    const float electrodeHeight = layoutArea.getHeight() / rows;
+
+    const float axisLabelWidth = 75.0f;
+    const float axisLabelPadding = 8.0f;
+    const float tickLength = 6.0f;
+    const float leftTickStartX = layoutArea.getX() - tickLength;
+    const float leftLabelX = leftTickStartX - (axisLabelWidth + axisLabelPadding);
+    const float axisHeadingTop = layoutArea.getY() - 20.0f;
+
+    const float rightLabelX = layoutArea.getRight() + tickLength + axisLabelPadding;
+    const float bankLabelWidth = axisLabelWidth;
+    const float bankMarkerX = rightLabelX + 30.0f;
+    const float bankHeadingTop = axisHeadingTop;
+
+    // Draw electrodes
+    for (int i = 0; i < parent->electrodeMetadata.size(); ++i)
+    {
+        const auto& meta = parent->electrodeMetadata.getReference (i);
+        const float x = layoutArea.getX()
+                        + meta.shank * (layoutShankWidth + shankGap)
+                        + meta.column_index * electrodePixelWidth;
+        const float y = layoutArea.getBottom() - (meta.row_index + 1) * electrodeHeight;
+
+        Rectangle<float> electrodeRect (x, y, electrodePixelWidth, electrodeHeight);
+        if (electrodeRect.getWidth() > 1.3f && electrodeRect.getHeight() > 1.3f)
+            electrodeRect = electrodeRect.reduced (0.2f, 0.2f);
+
+        g.setColour (parent->electrodeMetadata.getReference (i).colour);
+        g.fillRect (electrodeRect);
+    }
+
+    // Shank outlines
+    g.setColour (findColour (ThemeColours::outline));
+    for (int shank = 0; shank < shankCount; ++shank)
+    {
+        const float x = layoutArea.getX() + shank * (layoutShankWidth + shankGap);
+        Rectangle<float> shankRect (x, layoutArea.getY(), layoutShankWidth, layoutArea.getHeight());
+        g.drawRoundedRectangle (shankRect, 3.0f, 1.0f);
+    }
+
+    // Axis labels
+    g.setColour (findColour (ThemeColours::defaultText));
+    g.setFont (FontOptions ("Inter", "Medium", 13.0f));
+    g.drawText ("Y Pos (um)", leftLabelX, axisHeadingTop, axisLabelWidth, 16, Justification::centredRight);
+    g.drawText ("Electrode", rightLabelX, bankHeadingTop, bankLabelWidth, 16, Justification::centredLeft);
+
+    // Electrode labels
+    g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.75f));
+    g.setFont (FontOptions (12.0f));
+    const int skip = jmax (1, channelLabelSkip);
+    for (int row = 0; row <= rows; row += skip)
+    {
+        const float y = layoutArea.getBottom() - row * electrodeHeight;
+        if (y < layoutArea.getY() || y > layoutArea.getBottom())
+            continue;
+
+        g.drawLine (leftTickStartX, y, leftTickStartX + tickLength, y, 1.0f);
+        g.drawLine (layoutArea.getRight(), y, layoutArea.getRight() + tickLength, y, 1.0f);
+
+        const int index = findElectrodeIndexForRow (row);
+        if (index >= 0)
+        {
+            const float depth = parent->electrodeMetadata[index].ypos;
+            g.drawText (String (depth), leftLabelX, (int) (y - 6.0f), axisLabelWidth, 12, Justification::right);
+        }
+
+        g.drawText (String (row), (int) rightLabelX, (int) (y - 6.0f), (int) axisLabelWidth, 12, Justification::left);
+    }
+
+    // Bank labels
+    g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.5f));
+    g.setFont (FontOptions (16.0f));
+    int bankIndex = 0;
+    for (auto bank : parent->probeMetadata.availableBanks)
+    {
+        if (bank < Bank::A || bank > Bank::M)
+            continue;
+
+        int minRow = std::numeric_limits<int>::max();
+        int maxRow = std::numeric_limits<int>::min();
+
+        for (int ei = 0; ei < parent->electrodeMetadata.size(); ++ei)
+        {
+            const auto& meta = parent->electrodeMetadata.getReference (ei);
+            if (meta.bank != bank)
+                continue;
+
+            minRow = jmin (minRow, meta.row_index);
+            maxRow = jmax (maxRow, meta.row_index);
+        }
+
+        if (minRow > maxRow)
+            continue;
+
+        const float topY = layoutArea.getBottom() - (maxRow + 1) * electrodeHeight;
+        const float bottomY = layoutArea.getBottom() - minRow * electrodeHeight;
+
+        // Draw bank marker line(s)
+        if (bankIndex == 0)
+            g.drawLine (leftTickStartX - 30.0f, bottomY, bankMarkerX, bottomY, 1.0f);
+
+        g.drawLine (leftTickStartX - 30.0f, topY, bankMarkerX, topY, 1.0f);
+
+        const float labelY = (topY + bottomY) * 0.5f - 8.0f;
+        g.drawText (bankToString (bank), (int) bankMarkerX, (int) labelY, (int) bankLabelWidth, 16, Justification::left);
+
+        bankIndex++;
+    }
 }
 
 void ProbeBrowser::paint (Graphics& g)
 {
+    if (displayMode == DisplayMode::OverviewOnly)
+    {
+        paintOverview (g);
+        return;
+    }
+
     const int LEFT_BORDER = parent->probeMetadata.columns_per_shank >= 8 ? 63 : 70;
 
     // Draw zoomed-out channels
@@ -637,7 +885,7 @@ void ProbeBrowser::paint (Graphics& g)
     // Draw all electrodes in zoomed-out view
     for (int i = 0; i < parent->electrodeMetadata.size(); ++i)
     {
-        g.setColour (getElectrodeColour (i).withAlpha (0.5f));
+        g.setColour (getElectrodeColour (i));
         int col = parent->electrodeMetadata[i].column_index;
         int shank = parent->electrodeMetadata[i].shank;
         int row = parent->electrodeMetadata[i].row_index;
@@ -766,7 +1014,7 @@ void ProbeBrowser::paint (Graphics& g)
         for (int bi = 0; bi < bankCount; ++bi)
         {
             Bank b = parent->probeMetadata.availableBanks[bi];
-            if (b == Bank::OFF || b == Bank::NONE)
+            if (b < Bank::A || b > Bank::M)
                 continue;
 
             int minRow = std::numeric_limits<int>::max();
@@ -944,7 +1192,18 @@ void ProbeBrowser::drawAnnotations (Graphics& g)
 
 Colour ProbeBrowser::getElectrodeColour (int i)
 {
-    if (parent->electrodeMetadata[i].status == ElectrodeStatus::DISCONNECTED) // not available
+    if (parent->mode == VisualizationMode::ACTIVITY_VIEW)
+    {
+        if (parent->electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
+        {
+            return parent->electrodeMetadata.getReference (i).colour;
+        }
+        else
+        {
+            return parent->electrodeMetadata.getReference (i).colour.withAlpha (0.4f);
+        }
+    }
+    else if (parent->electrodeMetadata[i].status == ElectrodeStatus::DISCONNECTED) // not available
     {
         //std::cout << "Electrode " << i << " : " << (int) parent->electrodeMetadata[i].bank << " is disconnected" << std::endl;
 
@@ -985,17 +1244,6 @@ Colour ProbeBrowser::getElectrodeColour (int i)
                 return Colours::black;
             }
         }
-        else if (parent->mode == VisualizationMode::ACTIVITY_VIEW)
-        {
-            if (parent->electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
-            {
-                return parent->electrodeMetadata.getReference (i).colour;
-            }
-            else
-            {
-                return Colours::grey;
-            }
-        }
 
         // Fallback colour for unexpected mode values
         return Colours::grey;
@@ -1004,7 +1252,7 @@ Colour ProbeBrowser::getElectrodeColour (int i)
 
 void ProbeBrowser::timerCallback()
 {
-    if (parent->mode != VisualizationMode::ACTIVITY_VIEW || ! isShowing())
+    if (displayMode != DisplayMode::OverviewOnly && (parent->mode != VisualizationMode::ACTIVITY_VIEW || ! isShowing()))
         return;
 
     const float* peakToPeakValues = parent->probe->getPeakToPeakValues (activityToView);
@@ -1016,16 +1264,13 @@ void ProbeBrowser::timerCallback()
 
     for (int i = 0; i < electrodeCount; i++)
     {
-        if (parent->electrodeMetadata[i].status == ElectrodeStatus::CONNECTED)
-        {
-            const int electrodeIdx = parent->electrodeMetadata[i].global_index;
+        const int electrodeIdx = parent->electrodeMetadata[i].global_index;
 
-            if (! isPositiveAndBelow (electrodeIdx, electrodeCount))
-                continue;
+        if (! isPositiveAndBelow (electrodeIdx, electrodeCount))
+            continue;
 
-            parent->electrodeMetadata.getReference (i).colour =
-                ColourScheme::getColourForNormalizedValue (peakToPeakValues[electrodeIdx] / maxPeakToPeakAmplitude);
-        }
+        parent->electrodeMetadata.getReference (i).colour =
+            ColourScheme::getColourForNormalizedValue (peakToPeakValues[electrodeIdx] / maxPeakToPeakAmplitude);
     }
 
     repaint();

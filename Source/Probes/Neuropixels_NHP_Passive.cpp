@@ -256,6 +256,9 @@ void Neuropixels_NHP_Passive::writeConfiguration()
 
 void Neuropixels_NHP_Passive::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     ap_timestamp = 0;
     lfp_timestamp = 0;
 

@@ -604,18 +604,25 @@ public:
             lfpView->setCommonAverageReferencingEnabled (shouldUseCar);
     }
 
-    void setActivityViewSurveyMode (bool enabled, ActivityToView view, bool reset = true)
+    void setSurveyMode (bool enabled, bool reset = true)
     {
-        if (view == ActivityToView::APVIEW)
-        {
-            if (apView)
-                apView->setSurveyMode (enabled, reset);
-        }
-        else if (view == ActivityToView::LFPVIEW)
-        {
-            if (lfpView)
-                lfpView->setSurveyMode (enabled, reset);
-        }
+        if (apView)
+            apView->setSurveyMode (enabled, reset);
+
+        if (lfpView)
+            lfpView->setSurveyMode (enabled, reset);
+
+        surveyModeActive = enabled;
+    }
+
+    void setEnabledForSurvey (bool enabled)
+    {
+        isEnabledForSurvey = enabled;
+    }
+
+    bool getEnabledForSurvey() const
+    {
+        return isEnabledForSurvey;
     }
 
 protected:
@@ -642,6 +649,8 @@ protected:
 
     uint64 eventCode;
     Array<int> gains; // available gain values
+    bool isEnabledForSurvey = false;
+    bool surveyModeActive = false;
 };
 
 class Basestation;

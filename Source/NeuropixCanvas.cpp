@@ -268,7 +268,7 @@ void NeuropixCanvas::startAcquisition()
 {
     for (auto settingsInterface : settingsInterfaces)
     {
-        if (settingsInterface->dataSource != nullptr)
+        if (settingsInterface->dataSource != nullptr || settingsInterface->type == SettingsInterface::SURVEY_SETTINGS_INTERFACE)
         {
             settingsInterface->startAcquisition();
         }
@@ -279,7 +279,7 @@ void NeuropixCanvas::stopAcquisition()
 {
     for (auto settingsInterface : settingsInterfaces)
     {
-        if (settingsInterface->dataSource != nullptr)
+        if (settingsInterface->dataSource != nullptr || settingsInterface->type == SettingsInterface::SURVEY_SETTINGS_INTERFACE)
         {
             settingsInterface->stopAcquisition();
         }

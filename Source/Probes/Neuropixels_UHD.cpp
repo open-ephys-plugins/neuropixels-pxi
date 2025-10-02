@@ -574,6 +574,9 @@ void Neuropixels_UHD::writeConfiguration()
 
 void Neuropixels_UHD::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     ap_timestamp = 0;
     lfp_timestamp = 0;
 

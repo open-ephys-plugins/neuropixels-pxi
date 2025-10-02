@@ -29,13 +29,40 @@
 class NeuropixEditor;
 class NeuropixCanvas;
 class NeuropixThread;
+class ProbeBrowser;
+
+class SurveyProbePanel : public Component
+{
+public:
+    explicit SurveyProbePanel (Probe* p);
+    ~SurveyProbePanel() override;
+
+    void refresh();
+    void paint (Graphics& g) override;
+    void resized() override;
+
+    ProbeBrowser* getProbeBrowser() const { return probeBrowser.get(); }
+    Probe* getProbe() const { return probe; }
+
+    static constexpr int width = 480;
+    static constexpr int minHeight = 720;
+
+private:
+    Probe* probe { nullptr };
+    std::unique_ptr<Label> title;
+    std::unique_ptr<ProbeBrowser> probeBrowser;
+    std::unique_ptr<Label> placeholder;
+};
 
 // Background worker that executes the survey without blocking the UI.
 struct SurveyTarget
 {
     Probe* probe { nullptr };
+    Array<String> electrodeConfigs;
     Array<Bank> banks;
     Array<int> shanks;
+    int shankCount { 1 };
+    bool surveyComplete { false };
 };
 
 class SurveyRunner : public ThreadWithProgressWindow
@@ -71,7 +98,7 @@ public:
     bool applyProbeSettings (ProbeSettings, bool) override { return false; }
     void saveParameters (XmlElement*) override {}
     void loadParameters (XmlElement*) override {}
-    void updateInfoString() override {}
+    void updateInfoString() override;
 
     void paint (Graphics& g) override;
     void resized() override;
@@ -87,11 +114,14 @@ public:
     Component* refreshComponentForCell (int rowNumber, int columnId, bool isRowSelected, Component* existingComponentToUpdate) override;
     void cellClicked (int rowNumber, int columnId, const MouseEvent&) override;
 
+    static String bankToString (Bank b);
+
 private:
     void refreshProbeList();
+    void rebuildProbePanels();
+    void layoutProbePanels();
     String banksSummary (const Array<Bank>&) const;
     String shanksSummary (const Array<int>&, int shankCount) const;
-    static String bankToString (Bank b);
     void showBanksSelector (int row, Component* anchor);
     void showShanksSelector (int row, Component* anchor);
     void launchSurvey();
@@ -107,6 +137,11 @@ private:
 
     // Table for probe selection and granular bank/shank selection
     std::unique_ptr<TableListBox> table;
+    std::unique_ptr<Viewport> probeViewport;
+    std::unique_ptr<Component> probeViewportContent;
+    OwnedArray<SurveyProbePanel> probePanels;
+    int probePanelsWidth { 0 };
+
     enum Columns
     {
         ColSelect = 1,
@@ -119,6 +154,7 @@ private:
     struct RowState
     {
         Probe* probe { nullptr };
+        Array<String> electrodeConfigs;
         bool selected { true };
         Array<Bank> availableBanks;
         int shankCount { 1 };

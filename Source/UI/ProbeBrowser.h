@@ -37,6 +37,12 @@ class ProbeBrowser : public Component,
                      public Timer
 {
 public:
+    enum class DisplayMode
+    {
+        Interactive,
+        OverviewOnly
+    };
+
     /** Constructor */
     ProbeBrowser (NeuropixInterface*);
 
@@ -57,6 +63,10 @@ public:
 
     /** Main paint method */
     void paint (Graphics& g);
+
+    /** Switch between interactive and overview-only render modes */
+    void setDisplayMode (DisplayMode mode);
+    DisplayMode getDisplayMode() const { return displayMode; }
 
     /** Draw annotation overlays */
     void drawAnnotations (Graphics& g);
@@ -110,10 +120,12 @@ private:
     String electrodeInfoString;
 
     // Helper methods
+    void paintOverview (Graphics& g);
     Colour getElectrodeColour (int index);
     int getNearestElectrode (int x, int y);
     Array<int> getElectrodesWithinBounds (int x, int y, int w, int h);
     String getElectrodeInfoString (int index);
+    int findElectrodeIndexForRow (int row) const;
 
     void handleLeftMouseDown (const MouseEvent& event);
     void handleRightMouseDown (const MouseEvent& event);
@@ -124,6 +136,8 @@ private:
     std::unique_ptr<TooltipWindow> tooltipWindow;
 
     NeuropixInterface* parent;
+
+    DisplayMode displayMode { DisplayMode::Interactive };
 };
 
 #endif // __PROBEBROWSER_H__

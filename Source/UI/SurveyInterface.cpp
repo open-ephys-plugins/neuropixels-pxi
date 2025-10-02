@@ -27,6 +27,7 @@
 #include "../NeuropixEditor.h"
 #include "../NeuropixThread.h"
 #include "NeuropixInterface.h"
+#include "ProbeBrowser.h"
 
 #include <cmath>
 #include <functional>
@@ -139,6 +140,8 @@ private:
         else
             selection.add (bank);
 
+        selection.sort();
+
         refreshButtonStates();
         notifySelectionChanged();
     }
@@ -165,7 +168,7 @@ public:
 
         for (int i = 0; i < shankCount; ++i)
         {
-            auto* btn = new UtilityButton (String (i));
+            auto* btn = new UtilityButton (String (i + 1));
             btn->setClickingTogglesState (true);
             btn->setRadius (2.0f);
             btn->addListener (this);
@@ -254,6 +257,8 @@ private:
         else
             selection.add (idx);
 
+        selection.sort();
+
         refreshButtonStates();
         notifySelectionChanged();
     }
@@ -264,6 +269,81 @@ private:
     OwnedArray<UtilityButton> shankButtons;
     std::function<void (const Array<int>&)> onSelectionChanged;
 };
+
+namespace
+{
+constexpr int surveyProbePanelSpacing = 20;
+} // namespace
+
+SurveyProbePanel::SurveyProbePanel (Probe* p) : probe (p)
+{
+    title = std::make_unique<Label>();
+    title->setJustificationType (Justification::centred);
+    title->setFont (FontOptions ("Inter", "Semi Bold", 20.0f));
+    title->setInterceptsMouseClicks (false, false);
+    addAndMakeVisible (*title);
+
+    if (probe != nullptr && probe->ui != nullptr)
+    {
+        auto browser = std::make_unique<ProbeBrowser> (probe->ui);
+        browser->setDisplayMode (ProbeBrowser::DisplayMode::OverviewOnly);
+        browser->setInterceptsMouseClicks (false, false);
+        browser->setOpaque (false);
+        probeBrowser = std::move (browser);
+        addAndMakeVisible (*probeBrowser);
+    }
+    else
+    {
+        placeholder = std::make_unique<Label>();
+        placeholder->setJustificationType (Justification::centred);
+        placeholder->setFont (FontOptions ("Inter", "Regular", 14.0f));
+        placeholder->setColour (Label::textColourId, findColour (ThemeColours::defaultText).withAlpha (0.6f));
+        placeholder->setText ("Probe view unavailable", dontSendNotification);
+        placeholder->setInterceptsMouseClicks (false, false);
+        addAndMakeVisible (*placeholder);
+    }
+
+    refresh();
+}
+
+SurveyProbePanel::~SurveyProbePanel() = default;
+
+void SurveyProbePanel::refresh()
+{
+    if (title != nullptr && probe != nullptr)
+        title->setText (probe->getName(), dontSendNotification);
+
+    if (probeBrowser != nullptr)
+        probeBrowser->repaint();
+}
+
+void SurveyProbePanel::paint (Graphics& g)
+{
+    auto panelBounds = getLocalBounds().toFloat().reduced (1.0f);
+    g.setColour (findColour (ThemeColours::componentParentBackground).withAlpha (0.5f));
+    g.fillRoundedRectangle (panelBounds, 8.0f);
+
+    g.setColour (findColour (ThemeColours::outline).withAlpha (0.75f));
+    g.drawRoundedRectangle (panelBounds, 8.0f, 1.0f);
+}
+
+void SurveyProbePanel::resized()
+{
+    auto bounds = getLocalBounds().reduced (14);
+    auto header = bounds.removeFromTop (34);
+    if (title != nullptr)
+        title->setBounds (header);
+
+    if (probeBrowser != nullptr)
+    {
+        bounds.removeFromTop (6);
+        probeBrowser->setBounds (bounds);
+    }
+    else if (placeholder != nullptr)
+    {
+        placeholder->setBounds (bounds);
+    }
+}
 
 // --------------------- SurveyRunner -------------------------
 
@@ -281,185 +361,124 @@ void SurveyRunner::run()
     if (targets.size() == 0)
         return;
 
+    LOGC ("SurveyRunner: Starting survey with ", targets.size(), " targets");
+
     // For progress
-    int totalSteps = 0;
+    int maxSteps = 0;
+    Array<ProbeSettings> settingsToRestore;
     for (const auto& tgt : targets)
     {
         auto* p = tgt.probe;
-        int shanks = tgt.shanks.size() > 0 ? tgt.shanks.size() : jmax (1, p->probeMetadata.shank_count);
-        int banks = tgt.banks.size() > 0 ? tgt.banks.size() : jmax (1, p->settings.availableBanks.size());
-        totalSteps += shanks * banks;
+        settingsToRestore.add (p->settings);
+        maxSteps = jmax (maxSteps, tgt.banks.size() * tgt.shanks.size());
     }
 
     int completed = 0;
 
     // Ensure settings queue is idle
     if (editor->uiLoader->isThreadRunning())
-        editor->uiLoader->waitForThreadToExit (20000);
-
-    for (const auto& target : targets)
     {
-        Probe* probe = target.probe;
-        // Make a working copy of settings
-        ProbeSettings base = probe->settings;
-        base.clearElectrodeSelection();
+        LOGD ("SurveyRunner: uiLoader thread running, waiting for it to exit");
+        editor->uiLoader->waitForThreadToExit (20000);
+    }
 
-        // select initial population as currently connected electrodes, but we'll change bank/shank selection per combo
-        for (int i = 0; i < probe->channel_count; ++i)
+    setStatusMessage ("Surveying probes...");
+
+    Array<int> bankIndices;
+    bankIndices.insertMultiple (0, 0, targets.size());
+    Array<int> shanksIndices;
+    shanksIndices.insertMultiple (0, 0, targets.size());
+
+    for (int i = 0; i < maxSteps && ! threadShouldExit(); ++i)
+    {
+        setProgress (i / (float) maxSteps);
+        setStatusMessage ("Surveying probes... Step " + String (i + 1) + "/" + String (maxSteps));
+        LOGD ("SurveyRunner: Step ", i + 1, "/", maxSteps);
+
+        int targetIdx = 0;
+        for (auto& target : targets)
         {
-            base.selectedChannel.add (i);
-            // fill placeholders; we overwrite bank/shank per iteration
-            base.selectedBank.add (Bank::A);
-            base.selectedShank.add (0);
-            // map channel -> an electrode index with same channel to keep metadata lookup consistent
-            int fallbackElectrode = i;
-            for (int eIdx = 0; eIdx < probe->electrodeMetadata.size(); ++eIdx)
-            {
-                if (probe->electrodeMetadata[eIdx].channel == i)
-                {
-                    fallbackElectrode = eIdx;
-                    break;
-                }
-            }
-            base.selectedElectrode.add (fallbackElectrode);
-        }
+            Probe* probe = target.probe;
 
-        Array<Bank> banks = (target.banks.size() > 0 ? target.banks : probe->settings.availableBanks);
-        if (banks.size() == 0)
-            banks.add (Bank::A);
-        Array<int> shanksList;
-        if (target.shanks.size() > 0)
-            shanksList = target.shanks;
-        else
-            for (int i = 0; i < jmax (1, probe->probeMetadata.shank_count); ++i)
-                shanksList.add (i);
-
-        for (int shIndex = 0; shIndex < shanksList.size() && ! threadShouldExit(); ++shIndex)
-        {
-            int sh = shanksList[shIndex];
-            for (int bi = 0; bi < banks.size() && ! threadShouldExit(); ++bi)
+            if (shanksIndices[targetIdx] < target.shanks.size()
+                && bankIndices[targetIdx] < target.banks.size())
             {
-                Bank bank = banks[bi];
+                int sh = target.shanks[shanksIndices[targetIdx]];
+                Bank bank = target.banks[bankIndices[targetIdx]];
+
+                LOGD ("SurveyRunner: Applying settings to probe ", probe->getName().toRawUTF8(), " - Bank=", SurveyInterface::bankToString (bank).toRawUTF8(), " Shank=", sh);
 
                 // Build settings for this combo
-                ProbeSettings pset = base;
-                pset.selectedBank.clear();
-                pset.selectedShank.clear();
-                pset.selectedElectrode.clear();
-
-                // Assign per-channel bank/shank and resolve electrodes to this bank/shank
-                for (int ch = 0; ch < probe->channel_count; ++ch)
+                for (const auto& config : target.electrodeConfigs)
                 {
-                    pset.selectedBank.add (bank);
-                    pset.selectedShank.add (sh);
-
-                    // Find an electrode that maps to this ch, bank, shank; if not found, keep fallback mapping
-                    int elecIndex = -1;
-                    for (int eIdx = 0; eIdx < probe->electrodeMetadata.size(); ++eIdx)
+                    if (config.containsIgnoreCase ("Bank " + SurveyInterface::bankToString (bank)))
                     {
-                        const auto& em = probe->electrodeMetadata[eIdx];
-                        if (em.channel == ch && em.shank == sh && em.bank == bank)
+                        if (target.shankCount > 1 && config.containsIgnoreCase ("Shank " + String (sh + 1)))
                         {
-                            elecIndex = eIdx;
+                            auto selected = probe->selectElectrodeConfiguration (config);
+                            probe->ui->selectElectrodes (selected);
+                            LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
+                            break;
+                        }
+                        else if (target.shankCount == 1)
+                        {
+                            auto selected = probe->selectElectrodeConfiguration (config);
+                            probe->ui->selectElectrodes (selected);
+                            LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
                             break;
                         }
                     }
-                    if (elecIndex < 0)
-                        elecIndex = pset.selectedElectrode[jmin (jmax (0, ch), pset.selectedElectrode.size() - 1)];
-
-                    pset.selectedElectrode.add (elecIndex);
                 }
 
-                // Ensure acquisition is stopped for reconfiguration
-                thread->stopAcquisition();
-                Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 150);
-
-                // Queue settings and apply in background (UI thread orchestrates the write) while stopped
-                pset.probe = probe;
-                probe->updateSettings (pset);
-                thread->updateProbeSettingsQueue (pset);
-
-                // Apply queued settings now; we wait until uiLoader finishes after run() returns
-                if (! editor->uiLoader->isThreadRunning())
-                    editor->uiLoader->startThread();
-
-                // Wait for settings to apply before measuring
-                while (editor->uiLoader->isThreadRunning() && ! threadShouldExit())
-                    Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 10);
-
-                // Prepare activity views for survey averaging and start acquisition
-                probe->setActivityViewSurveyMode (true, ActivityToView::APVIEW);
-                if (probe->generatesLfpData())
-                    probe->setActivityViewSurveyMode (true, ActivityToView::LFPVIEW);
-
-                // Start acquisition for this window
-                thread->startAcquisition();
-
-                // Reset activity views and allow a short settle to avoid mixing prior config data
-                Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 300);
-
-                // Collect P2P over the requested window; sample at ~10 Hz (for both AP and LFP if available)
-                const double startMs = Time::getMillisecondCounterHiRes();
-                const double durationMs = secondsPer * 1000.0;
-                while ((Time::getMillisecondCounterHiRes() - startMs) < durationMs && ! threadShouldExit())
+                bankIndices.set (targetIdx, bankIndices[targetIdx] + 1);
+                if (bankIndices[targetIdx] >= target.banks.size())
                 {
-                    probe->getPeakToPeakValues (ActivityToView::APVIEW);
-
-                    if (probe->generatesLfpData())
-                        probe->getPeakToPeakValues (ActivityToView::LFPVIEW);
-
-                    Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 100); // ~10 Hz
+                    bankIndices.set (targetIdx, 0);
+                    shanksIndices.set (targetIdx, shanksIndices[targetIdx] + 1);
                 }
-
-                // Stop acquisition for this window before proceeding to next config
-                thread->stopAcquisition();
-                Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 100);
-
-                const int electrodeCount = probe->electrodeMetadata.size();
-
-                HeapBlock<float> averagedAP (electrodeCount);
-                const float* apAverages = probe->getPeakToPeakValues (ActivityToView::APVIEW);
-                if (apAverages != nullptr)
-                {
-                    for (int i = 0; i < electrodeCount; ++i)
-                        averagedAP[i] = apAverages[i];
-                }
-                else
-                {
-                    for (int i = 0; i < electrodeCount; ++i)
-                        averagedAP[i] = 0.0f;
-                }
-
-                HeapBlock<float> averagedLFP;
-                if (probe->generatesLfpData())
-                {
-                    averagedLFP.malloc ((size_t) electrodeCount);
-                    const float* lfpAverages = probe->getPeakToPeakValues (ActivityToView::LFPVIEW);
-                    if (lfpAverages != nullptr)
-                    {
-                        for (int i = 0; i < electrodeCount; ++i)
-                            averagedLFP[i] = lfpAverages[i];
-                    }
-                    else
-                    {
-                        for (int i = 0; i < electrodeCount; ++i)
-                            averagedLFP[i] = 0.0f;
-                    }
-                }
-
-                probe->setActivityViewSurveyMode (false, ActivityToView::APVIEW, false);
-                if (probe->generatesLfpData())
-                    probe->setActivityViewSurveyMode (false, ActivityToView::LFPVIEW, false);
-
-                completed++;
-                setStatusMessage ("Surveying " + probe->getName() + ": bank " + String ((int) bank) + ", shank " + String (sh + 1));
-                setProgress ((double) completed / (double) totalSteps);
             }
+            else
+            {
+                target.surveyComplete = true;
+                probe->setEnabledForSurvey (false);
+                LOGD ("SurveyRunner: Survey complete for probe ", probe->getName().toRawUTF8());
+            }
+
+            targetIdx++;
         }
+
+        // Wait for settings to apply before measuring
+        if (editor->uiLoader->isThreadRunning())
+            LOGD ("SurveyRunner: Waiting for uiLoader to finish applying settings");
+
+        while (editor->uiLoader->isThreadRunning() && ! threadShouldExit())
+            Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 10);
+
+        // Start acquisition for this window
+        CoreServices::setAcquisitionStatus (true);
+        LOGD ("SurveyRunner: Acquisition started for step ", i + 1);
+
+        Time::waitForMillisecondCounter (Time::getMillisecondCounter() + (secondsPer * 1000) + 100);
+
+        // Stop acquisition for this window before proceeding to next config
+        CoreServices::setAcquisitionStatus (false);
+        LOGD ("SurveyRunner: Acquisition stopped for step ", i + 1);
+
+        Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 100);
     }
 
-    // Ensure acquisition is stopped at the end
-    thread->stopAcquisition();
+    setProgress (1.0f);
+
+    setStatusMessage ("Restoring pre-survey probe settings...");
+    LOGC ("Restoring pre-survey probe settings...");
+
+    int targetIdx = 0;
+    for (auto& target : targets)
+    {
+        target.probe->ui->selectElectrodes (settingsToRestore[targetIdx].selectedElectrode);
+    }
+
+    LOGC ("SurveyRunner: Survey run finished");
 }
 
 // --------------------- SurveyInterface -------------------------
@@ -467,7 +486,7 @@ void SurveyRunner::run()
 SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, NeuropixCanvas* c)
     : SettingsInterface (nullptr, t, e, c), thread (t), editor (e), canvas (c)
 {
-    type = SettingsInterface::UNKNOWN_SETTINGS_INTERFACE;
+    type = SettingsInterface::SURVEY_SETTINGS_INTERFACE;
 
     secondsPerBankSlider = std::make_unique<Slider> (Slider::LinearHorizontal, Slider::TextBoxRight);
     secondsPerBankSlider->setRange (1, 30.0, 1.0);
@@ -485,7 +504,18 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     table->getHeader().addColumn ("Type", Columns::ColType, 120);
     table->getHeader().addColumn ("Banks", Columns::ColBanks, 120);
     table->getHeader().addColumn ("Shanks", Columns::ColShanks, 100);
+    table->setAutoSizeMenuOptionShown (false);
+    table->getHeader().setInterceptsMouseClicks (false, false);
+    table->setOutlineThickness (1);
     addAndMakeVisible (*table);
+
+    probeViewportContent = std::make_unique<Component>();
+    probeViewport = std::make_unique<Viewport> ("SurveyProbeViewport");
+    probeViewport->setScrollBarsShown (false, true);
+    probeViewport->setScrollBarThickness (12);
+    probeViewport->setViewedComponent (probeViewportContent.get(), false);
+    probeViewport->setInterceptsMouseClicks (true, false);
+    addAndMakeVisible (*probeViewport);
 
     refreshProbeList();
 }
@@ -494,21 +524,58 @@ void SurveyInterface::paint (Graphics& g)
 {
     g.fillAll (findColour (ThemeColours::componentParentBackground));
 
+    const float leftPanelX = 10.0f;
+    const float leftPanelWidth = 510.0f;
+    const float panelHeight = (float) getHeight() - 20.0f;
+
     g.setColour (findColour (ThemeColours::componentBackground));
-    g.fillRoundedRectangle (10.0f, 10.0f, 510.0f, getHeight() - 20.0f, 8.0f);
+    g.fillRoundedRectangle (leftPanelX, 10.0f, leftPanelWidth, panelHeight, 8.0f);
+
+    Rectangle<int> rightArea = getLocalBounds();
+    rightArea.removeFromLeft ((int) (leftPanelX + leftPanelWidth) + 20);
+    if (! rightArea.isEmpty())
+    {
+        g.fillRoundedRectangle (rightArea.reduced (10).toFloat(), 8.0f);
+    }
 
     g.setColour (findColour (ThemeColours::defaultText));
     g.setFont (FontOptions ("Inter", "Medium", 16.0f));
-    g.drawText ("Seconds per bank/shank:", 30, 70, 200, 25, Justification::centredLeft);
+    g.drawText ("Seconds per bank/shank:", 30, 80, 200, 25, Justification::centredLeft);
 }
 
 void SurveyInterface::resized()
 {
-    runButton->setBounds (205, 30, 120, 25);
+    const int leftPanelX = 10;
+    const int leftPanelWidth = 510;
+    const int topMargin = 10;
 
-    secondsPerBankSlider->setBounds (190, 70, 250, 25);
+    if (runButton != nullptr)
+        runButton->setBounds (leftPanelX + (leftPanelWidth - 140) / 2, topMargin + 20, 140, 30);
 
-    table->setBounds (30, 120, 470, (getNumRows() + 1) * table->getRowHeight() + 10);
+    if (secondsPerBankSlider != nullptr)
+        secondsPerBankSlider->setBounds (200, topMargin + 70, 220, 25);
+
+    if (table != nullptr)
+    {
+        const int tableTop = topMargin + 120;
+        const int desiredHeight = (getNumRows() + 1) * table->getRowHeight() + 8;
+        const int availableHeight = getHeight() - tableTop - 40;
+        table->setBounds (leftPanelX + 20, tableTop, leftPanelWidth - 38, jmin (desiredHeight, availableHeight));
+    }
+
+    if (probeViewport != nullptr)
+    {
+        Rectangle<int> rightArea = getLocalBounds();
+        rightArea.removeFromLeft (leftPanelX + leftPanelWidth + 20);
+        rightArea = rightArea.reduced (10, 10);
+        if (rightArea.getWidth() < 0)
+            rightArea.setWidth (0);
+        if (rightArea.getHeight() < 0)
+            rightArea.setHeight (0);
+
+        probeViewport->setBounds (rightArea);
+        layoutProbePanels();
+    }
 }
 
 void SurveyInterface::buttonClicked (Button* b)
@@ -523,18 +590,90 @@ void SurveyInterface::comboBoxChanged (ComboBox* cb)
 
 void SurveyInterface::startAcquisition()
 {
-    // Disable all controls during acquisition
-    runButton->setEnabled (false);
-    secondsPerBankSlider->setEnabled (false);
-    table->setEnabled (false);
+    for (auto& panel : probePanels)
+    {
+        if (panel->getProbe()->getEnabledForSurvey())
+            panel->getProbeBrowser()->startTimer (100);
+    }
 }
 
 void SurveyInterface::stopAcquisition()
 {
-    // Re-enable controls
-    runButton->setEnabled (true);
-    secondsPerBankSlider->setEnabled (true);
-    table->setEnabled (true);
+    for (auto& panel : probePanels)
+    {
+        panel->getProbeBrowser()->stopTimer();
+    }
+}
+
+void SurveyInterface::updateInfoString()
+{
+    for (auto& panel : probePanels)
+    {
+        panel->refresh();
+    }
+
+    if (table)
+    {
+        table->repaint();
+    }
+}
+
+void SurveyInterface::rebuildProbePanels()
+{
+    if (probeViewportContent == nullptr)
+        return;
+
+    probeViewportContent->removeAllChildren();
+    probePanels.clear();
+    probePanelsWidth = 0;
+
+    int x = 0;
+    if (thread != nullptr)
+    {
+        for (auto* probe : thread->getProbes())
+        {
+            if (probe == nullptr)
+                continue;
+
+            auto panel = std::make_unique<SurveyProbePanel> (probe);
+            panel->setBounds (x, 0, SurveyProbePanel::width, SurveyProbePanel::minHeight);
+            panel->refresh();
+            probeViewportContent->addAndMakeVisible (panel.get());
+            probePanels.add (panel.release());
+
+            x += SurveyProbePanel::width + surveyProbePanelSpacing;
+        }
+    }
+
+    probePanelsWidth = x > 0 ? x + surveyProbePanelSpacing : 0;
+
+    layoutProbePanels();
+
+    if (probeViewport != nullptr)
+        probeViewport->setViewPosition (0, 0);
+}
+
+void SurveyInterface::layoutProbePanels()
+{
+    if (probeViewport == nullptr || probeViewportContent == nullptr)
+        return;
+
+    const int viewportWidth = probeViewport->getWidth();
+    const int viewportHeight = probeViewport->getHeight();
+
+    const int contentWidth = probePanelsWidth;
+    const int contentHeight = jmax (SurveyProbePanel::minHeight, viewportHeight);
+    probeViewportContent->setSize (contentWidth, contentHeight);
+
+    int x = surveyProbePanelSpacing;
+    for (auto* panel : probePanels)
+    {
+        if (panel == nullptr)
+            continue;
+
+        panel->setBounds (x, 20, SurveyProbePanel::width, contentHeight - 40);
+        x += SurveyProbePanel::width + surveyProbePanelSpacing;
+    }
 }
 
 void SurveyInterface::refreshProbeList()
@@ -544,12 +683,16 @@ void SurveyInterface::refreshProbeList()
     {
         RowState r;
         r.probe = p;
+        r.electrodeConfigs = p->settings.availableElectrodeConfigurations;
         r.selected = true;
 
         for (const auto& b : p->settings.availableBanks)
         {
             if (b < Bank::A || b > Bank::M)
                 continue;
+
+            if (r.probe->type == ProbeType::NP2_4 && b == Bank::D)
+                continue; // Bank D not available on NP2 4-shank
 
             r.availableBanks.add (b);
         }
@@ -559,19 +702,48 @@ void SurveyInterface::refreshProbeList()
     }
     if (table)
         table->updateContent();
+
+    rebuildProbePanels();
 }
 
 void SurveyInterface::launchSurvey()
 {
+    // Disable all controls during acquisition
+    runButton->setEnabled (false);
+    secondsPerBankSlider->setEnabled (false);
+    table->setEnabled (false);
+
     Array<SurveyTarget> targets;
     for (const auto& r : rows)
     {
+        // Prepare activity views for survey averaging
+        r.probe->setSurveyMode (true);
+
         if (! r.selected)
+        {
+            r.probe->setEnabledForSurvey (false);
             continue;
+        }
+
         SurveyTarget t;
         t.probe = r.probe;
-        t.banks = r.chosenBanks; // empty => all
-        t.shanks = r.chosenShanks; // empty => all
+        t.electrodeConfigs = r.electrodeConfigs;
+        t.probe->setEnabledForSurvey (true);
+
+        if (r.chosenBanks.size() > 0)
+            t.banks = r.chosenBanks;
+        else
+            t.banks = r.availableBanks; // empty => all available
+
+        if (r.chosenShanks.size() > 0)
+            t.shanks = r.chosenShanks;
+        else
+        {
+            for (int i = 0; i < r.shankCount; ++i)
+                t.shanks.add (i); // empty => all shanks
+        }
+        t.shankCount = r.shankCount;
+
         targets.add (t);
     }
 
@@ -583,6 +755,17 @@ void SurveyInterface::launchSurvey()
 
     std::unique_ptr<SurveyRunner> runner = std::make_unique<SurveyRunner> (thread, editor, targets, (float) secondsPerBankSlider->getValue());
     runner->runThread();
+
+    // Restore activity views to normal mode
+    for (const auto& r : rows)
+    {
+        r.probe->setSurveyMode (false, false);
+    }
+
+    // Re-enable controls
+    runButton->setEnabled (true);
+    secondsPerBankSlider->setEnabled (true);
+    table->setEnabled (true);
 }
 
 // ---------------------- TableListBoxModel ----------------------
@@ -597,9 +780,9 @@ void SurveyInterface::paintRowBackground (Graphics& g, int rowNumber, int width,
     auto bg = findColour (ThemeColours::widgetBackground);
 
     if (rowNumber % 2 == 0)
-        g.fillAll (bg.darker (0.15f));
+        g.fillAll (bg);
     else
-        g.fillAll (bg.darker (0.25f));
+        g.fillAll (bg.darker (0.1f));
 }
 
 void SurveyInterface::paintCell (Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
@@ -721,7 +904,7 @@ String SurveyInterface::shanksSummary (const Array<int>& shanks, int shankCount)
         return shankCount > 1 ? String ("All") : String ("--");
     StringArray parts;
     for (auto s : shanks)
-        parts.add (String (s));
+        parts.add (String (s + 1));
     return parts.joinIntoString (", ");
 }
 

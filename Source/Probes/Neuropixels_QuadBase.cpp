@@ -371,6 +371,9 @@ void Neuropixels_QuadBase::writeConfiguration()
 
 void Neuropixels_QuadBase::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     if (acquisitionThreads.size() == 0)
     {
         for (int shank = 0; shank < 4; shank++)
