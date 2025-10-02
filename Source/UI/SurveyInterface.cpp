@@ -578,7 +578,7 @@ void SurveyInterface::resized()
 
 void SurveyInterface::buttonClicked (Button* b)
 {
-    if (b == runButton.get())
+    if (b == runButton.get() && ! CoreServices::getAcquisitionStatus())
         launchSurvey();
 }
 
@@ -759,6 +759,7 @@ void SurveyInterface::launchSurvey()
     for (const auto& r : rows)
     {
         r.probe->setSurveyMode (false, false);
+        r.probe->setEnabledForSurvey (false);
     }
 
     // Re-enable controls
