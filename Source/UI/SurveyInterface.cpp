@@ -365,11 +365,9 @@ void SurveyRunner::run()
 
     // For progress
     int maxSteps = 0;
-    Array<ProbeSettings> settingsToRestore;
     for (const auto& tgt : targets)
     {
         auto* p = tgt.probe;
-        settingsToRestore.add (p->settings);
         maxSteps = jmax (maxSteps, tgt.banks.size() * tgt.shanks.size());
     }
 
@@ -475,7 +473,7 @@ void SurveyRunner::run()
     int targetIdx = 0;
     for (auto& target : targets)
     {
-        target.probe->ui->selectElectrodes (settingsToRestore[targetIdx].selectedElectrode);
+        target.probe->ui->selectElectrodes (target.electrodesToRestore);
     }
 
     LOGC ("SurveyRunner: Survey run finished");
@@ -728,6 +726,7 @@ void SurveyInterface::launchSurvey()
         SurveyTarget t;
         t.probe = r.probe;
         t.electrodeConfigs = r.electrodeConfigs;
+        t.electrodesToRestore = r.probe->settings.selectedElectrode;
         t.probe->setEnabledForSurvey (true);
 
         if (r.chosenBanks.size() > 0)

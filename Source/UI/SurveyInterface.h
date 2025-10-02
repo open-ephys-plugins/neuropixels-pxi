@@ -59,6 +59,7 @@ struct SurveyTarget
 {
     Probe* probe { nullptr };
     Array<String> electrodeConfigs;
+    Array<int> electrodesToRestore;
     Array<Bank> banks;
     Array<int> shanks;
     int shankCount { 1 };
