@@ -107,7 +107,8 @@ private:
         for (int i = 0; i < bankButtons.size(); ++i)
         {
             const Bank bank = availableBanks[i];
-            bankButtons[i]->setToggleState (selection.contains (bank), dontSendNotification);
+            const bool isSelected = selection.contains (bank) || (selection.isEmpty());
+            bankButtons[i]->setToggleState (isSelected, dontSendNotification);
         }
     }
 
@@ -131,16 +132,28 @@ private:
             return;
 
         const int idx = bankButtons.indexOf ((UtilityButton*) button);
-        if (! isPositiveAndBelow (idx, availableBanks.size()))
-            return;
 
         const Bank bank = availableBanks[idx];
         if (selection.contains (bank))
+        {
             selection.removeFirstMatchingValue (bank);
+        }
+        else if (selection.isEmpty())
+        {
+            for (const auto b : availableBanks)
+                if (b != bank)
+                    selection.add (b);
+        }
         else
+        {
             selection.add (bank);
+        }
 
         selection.sort();
+
+        // if selection contains all available banks, treat as "all" (empty selection)
+        if (selection.size() == availableBanks.size())
+            selection.clear();
 
         refreshButtonStates();
         notifySelectionChanged();
@@ -225,7 +238,8 @@ private:
         for (int i = 0; i < shankButtons.size(); ++i)
         {
             const int shank = i;
-            shankButtons[i]->setToggleState (selection.contains (shank), dontSendNotification);
+            const bool isSelected = selection.contains (shank) || (selection.isEmpty());
+            shankButtons[i]->setToggleState (isSelected, dontSendNotification);
         }
     }
 
@@ -253,11 +267,25 @@ private:
             return;
 
         if (selection.contains (idx))
+        {
             selection.removeFirstMatchingValue (idx);
+        }
+        else if (selection.isEmpty())
+        {
+            for (int i = 0; i < shankCount; ++i)
+                if (i != idx)
+                    selection.add (i);
+        }
         else
+        {
             selection.add (idx);
+        }
 
         selection.sort();
+
+        // if selection contains all available shanks, treat as "all" (empty selection)
+        if (selection.size() == shankCount)
+            selection.clear();
 
         refreshButtonStates();
         notifySelectionChanged();
@@ -835,6 +863,7 @@ void SurveyInterface::saveSurveyResultsToJson (const Array<SurveyTarget>& target
         {
             const auto& meta = probe->electrodeMetadata.getReference (idx);
             const size_t index = static_cast<size_t> (idx);
+            bool wasSurveyed = (target.banks.isEmpty() || target.banks.contains (meta.bank)) && (target.shanks.isEmpty() || target.shanks.contains (meta.shank));
 
             DynamicObject::Ptr electrodeObj = new DynamicObject();
             electrodeObj->setProperty (Identifier ("global_index"), meta.global_index);
@@ -845,6 +874,7 @@ void SurveyInterface::saveSurveyResultsToJson (const Array<SurveyTarget>& target
             electrodeObj->setProperty (Identifier ("is_reference"), meta.type == ElectrodeType::REFERENCE);
             electrodeObj->setProperty (Identifier ("position_x_um"), meta.xpos);
             electrodeObj->setProperty (Identifier ("position_y_um"), meta.ypos);
+            electrodeObj->setProperty (Identifier ("was_surveyed"), wasSurveyed);
 
             const float apPeak = index < apStats.averages.size() ? apStats.averages[index] : 0.0f;
             electrodeObj->setProperty (Identifier ("peak_to_peak"), apPeak);
