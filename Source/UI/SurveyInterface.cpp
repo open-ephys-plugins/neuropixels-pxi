@@ -700,9 +700,6 @@ void SurveyInterface::refreshProbeList()
             if (b < Bank::A || b > Bank::M)
                 continue;
 
-            if (r.probe->type == ProbeType::NP2_4 && b == Bank::D)
-                continue; // Bank D not available on NP2 4-shank
-
             r.availableBanks.add (b);
         }
 

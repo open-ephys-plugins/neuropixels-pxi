@@ -101,15 +101,19 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 1 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 2 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 3 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 4 Bank D");
             settings.availableElectrodeConfigurations.add ("All Shanks 1-96");
             settings.availableElectrodeConfigurations.add ("All Shanks 97-192");
             settings.availableElectrodeConfigurations.add ("All Shanks 193-288");
@@ -290,6 +294,13 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
             selection.add (i);
         }
     }
+    else if (config.equalsIgnoreCase ("Shank 1 Bank D"))
+    {
+        for (int i = 896; i < 1280; i++)
+        {
+            selection.add (i);
+        }
+    }
     else if (config.equalsIgnoreCase ("Shank 2 Bank A"))
     {
         int startElectrode = 1280;
@@ -311,6 +322,15 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
     else if (config.equalsIgnoreCase ("Shank 2 Bank C"))
     {
         int startElectrode = 1280 + 384 * 2;
+
+        for (int i = startElectrode; i < startElectrode + 384; i++)
+        {
+            selection.add (i);
+        }
+    }
+    else if (config.equalsIgnoreCase ("Shank 2 Bank D"))
+    {
+        int startElectrode = 1280 + 896;
 
         for (int i = startElectrode; i < startElectrode + 384; i++)
         {
@@ -344,6 +364,15 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
             selection.add (i);
         }
     }
+    else if (config.equalsIgnoreCase ("Shank 3 Bank D"))
+    {
+        int startElectrode = 1280 * 2 + 896;
+
+        for (int i = startElectrode; i < startElectrode + 384; i++)
+        {
+            selection.add (i);
+        }
+    }
     else if (config.equalsIgnoreCase ("Shank 4 Bank A"))
     {
         int startElectrode = 1280 * 3;
@@ -365,6 +394,15 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
     else if (config.equalsIgnoreCase ("Shank 4 Bank C"))
     {
         int startElectrode = 1280 * 3 + 384 * 2;
+
+        for (int i = startElectrode; i < startElectrode + 384; i++)
+        {
+            selection.add (i);
+        }
+    }
+    else if (config.equalsIgnoreCase ("Shank 4 Bank D"))
+    {
+        int startElectrode = 1280 * 3 + 896;
 
         for (int i = startElectrode; i < startElectrode + 384; i++)
         {
