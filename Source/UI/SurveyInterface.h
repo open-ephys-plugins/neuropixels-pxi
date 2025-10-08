@@ -74,8 +74,6 @@ public:
 
     void run() override;
 
-    bool wasCancelled() const { return threadShouldExit(); }
-
 private:
     NeuropixThread* thread;
     NeuropixEditor* editor;
@@ -126,6 +124,7 @@ private:
     void showBanksSelector (int row, Component* anchor);
     void showShanksSelector (int row, Component* anchor);
     void launchSurvey();
+    void saveSurveyResultsToJson (const Array<SurveyTarget>& targets, float secondsPerConfig);
 
     NeuropixThread* thread;
     NeuropixEditor* editor;
@@ -135,6 +134,7 @@ private:
     std::unique_ptr<Label> titleLabel;
     std::unique_ptr<UtilityButton> runButton;
     std::unique_ptr<Slider> secondsPerBankSlider;
+    std::unique_ptr<UtilityButton> saveButton;
 
     // Table for probe selection and granular bank/shank selection
     std::unique_ptr<TableListBox> table;
@@ -164,4 +164,5 @@ private:
     };
 
     Array<RowState> rows;
+    Array<SurveyTarget> lastSurveyTargets;
 };

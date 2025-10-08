@@ -268,6 +268,24 @@ void ActivityView::resetSurveyData()
     std::fill (surveySampleCount.begin(), surveySampleCount.end(), 0);
 }
 
+ActivityView::SurveyStatistics ActivityView::getSurveyStatistics()
+{
+    const ScopedLock lock (bufferMutex);
+
+    SurveyStatistics stats;
+    stats.totals = surveyAccumulation;
+    stats.sampleCounts = surveySampleCount;
+    stats.averages.resize (stats.totals.size(), 0.0f);
+
+    for (size_t i = 0; i < stats.totals.size(); ++i)
+    {
+        const auto count = i < stats.sampleCounts.size() ? stats.sampleCounts[i] : 0;
+        stats.averages[i] = count > 0 ? static_cast<float> (stats.totals[i] / static_cast<double> (count)) : 0.0f;
+    }
+
+    return stats;
+}
+
 void ActivityView::calculatePeakToPeakValues()
 {
     const ScopedLock lock (bufferMutex);

@@ -507,6 +507,12 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     table->setOutlineThickness (1);
     addAndMakeVisible (*table);
 
+    saveButton = std::make_unique<UtilityButton> ("SAVE RESULTS");
+    saveButton->setClickingTogglesState (false);
+    saveButton->addListener (this);
+    saveButton->setEnabled (false);
+    addAndMakeVisible (*saveButton);
+
     probeViewportContent = std::make_unique<Component>();
     probeViewport = std::make_unique<Viewport> ("SurveyProbeViewport");
     probeViewport->setScrollBarsShown (false, true);
@@ -561,6 +567,9 @@ void SurveyInterface::resized()
         table->setBounds (leftPanelX + 20, tableTop, leftPanelWidth - 38, jmin (desiredHeight, availableHeight));
     }
 
+    if (saveButton != nullptr && table != nullptr)
+        saveButton->setBounds (leftPanelX + (leftPanelWidth - 110) / 2, table->getBottom() + 30, 110, 24);
+
     if (probeViewport != nullptr)
     {
         Rectangle<int> rightArea = getLocalBounds();
@@ -580,6 +589,8 @@ void SurveyInterface::buttonClicked (Button* b)
 {
     if (b == runButton.get() && ! CoreServices::getAcquisitionStatus())
         launchSurvey();
+    else if (b == saveButton.get() && lastSurveyTargets.size() > 0)
+        saveSurveyResultsToJson (lastSurveyTargets, secondsPerBankSlider->getValue());
 }
 
 void SurveyInterface::comboBoxChanged (ComboBox* cb)
@@ -710,6 +721,9 @@ void SurveyInterface::launchSurvey()
     runButton->setEnabled (false);
     secondsPerBankSlider->setEnabled (false);
     table->setEnabled (false);
+    saveButton->setEnabled (false);
+
+    lastSurveyTargets.clear();
 
     Array<SurveyTarget> targets;
     for (const auto& r : rows)
@@ -749,11 +763,19 @@ void SurveyInterface::launchSurvey()
     if (targets.size() == 0)
     {
         CoreServices::sendStatusMessage ("No probes selected for survey.");
+        runButton->setEnabled (true);
+        secondsPerBankSlider->setEnabled (true);
+        table->setEnabled (true);
         return;
     }
 
     std::unique_ptr<SurveyRunner> runner = std::make_unique<SurveyRunner> (thread, editor, targets, (float) secondsPerBankSlider->getValue());
-    runner->runThread();
+
+    if (runner->runThread())
+    {
+        lastSurveyTargets = targets;
+        saveButton->setEnabled (true);
+    }
 
     // Restore activity views to normal mode
     for (const auto& r : rows)
@@ -766,6 +788,112 @@ void SurveyInterface::launchSurvey()
     runButton->setEnabled (true);
     secondsPerBankSlider->setEnabled (true);
     table->setEnabled (true);
+}
+
+void SurveyInterface::saveSurveyResultsToJson (const Array<SurveyTarget>& targets, float secondsPerConfig)
+{
+    if (targets.isEmpty())
+        return;
+
+    const auto timestamp = Time::getCurrentTime();
+
+    DynamicObject root;
+    root.setProperty (Identifier ("generated_at"), timestamp.toISO8601 (true));
+    root.setProperty (Identifier ("seconds_per_configuration"), static_cast<double> (secondsPerConfig));
+    root.setProperty (Identifier ("probe_count"), targets.size());
+
+    Array<var> probesVar;
+
+    for (const auto& target : targets)
+    {
+        Probe* probe = target.probe;
+        if (probe == nullptr)
+            continue;
+
+        ActivityView::SurveyStatistics apStats = probe->getSurveyStatistics (ActivityToView::APVIEW);
+
+        DynamicObject::Ptr probeObj = new DynamicObject();
+        probeObj->setProperty (Identifier ("name"), probe->getName());
+        probeObj->setProperty (Identifier ("type"), String (probeTypeToString (probe->type)));
+        probeObj->setProperty (Identifier ("shank_count"), probe->probeMetadata.shank_count);
+        probeObj->setProperty (Identifier ("sample_rate"), static_cast<double> (probe->ap_sample_rate));
+
+        if (probe->info.serial_number != 0)
+            probeObj->setProperty (Identifier ("serial_number"), String (probe->info.serial_number));
+
+        Array<var> bankStrings;
+        for (auto bank : target.banks)
+            bankStrings.add (bankToString (bank));
+        probeObj->setProperty (Identifier ("banks_surveyed"), bankStrings);
+
+        Array<var> shankIndices;
+        for (auto shank : target.shanks)
+            shankIndices.add (shank + 1); // 1-based for readability
+        probeObj->setProperty (Identifier ("shanks_surveyed"), shankIndices);
+
+        Array<var> electrodesVar;
+        const int electrodeCount = probe->electrodeMetadata.size();
+
+        for (int idx = 0; idx < electrodeCount; ++idx)
+        {
+            const auto& meta = probe->electrodeMetadata.getReference (idx);
+            const size_t index = static_cast<size_t> (idx);
+
+            DynamicObject::Ptr electrodeObj = new DynamicObject();
+            electrodeObj->setProperty (Identifier ("global_index"), meta.global_index);
+            electrodeObj->setProperty (Identifier ("shank"), meta.shank);
+            electrodeObj->setProperty (Identifier ("column"), meta.column_index);
+            electrodeObj->setProperty (Identifier ("row"), meta.row_index);
+            electrodeObj->setProperty (Identifier ("bank"), bankToString (meta.bank));
+            electrodeObj->setProperty (Identifier ("is_reference"), meta.type == ElectrodeType::REFERENCE);
+            electrodeObj->setProperty (Identifier ("position_x_um"), meta.xpos);
+            electrodeObj->setProperty (Identifier ("position_y_um"), meta.ypos);
+
+            const float apPeak = index < apStats.averages.size() ? apStats.averages[index] : 0.0f;
+            electrodeObj->setProperty (Identifier ("peak_to_peak"), apPeak);
+
+            electrodesVar.add (electrodeObj.get());
+        }
+
+        probeObj->setProperty (Identifier ("electrodes"), electrodesVar);
+
+        probesVar.add (probeObj.get());
+    }
+
+    if (probesVar.isEmpty())
+    {
+        CoreServices::sendStatusMessage ("No survey data collected to export.");
+        return;
+    }
+
+    root.setProperty (Identifier ("probes"), probesVar);
+
+    String defaultName = "neuropixels_survey_" + timestamp.formatted ("%Y-%m-%d_%H-%M-%S") + ".json";
+    File defaultLocation = CoreServices::getDefaultUserSaveDirectory().getChildFile (defaultName);
+
+    FileChooser fileChooser ("Save survey results as JSON", defaultLocation, "*.json");
+
+    if (! fileChooser.browseForFileToSave (true))
+    {
+        CoreServices::sendStatusMessage ("Survey results export cancelled.");
+        return;
+    }
+
+    File outputFile = fileChooser.getResult();
+    if (! outputFile.hasFileExtension (".json"))
+        outputFile = outputFile.withFileExtension (".json");
+
+    FileOutputStream outputStream (outputFile);
+    if (! outputStream.openedOk())
+    {
+        CoreServices::sendStatusMessage ("Unable to write survey results to " + outputFile.getFullPathName());
+        return;
+    }
+
+    root.writeAsJSON (outputStream, JSON::FormatOptions {}.withIndentLevel (4).withSpacing (JSON::Spacing::multiLine).withMaxDecimalPlaces (6));
+    outputStream.flush();
+
+    CoreServices::sendStatusMessage ("Survey results saved to " + outputFile.getFullPathName());
 }
 
 // ---------------------- TableListBoxModel ----------------------

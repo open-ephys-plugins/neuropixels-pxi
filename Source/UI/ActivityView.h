@@ -70,6 +70,15 @@ public:
 
     void resetSurveyData();
 
+    struct SurveyStatistics
+    {
+        std::vector<float> averages;
+        std::vector<double> totals;
+        std::vector<uint64_t> sampleCounts;
+    };
+
+    SurveyStatistics getSurveyStatistics();
+
 private:
     void calculatePeakToPeakValues();
 

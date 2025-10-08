@@ -586,6 +586,17 @@ public:
             return lfpView->getPeakToPeakValues();
     }
 
+    ActivityView::SurveyStatistics getSurveyStatistics (ActivityToView view)
+    {
+        if (view == ActivityToView::APVIEW && apView)
+            return apView->getSurveyStatistics();
+
+        if (view == ActivityToView::LFPVIEW && lfpView)
+            return lfpView->getSurveyStatistics();
+
+        return ActivityView::SurveyStatistics {};
+    }
+
     void setActivityViewFilterState (bool shouldFilter)
     {
         if (apView)
