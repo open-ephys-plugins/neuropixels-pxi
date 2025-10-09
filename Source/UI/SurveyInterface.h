@@ -54,6 +54,27 @@ private:
     std::unique_ptr<Label> placeholder;
 };
 
+/**
+
+    Expands/collapses the settings panel of the SurveyInterface
+
+*/
+class PanelToggleButton : public Button
+{
+public:
+    /** Constructor */
+    PanelToggleButton();
+
+    /** Destructor */
+    ~PanelToggleButton() {}
+
+    void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown) override;
+
+private:
+    Path collapsePath;
+    Path expandPath;
+};
+
 // Background worker that executes the survey without blocking the UI.
 struct SurveyTarget
 {
@@ -132,9 +153,12 @@ private:
 
     // Controls
     std::unique_ptr<Label> titleLabel;
+    std::unique_ptr<PanelToggleButton> panelToggleButton;
     std::unique_ptr<UtilityButton> runButton;
     std::unique_ptr<Slider> secondsPerBankSlider;
     std::unique_ptr<UtilityButton> saveButton;
+
+    bool leftPanelCollapsed { false };
 
     // Table for probe selection and granular bank/shank selection
     std::unique_ptr<TableListBox> table;

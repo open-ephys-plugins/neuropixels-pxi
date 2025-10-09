@@ -300,7 +300,9 @@ private:
 
 namespace
 {
-constexpr int surveyProbePanelSpacing = 20;
+static constexpr int surveyProbePanelSpacing = 20;
+static constexpr int leftPanelExpandedWidth = 510;
+static constexpr int leftPanelToggleWidth = 25;
 } // namespace
 
 SurveyProbePanel::SurveyProbePanel (Probe* p) : probe (p)
@@ -507,12 +509,43 @@ void SurveyRunner::run()
     LOGC ("SurveyRunner: Survey run finished");
 }
 
+// --------------------- PanelToggleButton -------------------------
+PanelToggleButton::PanelToggleButton() : Button ("Panel Toggle")
+{
+    setClickingTogglesState (true);
+    setTooltip ("Show/hide settings panel");
+    // String hamburgerPath = "M20 7L4 7 M20 12L4 12 M20 17L4 17";
+    String collapse = "M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z M9 4v16 M15 10l-2 2l2 2";
+    collapsePath = Drawable::parseSVGPath (collapse);
+
+    String expand = "M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z M9 4v16 M14 10l2 2l-2 2";
+    expandPath = Drawable::parseSVGPath (expand);
+}
+
+void PanelToggleButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown)
+{
+    auto bounds = getLocalBounds().toFloat().reduced (1.0f);
+    g.setColour (findColour (ThemeColours::widgetBackground));
+    g.fillRoundedRectangle (bounds, 4.0f);
+
+    auto iconArea = bounds;
+    Path toggleIcon = getToggleState() ? collapsePath : expandPath;
+    toggleIcon.scaleToFit (iconArea.getX(), iconArea.getY(), iconArea.getWidth(), iconArea.getHeight(), true);
+    g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.75f));
+    g.strokePath (toggleIcon, PathStrokeType (1.5f));
+}
+
 // --------------------- SurveyInterface -------------------------
 
 SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, NeuropixCanvas* c)
     : SettingsInterface (nullptr, t, e, c), thread (t), editor (e), canvas (c)
 {
     type = SettingsInterface::SURVEY_SETTINGS_INTERFACE;
+
+    panelToggleButton = std::make_unique<PanelToggleButton>();
+    panelToggleButton->setToggleState (true, dontSendNotification);
+    panelToggleButton->addListener (this);
+    addAndMakeVisible (*panelToggleButton);
 
     secondsPerBankSlider = std::make_unique<Slider> (Slider::LinearHorizontal, Slider::TextBoxRight);
     secondsPerBankSlider->setRange (1, 30.0, 1.0);
@@ -557,51 +590,91 @@ void SurveyInterface::paint (Graphics& g)
     g.fillAll (findColour (ThemeColours::componentParentBackground));
 
     const float leftPanelX = 10.0f;
-    const float leftPanelWidth = 510.0f;
     const float panelHeight = (float) getHeight() - 20.0f;
+    const bool showSettings = ! leftPanelCollapsed;
 
     g.setColour (findColour (ThemeColours::componentBackground));
-    g.fillRoundedRectangle (leftPanelX, 10.0f, leftPanelWidth, panelHeight, 8.0f);
-
-    Rectangle<int> rightArea = getLocalBounds();
-    rightArea.removeFromLeft ((int) (leftPanelX + leftPanelWidth) + 20);
-    if (! rightArea.isEmpty())
+    if (showSettings)
     {
-        g.fillRoundedRectangle (rightArea.reduced (10).toFloat(), 8.0f);
+        g.fillRoundedRectangle (leftPanelX, 10.0f, (float) leftPanelExpandedWidth, panelHeight, 8.0f);
+        g.setColour (findColour (ThemeColours::outline).withAlpha (0.75f));
+        g.drawRoundedRectangle (leftPanelX, 10.0f, (float) leftPanelExpandedWidth, panelHeight, 8.0f, 1.0f);
+
+        g.setFont (FontOptions ("Inter", "Semi Bold", 20.0f));
+        g.setColour (findColour (ThemeColours::defaultText));
+        g.drawText ("SURVEY SETTINGS", leftPanelX, 25.0f, leftPanelExpandedWidth, 25.0f, Justification::centred);
+    }
+    else
+    {
+        g.fillRoundedRectangle (leftPanelX, 10.0f, (float) leftPanelToggleWidth, panelHeight, 8.0f);
+        g.setColour (findColour (ThemeColours::outline).withAlpha (0.75f));
+        g.drawRoundedRectangle (leftPanelX, 10.0f, (float) leftPanelToggleWidth, panelHeight, 8.0f, 1.0f);
+
+        g.addTransform (AffineTransform::rotation (-MathConstants<double>::halfPi));
+        g.setFont (FontOptions ("Inter", "Semi Bold", 18.0f));
+        g.setColour (findColour (ThemeColours::defaultText));
+        g.drawText ("SURVEY SETTINGS", -(int) (panelHeight + 10), 10, (int) panelHeight, leftPanelToggleWidth, Justification::centred);
+        g.addTransform (AffineTransform::rotation (MathConstants<double>::halfPi));
     }
 
-    g.setColour (findColour (ThemeColours::defaultText));
-    g.setFont (FontOptions ("Inter", "Medium", 16.0f));
-    g.drawText ("Seconds per bank/shank:", 30, 80, 200, 25, Justification::centredLeft);
+    Rectangle<int> rightArea = getLocalBounds();
+    const int leftReservedWidth = (int) leftPanelX + (showSettings ? leftPanelExpandedWidth : leftPanelToggleWidth) + 20;
+    rightArea.removeFromLeft (leftReservedWidth);
+    if (! rightArea.isEmpty())
+    {
+        auto rightPanel = rightArea.reduced (10);
+        if (! rightPanel.isEmpty())
+        {
+            g.setColour (findColour (ThemeColours::componentBackground));
+            g.fillRoundedRectangle (rightPanel.toFloat(), 8.0f);
+        }
+    }
+
+    if (showSettings)
+    {
+        g.setColour (findColour (ThemeColours::defaultText));
+        g.setFont (FontOptions ("Inter", "Medium", 16.0f));
+        g.drawText ("Seconds per bank/shank:", 30, 120, 200, 25, Justification::centredLeft);
+    }
 }
 
 void SurveyInterface::resized()
 {
     const int leftPanelX = 10;
-    const int leftPanelWidth = 510;
-    const int topMargin = 10;
+    const int topMargin = 50;
+    const bool showSettings = ! leftPanelCollapsed;
 
-    if (runButton != nullptr)
-        runButton->setBounds (leftPanelX + (leftPanelWidth - 140) / 2, topMargin + 20, 140, 30);
+    const int toggleWidth = 24;
+    const int toggleX = leftPanelX + (showSettings ? leftPanelExpandedWidth - 12 : toggleWidth - 12);
+    const int toggleY = 25;
+    panelToggleButton->setBounds (toggleX, toggleY, toggleWidth, toggleWidth);
 
-    if (secondsPerBankSlider != nullptr)
-        secondsPerBankSlider->setBounds (200, topMargin + 70, 220, 25);
+    runButton->setVisible (showSettings);
+    if (showSettings)
+        runButton->setBounds (leftPanelX + (leftPanelExpandedWidth - 140) / 2, topMargin + 20, 140, 30);
 
-    if (table != nullptr)
+    secondsPerBankSlider->setVisible (showSettings);
+    if (showSettings)
+        secondsPerBankSlider->setBounds (leftPanelX + 190, topMargin + 70, 220, 25);
+
+    table->setVisible (showSettings);
+    if (showSettings)
     {
         const int tableTop = topMargin + 120;
         const int desiredHeight = (getNumRows() + 1) * table->getRowHeight() + 8;
         const int availableHeight = getHeight() - tableTop - 40;
-        table->setBounds (leftPanelX + 20, tableTop, leftPanelWidth - 38, jmin (desiredHeight, availableHeight));
+        table->setBounds (leftPanelX + 20, tableTop, leftPanelExpandedWidth - 38, jmin (desiredHeight, availableHeight));
     }
 
-    if (saveButton != nullptr && table != nullptr)
-        saveButton->setBounds (leftPanelX + (leftPanelWidth - 110) / 2, table->getBottom() + 30, 110, 24);
+    saveButton->setVisible (showSettings);
+    if (showSettings && table != nullptr)
+        saveButton->setBounds (leftPanelX + (leftPanelExpandedWidth - 110) / 2, table->getBottom() + 30, 110, 24);
 
     if (probeViewport != nullptr)
     {
         Rectangle<int> rightArea = getLocalBounds();
-        rightArea.removeFromLeft (leftPanelX + leftPanelWidth + 20);
+        const int leftReservedWidth = leftPanelX + (showSettings ? leftPanelExpandedWidth : leftPanelToggleWidth) + 20;
+        rightArea.removeFromLeft (leftReservedWidth);
         rightArea = rightArea.reduced (10, 10);
         if (rightArea.getWidth() < 0)
             rightArea.setWidth (0);
@@ -615,7 +688,13 @@ void SurveyInterface::resized()
 
 void SurveyInterface::buttonClicked (Button* b)
 {
-    if (b == runButton.get() && ! CoreServices::getAcquisitionStatus())
+    if (b == panelToggleButton.get())
+    {
+        leftPanelCollapsed = ! panelToggleButton->getToggleState();
+        resized();
+        repaint();
+    }
+    else if (b == runButton.get() && ! CoreServices::getAcquisitionStatus())
         launchSurvey();
     else if (b == saveButton.get() && lastSurveyTargets.size() > 0)
         saveSurveyResultsToJson (lastSurveyTargets, secondsPerBankSlider->getValue());
