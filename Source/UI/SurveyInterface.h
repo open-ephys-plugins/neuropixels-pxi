@@ -25,6 +25,7 @@
 
 #include "SettingsInterface.h"
 #include <VisualizerEditorHeaders.h>
+#include <array>
 
 class NeuropixEditor;
 class NeuropixCanvas;
@@ -43,6 +44,7 @@ public:
 
     ProbeBrowser* getProbeBrowser() const { return probeBrowser.get(); }
     Probe* getProbe() const { return probe; }
+    void setMaxPeakToPeakAmplitude (float amplitude);
 
     static constexpr int width = 480;
     static constexpr int minHeight = 720;
@@ -146,6 +148,7 @@ private:
     void showShanksSelector (int row, Component* anchor);
     void launchSurvey();
     void saveSurveyResultsToJson (const Array<SurveyTarget>& targets, float secondsPerConfig);
+    void applyMaxAmplitudeToPanels();
 
     NeuropixThread* thread;
     NeuropixEditor* editor;
@@ -156,6 +159,7 @@ private:
     std::unique_ptr<PanelToggleButton> panelToggleButton;
     std::unique_ptr<UtilityButton> runButton;
     std::unique_ptr<Slider> secondsPerBankSlider;
+    std::unique_ptr<ComboBox> amplitudeRangeComboBox;
     std::unique_ptr<UtilityButton> saveButton;
 
     bool leftPanelCollapsed { false };
@@ -189,4 +193,6 @@ private:
 
     Array<RowState> rows;
     Array<SurveyTarget> lastSurveyTargets;
+    float currentMaxPeakToPeak { 500.0f };
+    Array<float> amplitudeOptions { 250.0f, 500.0f, 750.0f, 1000.0f };
 };

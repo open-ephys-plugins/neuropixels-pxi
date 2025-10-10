@@ -27,6 +27,7 @@
 #include "../NeuropixEditor.h"
 #include "../NeuropixThread.h"
 #include "NeuropixInterface.h"
+#include "ColourScheme.h"
 #include "ProbeBrowser.h"
 
 #include <cmath>
@@ -375,6 +376,15 @@ void SurveyProbePanel::resized()
     }
 }
 
+void SurveyProbePanel::setMaxPeakToPeakAmplitude (float amplitude)
+{
+    if (probeBrowser != nullptr)
+    {
+        probeBrowser->setMaxPeakToPeakAmplitude (amplitude);
+        probeBrowser->repaint();
+    }
+}
+
 // --------------------- SurveyRunner -------------------------
 
 SurveyRunner::SurveyRunner (NeuropixThread* t, NeuropixEditor* e, const Array<SurveyTarget>& targetsToSurvey, float secondsPerConfig)
@@ -531,7 +541,7 @@ void PanelToggleButton::paintButton (Graphics& g, bool isMouseOver, bool isButto
     auto iconArea = bounds;
     Path toggleIcon = getToggleState() ? collapsePath : expandPath;
     toggleIcon.scaleToFit (iconArea.getX(), iconArea.getY(), iconArea.getWidth(), iconArea.getHeight(), true);
-    g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.75f));
+    g.setColour (findColour (ThemeColours::defaultText).withAlpha (isMouseOver ? 1.0f : 0.6f));
     g.strokePath (toggleIcon, PathStrokeType (1.5f));
 }
 
@@ -551,6 +561,14 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     secondsPerBankSlider->setRange (1, 30.0, 1.0);
     secondsPerBankSlider->setValue (2.0);
     addAndMakeVisible (*secondsPerBankSlider);
+
+    amplitudeRangeComboBox = std::make_unique<ComboBox> ("Amplitude Range");
+    const std::array<const char*, 4> amplitudeLabels { "0 - 250 \xC2\xB5V", "0 - 500 \xC2\xB5V", "0 - 750 \xC2\xB5V", "0 - 1000 \xC2\xB5V" };
+    for (size_t i = 0; i < amplitudeOptions.size(); ++i)
+        amplitudeRangeComboBox->addItem (String::fromUTF8 (amplitudeLabels[i]), static_cast<int> (i) + 1);
+    amplitudeRangeComboBox->setSelectedId (2, dontSendNotification);
+    amplitudeRangeComboBox->addListener (this);
+    addAndMakeVisible (*amplitudeRangeComboBox);
 
     runButton = std::make_unique<UtilityButton> ("RUN SURVEY...");
     runButton->setToggleState (true, dontSendNotification);
@@ -633,8 +651,29 @@ void SurveyInterface::paint (Graphics& g)
     if (showSettings)
     {
         g.setColour (findColour (ThemeColours::defaultText));
-        g.setFont (FontOptions ("Inter", "Medium", 16.0f));
+        g.setFont (FontOptions ("Inter", "Medium", 18.0f));
         g.drawText ("Seconds per bank/shank:", 30, 120, 200, 25, Justification::centredLeft);
+
+        const int amplitudeY = saveButton != nullptr ? saveButton->getBottom() + 30 : 155;
+        g.drawText ("Amplitude scale:", 30, amplitudeY, 200, 25, Justification::centredLeft);
+
+        const int legendX = 50;
+        const int legendY = amplitudeY + 40;
+        const int legendEntryHeight = 20;
+        const int legendRectSize = 15;
+        const int legendSteps = 5;
+
+        g.setFont (FontOptions ("Inter", "Regular", 15.0f));
+        for (int i = 0; i <= legendSteps; ++i)
+        {
+            const float normalized = legendSteps == 0 ? 0.0f : static_cast<float> (i) / static_cast<float> (legendSteps);
+            g.setColour (ColourScheme::getColourForNormalizedValue (normalized));
+            g.fillRect (legendX, legendY + legendEntryHeight * i, legendRectSize, legendRectSize);
+
+            const int amplitudeValue = juce::roundToInt ((legendSteps == 0 ? 0.0f : currentMaxPeakToPeak / static_cast<float> (legendSteps)) * static_cast<float> (i));
+            g.setColour (findColour (ThemeColours::defaultText));
+            g.drawText (String (amplitudeValue) + String::fromUTF8 (" \xC2\xB5V"), legendX + legendRectSize + 8, legendY + legendEntryHeight * i - 2, 150, legendRectSize + 4, Justification::centredLeft);
+        }
     }
 }
 
@@ -655,7 +694,7 @@ void SurveyInterface::resized()
 
     secondsPerBankSlider->setVisible (showSettings);
     if (showSettings)
-        secondsPerBankSlider->setBounds (leftPanelX + 190, topMargin + 70, 220, 25);
+        secondsPerBankSlider->setBounds (leftPanelX + 200, topMargin + 70, 220, 25);
 
     table->setVisible (showSettings);
     if (showSettings)
@@ -669,6 +708,10 @@ void SurveyInterface::resized()
     saveButton->setVisible (showSettings);
     if (showSettings && table != nullptr)
         saveButton->setBounds (leftPanelX + (leftPanelExpandedWidth - 110) / 2, table->getBottom() + 30, 110, 24);
+
+    amplitudeRangeComboBox->setVisible (showSettings);
+    if (showSettings)
+        amplitudeRangeComboBox->setBounds (leftPanelX + 150, saveButton->getBottom() + 30, 110, 22);
 
     if (probeViewport != nullptr)
     {
@@ -702,6 +745,17 @@ void SurveyInterface::buttonClicked (Button* b)
 
 void SurveyInterface::comboBoxChanged (ComboBox* cb)
 {
+    if (cb == amplitudeRangeComboBox.get())
+    {
+        const int optionIndex = amplitudeRangeComboBox->getSelectedId() - 1;
+        if (isPositiveAndBelow (optionIndex, static_cast<int> (amplitudeOptions.size())))
+        {
+            const float newAmplitude = amplitudeOptions[static_cast<size_t> (optionIndex)];
+            currentMaxPeakToPeak = newAmplitude;
+            applyMaxAmplitudeToPanels();
+            repaint();
+        }
+    }
 }
 
 void SurveyInterface::startAcquisition()
@@ -753,6 +807,7 @@ void SurveyInterface::rebuildProbePanels()
 
             auto panel = std::make_unique<SurveyProbePanel> (probe);
             panel->setBounds (x, 0, SurveyProbePanel::width, SurveyProbePanel::minHeight);
+            panel->setMaxPeakToPeakAmplitude (currentMaxPeakToPeak);
             panel->refresh();
             probeViewportContent->addAndMakeVisible (panel.get());
             probePanels.add (panel.release());
@@ -817,6 +872,7 @@ void SurveyInterface::refreshProbeList()
         table->updateContent();
 
     rebuildProbePanels();
+    applyMaxAmplitudeToPanels();
 }
 
 void SurveyInterface::launchSurvey()
@@ -1000,6 +1056,20 @@ void SurveyInterface::saveSurveyResultsToJson (const Array<SurveyTarget>& target
     outputStream.flush();
 
     CoreServices::sendStatusMessage ("Survey results saved to " + outputFile.getFullPathName());
+}
+
+void SurveyInterface::applyMaxAmplitudeToPanels()
+{
+    for (auto* panel : probePanels)
+    {
+        if (panel == nullptr)
+            continue;
+
+        panel->setMaxPeakToPeakAmplitude (currentMaxPeakToPeak);
+    }
+
+    if (probeViewportContent != nullptr)
+        probeViewportContent->repaint();
 }
 
 // ---------------------- TableListBoxModel ----------------------

@@ -76,6 +76,9 @@ public:
     int getZoomOffset();
     void setZoomHeightAndOffset (int, int);
 
+    /** Set max peak-to-peak amplitude */
+    void setMaxPeakToPeakAmplitude (float);
+
     ActivityToView activityToView;
     float maxPeakToPeakAmplitude;
 
@@ -122,6 +125,7 @@ private:
     // Helper methods
     void paintOverview (Graphics& g);
     Colour getElectrodeColour (int index);
+    void calculateElectrodeColours();
     int getNearestElectrode (int x, int y);
     Array<int> getElectrodesWithinBounds (int x, int y, int w, int h);
     String getElectrodeInfoString (int index);

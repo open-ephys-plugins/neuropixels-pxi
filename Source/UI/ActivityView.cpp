@@ -60,7 +60,7 @@ ActivityView::ActivityView (int numChannels_,
         blocks = blocks_;
     }
 
-    peakToPeakValues.assign (totalElectrodes, 0.0f);
+    peakToPeakValues.assign (totalElectrodes, -1.0f);
     channelToElectrode.resize (numChannels, -1);
     for (int i = 0; i < numChannels; ++i)
     {
@@ -225,7 +225,7 @@ void ActivityView::reset (int blockIndex)
             if (! isPositiveAndBelow (electrodeIdx, (int) peakToPeakValues.size()))
                 continue;
 
-            peakToPeakValues[(size_t) electrodeIdx] = 0.0f;
+            peakToPeakValues[(size_t) electrodeIdx] = -1.0f;
             if (isPositiveAndBelow (electrodeIdx, (int) surveyAccumulation.size()))
             {
                 surveyAccumulation[(size_t) electrodeIdx] = 0.0;

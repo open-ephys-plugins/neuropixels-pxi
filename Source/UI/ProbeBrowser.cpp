@@ -1253,11 +1253,8 @@ Colour ProbeBrowser::getElectrodeColour (int i)
     }
 }
 
-void ProbeBrowser::timerCallback()
+void ProbeBrowser::calculateElectrodeColours()
 {
-    if (displayMode != DisplayMode::OverviewOnly && (parent->mode != VisualizationMode::ACTIVITY_VIEW || ! isShowing()))
-        return;
-
     const float* peakToPeakValues = parent->probe->getPeakToPeakValues (activityToView);
 
     if (peakToPeakValues == nullptr)
@@ -1268,15 +1265,24 @@ void ProbeBrowser::timerCallback()
     for (int i = 0; i < electrodeCount; i++)
     {
         const int electrodeIdx = parent->electrodeMetadata[i].global_index;
+        const float value = peakToPeakValues[electrodeIdx];
 
-        if (! isPositiveAndBelow (electrodeIdx, electrodeCount))
+        if (value < 0)
             continue;
 
         parent->electrodeMetadata.getReference (i).colour =
-            ColourScheme::getColourForNormalizedValue (peakToPeakValues[electrodeIdx] / maxPeakToPeakAmplitude);
+            ColourScheme::getColourForNormalizedValue (value / maxPeakToPeakAmplitude);
     }
 
     repaint();
+}
+
+void ProbeBrowser::timerCallback()
+{
+    if (displayMode != DisplayMode::OverviewOnly && (parent->mode != VisualizationMode::ACTIVITY_VIEW || ! isShowing()))
+        return;
+
+    calculateElectrodeColours();
 }
 
 int ProbeBrowser::getZoomHeight()
@@ -1307,4 +1313,10 @@ void ProbeBrowser::setZoomHeightAndOffset (int newHeight, int newOffset)
         newOffset = maxOffset;
 
     zoomOffset = newOffset;
+}
+
+void ProbeBrowser::setMaxPeakToPeakAmplitude (float amp)
+{
+    maxPeakToPeakAmplitude = jmax (amp, 1.0f);
+    calculateElectrodeColours();
 }
