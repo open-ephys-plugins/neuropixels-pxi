@@ -92,7 +92,7 @@ struct SurveyTarget
 class SurveyRunner : public ThreadWithProgressWindow
 {
 public:
-    SurveyRunner (NeuropixThread* t, NeuropixEditor* e, const Array<SurveyTarget>& targetsToSurvey, float secondsPerConfig);
+    SurveyRunner (NeuropixThread* t, NeuropixEditor* e, const Array<SurveyTarget>& targetsToSurvey, float secondsPerConfig, bool recordDuringSurvey);
     ~SurveyRunner() {}
 
     void run() override;
@@ -102,6 +102,7 @@ private:
     NeuropixEditor* editor;
     Array<SurveyTarget> targets;
     float secondsPer;
+    bool recordDuringSurvey;
 };
 
 // Simple UI to configure and launch a survey across probes
@@ -158,6 +159,7 @@ private:
     std::unique_ptr<Label> titleLabel;
     std::unique_ptr<PanelToggleButton> panelToggleButton;
     std::unique_ptr<UtilityButton> runButton;
+    std::unique_ptr<ToggleButton> recordingToggleButton;
     std::unique_ptr<Slider> secondsPerBankSlider;
     std::unique_ptr<ComboBox> amplitudeRangeComboBox;
     std::unique_ptr<UtilityButton> saveButton;

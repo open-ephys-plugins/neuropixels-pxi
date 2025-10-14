@@ -26,8 +26,8 @@
 #include "../NeuropixCanvas.h"
 #include "../NeuropixEditor.h"
 #include "../NeuropixThread.h"
-#include "NeuropixInterface.h"
 #include "ColourScheme.h"
+#include "NeuropixInterface.h"
 #include "ProbeBrowser.h"
 
 #include <cmath>
@@ -387,12 +387,13 @@ void SurveyProbePanel::setMaxPeakToPeakAmplitude (float amplitude)
 
 // --------------------- SurveyRunner -------------------------
 
-SurveyRunner::SurveyRunner (NeuropixThread* t, NeuropixEditor* e, const Array<SurveyTarget>& targetsToSurvey, float secondsPerConfig)
+SurveyRunner::SurveyRunner (NeuropixThread* t, NeuropixEditor* e, const Array<SurveyTarget>& targetsToSurvey, float secondsPerConfig, bool recordDuringSurvey_)
     : ThreadWithProgressWindow ("Running survey", true, true),
       thread (t),
       editor (e),
       targets (targetsToSurvey),
-      secondsPer (secondsPerConfig)
+      secondsPer (secondsPerConfig),
+      recordDuringSurvey (recordDuringSurvey_)
 {
 }
 
@@ -492,8 +493,12 @@ void SurveyRunner::run()
         while (editor->uiLoader->isThreadRunning() && ! threadShouldExit())
             Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 10);
 
-        // Start acquisition for this window
-        CoreServices::setAcquisitionStatus (true);
+        // Start acquisition/recording for this window
+        if (recordDuringSurvey)
+            CoreServices::setRecordingStatus (true);
+        else
+            CoreServices::setAcquisitionStatus (true);
+
         LOGD ("SurveyRunner: Acquisition started for step ", i + 1);
 
         Time::waitForMillisecondCounter (Time::getMillisecondCounter() + (secondsPer * 1000) + 100);
@@ -575,6 +580,13 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     runButton->addListener (this);
     addAndMakeVisible (*runButton);
 
+    recordingToggleButton = std::make_unique<ToggleButton> ("Record survey to disk");
+    recordingToggleButton->setToggleState (false, dontSendNotification);
+    recordingToggleButton->addListener (this);
+    recordingToggleButton->setTooltip ("If enabled, each record node will record to disk during the survey. "
+                                       "Otherwise, data will be acquired but not saved. You can still save the survey results to a JSON file afterwards.");
+    addAndMakeVisible (*recordingToggleButton);
+
     table = std::make_unique<TableListBox> ("Survey Table", this);
     table->getHeader().addColumn ("Use", Columns::ColSelect, 30);
     table->getHeader().addColumn ("Probe", Columns::ColName, 100);
@@ -590,6 +602,7 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     saveButton->setClickingTogglesState (false);
     saveButton->addListener (this);
     saveButton->setEnabled (false);
+    saveButton->setTooltip ("Save survey results (peak-to-peak amplitude) to a JSON file");
     addAndMakeVisible (*saveButton);
 
     probeViewportContent = std::make_unique<Component>();
@@ -652,9 +665,10 @@ void SurveyInterface::paint (Graphics& g)
     {
         g.setColour (findColour (ThemeColours::defaultText));
         g.setFont (FontOptions ("Inter", "Medium", 18.0f));
-        g.drawText ("Seconds per bank/shank:", 30, 120, 200, 25, Justification::centredLeft);
+        const int secondsLabelY = secondsPerBankSlider != nullptr ? secondsPerBankSlider->getY() : 120;
+        g.drawText ("Seconds per bank/shank:", 30, secondsLabelY, 200, 25, Justification::centredLeft);
 
-        const int amplitudeY = saveButton != nullptr ? saveButton->getBottom() + 30 : 155;
+        const int amplitudeY = amplitudeRangeComboBox != nullptr ? amplitudeRangeComboBox->getY() : secondsLabelY + 60;
         g.drawText ("Amplitude scale:", 30, amplitudeY, 200, 25, Justification::centredLeft);
 
         const int legendX = 50;
@@ -694,12 +708,24 @@ void SurveyInterface::resized()
 
     secondsPerBankSlider->setVisible (showSettings);
     if (showSettings)
-        secondsPerBankSlider->setBounds (leftPanelX + 200, topMargin + 70, 220, 25);
+    {
+        const int sliderY =  runButton->getBottom() + 20;
+        secondsPerBankSlider->setBounds (leftPanelX + 200, sliderY, 220, 25);
+    }
+
+    recordingToggleButton->setVisible (showSettings);
+    if (showSettings)
+    {
+        const int toggleWidth = leftPanelExpandedWidth - 40;
+        const int toggleX = leftPanelX + 20;
+        const int toggleY = secondsPerBankSlider->getBottom() + 20;
+        recordingToggleButton->setBounds (toggleX, toggleY, toggleWidth, 24);
+    }
 
     table->setVisible (showSettings);
     if (showSettings)
     {
-        const int tableTop = topMargin + 120;
+        const int tableTop = recordingToggleButton->getBottom() + 20;
         const int desiredHeight = (getNumRows() + 1) * table->getRowHeight() + 8;
         const int availableHeight = getHeight() - tableTop - 40;
         table->setBounds (leftPanelX + 20, tableTop, leftPanelExpandedWidth - 38, jmin (desiredHeight, availableHeight));
@@ -877,11 +903,29 @@ void SurveyInterface::refreshProbeList()
 
 void SurveyInterface::launchSurvey()
 {
+    bool shouldRecordSurvey = recordingToggleButton->getToggleState();
+
+    if (shouldRecordSurvey && CoreServices::getAvailableRecordNodeIds().size() == 0)
+    {
+        bool shouldProceed = AlertWindow::showOkCancelBox (AlertWindow::WarningIcon,
+                                                           "No Record Node Found",
+                                                           "You have chosen to record the survey to disk, but no Record Node is available. Would you like to proceed with acquisition only?",
+                                                           "Yes",
+                                                           "No",
+                                                           this);
+
+        if (shouldProceed)
+            shouldRecordSurvey = false;
+        else
+            return;
+    }
+
     // Disable all controls during acquisition
     runButton->setEnabled (false);
     secondsPerBankSlider->setEnabled (false);
     table->setEnabled (false);
     saveButton->setEnabled (false);
+    recordingToggleButton->setEnabled (false);
 
     lastSurveyTargets.clear();
 
@@ -926,10 +970,11 @@ void SurveyInterface::launchSurvey()
         runButton->setEnabled (true);
         secondsPerBankSlider->setEnabled (true);
         table->setEnabled (true);
+        recordingToggleButton->setEnabled (true);
         return;
     }
 
-    std::unique_ptr<SurveyRunner> runner = std::make_unique<SurveyRunner> (thread, editor, targets, (float) secondsPerBankSlider->getValue());
+    std::unique_ptr<SurveyRunner> runner = std::make_unique<SurveyRunner> (thread, editor, targets, (float) secondsPerBankSlider->getValue(), shouldRecordSurvey);
 
     if (runner->runThread())
     {
@@ -948,6 +993,7 @@ void SurveyInterface::launchSurvey()
     runButton->setEnabled (true);
     secondsPerBankSlider->setEnabled (true);
     table->setEnabled (true);
+    recordingToggleButton->setEnabled (true);
 }
 
 void SurveyInterface::saveSurveyResultsToJson (const Array<SurveyTarget>& targets, float secondsPerConfig)
