@@ -445,7 +445,7 @@ void SurveyRunner::run()
                 int sh = target.shanks[shanksIndices[targetIdx]];
                 Bank bank = target.banks[bankIndices[targetIdx]];
 
-                LOGD ("SurveyRunner: Applying settings to probe ", probe->getName().toRawUTF8(), " - Bank=", SurveyInterface::bankToString (bank).toRawUTF8(), " Shank=", sh);
+                LOGD ("SurveyRunner: Applying settings to probe ", probe->getName().toRawUTF8(), " - Bank=", SurveyInterface::bankToString (bank).toRawUTF8(), " Shank=", sh + 1);
 
                 // Build settings for this combo
                 for (const auto& config : target.electrodeConfigs)
@@ -709,7 +709,7 @@ void SurveyInterface::resized()
     secondsPerBankSlider->setVisible (showSettings);
     if (showSettings)
     {
-        const int sliderY =  runButton->getBottom() + 20;
+        const int sliderY = runButton->getBottom() + 20;
         secondsPerBankSlider->setBounds (leftPanelX + 200, sliderY, 220, 25);
     }
 
@@ -1034,7 +1034,7 @@ void SurveyInterface::saveSurveyResultsToJson (const Array<SurveyTarget>& target
 
         Array<var> shankIndices;
         for (auto shank : target.shanks)
-            shankIndices.add (shank + 1); // 1-based for readability
+            shankIndices.add (shank);
         probeObj->setProperty (Identifier ("shanks_surveyed"), shankIndices);
 
         Array<var> electrodesVar;

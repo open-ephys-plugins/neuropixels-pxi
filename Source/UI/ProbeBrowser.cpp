@@ -1267,7 +1267,7 @@ void ProbeBrowser::calculateElectrodeColours()
         const int electrodeIdx = parent->electrodeMetadata[i].global_index;
         const float value = peakToPeakValues[electrodeIdx];
 
-        if (value < 0)
+        if (value < 0.0f)
             continue;
 
         parent->electrodeMetadata.getReference (i).colour =

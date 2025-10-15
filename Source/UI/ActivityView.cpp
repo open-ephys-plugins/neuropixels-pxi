@@ -253,6 +253,10 @@ void ActivityView::setSurveyMode (bool enabled, bool reset)
     const ScopedLock lock (bufferMutex);
     surveyMode = enabled;
 
+    // Reset abstract FIFOs
+    for (auto& fifo : abstractFifos)
+        fifo->reset();
+
     if (reset)
         resetSurveyData();
 }
