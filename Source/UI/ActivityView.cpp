@@ -226,11 +226,6 @@ void ActivityView::reset (int blockIndex)
                 continue;
 
             peakToPeakValues[(size_t) electrodeIdx] = -1.0f;
-            if (isPositiveAndBelow (electrodeIdx, (int) surveyAccumulation.size()))
-            {
-                surveyAccumulation[(size_t) electrodeIdx] = 0.0;
-                surveySampleCount[(size_t) electrodeIdx] = 0;
-            }
         }
 
         counters[blockIndex] = 0;
