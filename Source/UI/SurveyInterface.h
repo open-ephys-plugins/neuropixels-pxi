@@ -194,6 +194,7 @@ private:
     };
 
     Array<RowState> rows;
+    bool isSurveyRunning { false };
     Array<SurveyTarget> lastSurveyTargets;
     float currentMaxPeakToPeak { 500.0f };
     Array<float> amplitudeOptions { 250.0f, 500.0f, 750.0f, 1000.0f };

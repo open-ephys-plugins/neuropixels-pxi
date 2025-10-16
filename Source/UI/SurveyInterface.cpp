@@ -791,6 +791,9 @@ void SurveyInterface::startAcquisition()
         if (panel->getProbe()->getEnabledForSurvey())
             panel->getProbeBrowser()->startTimer (100);
     }
+
+    if (! isSurveyRunning)
+        runButton->setEnabled (false);
 }
 
 void SurveyInterface::stopAcquisition()
@@ -799,6 +802,9 @@ void SurveyInterface::stopAcquisition()
     {
         panel->getProbeBrowser()->stopTimer();
     }
+
+    if (! isSurveyRunning)
+        runButton->setEnabled (true);
 }
 
 void SurveyInterface::updateInfoString()
@@ -974,6 +980,8 @@ void SurveyInterface::launchSurvey()
         return;
     }
 
+    isSurveyRunning = true;
+
     std::unique_ptr<SurveyRunner> runner = std::make_unique<SurveyRunner> (thread, editor, targets, (float) secondsPerBankSlider->getValue(), shouldRecordSurvey);
 
     if (runner->runThread())
@@ -988,6 +996,8 @@ void SurveyInterface::launchSurvey()
         r.probe->setSurveyMode (false, false);
         r.probe->setEnabledForSurvey (false);
     }
+
+    isSurveyRunning = false;
 
     // Re-enable controls
     runButton->setEnabled (true);
