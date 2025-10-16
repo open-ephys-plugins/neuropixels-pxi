@@ -222,6 +222,8 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
     setGroupColours (groupBColour, { Bank::D, Bank::D1, Bank::D2, Bank::D3, Bank::D4, Bank::H, Bank::L });
 
     dragZoneWidth = 10;
+
+    overviewElectrodeColours.insertMultiple (0, Colour (160, 160, 160), parent->electrodeMetadata.size());
 }
 
 void ProbeBrowser::setDisplayMode (DisplayMode mode)
@@ -784,7 +786,7 @@ void ProbeBrowser::paintOverview (Graphics& g)
         if (electrodeRect.getWidth() > 1.3f && electrodeRect.getHeight() > 1.3f)
             electrodeRect = electrodeRect.reduced (0.2f, 0.2f);
 
-        g.setColour (parent->electrodeMetadata.getReference (i).colour);
+        g.setColour (overviewElectrodeColours.getUnchecked (i));
         g.fillRect (electrodeRect);
     }
 
@@ -1270,8 +1272,8 @@ void ProbeBrowser::calculateElectrodeColours()
         if (value < 0.0f)
             continue;
 
-        parent->electrodeMetadata.getReference (i).colour =
-            ColourScheme::getColourForNormalizedValue (value / maxPeakToPeakAmplitude);
+        overviewElectrodeColours.setUnchecked (i, ColourScheme::getColourForNormalizedValue (value / overviewMaxPeakToPeakAmplitude));
+        parent->electrodeMetadata.getReference (i).colour = ColourScheme::getColourForNormalizedValue (value / maxPeakToPeakAmplitude);
     }
 
     repaint();
@@ -1317,6 +1319,6 @@ void ProbeBrowser::setZoomHeightAndOffset (int newHeight, int newOffset)
 
 void ProbeBrowser::setMaxPeakToPeakAmplitude (float amp)
 {
-    maxPeakToPeakAmplitude = jmax (amp, 1.0f);
+    overviewMaxPeakToPeakAmplitude = jmax (amp, 1.0f);
     calculateElectrodeColours();
 }

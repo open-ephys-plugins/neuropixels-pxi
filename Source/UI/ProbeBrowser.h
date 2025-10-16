@@ -122,6 +122,10 @@ private:
 
     String electrodeInfoString;
 
+    // Local electrode colours for Overview mode
+    Array<Colour> overviewElectrodeColours;
+    float overviewMaxPeakToPeakAmplitude = 500.0f;
+
     // Helper methods
     void paintOverview (Graphics& g);
     Colour getElectrodeColour (int index);
