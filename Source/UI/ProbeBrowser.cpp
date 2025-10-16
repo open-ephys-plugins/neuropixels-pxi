@@ -1270,10 +1270,15 @@ void ProbeBrowser::calculateElectrodeColours()
         const float value = peakToPeakValues[electrodeIdx];
 
         if (value < 0.0f)
-            continue;
-
-        overviewElectrodeColours.setUnchecked (i, ColourScheme::getColourForNormalizedValue (value / overviewMaxPeakToPeakAmplitude));
-        parent->electrodeMetadata.getReference (i).colour = ColourScheme::getColourForNormalizedValue (value / maxPeakToPeakAmplitude);
+        {
+            overviewElectrodeColours.setUnchecked (i, Colour (160, 160, 160));
+            parent->electrodeMetadata.getReference (i).colour = Colour (160, 160, 160);
+        }
+        else
+        {
+            overviewElectrodeColours.setUnchecked (i, ColourScheme::getColourForNormalizedValue (value / overviewMaxPeakToPeakAmplitude));
+            parent->electrodeMetadata.getReference (i).colour = ColourScheme::getColourForNormalizedValue (value / maxPeakToPeakAmplitude);
+        }
     }
 
     repaint();

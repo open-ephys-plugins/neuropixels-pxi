@@ -265,6 +265,7 @@ void ActivityView::resetSurveyData()
 {
     std::fill (surveyAccumulation.begin(), surveyAccumulation.end(), 0.0);
     std::fill (surveySampleCount.begin(), surveySampleCount.end(), 0);
+    std::fill (peakToPeakValues.begin(), peakToPeakValues.end(), -1.0f);
 }
 
 ActivityView::SurveyStatistics ActivityView::getSurveyStatistics()
