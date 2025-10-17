@@ -968,6 +968,8 @@ void SurveyInterface::launchSurvey()
     // Disable all controls during acquisition
     runButton->setEnabled (false);
     secondsPerBankComboBox->setEnabled (false);
+    activityViewCARToggle->setEnabled (false);
+    activityViewFilterToggle->setEnabled (false);
     table->setEnabled (false);
     saveButton->setEnabled (false);
     recordingToggleButton->setEnabled (false);
@@ -1030,6 +1032,8 @@ void SurveyInterface::launchSurvey()
         CoreServices::sendStatusMessage ("No probes selected for survey.");
         runButton->setEnabled (true);
         secondsPerBankComboBox->setEnabled (true);
+        activityViewCARToggle->setEnabled (true);
+        activityViewFilterToggle->setEnabled (true);
         table->setEnabled (true);
         recordingToggleButton->setEnabled (true);
         return;
@@ -1069,6 +1073,8 @@ void SurveyInterface::launchSurvey()
     // Re-enable controls
     runButton->setEnabled (true);
     secondsPerBankComboBox->setEnabled (true);
+    activityViewCARToggle->setEnabled (true);
+    activityViewFilterToggle->setEnabled (true);
     table->setEnabled (true);
     recordingToggleButton->setEnabled (true);
 }

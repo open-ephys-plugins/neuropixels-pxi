@@ -792,7 +792,7 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
         {
             const int optionIndex = activityViewAmplitudeComboBox->getSelectedId() - 1;
             currentMaxPeakToPeak = amplitudeOptions[static_cast<size_t> (optionIndex)];
-            probeBrowser->maxPeakToPeakAmplitude = currentMaxPeakToPeak;
+            probeBrowser->setMaxPeakToPeakAmplitude (currentMaxPeakToPeak);
         }
         else if (comboBox == redEmissionSiteComboBox.get())
         {
@@ -840,7 +840,7 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
         {
             const int optionIndex = activityViewAmplitudeComboBox->getSelectedId() - 1;
             currentMaxPeakToPeak = amplitudeOptions[static_cast<size_t> (optionIndex)];
-            probeBrowser->maxPeakToPeakAmplitude = currentMaxPeakToPeak;
+            probeBrowser->setMaxPeakToPeakAmplitude (currentMaxPeakToPeak);
             repaint();
         }
         else if (comboBox == redEmissionSiteComboBox.get())

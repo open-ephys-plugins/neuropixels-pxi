@@ -115,14 +115,7 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
 
     ProbeType probeType = parent->probe->type;
 
-    if (probeType == ProbeType::QUAD_BASE || probeType == ProbeType::NP2_1 || probeType == ProbeType::NP2_4)
-    {
-        maxPeakToPeakAmplitude = 1000.0f;
-    }
-    else
-    {
-        maxPeakToPeakAmplitude = 250.0f;
-    }
+    maxPeakToPeakAmplitude = 500.0f;
 
     isOverZoomRegion = false;
     isOverUpperBorder = false;
@@ -1324,6 +1317,11 @@ void ProbeBrowser::setZoomHeightAndOffset (int newHeight, int newOffset)
 
 void ProbeBrowser::setMaxPeakToPeakAmplitude (float amp)
 {
-    overviewMaxPeakToPeakAmplitude = jmax (amp, 1.0f);
-    calculateElectrodeColours();
+    if (displayMode == DisplayMode::OverviewOnly)
+        overviewMaxPeakToPeakAmplitude = jmax (amp, 1.0f);
+    else
+        maxPeakToPeakAmplitude = jmax (amp, 1.0f);
+
+    if (! isTimerRunning())
+        calculateElectrodeColours();
 }
