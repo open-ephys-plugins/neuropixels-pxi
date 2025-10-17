@@ -572,8 +572,8 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
 
     amplitudeRangeComboBox = std::make_unique<ComboBox> ("Amplitude Range");
     const std::array<const char*, 4> amplitudeLabels { "0 - 250 \xC2\xB5V", "0 - 500 \xC2\xB5V", "0 - 750 \xC2\xB5V", "0 - 1000 \xC2\xB5V" };
-    for (size_t i = 0; i < amplitudeOptions.size(); ++i)
-        amplitudeRangeComboBox->addItem (String::fromUTF8 (amplitudeLabels[i]), static_cast<int> (i) + 1);
+    for (int i = 0; i < amplitudeOptions.size(); ++i)
+        amplitudeRangeComboBox->addItem (String::fromUTF8 (amplitudeLabels[i]), i + 1);
     amplitudeRangeComboBox->setSelectedId (2, dontSendNotification);
     amplitudeRangeComboBox->addListener (this);
     addAndMakeVisible (*amplitudeRangeComboBox);

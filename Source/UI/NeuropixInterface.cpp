@@ -269,7 +269,17 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         activityViewCARButton->setBounds (500, currentHeight + 44, 70, 18);
         addAndMakeVisible (activityViewCARButton.get());
 
-        currentHeight += 105;
+        activityViewAmplitudeComboBox = std::make_unique<ComboBox> ("Activity View Amplitude Range");
+        const std::array<const char*, 4> amplitudeLabels { "0 - 250 \xC2\xB5V", "0 - 500 \xC2\xB5V", "0 - 750 \xC2\xB5V", "0 - 1000 \xC2\xB5V" };
+        for (int i = 0; i < amplitudeOptions.size(); ++i)
+            activityViewAmplitudeComboBox->addItem (String::fromUTF8 (amplitudeLabels[i]), i + 1);
+        activityViewAmplitudeComboBox->setSelectedId (2, dontSendNotification); // Default to 500 µV
+        activityViewAmplitudeComboBox->addListener (this);
+        activityViewAmplitudeComboBox->setBounds (500, currentHeight + 70, 100, 22);
+        activityViewAmplitudeComboBox->setTooltip ("Set amplitude scale for activity view");
+        addAndMakeVisible (activityViewAmplitudeComboBox.get());
+
+        currentHeight += 125;
 
         if (probe->info.part_number == "NP1300") // Neuropixels Opto
         {
@@ -771,14 +781,18 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
             {
                 probeBrowser->activityToView = ActivityToView::APVIEW;
                 ColourScheme::setColourScheme (ColourSchemeId::PLASMA);
-                probeBrowser->maxPeakToPeakAmplitude = 250.0f;
             }
             else
             {
                 probeBrowser->activityToView = ActivityToView::LFPVIEW;
                 ColourScheme::setColourScheme (ColourSchemeId::VIRIDIS);
-                probeBrowser->maxPeakToPeakAmplitude = 500.0f;
             }
+        }
+        else if (comboBox == activityViewAmplitudeComboBox.get())
+        {
+            const int optionIndex = activityViewAmplitudeComboBox->getSelectedId() - 1;
+            currentMaxPeakToPeak = amplitudeOptions[static_cast<size_t> (optionIndex)];
+            probeBrowser->maxPeakToPeakAmplitude = currentMaxPeakToPeak;
         }
         else if (comboBox == redEmissionSiteComboBox.get())
         {
@@ -813,15 +827,20 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
             {
                 probeBrowser->activityToView = ActivityToView::APVIEW;
                 ColourScheme::setColourScheme (ColourSchemeId::PLASMA);
-                probeBrowser->maxPeakToPeakAmplitude = 250.0f;
             }
             else
             {
                 probeBrowser->activityToView = ActivityToView::LFPVIEW;
                 ColourScheme::setColourScheme (ColourSchemeId::VIRIDIS);
-                probeBrowser->maxPeakToPeakAmplitude = 500.0f;
             }
 
+            repaint();
+        }
+        else if (comboBox == activityViewAmplitudeComboBox.get())
+        {
+            const int optionIndex = activityViewAmplitudeComboBox->getSelectedId() - 1;
+            currentMaxPeakToPeak = amplitudeOptions[static_cast<size_t> (optionIndex)];
+            probeBrowser->maxPeakToPeakAmplitude = currentMaxPeakToPeak;
             repaint();
         }
         else if (comboBox == redEmissionSiteComboBox.get())
@@ -1379,7 +1398,7 @@ void NeuropixInterface::drawLegend (Graphics& g)
     g.setFont (15);
 
     int xOffset = 500;
-    int yOffset = 485;
+    int yOffset = activityViewAmplitudeComboBox == nullptr ? 485 : activityViewAmplitudeComboBox->getBottom() + 30;
 
     switch (mode)
     {

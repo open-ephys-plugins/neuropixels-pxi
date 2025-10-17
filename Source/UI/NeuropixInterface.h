@@ -137,6 +137,7 @@ private:
     std::unique_ptr<ComboBox> referenceComboBox;
     std::unique_ptr<ComboBox> filterComboBox;
     std::unique_ptr<ComboBox> activityViewComboBox;
+    std::unique_ptr<ComboBox> activityViewAmplitudeComboBox;
     std::unique_ptr<ComboBox> redEmissionSiteComboBox;
     std::unique_ptr<ComboBox> blueEmissionSiteComboBox;
 
@@ -216,6 +217,9 @@ private:
     Array<BIST> availableBists;
     Array<String> imroFiles;
     Array<bool> imroLoadedFromFolder;
+    
+    Array<float> amplitudeOptions { 250.0f, 500.0f, 750.0f, 1000.0f };
+    float currentMaxPeakToPeak { 500.0f };
 };
 
 /**
