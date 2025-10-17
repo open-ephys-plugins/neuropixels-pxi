@@ -46,7 +46,9 @@ public:
     Probe* getProbe() const { return probe; }
     void setMaxPeakToPeakAmplitude (float amplitude);
 
-    static constexpr int width = 480;
+    int getOptimalWidth () const;
+
+    static constexpr int width = 460;
     static constexpr int minHeight = 720;
 
 private:

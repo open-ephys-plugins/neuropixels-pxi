@@ -385,6 +385,20 @@ void SurveyProbePanel::setMaxPeakToPeakAmplitude (float amplitude)
     }
 }
 
+int SurveyProbePanel::getOptimalWidth() const
+{
+    const int shankCount = probe->probeMetadata.shank_count;
+    // Keep full width for 4+ shanks, reduce for fewer shanks
+    if (shankCount >= 4)
+        return 460;
+    else if (shankCount == 3)
+        return 400;
+    else if (shankCount == 2)
+        return 340;
+    else // 1 shank
+        return 280;
+}
+
 // --------------------- SurveyRunner -------------------------
 
 SurveyRunner::SurveyRunner (NeuropixThread* t, NeuropixEditor* e, const Array<SurveyTarget>& targetsToSurvey, float secondsPerConfig, bool recordDuringSurvey_)
@@ -877,13 +891,14 @@ void SurveyInterface::rebuildProbePanels()
                 continue;
 
             auto panel = std::make_unique<SurveyProbePanel> (probe);
-            panel->setBounds (x, 0, SurveyProbePanel::width, SurveyProbePanel::minHeight);
+            const int panelWidth = panel->getOptimalWidth();
+            panel->setBounds (x, 0, panelWidth, SurveyProbePanel::minHeight);
             panel->setMaxPeakToPeakAmplitude (currentMaxPeakToPeak);
             panel->refresh();
             probeViewportContent->addAndMakeVisible (panel.get());
             probePanels.add (panel.release());
 
-            x += SurveyProbePanel::width + surveyProbePanelSpacing;
+            x += panelWidth + surveyProbePanelSpacing;
         }
     }
 
@@ -913,8 +928,9 @@ void SurveyInterface::layoutProbePanels()
         if (panel == nullptr)
             continue;
 
-        panel->setBounds (x, 20, SurveyProbePanel::width, contentHeight - 40);
-        x += SurveyProbePanel::width + surveyProbePanelSpacing;
+        const int panelWidth = panel->getWidth();
+        panel->setBounds (x, 20, panelWidth, contentHeight - 40);
+        x += panelWidth + surveyProbePanelSpacing;
     }
 }
 
