@@ -87,6 +87,8 @@ struct SurveyTarget
     Array<int> shanks;
     int shankCount { 1 };
     bool surveyComplete { false };
+    bool originalFilterState { true };
+    bool originalCARState { true };
 };
 
 class SurveyRunner : public ThreadWithProgressWindow
@@ -160,6 +162,8 @@ private:
     std::unique_ptr<PanelToggleButton> panelToggleButton;
     std::unique_ptr<UtilityButton> runButton;
     std::unique_ptr<ToggleButton> recordingToggleButton;
+    std::unique_ptr<UtilityButton> activityViewFilterToggle;
+    std::unique_ptr<UtilityButton> activityViewCARToggle;
     std::unique_ptr<Slider> secondsPerBankSlider;
     std::unique_ptr<ComboBox> amplitudeRangeComboBox;
     std::unique_ptr<UtilityButton> saveButton;

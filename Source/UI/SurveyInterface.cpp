@@ -587,6 +587,20 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
                                        "Otherwise, data will be acquired but not saved. You can still save the survey results to a JSON file afterwards.");
     addAndMakeVisible (*recordingToggleButton);
 
+    activityViewFilterToggle = std::make_unique<UtilityButton> ("BP FILTER");
+    activityViewFilterToggle->setToggleState (true, dontSendNotification);
+    activityViewFilterToggle->setClickingTogglesState (true);
+    activityViewFilterToggle->addListener (this);
+    activityViewFilterToggle->setTooltip ("Apply bandpass filtering (300 Hz - 6 kHz) to activity view during survey");
+    addAndMakeVisible (*activityViewFilterToggle);
+
+    activityViewCARToggle = std::make_unique<UtilityButton> ("CAR");
+    activityViewCARToggle->setToggleState (true, dontSendNotification);
+    activityViewCARToggle->setClickingTogglesState (true);
+    activityViewCARToggle->addListener (this);
+    activityViewCARToggle->setTooltip ("Apply common average referencing to activity view during survey");
+    addAndMakeVisible (*activityViewCARToggle);
+
     table = std::make_unique<TableListBox> ("Survey Table", this);
     table->getHeader().addColumn ("Use", Columns::ColSelect, 30);
     table->getHeader().addColumn ("Probe", Columns::ColName, 100);
@@ -668,6 +682,9 @@ void SurveyInterface::paint (Graphics& g)
         const int secondsLabelY = secondsPerBankSlider != nullptr ? secondsPerBankSlider->getY() : 120;
         g.drawText ("Seconds per bank/shank:", 30, secondsLabelY, 200, 25, Justification::centredLeft);
 
+        const int filterY = secondsLabelY + 45;
+        g.drawText ("Activity view options:", 30, filterY, 200, 25, Justification::centredLeft);
+
         const int amplitudeY = amplitudeRangeComboBox != nullptr ? amplitudeRangeComboBox->getY() : secondsLabelY + 60;
         g.drawText ("Amplitude scale:", 30, amplitudeY, 200, 25, Justification::centredLeft);
 
@@ -713,12 +730,30 @@ void SurveyInterface::resized()
         secondsPerBankSlider->setBounds (leftPanelX + 200, sliderY, 220, 25);
     }
 
+    activityViewFilterToggle->setVisible (showSettings);
+    if (showSettings)
+    {
+        const int toggleWidth = 100;
+        const int toggleX = leftPanelX + 200;
+        const int toggleY = secondsPerBankSlider->getBottom() + 20;
+        activityViewFilterToggle->setBounds (toggleX, toggleY, toggleWidth, 22);
+    }
+
+    activityViewCARToggle->setVisible (showSettings);
+    if (showSettings)
+    {
+        const int toggleWidth = 100;
+        const int toggleX = activityViewFilterToggle->getRight() + 10;
+        const int toggleY = activityViewFilterToggle->getY();
+        activityViewCARToggle->setBounds (toggleX, toggleY, toggleWidth, 22);
+    }
+
     recordingToggleButton->setVisible (showSettings);
     if (showSettings)
     {
-        const int toggleWidth = leftPanelExpandedWidth - 40;
+        const int toggleWidth = 200;
         const int toggleX = leftPanelX + 20;
-        const int toggleY = secondsPerBankSlider->getBottom() + 20;
+        const int toggleY = activityViewCARToggle->getBottom() + 20;
         recordingToggleButton->setBounds (toggleX, toggleY, toggleWidth, 24);
     }
 
@@ -767,6 +802,7 @@ void SurveyInterface::buttonClicked (Button* b)
         launchSurvey();
     else if (b == saveButton.get() && lastSurveyTargets.size() > 0)
         saveSurveyResultsToJson (lastSurveyTargets, secondsPerBankSlider->getValue());
+    // Note: activityViewFilterToggle and activityViewCARToggle are only applied when survey is launched
 }
 
 void SurveyInterface::comboBoxChanged (ComboBox* cb)
@@ -935,6 +971,10 @@ void SurveyInterface::launchSurvey()
 
     lastSurveyTargets.clear();
 
+    // Get the desired filter and CAR states from the toggle buttons
+    bool desiredFilterState = activityViewFilterToggle->getToggleState();
+    bool desiredCARState = activityViewCARToggle->getToggleState();
+
     Array<SurveyTarget> targets;
     for (const auto& r : rows)
     {
@@ -952,6 +992,14 @@ void SurveyInterface::launchSurvey()
         t.electrodeConfigs = r.electrodeConfigs;
         t.electrodesToRestore = r.probe->settings.selectedElectrode;
         t.probe->setEnabledForSurvey (true);
+
+        // Store original filter and CAR states
+        t.originalFilterState = r.probe->getActivityViewFilterState();
+        t.originalCARState = r.probe->getActivityViewCARState();
+
+        // Apply the desired states from toggle buttons
+        r.probe->setActivityViewFilterState (desiredFilterState);
+        r.probe->setActivityViewCARState (desiredCARState);
 
         if (r.chosenBanks.size() > 0)
             t.banks = r.chosenBanks;
@@ -990,7 +1038,15 @@ void SurveyInterface::launchSurvey()
         saveButton->setEnabled (true);
     }
 
-    // Restore activity views to normal mode
+    // Restore activity views to normal mode and restore original filter/CAR states
+    for (const auto& t : targets)
+    {
+        // Restore original filter and CAR states
+        t.probe->setActivityViewFilterState (t.originalFilterState);
+        t.probe->setActivityViewCARState (t.originalCARState);
+    }
+
+    // Also restore for non-selected probes
     for (const auto& r : rows)
     {
         r.probe->setSurveyMode (false, false);

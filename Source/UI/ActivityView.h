@@ -58,7 +58,11 @@ public:
 
     void setBandpassFilterEnabled (bool enabled);
 
+    const bool getBandpassFilterEnabled() const { return filterEnabled; }
+
     void setCommonAverageReferencingEnabled (bool enabled);
+
+    const bool getCommonAverageReferencingEnabled() const { return carEnabled; }
 
     void addToBuffer (float* samples, int numSamples, int blockIndex = 0);
 
@@ -108,7 +112,7 @@ private:
 
     // Bandpass filter state
     bool filterEnabled;
-    Array<Dsp::Filter*> filters;
+    OwnedArray<Dsp::Filter> filters;
 
     // Common average referencing state
     bool carEnabled;

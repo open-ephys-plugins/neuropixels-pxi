@@ -606,6 +606,17 @@ public:
             lfpView->setBandpassFilterEnabled (shouldFilter);
     }
 
+    const bool getActivityViewFilterState() const
+    {
+        if (apView)
+            return apView->getBandpassFilterEnabled();
+
+        if (lfpView)
+            return lfpView->getBandpassFilterEnabled();
+
+        return false;
+    }
+
     void setActivityViewCARState (bool shouldUseCar)
     {
         if (apView)
@@ -613,6 +624,17 @@ public:
 
         if (lfpView)
             lfpView->setCommonAverageReferencingEnabled (shouldUseCar);
+    }
+
+    const bool getActivityViewCARState() const
+    {
+        if (apView)
+            return apView->getCommonAverageReferencingEnabled();
+
+        if (lfpView)
+            return lfpView->getCommonAverageReferencingEnabled();
+
+        return false;
     }
 
     void setSurveyMode (bool enabled, bool reset = true)

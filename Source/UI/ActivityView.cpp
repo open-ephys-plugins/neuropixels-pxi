@@ -246,6 +246,10 @@ void ActivityView::setChannelToElectrodeMapping (const std::vector<int>& mapping
         return;
 
     channelToElectrode = mapping;
+
+    // Reset filters after changing mapping
+    for (auto& filter : filters)
+        filter->reset();
 }
 
 void ActivityView::setSurveyMode (bool enabled, bool reset)
