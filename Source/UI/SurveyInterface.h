@@ -164,7 +164,7 @@ private:
     std::unique_ptr<ToggleButton> recordingToggleButton;
     std::unique_ptr<UtilityButton> activityViewFilterToggle;
     std::unique_ptr<UtilityButton> activityViewCARToggle;
-    std::unique_ptr<Slider> secondsPerBankSlider;
+    std::unique_ptr<ComboBox> secondsPerBankComboBox;
     std::unique_ptr<ComboBox> amplitudeRangeComboBox;
     std::unique_ptr<UtilityButton> saveButton;
 
@@ -200,6 +200,8 @@ private:
     Array<RowState> rows;
     bool isSurveyRunning { false };
     Array<SurveyTarget> lastSurveyTargets;
+    float lastSurveySecondsPerConfig { 2.0f };
     float currentMaxPeakToPeak { 500.0f };
     Array<float> amplitudeOptions { 250.0f, 500.0f, 750.0f, 1000.0f };
+    Array<float> timeOptions { 2.0f, 5.0f, 10.0f, 30.0f, 60.0f, 300.0f, 600.0f }; // in seconds
 };

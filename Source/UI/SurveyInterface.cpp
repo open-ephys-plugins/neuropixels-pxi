@@ -562,10 +562,13 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     panelToggleButton->addListener (this);
     addAndMakeVisible (*panelToggleButton);
 
-    secondsPerBankSlider = std::make_unique<Slider> (Slider::LinearHorizontal, Slider::TextBoxRight);
-    secondsPerBankSlider->setRange (1, 30.0, 1.0);
-    secondsPerBankSlider->setValue (2.0);
-    addAndMakeVisible (*secondsPerBankSlider);
+    secondsPerBankComboBox = std::make_unique<ComboBox> ("Seconds Per Bank");
+    const std::array<const char*, 7> timeLabels { "2 s", "5 s", "10 s", "30 s", "1 min", "5 mins", "10 mins" };
+    for (int i = 0; i < timeOptions.size(); ++i)
+        secondsPerBankComboBox->addItem (timeLabels[i], i + 1);
+    secondsPerBankComboBox->setSelectedId (1, dontSendNotification); // Default to 2s
+    secondsPerBankComboBox->addListener (this);
+    addAndMakeVisible (*secondsPerBankComboBox);
 
     amplitudeRangeComboBox = std::make_unique<ComboBox> ("Amplitude Range");
     const std::array<const char*, 4> amplitudeLabels { "0 - 250 \xC2\xB5V", "0 - 500 \xC2\xB5V", "0 - 750 \xC2\xB5V", "0 - 1000 \xC2\xB5V" };
@@ -679,11 +682,11 @@ void SurveyInterface::paint (Graphics& g)
     {
         g.setColour (findColour (ThemeColours::defaultText));
         g.setFont (FontOptions ("Inter", "Medium", 18.0f));
-        const int secondsLabelY = secondsPerBankSlider != nullptr ? secondsPerBankSlider->getY() : 120;
-        g.drawText ("Seconds per bank/shank:", 30, secondsLabelY, 200, 25, Justification::centredLeft);
+        const int secondsLabelY = secondsPerBankComboBox != nullptr ? secondsPerBankComboBox->getY() : 120;
+        g.drawText ("Time per bank/shank:", 30, secondsLabelY, 170, 25, Justification::centredLeft);
 
         const int filterY = secondsLabelY + 45;
-        g.drawText ("Activity view options:", 30, filterY, 200, 25, Justification::centredLeft);
+        g.drawText ("Activity view options:", 30, filterY, 170, 25, Justification::centredLeft);
 
         const int amplitudeY = amplitudeRangeComboBox != nullptr ? amplitudeRangeComboBox->getY() : secondsLabelY + 60;
         g.drawText ("Amplitude scale:", 30, amplitudeY, 200, 25, Justification::centredLeft);
@@ -723,19 +726,19 @@ void SurveyInterface::resized()
     if (showSettings)
         runButton->setBounds (leftPanelX + (leftPanelExpandedWidth - 140) / 2, topMargin + 20, 140, 30);
 
-    secondsPerBankSlider->setVisible (showSettings);
+    secondsPerBankComboBox->setVisible (showSettings);
     if (showSettings)
     {
-        const int sliderY = runButton->getBottom() + 20;
-        secondsPerBankSlider->setBounds (leftPanelX + 200, sliderY, 220, 25);
+        const int comboBoxY = runButton->getBottom() + 20;
+        secondsPerBankComboBox->setBounds (leftPanelX + 190, comboBoxY, 100, 25);
     }
 
     activityViewFilterToggle->setVisible (showSettings);
     if (showSettings)
     {
         const int toggleWidth = 100;
-        const int toggleX = leftPanelX + 200;
-        const int toggleY = secondsPerBankSlider->getBottom() + 20;
+        const int toggleX = leftPanelX + 190;
+        const int toggleY = secondsPerBankComboBox->getBottom() + 20;
         activityViewFilterToggle->setBounds (toggleX, toggleY, toggleWidth, 22);
     }
 
@@ -801,7 +804,7 @@ void SurveyInterface::buttonClicked (Button* b)
     else if (b == runButton.get() && ! CoreServices::getAcquisitionStatus())
         launchSurvey();
     else if (b == saveButton.get() && lastSurveyTargets.size() > 0)
-        saveSurveyResultsToJson (lastSurveyTargets, secondsPerBankSlider->getValue());
+        saveSurveyResultsToJson (lastSurveyTargets, lastSurveySecondsPerConfig);
     // Note: activityViewFilterToggle and activityViewCARToggle are only applied when survey is launched
 }
 
@@ -964,7 +967,7 @@ void SurveyInterface::launchSurvey()
 
     // Disable all controls during acquisition
     runButton->setEnabled (false);
-    secondsPerBankSlider->setEnabled (false);
+    secondsPerBankComboBox->setEnabled (false);
     table->setEnabled (false);
     saveButton->setEnabled (false);
     recordingToggleButton->setEnabled (false);
@@ -974,6 +977,10 @@ void SurveyInterface::launchSurvey()
     // Get the desired filter and CAR states from the toggle buttons
     bool desiredFilterState = activityViewFilterToggle->getToggleState();
     bool desiredCARState = activityViewCARToggle->getToggleState();
+
+    // Get the selected time duration
+    const int timeOptionIndex = secondsPerBankComboBox->getSelectedId() - 1;
+    float secondsPerConfig = timeOptions[timeOptionIndex];
 
     Array<SurveyTarget> targets;
     for (const auto& r : rows)
@@ -1022,7 +1029,7 @@ void SurveyInterface::launchSurvey()
     {
         CoreServices::sendStatusMessage ("No probes selected for survey.");
         runButton->setEnabled (true);
-        secondsPerBankSlider->setEnabled (true);
+        secondsPerBankComboBox->setEnabled (true);
         table->setEnabled (true);
         recordingToggleButton->setEnabled (true);
         return;
@@ -1030,17 +1037,21 @@ void SurveyInterface::launchSurvey()
 
     isSurveyRunning = true;
 
-    std::unique_ptr<SurveyRunner> runner = std::make_unique<SurveyRunner> (thread, editor, targets, (float) secondsPerBankSlider->getValue(), shouldRecordSurvey);
+    std::unique_ptr<SurveyRunner> runner = std::make_unique<SurveyRunner> (thread, editor, targets, secondsPerConfig, shouldRecordSurvey);
 
     if (runner->runThread())
     {
         lastSurveyTargets = targets;
+        lastSurveySecondsPerConfig = secondsPerConfig;
         saveButton->setEnabled (true);
     }
 
     // Restore activity views to normal mode and restore original filter/CAR states
     for (const auto& t : targets)
     {
+        t.probe->setSurveyMode (false, false);
+        t.probe->setEnabledForSurvey (false);
+
         // Restore original filter and CAR states
         t.probe->setActivityViewFilterState (t.originalFilterState);
         t.probe->setActivityViewCARState (t.originalCARState);
@@ -1057,7 +1068,7 @@ void SurveyInterface::launchSurvey()
 
     // Re-enable controls
     runButton->setEnabled (true);
-    secondsPerBankSlider->setEnabled (true);
+    secondsPerBankComboBox->setEnabled (true);
     table->setEnabled (true);
     recordingToggleButton->setEnabled (true);
 }
