@@ -301,7 +301,7 @@ private:
 
 namespace
 {
-static constexpr int surveyProbePanelSpacing = 20;
+static constexpr int surveyProbePanelSpacing = 0;
 static constexpr int leftPanelExpandedWidth = 510;
 static constexpr int leftPanelToggleWidth = 25;
 } // namespace
@@ -310,9 +310,14 @@ SurveyProbePanel::SurveyProbePanel (Probe* p) : probe (p)
 {
     title = std::make_unique<Label>();
     title->setJustificationType (Justification::centred);
-    title->setFont (FontOptions ("Inter", "Semi Bold", 20.0f));
     title->setInterceptsMouseClicks (false, false);
+    title->setFont (FontOptions ("Inter", "Bold", 24.0f));
     addAndMakeVisible (*title);
+
+    subTitle = std::make_unique<Label>();
+    subTitle->setJustificationType (Justification::centred);
+    subTitle->setInterceptsMouseClicks (false, false);
+    addAndMakeVisible (*subTitle);
 
     if (probe != nullptr && probe->ui != nullptr)
     {
@@ -344,26 +349,33 @@ void SurveyProbePanel::refresh()
     if (title != nullptr && probe != nullptr)
         title->setText (probe->getName(), dontSendNotification);
 
+    if (subTitle != nullptr && probe != nullptr)
+        subTitle->setText ("Slot " + String (probe->basestation->slot) + ", Port " + String (probe->headstage->port), dontSendNotification);
+
     if (probeBrowser != nullptr)
         probeBrowser->repaint();
 }
 
 void SurveyProbePanel::paint (Graphics& g)
 {
-    auto panelBounds = getLocalBounds().toFloat().reduced (1.0f);
+    /* auto panelBounds = getLocalBounds().toFloat().reduced (1.0f);
     g.setColour (findColour (ThemeColours::componentParentBackground).withAlpha (0.5f));
     g.fillRoundedRectangle (panelBounds, 8.0f);
 
     g.setColour (findColour (ThemeColours::outline).withAlpha (0.75f));
-    g.drawRoundedRectangle (panelBounds, 8.0f, 1.0f);
+    g.drawRoundedRectangle (panelBounds, 8.0f, 1.0f); */
 }
 
 void SurveyProbePanel::resized()
 {
     auto bounds = getLocalBounds().reduced (14);
-    auto header = bounds.removeFromTop (34);
+    auto header = bounds.removeFromTop (22);
+    auto subHeader = bounds.removeFromTop (40);
     if (title != nullptr)
         title->setBounds (header);
+
+    if (subTitle != nullptr)
+        subTitle->setBounds (subHeader);
 
     if (probeBrowser != nullptr)
     {
@@ -442,86 +454,101 @@ void SurveyRunner::run()
     Array<int> shanksIndices;
     shanksIndices.insertMultiple (0, 0, targets.size());
 
-    for (int i = 0; i < maxSteps && ! threadShouldExit(); ++i)
+    for (int i = 0; i < maxSteps; ++i)
     {
-        setProgress (i / (float) maxSteps);
-        setStatusMessage ("Surveying probes... Step " + String (i + 1) + "/" + String (maxSteps));
-        LOGD ("SurveyRunner: Step ", i + 1, "/", maxSteps);
 
-        int targetIdx = 0;
-        for (auto& target : targets)
+        if (!threadShouldExit())
         {
-            Probe* probe = target.probe;
+            setProgress (i / (float) maxSteps);
+            setStatusMessage ("Surveying probes... Step " + String (i + 1) + "/" + String (maxSteps));
+            LOGD ("SurveyRunner: Step ", i + 1, "/", maxSteps);
 
-            if (shanksIndices[targetIdx] < target.shanks.size()
-                && bankIndices[targetIdx] < target.banks.size())
+            int targetIdx = 0;
+            for (auto& target : targets)
             {
-                int sh = target.shanks[shanksIndices[targetIdx]];
-                Bank bank = target.banks[bankIndices[targetIdx]];
+                Probe* probe = target.probe;
 
-                LOGD ("SurveyRunner: Applying settings to probe ", probe->getName().toRawUTF8(), " - Bank=", SurveyInterface::bankToString (bank).toRawUTF8(), " Shank=", sh + 1);
-
-                // Build settings for this combo
-                for (const auto& config : target.electrodeConfigs)
+                if (shanksIndices[targetIdx] < target.shanks.size()
+                    && bankIndices[targetIdx] < target.banks.size())
                 {
-                    if (config.containsIgnoreCase ("Bank " + SurveyInterface::bankToString (bank)))
+                    int sh = target.shanks[shanksIndices[targetIdx]];
+                    Bank bank = target.banks[bankIndices[targetIdx]];
+
+                    LOGD ("SurveyRunner: Applying settings to probe ", probe->getName().toRawUTF8(), " - Bank=", SurveyInterface::bankToString (bank).toRawUTF8(), " Shank=", sh + 1);
+
+                    // Build settings for this combo
+                    for (const auto& config : target.electrodeConfigs)
                     {
-                        if (target.shankCount > 1 && config.containsIgnoreCase ("Shank " + String (sh + 1)))
+                        if (config.containsIgnoreCase ("Bank " + SurveyInterface::bankToString (bank)))
                         {
-                            auto selected = probe->selectElectrodeConfiguration (config);
-                            probe->ui->selectElectrodes (selected);
-                            LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
-                            break;
-                        }
-                        else if (target.shankCount == 1)
-                        {
-                            auto selected = probe->selectElectrodeConfiguration (config);
-                            probe->ui->selectElectrodes (selected);
-                            LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
-                            break;
+                            if (target.shankCount > 1 && config.containsIgnoreCase ("Shank " + String (sh + 1)))
+                            {
+                                auto selected = probe->selectElectrodeConfiguration (config);
+                                probe->ui->selectElectrodes (selected);
+                                LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
+                                break;
+                            }
+                            else if (target.shankCount == 1)
+                            {
+                                auto selected = probe->selectElectrodeConfiguration (config);
+                                probe->ui->selectElectrodes (selected);
+                                LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
+                                break;
+                            }
                         }
                     }
-                }
 
-                bankIndices.set (targetIdx, bankIndices[targetIdx] + 1);
-                if (bankIndices[targetIdx] >= target.banks.size())
+                    bankIndices.set (targetIdx, bankIndices[targetIdx] + 1);
+                    if (bankIndices[targetIdx] >= target.banks.size())
+                    {
+                        bankIndices.set (targetIdx, 0);
+                        shanksIndices.set (targetIdx, shanksIndices[targetIdx] + 1);
+                    }
+                }
+                else
                 {
-                    bankIndices.set (targetIdx, 0);
-                    shanksIndices.set (targetIdx, shanksIndices[targetIdx] + 1);
+                    target.surveyComplete = true;
+                    probe->setEnabledForSurvey (false);
+                    LOGD ("SurveyRunner: Survey complete for probe ", probe->getName().toRawUTF8());
                 }
+
+                targetIdx++;
             }
+
+            // Wait for settings to apply before measuring
+            if (editor->uiLoader->isThreadRunning())
+                LOGD ("SurveyRunner: Waiting for uiLoader to finish applying settings");
+
+            while (editor->uiLoader->isThreadRunning() && ! threadShouldExit())
+                Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 10);
+
+            // Start acquisition/recording for this window
+            if (recordDuringSurvey)
+                CoreServices::setRecordingStatus (true);
             else
-            {
-                target.surveyComplete = true;
-                probe->setEnabledForSurvey (false);
-                LOGD ("SurveyRunner: Survey complete for probe ", probe->getName().toRawUTF8());
-            }
+                CoreServices::setAcquisitionStatus (true);
 
-            targetIdx++;
+            LOGD ("SurveyRunner: Acquisition started for step ", i + 1);
+
+            Time::waitForMillisecondCounter (Time::getMillisecondCounter() + (secondsPer * 1000) + 100);
+
+            // Stop acquisition for this window before proceeding to next config
+            CoreServices::setAcquisitionStatus (false);
+            LOGD ("SurveyRunner: Acquisition stopped for step ", i + 1);
+
+            Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 100);
         }
-
-        // Wait for settings to apply before measuring
-        if (editor->uiLoader->isThreadRunning())
-            LOGD ("SurveyRunner: Waiting for uiLoader to finish applying settings");
-
-        while (editor->uiLoader->isThreadRunning() && ! threadShouldExit())
-            Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 10);
-
-        // Start acquisition/recording for this window
-        if (recordDuringSurvey)
-            CoreServices::setRecordingStatus (true);
         else
-            CoreServices::setAcquisitionStatus (true);
+        {
+            LOGC ("Cancel button pressed, stopping survey early");
 
-        LOGD ("SurveyRunner: Acquisition started for step ", i + 1);
+            CoreServices::setAcquisitionStatus (false);
 
-        Time::waitForMillisecondCounter (Time::getMillisecondCounter() + (secondsPer * 1000) + 100);
+            LOGD ("SurveyRunner: Acquisition stopped for step ", i + 1);
 
-        // Stop acquisition for this window before proceeding to next config
-        CoreServices::setAcquisitionStatus (false);
-        LOGD ("SurveyRunner: Acquisition stopped for step ", i + 1);
-
-        Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 100);
+            Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 100);
+        }
+        
     }
 
     setProgress (1.0f);
@@ -662,9 +689,9 @@ void SurveyInterface::paint (Graphics& g)
         g.setColour (findColour (ThemeColours::outline).withAlpha (0.75f));
         g.drawRoundedRectangle (leftPanelX, 10.0f, (float) leftPanelExpandedWidth, panelHeight, 8.0f, 1.0f);
 
-        g.setFont (FontOptions ("Inter", "Semi Bold", 20.0f));
+        g.setFont (FontOptions ("Inter", "Semi Bold", 25.0f));
         g.setColour (findColour (ThemeColours::defaultText));
-        g.drawText ("SURVEY SETTINGS", leftPanelX, 25.0f, leftPanelExpandedWidth, 25.0f, Justification::centred);
+        g.drawText ("SURVEY SETTINGS", leftPanelX + 20.0f, 35.0f, leftPanelExpandedWidth, 25.0f, Justification::centredLeft);
     }
     else
     {
@@ -674,8 +701,8 @@ void SurveyInterface::paint (Graphics& g)
 
         g.addTransform (AffineTransform::rotation (-MathConstants<double>::halfPi));
         g.setFont (FontOptions ("Inter", "Semi Bold", 18.0f));
-        g.setColour (findColour (ThemeColours::defaultText));
-        g.drawText ("SURVEY SETTINGS", -(int) (panelHeight + 10), 10, (int) panelHeight, leftPanelToggleWidth, Justification::centred);
+        g.setColour (findColour (ThemeColours::defaultText).withAlpha(0.5f));
+        g.drawText ("SURVEY SETTINGS", -(int) (panelHeight + 20), 2, (int) panelHeight, leftPanelToggleWidth, Justification::centred);
         g.addTransform (AffineTransform::rotation (MathConstants<double>::halfPi));
     }
 
@@ -738,13 +765,13 @@ void SurveyInterface::resized()
 
     runButton->setVisible (showSettings);
     if (showSettings)
-        runButton->setBounds (leftPanelX + (leftPanelExpandedWidth - 140) / 2, topMargin + 20, 140, 30);
+        runButton->setBounds (leftPanelExpandedWidth - 200, topMargin - 20, 180, 30);
 
     secondsPerBankComboBox->setVisible (showSettings);
     if (showSettings)
     {
         const int comboBoxY = runButton->getBottom() + 20;
-        secondsPerBankComboBox->setBounds (leftPanelX + 190, comboBoxY, 100, 25);
+        secondsPerBankComboBox->setBounds (leftPanelX + 190, comboBoxY, 90, 25);
     }
 
     activityViewFilterToggle->setVisible (showSettings);
@@ -769,15 +796,15 @@ void SurveyInterface::resized()
     if (showSettings)
     {
         const int toggleWidth = 200;
-        const int toggleX = leftPanelX + 20;
-        const int toggleY = activityViewCARToggle->getBottom() + 20;
+        const int toggleX = secondsPerBankComboBox->getRight() + 10;
+        const int toggleY = runButton->getBottom() + 20;
         recordingToggleButton->setBounds (toggleX, toggleY, toggleWidth, 24);
     }
 
     table->setVisible (showSettings);
     if (showSettings)
     {
-        const int tableTop = recordingToggleButton->getBottom() + 20;
+        const int tableTop = activityViewCARToggle->getBottom() + 20;
         const int desiredHeight = (getNumRows() + 1) * table->getRowHeight() + 8;
         const int availableHeight = getHeight() - tableTop - 40;
         table->setBounds (leftPanelX + 20, tableTop, leftPanelExpandedWidth - 38, jmin (desiredHeight, availableHeight));

@@ -49,11 +49,12 @@ public:
     int getOptimalWidth () const;
 
     static constexpr int width = 460;
-    static constexpr int minHeight = 720;
+    static constexpr int minHeight = 300;
 
 private:
     Probe* probe { nullptr };
     std::unique_ptr<Label> title;
+    std::unique_ptr<Label> subTitle;
     std::unique_ptr<ProbeBrowser> probeBrowser;
     std::unique_ptr<Label> placeholder;
 };
