@@ -456,8 +456,7 @@ void SurveyRunner::run()
 
     for (int i = 0; i < maxSteps; ++i)
     {
-
-        if (!threadShouldExit())
+        if (! threadShouldExit())
         {
             setProgress (i / (float) maxSteps);
             setStatusMessage ("Surveying probes... Step " + String (i + 1) + "/" + String (maxSteps));
@@ -466,6 +465,12 @@ void SurveyRunner::run()
             int targetIdx = 0;
             for (auto& target : targets)
             {
+                if (threadShouldExit())
+                {
+                    LOGC ("Cancel button pressed, stopping survey early");
+                    return;
+                }
+
                 Probe* probe = target.probe;
 
                 if (shanksIndices[targetIdx] < target.shanks.size()
@@ -484,6 +489,7 @@ void SurveyRunner::run()
                             if (target.shankCount > 1 && config.containsIgnoreCase ("Shank " + String (sh + 1)))
                             {
                                 auto selected = probe->selectElectrodeConfiguration (config);
+                                const MessageManagerLock mmLock;
                                 probe->ui->selectElectrodes (selected);
                                 LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
                                 break;
@@ -491,6 +497,7 @@ void SurveyRunner::run()
                             else if (target.shankCount == 1)
                             {
                                 auto selected = probe->selectElectrodeConfiguration (config);
+                                const MessageManagerLock mmLock;
                                 probe->ui->selectElectrodes (selected);
                                 LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
                                 break;
@@ -522,6 +529,12 @@ void SurveyRunner::run()
             while (editor->uiLoader->isThreadRunning() && ! threadShouldExit())
                 Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 10);
 
+            if (threadShouldExit())
+            {
+                LOGC ("Cancel button pressed, stopping survey early");
+                return;
+            }
+
             // Start acquisition/recording for this window
             if (recordDuringSurvey)
                 CoreServices::setRecordingStatus (true);
@@ -532,6 +545,12 @@ void SurveyRunner::run()
 
             Time::waitForMillisecondCounter (Time::getMillisecondCounter() + (secondsPer * 1000) + 100);
 
+            if (threadShouldExit())
+            {
+                LOGC ("Cancel button pressed, stopping survey early");
+                return;
+            }
+
             // Stop acquisition for this window before proceeding to next config
             CoreServices::setAcquisitionStatus (false);
             LOGD ("SurveyRunner: Acquisition stopped for step ", i + 1);
@@ -541,14 +560,8 @@ void SurveyRunner::run()
         else
         {
             LOGC ("Cancel button pressed, stopping survey early");
-
-            CoreServices::setAcquisitionStatus (false);
-
-            LOGD ("SurveyRunner: Acquisition stopped for step ", i + 1);
-
-            Time::waitForMillisecondCounter (Time::getMillisecondCounter() + 100);
+            return;
         }
-        
     }
 
     setProgress (1.0f);
@@ -702,7 +715,7 @@ void SurveyInterface::paint (Graphics& g)
         g.addTransform (AffineTransform::rotation (-MathConstants<double>::halfPi));
         g.setFont (FontOptions ("Inter", "Semi Bold", 18.0f));
         g.setColour (findColour (ThemeColours::defaultText).withAlpha(0.5f));
-        g.drawText ("SURVEY SETTINGS", -(int) (panelHeight + 20), 2, (int) panelHeight, leftPanelToggleWidth, Justification::centred);
+        g.drawText ("SURVEY SETTINGS", -(int) (panelHeight + 20), 10, (int) panelHeight, leftPanelToggleWidth, Justification::centred);
         g.addTransform (AffineTransform::rotation (MathConstants<double>::halfPi));
     }
 
@@ -889,6 +902,9 @@ void SurveyInterface::stopAcquisition()
 
 void SurveyInterface::updateInfoString()
 {
+    if (isSurveyRunning)
+        return;
+
     for (auto& panel : probePanels)
     {
         panel->refresh();
@@ -1091,6 +1107,19 @@ void SurveyInterface::launchSurvey()
         lastSurveyTargets = targets;
         lastSurveySecondsPerConfig = secondsPerConfig;
         saveButton->setEnabled (true);
+    }
+    else
+    {
+        // Survey was cancelled
+        CoreServices::setAcquisitionStatus (false);
+
+        int targetIdx = 0;
+        for (auto& target : targets)
+        {
+            target.probe->ui->selectElectrodes (target.electrodesToRestore);
+        }
+
+        CoreServices::sendStatusMessage ("Survey cancelled.");
     }
 
     // Restore activity views to normal mode and restore original filter/CAR states
