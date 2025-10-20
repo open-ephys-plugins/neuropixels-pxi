@@ -502,14 +502,6 @@ void AcquisitionThread::run()
                     }
                 }
 
-                if ((packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_SYNC) && syncBitStatus)
-                {
-                    String msg = "NPX PACKET SYNC " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
-                    LOGC (msg);
-                    syncBitStatus = false;
-                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
-                }
-
                 if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_COUNT)
                 {
                     String msg = "NPX PACKET COUNT ERROR on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
