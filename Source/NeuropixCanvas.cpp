@@ -137,8 +137,6 @@ NeuropixCanvas::NeuropixCanvas (GenericProcessor* processor_, NeuropixEditor* ed
         topLevelTabNumber += 1;
     }
 
-    topLevelTabComponent->setCurrentTabIndex (topLevelTabNumber - 1);
-
     savedSettings.probeType = ProbeType::NONE;
 }
 
