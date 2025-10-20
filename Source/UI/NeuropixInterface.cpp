@@ -1798,6 +1798,7 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
             XmlElement* channelNode = xmlNode->createNewChildElement ("CHANNELS");
             XmlElement* xposNode = xmlNode->createNewChildElement ("ELECTRODE_XPOS");
             XmlElement* yposNode = xmlNode->createNewChildElement ("ELECTRODE_YPOS");
+            XmlElement* electrodeNode = xmlNode->createNewChildElement ("ELECTRODE_INDEX");
 
             ProbeSettings p = getProbeSettings();
 
@@ -1821,6 +1822,7 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
                 {
                     if (shank == electrodeGroupIndex)
                     {
+                        electrodeNode->setAttribute (chId, elec);
                         channelNode->setAttribute (chId, chString);
                         xposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].xpos + 250 * shank));
                         yposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].ypos));
@@ -1828,6 +1830,7 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
                 }
                 else
                 {
+                    electrodeNode->setAttribute (chId, elec);
                     channelNode->setAttribute (chId, chString);
                     xposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].xpos + 250 * shank));
                     yposNode->setAttribute (chId, String (probe->electrodeMetadata[elec].ypos));
