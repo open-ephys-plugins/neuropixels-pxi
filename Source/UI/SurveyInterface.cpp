@@ -644,8 +644,10 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     amplitudeRangeComboBox->addListener (this);
     addAndMakeVisible (*amplitudeRangeComboBox);
 
-    runButton = std::make_unique<UtilityButton> ("RUN SURVEY...");
-    runButton->setToggleState (true, dontSendNotification);
+    runButton = std::make_unique<TextButton> (String::fromUTF8 ("RUN SURVEY \t\t \xE2\x96\xB6")); // Play symbol
+    runButton->setColour (TextButton::buttonColourId, Colour (80, 180, 70));
+    runButton->setColour (TextButton::textColourOffId, Colours::black);
+    runButton->setColour (TextButton::textColourOnId, Colours::black);
     runButton->addListener (this);
     addAndMakeVisible (*runButton);
 

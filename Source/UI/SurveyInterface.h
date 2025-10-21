@@ -163,7 +163,7 @@ private:
     // Controls
     std::unique_ptr<Label> titleLabel;
     std::unique_ptr<PanelToggleButton> panelToggleButton;
-    std::unique_ptr<UtilityButton> runButton;
+    std::unique_ptr<TextButton> runButton;
     std::unique_ptr<ToggleButton> recordingToggleButton;
     std::unique_ptr<UtilityButton> activityViewFilterToggle;
     std::unique_ptr<UtilityButton> activityViewCARToggle;
