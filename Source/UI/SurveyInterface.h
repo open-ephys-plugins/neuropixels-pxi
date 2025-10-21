@@ -124,8 +124,8 @@ public:
     void startAcquisition() override;
     void stopAcquisition() override;
     bool applyProbeSettings (ProbeSettings, bool) override { return false; }
-    void saveParameters (XmlElement*) override {}
-    void loadParameters (XmlElement*) override {}
+    void saveParameters (XmlElement*) override;
+    void loadParameters (XmlElement*) override;
     void updateInfoString() override;
 
     void paint (Graphics& g) override;

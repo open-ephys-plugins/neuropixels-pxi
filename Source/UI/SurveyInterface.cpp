@@ -34,6 +34,18 @@
 #include <functional>
 #include <utility>
 
+static Bank stringToBank (const String& text)
+{
+    // if text is from "A" to "M", map to Bank::A to Bank::M
+    if (text.length() == 1)
+    {
+        const juce_wchar c = text.toUpperCase()[0];
+        if (c >= 'A' && c <= 'M')
+            return static_cast<Bank> (c - 'A');
+    }
+
+    return Bank::NONE;
+}
 class BankSelectorComponent : public Component,
                               private Button::Listener
 {
@@ -714,7 +726,7 @@ void SurveyInterface::paint (Graphics& g)
 
         g.addTransform (AffineTransform::rotation (-MathConstants<double>::halfPi));
         g.setFont (FontOptions ("Inter", "Semi Bold", 18.0f));
-        g.setColour (findColour (ThemeColours::defaultText).withAlpha(0.5f));
+        g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.5f));
         g.drawText ("SURVEY SETTINGS", -(int) (panelHeight + 20), 10, (int) panelHeight, leftPanelToggleWidth, Justification::centred);
         g.addTransform (AffineTransform::rotation (MathConstants<double>::halfPi));
     }
@@ -875,6 +887,230 @@ void SurveyInterface::comboBoxChanged (ComboBox* cb)
             repaint();
         }
     }
+}
+
+void SurveyInterface::saveParameters (XmlElement* xml)
+{
+    if (xml == nullptr)
+        return;
+
+    auto* surveyNode = xml->createNewChildElement ("SURVEY_SETTINGS");
+
+    int secondsIndex = secondsPerBankComboBox != nullptr ? secondsPerBankComboBox->getSelectedId() - 1 : 0;
+
+    const float secondsPerConfig = timeOptions[secondsIndex];
+    surveyNode->setAttribute ("seconds_per_config", secondsPerConfig);
+
+    const bool recordSurvey = recordingToggleButton->getToggleState();
+    const bool filterEnabled = activityViewFilterToggle->getToggleState();
+    const bool carEnabled = activityViewCARToggle->getToggleState();
+
+    surveyNode->setAttribute ("record_during_survey", recordSurvey);
+    surveyNode->setAttribute ("bandpass_filter_enabled", filterEnabled);
+    surveyNode->setAttribute ("car_enabled", carEnabled);
+
+    int amplitudeIndex = amplitudeRangeComboBox->getSelectedId() - 1;
+
+    const float amplitudeValue = amplitudeOptions[amplitudeIndex];
+    surveyNode->setAttribute ("max_amplitude", amplitudeValue);
+
+    for (const auto& row : rows)
+    {
+        if (row.probe == nullptr)
+            continue;
+
+        auto* probeNode = surveyNode->createNewChildElement ("SURVEY_PROBE");
+        probeNode->setAttribute ("name", row.probe->getName());
+        probeNode->setAttribute ("type", String (probeTypeToString (row.probe->type)));
+        probeNode->setAttribute ("type_id", static_cast<int> (row.probe->type));
+        probeNode->setAttribute ("selected", row.selected);
+
+        const bool useAllBanks = row.chosenBanks.isEmpty();
+        if (useAllBanks)
+        {
+            probeNode->setAttribute ("banks", "All");
+        }
+        else
+        {
+            StringArray bankTokens;
+            for (auto bank : row.chosenBanks)
+                bankTokens.add (bankToString (bank));
+            probeNode->setAttribute ("banks", bankTokens.joinIntoString (","));
+        }
+
+        const bool useAllShanks = row.chosenShanks.isEmpty();
+
+        if (useAllShanks)
+        {
+            probeNode->setAttribute ("shanks", "All");
+        }
+        else
+        {
+            StringArray shankTokens;
+            for (auto shank : row.chosenShanks)
+                shankTokens.add (String (shank));
+            probeNode->setAttribute ("shanks", shankTokens.joinIntoString (","));
+        }
+    }
+}
+
+void SurveyInterface::loadParameters (XmlElement* xml)
+{
+    if (xml == nullptr)
+        return;
+
+    if (rows.isEmpty())
+        refreshProbeList();
+
+    XmlElement* surveyNode = nullptr;
+    forEachXmlChildElement (*xml, child)
+    {
+        if (child->hasTagName ("SURVEY_SETTINGS"))
+        {
+            surveyNode = child;
+            break;
+        }
+    }
+
+    if (surveyNode == nullptr)
+        return;
+
+    const float defaultSeconds = timeOptions.isEmpty() ? 2.0f : timeOptions[0];
+    const float secondsValue = static_cast<float> (surveyNode->getDoubleAttribute ("seconds_per_config", defaultSeconds));
+
+    int secondsIndex = 0;
+    if (timeOptions.contains (secondsValue))
+        secondsIndex = timeOptions.indexOf (secondsValue);
+
+    if (secondsPerBankComboBox != nullptr)
+        secondsPerBankComboBox->setSelectedId (secondsIndex + 1, dontSendNotification);
+
+    const bool recordSurvey = surveyNode->getBoolAttribute ("record_during_survey", false);
+    const bool filterEnabled = surveyNode->getBoolAttribute ("bandpass_filter_enabled", true);
+    const bool carEnabled = surveyNode->getBoolAttribute ("car_enabled", true);
+
+    recordingToggleButton->setToggleState (recordSurvey, dontSendNotification);
+    activityViewFilterToggle->setToggleState (filterEnabled, dontSendNotification);
+    activityViewCARToggle->setToggleState (carEnabled, dontSendNotification);
+
+    const float amplitudeValue = static_cast<float> (surveyNode->getDoubleAttribute ("max_amplitude", currentMaxPeakToPeak));
+
+    int amplitudeIndex = 1; // Default to 500 uV
+    if (amplitudeOptions.contains (amplitudeValue))
+        amplitudeIndex = amplitudeOptions.indexOf (amplitudeValue);
+
+    if (amplitudeRangeComboBox != nullptr)
+        amplitudeRangeComboBox->setSelectedId (amplitudeIndex + 1, dontSendNotification);
+
+    currentMaxPeakToPeak = amplitudeOptions[amplitudeIndex];
+    applyMaxAmplitudeToPanels();
+
+    forEachXmlChildElement (*surveyNode, probeNode)
+    {
+        if (! probeNode->hasTagName ("SURVEY_PROBE"))
+            continue;
+
+        const auto probeName = probeNode->getStringAttribute ("name");
+        const int typeId = probeNode->getIntAttribute ("type_id", -1);
+        const String typeString = probeNode->getStringAttribute ("type");
+
+        int matchedRowIndex = -1;
+        for (int rowIdx = 0; rowIdx < rows.size(); ++rowIdx)
+        {
+            auto& row = rows.getReference (rowIdx);
+            if (row.probe == nullptr)
+                continue;
+
+            if (row.probe->getName() != probeName)
+                continue;
+
+            const int rowTypeId = static_cast<int> (row.probe->type);
+            if (typeId != -1 && rowTypeId != typeId)
+                continue;
+
+            if (typeId == -1 && typeString.isNotEmpty())
+            {
+                if (String (probeTypeToString (row.probe->type)) != typeString)
+                    continue;
+            }
+
+            matchedRowIndex = rowIdx;
+            break;
+        }
+
+        if (matchedRowIndex < 0)
+            continue;
+
+        auto& row = rows.getReference (matchedRowIndex);
+
+        row.selected = probeNode->getBoolAttribute ("selected", row.selected);
+
+        row.chosenBanks.clear();
+        String banksString = probeNode->getStringAttribute ("banks", "All");
+        if (banksString.equalsIgnoreCase ("All"))
+        {
+            // leave chosenBanks empty to indicate all banks
+        }
+        else
+        {
+            StringArray bankTokens;
+            if (banksString.isNotEmpty())
+            {
+                bankTokens.addTokens (banksString, ",", "");
+                bankTokens.trim();
+                bankTokens.removeEmptyStrings();
+            }
+
+            for (const auto& token : bankTokens)
+            {
+                Bank bankValue = stringToBank (token);
+                if (bankValue != Bank::NONE && row.availableBanks.contains (bankValue))
+                    row.chosenBanks.addIfNotAlreadyThere (bankValue);
+            }
+            row.chosenBanks.sort();
+        }
+
+        row.chosenShanks.clear();
+        String shanksString = probeNode->getStringAttribute ("shanks", "All");
+        if (shanksString.equalsIgnoreCase ("All") || row.shankCount == 1)
+        {
+            // leave chosenShanks empty to indicate all shanks
+        }
+        else
+        {
+            StringArray shankTokens;
+            if (shanksString.isNotEmpty())
+            {
+                shankTokens.addTokens (shanksString, ",", "");
+                shankTokens.trim();
+                shankTokens.removeEmptyStrings();
+            }
+
+            for (const auto& token : shankTokens)
+            {
+                const auto trimmed = token.trim();
+                if (trimmed.isEmpty())
+                    continue;
+
+                int shankIndex = trimmed.getIntValue();
+
+                if (isPositiveAndBelow (shankIndex, row.shankCount))
+                    row.chosenShanks.addIfNotAlreadyThere (shankIndex);
+            }
+            row.chosenShanks.sort();
+        }
+
+        if (table != nullptr)
+            table->repaintRow (matchedRowIndex);
+    }
+
+    if (table != nullptr)
+    {
+        table->updateContent();
+        table->repaint();
+    }
+
+    repaint();
 }
 
 void SurveyInterface::startAcquisition()
