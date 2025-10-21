@@ -107,6 +107,7 @@ private:
     NeuropixEditor* editor;
     Array<SurveyTarget> targets;
     float secondsPer;
+    int threadSleepMs { 50 };
     bool recordDuringSurvey;
 };
 

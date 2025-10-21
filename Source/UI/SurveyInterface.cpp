@@ -433,6 +433,12 @@ SurveyRunner::SurveyRunner (NeuropixThread* t, NeuropixEditor* e, const Array<Su
       secondsPer (secondsPerConfig),
       recordDuringSurvey (recordDuringSurvey_)
 {
+    if (secondsPer < 10.0f)
+        threadSleepMs = 50;
+    else if (secondsPer < 60.0f)
+        threadSleepMs = 100;
+    else
+        threadSleepMs = 200;
 }
 
 void SurveyRunner::run()
@@ -449,6 +455,8 @@ void SurveyRunner::run()
         auto* p = tgt.probe;
         maxSteps = jmax (maxSteps, tgt.banks.size() * tgt.shanks.size());
     }
+
+    const double invMaxSteps = maxSteps > 0 ? 1.0 / static_cast<double> (maxSteps) : 0.0;
 
     int completed = 0;
 
@@ -470,7 +478,7 @@ void SurveyRunner::run()
     {
         if (! threadShouldExit())
         {
-            setProgress (i / (float) maxSteps);
+            setProgress (static_cast<double> (i) * invMaxSteps);
             setStatusMessage ("Surveying probes... Step " + String (i + 1) + "/" + String (maxSteps));
             LOGD ("SurveyRunner: Step ", i + 1, "/", maxSteps);
 
@@ -555,7 +563,56 @@ void SurveyRunner::run()
 
             LOGD ("SurveyRunner: Acquisition started for step ", i + 1);
 
-            Time::waitForMillisecondCounter (Time::getMillisecondCounter() + (secondsPer * 1000) + 100);
+            const double mainWaitMs = jmax (0.0, static_cast<double> (secondsPer) * 1000.0);
+            const double waitStartMs = Time::getMillisecondCounterHiRes();
+
+            if (mainWaitMs > 0.0)
+            {
+                while (! threadShouldExit())
+                {
+                    const double elapsedMs = Time::getMillisecondCounterHiRes() - waitStartMs;
+                    const double clampedFraction = jlimit (0.0, 1.0, elapsedMs / mainWaitMs);
+
+                    if (maxSteps > 0)
+                        setProgress ((static_cast<double> (i) + clampedFraction) * invMaxSteps);
+
+                    const double remainingSecondsRaw = jmax (0.0, (mainWaitMs - elapsedMs) / 1000.0);
+                    const int remainingSecondsInt = static_cast<int> (std::round (remainingSecondsRaw));
+
+                    String remainingText;
+                    if (remainingSecondsInt >= 60)
+                    {
+                        const int minutes = remainingSecondsInt / 60;
+                        const int seconds = remainingSecondsInt % 60;
+                        remainingText = String (minutes) + " m " + String (seconds) + " s";
+                    }
+                    else
+                    {
+                        remainingText = String (remainingSecondsInt) + " s";
+                    }
+
+                    setStatusMessage ("Surveying probes... Step " + String (i + 1) + "/" + String (maxSteps)
+                                      + " (" + remainingText + " remaining)");
+
+                    if (elapsedMs >= mainWaitMs)
+                        break;
+
+                    Thread::sleep (threadSleepMs);
+                }
+
+                if (threadShouldExit())
+                {
+                    LOGC ("Cancel button pressed, stopping survey early");
+                    return;
+                }
+            }
+
+            const int postAcquisitionLeadMs = 100;
+            if (postAcquisitionLeadMs > 0)
+                Time::waitForMillisecondCounter (Time::getMillisecondCounter() + postAcquisitionLeadMs);
+
+            if (maxSteps > 0)
+                setProgress ((static_cast<double> (i) + 1.0) * invMaxSteps);
 
             if (threadShouldExit())
             {
