@@ -1279,7 +1279,12 @@ void ProbeBrowser::calculateElectrodeColours()
 
 void ProbeBrowser::timerCallback()
 {
+    // Skip for individual probe browser in activity view if not visible
     if (displayMode != DisplayMode::OverviewOnly && (parent->mode != VisualizationMode::ACTIVITY_VIEW || ! isShowing()))
+        return;
+
+    // Skip for survey interface probe browser if not visible
+    if (displayMode == DisplayMode::OverviewOnly && ! isShowing())
         return;
 
     calculateElectrodeColours();

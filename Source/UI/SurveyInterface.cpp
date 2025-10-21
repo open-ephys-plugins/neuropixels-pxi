@@ -1119,12 +1119,16 @@ void SurveyInterface::startAcquisition()
 {
     for (auto& panel : probePanels)
     {
-        if (panel->getProbe()->getEnabledForSurvey())
+        if (panel->getProbe()->getEnabledForSurvey() || ! isSurveyRunning)
             panel->getProbeBrowser()->startTimer (100);
     }
 
     if (! isSurveyRunning)
+    {
         runButton->setEnabled (false);
+        activityViewFilterToggle->setEnabled (false);
+        activityViewCARToggle->setEnabled (false);
+    }
 }
 
 void SurveyInterface::stopAcquisition()
@@ -1135,7 +1139,11 @@ void SurveyInterface::stopAcquisition()
     }
 
     if (! isSurveyRunning)
+    {
         runButton->setEnabled (true);
+        activityViewFilterToggle->setEnabled (true);
+        activityViewCARToggle->setEnabled (true);
+    }
 }
 
 void SurveyInterface::updateInfoString()
