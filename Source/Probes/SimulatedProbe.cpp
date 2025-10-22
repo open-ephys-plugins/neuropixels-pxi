@@ -805,6 +805,7 @@ bool SimulatedProbe::runBist (BIST bistType)
 
 void SimulatedProbe::run()
 {
+
     while (! threadShouldExit())
     {
         int64 start = Time::getHighResolutionTicks();
@@ -826,15 +827,18 @@ void SimulatedProbe::run()
                     }
                 }
 
-                ap_timestamps[i + packetNum * 12] = ap_timestamp++;
+                double currentMsModS = fmod (Time::getMillisecondCounterHiRes(), 1000.0);
 
-                if (ap_timestamp % 15000 == 0)
+                if (currentMsModS < 500)
                 {
-                    if (eventCode == 0)
-                        eventCode = 1;
-                    else
-                        eventCode = 0;
+                    eventCode = 1;
                 }
+                else
+                {
+                    eventCode = 0;
+                }
+
+                ap_timestamps[i + packetNum * 12] = ap_timestamp++;
 
                 event_codes[i + packetNum * 12] = eventCode;
 
@@ -847,6 +851,8 @@ void SimulatedProbe::run()
 
             if (sendSync)
                 lfpSamples[(384 * MAXPACKETS) + packetNum] = (float) eventCode;
+
+
         }
 
         apBuffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, 12 * MAXPACKETS);
