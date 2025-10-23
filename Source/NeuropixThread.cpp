@@ -1293,8 +1293,7 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
 
                 continuousChannels->getLast()->addMetadata (selectedElectrodeDescriptor, selectedElectrodeValue);
 
-                LOGD ("ch: ", ch, " name: ", name, " shank: ", shankIndex, " depth: ", depth, " xpos: ", xpos, " ypos: ", ypos, " electrode: ", selectedElectrode);
-
+                //LOGD ("ch: ", ch, " name: ", name, " shank: ", shankIndex, " depth: ", depth, " xpos: ", xpos, " ypos: ", ypos, " electrode: ", selectedElectrode);
                 
             }
 
