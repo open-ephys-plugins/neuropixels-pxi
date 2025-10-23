@@ -156,6 +156,11 @@ void NeuropixelsOpto::initialize (bool signalChainIsLoading)
     errorCode = Neuropixels::init (basestation->slot, headstage->port, dock);
     LOGD ("Neuropixels::init: errorCode: ", errorCode);
 
+    if (errorCode == Neuropixels::ERROR_SR_CHAIN)
+    {
+        LOGC (" Shift register error detected -- possible broken shank");
+    }
+
     errorCode = Neuropixels::setOPMODE (basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
     LOGD ("Neuropixels::setOPMODE: errorCode: ", errorCode);
 

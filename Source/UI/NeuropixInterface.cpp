@@ -328,12 +328,8 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         bistComboBox->addSeparator();
 
         availableBists.add (BIST::EMPTY);
-        availableBists.add (BIST::SIGNAL);
-        bistComboBox->addItem ("Test probe signal", 2);
-
-        availableBists.add (BIST::NOISE);
-        bistComboBox->addItem ("Test probe noise", 3);
-
+        availableBists.add (BIST::SIGNAL); // 2 -- disabled
+        availableBists.add (BIST::NOISE);  // 3 -- disabled
         availableBists.add (BIST::PSB);
         bistComboBox->addItem ("Test PSB bus", 4);
 

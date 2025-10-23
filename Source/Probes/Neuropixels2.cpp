@@ -173,8 +173,13 @@ bool Neuropixels2::close()
 
 void Neuropixels2::initialize (bool signalChainIsLoading)
 {
-    checkError (Neuropixels::init (basestation->slot, headstage->port, dock),
+    errorCode = checkError (Neuropixels::init (basestation->slot, headstage->port, dock),
                 "init: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
+
+    if (errorCode == Neuropixels::ERROR_SR_CHAIN)
+    {
+        LOGC (" Shift register error detected -- possible broken shank");
+    }
 }
 
 void Neuropixels2::calibrate()
@@ -807,8 +812,19 @@ bool Neuropixels2::runBist (BIST bistType)
         }
         case BIST::SR:
         {
-            if (Neuropixels::bistSR (slot, port, dock) == Neuropixels::SUCCESS)
+            uint8_t shanksOkMask;
+
+            if (Neuropixels::bistSR (slot, port, dock, &shanksOkMask) == Neuropixels::SUCCESS)
                 returnValue = true;
+            else
+            {
+                LOGD ("SR BIST failed with shank mask: ", (int) shanksOkMask);
+                LOGC ("shank 1 status: ", shanksOkMask & 1);
+                LOGC ("shank 2 status: ", (shanksOkMask >> 1) & 1);
+                LOGC ("shank 3 status: ", (shanksOkMask >> 2) & 1);
+                LOGC ("shank 4 status: ", (shanksOkMask >> 3) & 1);
+
+            }
             break;
         }
         case BIST::EEPROM:
