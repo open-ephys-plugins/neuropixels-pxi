@@ -156,9 +156,17 @@ void NeuropixelsOpto::initialize (bool signalChainIsLoading)
     errorCode = Neuropixels::init (basestation->slot, headstage->port, dock);
     LOGD ("Neuropixels::init: errorCode: ", errorCode);
 
-    if (errorCode == Neuropixels::ERROR_SR_CHAIN)
+    checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
+    errorCode = Neuropixels::bistSR (basestation->slot, headstage->port, dock);
+
+    if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC (" Shift register error detected -- possible broken shank");
+
+        for (int i = 0; i < electrodeMetadata.size(); i++)
+        {
+            electrodeMetadata.getReference (i).shank_is_programmable = false;
+        }
     }
 
     errorCode = Neuropixels::setOPMODE (basestation->slot, headstage->port, dock, Neuropixels::RECORDING);

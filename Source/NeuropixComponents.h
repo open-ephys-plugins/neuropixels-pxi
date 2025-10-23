@@ -248,6 +248,7 @@ struct ElectrodeMetadata
     int global_index;
     int shank_local_index;
     int shank;
+    bool shank_is_programmable = true; // true if shank is likely intact
     int column_index;
     int channel;
     int row_index;

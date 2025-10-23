@@ -176,9 +176,37 @@ void Neuropixels2::initialize (bool signalChainIsLoading)
     errorCode = checkError (Neuropixels::init (basestation->slot, headstage->port, dock),
                 "init: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
 
-    if (errorCode == Neuropixels::ERROR_SR_CHAIN)
+    checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
+    uint8_t shanksOkMask;
+    errorCode = Neuropixels::bistSR (basestation->slot, headstage->port, dock, &shanksOkMask);
+
+    if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC (" Shift register error detected -- possible broken shank");
+
+        int shankCount;
+        if (settings.probeType == ProbeType::NP2_4)
+        {
+            shankCount = 4;
+        }
+        else
+        {
+            shankCount = 1;
+        }
+
+        for (int shank = 0; shank < shankCount; shank++)
+        {
+            if (((shanksOkMask >> shank) & 1) == 0)
+            {
+                LOGC ("Shank ", shank + 1, " appears to be broken.");
+
+                for (int i = 0; i < electrodeMetadata.size(); i++)
+                {
+                    if (electrodeMetadata.getReference (i).shank == shank)
+                        electrodeMetadata.getReference (i).shank_is_programmable = false;
+                }
+            }
+        }
     }
 }
 
@@ -657,7 +685,9 @@ void Neuropixels2::setAllReferences()
 
 void Neuropixels2::writeConfiguration()
 {
-    checkError(Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false) , "writeProbeConfiguration");
+
+    errorCode = checkError(Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false) , "writeProbeConfiguration");
+
 }
 
 void Neuropixels2::startAcquisition()

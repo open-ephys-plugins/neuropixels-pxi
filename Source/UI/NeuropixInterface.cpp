@@ -1162,6 +1162,7 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
 
         for (int i = 0; i < electrodeMetadata.size(); i++)
         {
+            electrodeMetadata.getReference (i).shank_is_programmable = probe->electrodeMetadata.getReference (i).shank_is_programmable;
             electrodeMetadata.getReference (i).status = ElectrodeStatus::DISCONNECTED;
         }
 
@@ -1199,6 +1200,8 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
 
             for (int j = 0; j < electrodeMetadata.size(); j++)
             {
+                electrodeMetadata.getReference (i).shank_is_programmable = probe->electrodeMetadata.getReference (i).shank_is_programmable;
+
                 if (probe->type == ProbeType::QUAD_BASE)
                 {
                     if (electrodeMetadata[j].channel == channel && electrodeMetadata[j].shank == shank)
@@ -1402,14 +1405,15 @@ void NeuropixInterface::drawLegend (Graphics& g)
             g.drawMultiLineText ("ENABLED?", xOffset, yOffset, 200);
             g.drawMultiLineText ("YES", xOffset + 30, yOffset + 22, 200);
             g.drawMultiLineText ("NO", xOffset + 30, yOffset + 42, 200);
+            g.drawMultiLineText ("SHANK ERROR", xOffset + 30, yOffset + 62, 200);
 
             if (probe->type == ProbeType::NP2_1 || probe->type == ProbeType::NP2_4)
             {
-                g.drawMultiLineText ("SELECTABLE REFERENCE", xOffset + 30, yOffset + 62, 200);
+                g.drawMultiLineText ("SELECTABLE REFERENCE", xOffset + 30, yOffset + 82, 200);
             }
             else
             {
-                g.drawMultiLineText ("REFERENCE", xOffset + 30, yOffset + 62, 200);
+                g.drawMultiLineText ("REFERENCE", xOffset + 30, yOffset + 82, 200);
             }
 
             g.setColour (Colours::yellow);
@@ -1417,6 +1421,9 @@ void NeuropixInterface::drawLegend (Graphics& g)
 
             g.setColour (Colour (180, 180, 180));
             g.fillRect (xOffset + 10, yOffset + 30, 15, 15);
+
+            g.setColour (Colours::salmon);
+            g.fillRect (xOffset + 10, yOffset + 50, 15, 15);
 
             if (probe->type == ProbeType::NP2_1 || probe->type == ProbeType::NP2_4)
             {
@@ -1427,7 +1434,7 @@ void NeuropixInterface::drawLegend (Graphics& g)
                 g.setColour (Colours::black);
             }
 
-            g.fillRect (xOffset + 10, yOffset + 50, 15, 15);
+            g.fillRect (xOffset + 10, yOffset + 70, 15, 15);
 
             break;
 

@@ -1219,7 +1219,14 @@ Colour ProbeBrowser::getElectrodeColour (int i)
     {
         if (parent->mode == VisualizationMode::ENABLE_VIEW) // ENABLED STATE
         {
-            return Colours::yellow;
+            if (parent->electrodeMetadata[i].shank_is_programmable)
+            {
+                return Colours::yellow;
+            }
+            else
+            {
+                return Colours::salmon;
+            }
         }
         else if (parent->mode == VisualizationMode::AP_GAIN_VIEW) // AP GAIN
         {

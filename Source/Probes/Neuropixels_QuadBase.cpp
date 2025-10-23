@@ -151,6 +151,26 @@ void Neuropixels_QuadBase::initialize (bool signalChainIsLoading)
     if (errorCode == Neuropixels::ERROR_SR_CHAIN)
     {
         LOGC (" Shift register error detected -- possible broken shank");
+
+        checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
+
+        uint8_t shanksOkMask;
+
+        Neuropixels::bistSR (basestation->slot, headstage->port, dock, &shanksOkMask);
+
+        for (int shank = 0; shank < 4; shank++)
+        {
+            if (((shanksOkMask >> shank) & 1) == 0)
+            {
+                LOGC ("Shank ", shank + 1, " appears to be broken.");
+
+                for (int i = 0; i < electrodeMetadata.size(); i++)
+                {
+                    if (electrodeMetadata.getReference (i).shank == shank)
+                        electrodeMetadata.getReference (i).shank_is_programmable = false;
+                }
+            }
+        }
     }
 
     LOGD ("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
