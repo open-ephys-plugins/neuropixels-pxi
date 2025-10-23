@@ -58,6 +58,8 @@ XDAQ_BS::XDAQ_BS (NeuropixThread* neuropixThread, int serial_number) : Basestati
         LOGE ("Failed to map XDAQ with serial number ", serial_number);
         return;
     }
+    for (int port = 0; port < 4; ++port)
+        headstages.add (nullptr);
 
     customPortNames.clear();
 
@@ -146,7 +148,7 @@ void XDAQ_BS::searchForProbes()
             if (auto r = Neuropixels::getHeadstageHardwareID (slot, port, &hardwareID); r != Neuropixels::SUCCESS)
             {
                 LOGE ("Failed to get headstage hardware ID on slot ", slot, ", port ", port, ", error code: ", r);
-                headstages.add (nullptr);
+                headstages.set (port - 1, nullptr, true);
                 continue;
             }
 
@@ -185,8 +187,7 @@ void XDAQ_BS::searchForProbes()
             {
                 headstage = nullptr;
             }
-
-            headstages.add (headstage);
+            headstages.set (port - 1, headstage, true);
 
             if (headstage != nullptr)
             {
@@ -212,7 +213,7 @@ void XDAQ_BS::searchForProbes()
 
             errorCode = Neuropixels::closePort (slot, port); // close port
 
-            headstages.add (nullptr);
+            headstages.set (port - 1, nullptr, true);
         }
     }
 }
