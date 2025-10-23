@@ -1228,29 +1228,19 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
 
             if (type == ContinuousChannel::Type::ELECTRODE)
             {
-                float depth = 0.0f;
-                int chIndex = 0;
+                int chIndex = info.probe->settings.selectedChannel.indexOf (ch);
+                int shankIndex = info.probe->settings.selectedShank[chIndex];
+
+                int electrodeMetadataIndex = 0;
 
                 if (info.probe->type != ProbeType::UHD2)
                 {
-                    chIndex = info.probe->settings.selectedChannel.indexOf (ch);
-
-                    Array<Bank> availableBanks = info.probe->settings.availableBanks;
-
-                    int selectedBank = availableBanks.indexOf (info.probe->settings.selectedBank[chIndex]);
-
-                    int selectedElectrode = info.probe->settings.selectedElectrode[chIndex];
-                    int shank = info.probe->settings.selectedShank[chIndex];
-
-                    depth = float (info.probe->electrodeMetadata[selectedElectrode].ypos)
-                            + shank * 10000.0f
-                            + info.probe->electrodeMetadata[selectedElectrode].xpos * 0.001f;
-
-                    if (false)
-                        std::cout << "Channel: " << ch << " chIndex: " << chIndex << " ypos: " << info.probe->electrodeMetadata[selectedElectrode].ypos << " xpos: " << info.probe->electrodeMetadata[selectedElectrode].xpos << " depth: " << depth << std::endl;
-                }
+                    // non-UHD probes
+                    electrodeMetadataIndex = info.probe->settings.selectedElectrode[chIndex];
+                } 
                 else
                 {
+                    // UHD-specific
                     int electrodeIndex = 0;
 
                     for (int i = 0; i < info.probe->settings.selectedElectrode.size(); i++)
@@ -1262,27 +1252,50 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
                         }
                     }
 
-                    depth = float (info.probe->electrodeMetadata[electrodeIndex].ypos)
-                            + info.probe->electrodeMetadata[electrodeIndex].xpos * 0.001f;
+                    electrodeMetadataIndex = electrodeIndex;
+                } 
 
-                    if (false)
-                        std::cout << "Channel: " << ch << " electrodeIndex: " << electrodeIndex << " ypos: " << info.probe->electrodeMetadata[electrodeIndex].ypos << " xpos: " << info.probe->electrodeMetadata[electrodeIndex].xpos << " depth: " << depth << std::endl;
-                }
+                float xpos = info.probe->electrodeMetadata[electrodeMetadataIndex].xpos;
+                float ypos = info.probe->electrodeMetadata[electrodeMetadataIndex].ypos;
+                int selectedElectrode = info.probe->settings.selectedElectrode[chIndex];
+
+                // depth: must be unique value for compatibility with legacy LFP Viewer channel sorting algorithm
+                depth = float (ypos)
+                        + shankIndex * 10000.0f
+                        + xpos * 0.001f;
 
                 continuousChannels->getLast()->position.y = depth;
+                continuousChannels->getLast()->position.x = xpos;
+                continuousChannels->getLast()->group.name = "Shank " + String (shankIndex + 1);
+                continuousChannels->getLast()->group.number = shankIndex;
 
-                MetadataDescriptor descriptor (MetadataDescriptor::MetadataType::UINT16,
+                // Add actual ypos as metadata
+                MetadataDescriptor yposDescriptor (MetadataDescriptor::MetadataType::FLOAT,
+                                               1,
+                                               "ypos",
+                                               "Channel y-position (relative to shank tip)",
+                                               "channel.ypos");
+
+                MetadataValue yposValue (MetadataDescriptor::MetadataType::FLOAT, 1);
+                yposValue.setValue (ypos);
+
+                continuousChannels->getLast()->addMetadata (yposDescriptor, yposValue);
+
+                // Add electrode index as metadata
+                MetadataDescriptor selectedElectrodeDescriptor (MetadataDescriptor::MetadataType::UINT16,
                                                1,
                                                "electrode_index",
                                                "Electrode index for this channel",
                                                "neuropixels.electrode_index");
 
-                MetadataValue value (MetadataDescriptor::MetadataType::UINT16, 1);
-                value.setValue ((uint16) info.probe->settings.selectedElectrode[chIndex]);
+                MetadataValue selectedElectrodeValue (MetadataDescriptor::MetadataType::UINT16, 1);
+                selectedElectrodeValue.setValue ((uint16) selectedElectrode);
 
-                //LOGD("Setting channel ", ch, " electrode_index metadata value to ", (uint16)info.probe->settings.selectedElectrode[chIndex]);
+                continuousChannels->getLast()->addMetadata (selectedElectrodeDescriptor, selectedElectrodeValue);
 
-                continuousChannels->getLast()->addMetadata (descriptor, value);
+                LOGD ("ch: ", ch, " name: ", name, " shank: ", shankIndex, " depth: ", depth, " xpos: ", xpos, " ypos: ", ypos, " electrode: ", selectedElectrode);
+
+                
             }
 
         } // end channel loop
