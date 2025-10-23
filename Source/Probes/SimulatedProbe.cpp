@@ -817,6 +817,8 @@ void SimulatedProbe::run()
 
     while (! threadShouldExit())
     {
+        int64 start = Time::getHighResolutionTicks();
+
         for (int packetNum = 0; packetNum < MAXPACKETS; packetNum++)
         {
             for (int i = 0; i < 12; i++)
