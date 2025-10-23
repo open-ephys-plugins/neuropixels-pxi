@@ -107,8 +107,6 @@ static String bankToString (Bank b)
 
 ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
 {
-    tooltipWindow = std::make_unique<TooltipWindow> (parent, 300);
-
     cursorType = MouseCursor::NormalCursor;
 
     activityToView = ActivityToView::APVIEW;
@@ -240,6 +238,14 @@ ProbeBrowser::~ProbeBrowser()
 {
 }
 
+String ProbeBrowser::getTooltip()
+{
+    if (hoveredElectrodeIndex >= 0 && hoveredElectrodeIndex < parent->electrodeMetadata.size())
+        return getElectrodeInfoString (hoveredElectrodeIndex);
+    
+    return {};
+}
+
 void ProbeBrowser::mouseMove (const MouseEvent& event)
 {
     if (displayMode == DisplayMode::OverviewOnly)
@@ -291,17 +297,16 @@ void ProbeBrowser::mouseMove (const MouseEvent& event)
     {
         const int index = getNearestElectrode (event.x, event.y);
 
-        if (index > -1)
+        if (index > -1 && index != hoveredElectrodeIndex)
         {
+            hoveredElectrodeIndex = index;
             isOverElectrode = true;
-            electrodeInfoString = getElectrodeInfoString (index);
-            tooltipWindow->displayTip (event.getScreenPosition(), electrodeInfoString);
         }
     }
     else if (isOverElectrode)
     {
+        hoveredElectrodeIndex = -1;
         isOverElectrode = false;
-        tooltipWindow->hideTip();
     }
 }
 

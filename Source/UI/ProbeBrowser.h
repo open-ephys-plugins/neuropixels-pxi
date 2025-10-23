@@ -34,7 +34,8 @@
 
 */
 class ProbeBrowser : public Component,
-                     public Timer
+                     public Timer,
+                     public TooltipClient   
 {
 public:
     enum class DisplayMode
@@ -63,6 +64,9 @@ public:
 
     /** Main paint method */
     void paint (Graphics& g);
+
+    /** Returns tooltip text for the hovered electrode */
+    String getTooltip() override;
 
     /** Switch between interactive and overview-only render modes */
     void setDisplayMode (DisplayMode mode);
@@ -121,6 +125,7 @@ private:
     MouseCursor::StandardCursorType cursorType;
 
     String electrodeInfoString;
+    int hoveredElectrodeIndex = -1;
 
     // Local electrode colours for Overview mode
     Array<Colour> overviewElectrodeColours;
@@ -140,8 +145,6 @@ private:
     void handleZoomDrag (const MouseEvent& event);
     void handleSelectionDrag (const MouseEvent& event);
     void clampZoomValues();
-
-    std::unique_ptr<TooltipWindow> tooltipWindow;
 
     NeuropixInterface* parent;
 
