@@ -3304,6 +3304,9 @@ public:
                     String partNumber,
                     int serialNumber);
 
+    /** Static method to get current event code (synchronized across all probes) */
+    static int getGlobalEventCode();
+
     /** Opens the connection to the probe */
     bool open() override;
 
@@ -3366,6 +3369,9 @@ public:
     SimulatedData simulatedData;
 
     int SKIP;
+
+    /** Static timer for synchronized event codes across all SimulatedProbe instances */
+    static int64 globalTimerStart;
 
     float apSamples[385 * 12 * MAXPACKETS];
     float lfpSamples[385 * MAXPACKETS];

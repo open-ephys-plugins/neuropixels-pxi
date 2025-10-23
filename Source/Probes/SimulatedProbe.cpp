@@ -25,6 +25,15 @@
 #include "../Headstages/SimulatedHeadstage.h"
 #include "Geometry.h"
 
+// Initialize static member
+int64 SimulatedProbe::globalTimerStart = Time::getMillisecondCounterHiRes();
+
+int SimulatedProbe::getGlobalEventCode()
+{
+    double currentMsModS = fmod(Time::getMillisecondCounterHiRes() - globalTimerStart, 1000.0);
+    return (currentMsModS < 500) ? 1 : 0;
+}
+
 void SimulatedProbe::getInfo()
 {
     info.part_number = "Simulated probe";
@@ -808,8 +817,6 @@ void SimulatedProbe::run()
 
     while (! threadShouldExit())
     {
-        int64 start = Time::getHighResolutionTicks();
-
         for (int packetNum = 0; packetNum < MAXPACKETS; packetNum++)
         {
             for (int i = 0; i < 12; i++)
@@ -827,16 +834,7 @@ void SimulatedProbe::run()
                     }
                 }
 
-                double currentMsModS = fmod (Time::getMillisecondCounterHiRes(), 1000.0);
-
-                if (currentMsModS < 500)
-                {
-                    eventCode = 1;
-                }
-                else
-                {
-                    eventCode = 0;
-                }
+                eventCode = getGlobalEventCode();
 
                 ap_timestamps[i + packetNum * 12] = ap_timestamp++;
 
