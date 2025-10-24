@@ -160,11 +160,11 @@ void EditorBackground::paint (Graphics& g)
         }
 
         g.setFont (10);
-        if (type != ONEBOX)
-            g.drawText (String ("MAIN SYNC SLOT"), 90 * (numBasestations) + 32, 13, 100, 10, Justification::centredLeft);
-        g.drawText (String ("SMA CONFIGURATION"), 90 * (numBasestations) + 32, 48, 100, 10, Justification::centredLeft);
-        if (freqSelectEnabled)
-            g.drawText (String ("WITH FREQ"), 90 * (numBasestations) + 32, 82, 100, 10, Justification::centredLeft);
+        // if (type != ONEBOX)
+        //     g.drawText (String ("MAIN SYNC SLOT"), 90 * (numBasestations) + 32, 13, 100, 10, Justification::centredLeft);
+        // g.drawText (String ("SMA CONFIGURATION"), 90 * (numBasestations) + 32, 48, 100, 10, Justification::centredLeft);
+        // if (freqSelectEnabled)
+        //     g.drawText (String ("WITH FREQ"), 90 * (numBasestations) + 32, 82, 100, 10, Justification::centredLeft);
     }
     else
     {
@@ -636,15 +636,16 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
 
     if (basestations.size() > 0)
     {
-        if (thread->type != ONEBOX)
+        if (thread->type == PXI)
         {
             mainSyncSelector->setVisible (true);
             //addSyncChannelButton->setVisible (true);
             refreshButton->setVisible (true);
         }
 
-        inputOutputSyncSelector->setVisible (true);
-        desiredWidth = 100 * basestations.size() + 120;
+        // inputOutputSyncSelector->setVisible (true);
+        desiredWidth = 100 * basestations.size() + 20;
+        // desiredWidth = 100 * basestations.size() + 120;
     }
     else
     {
