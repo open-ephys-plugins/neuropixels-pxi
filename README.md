@@ -1,6 +1,9 @@
-# Neuropixels PXI Plugin
+# XDAQ-Neuropixels Plugin
 
-![Hardware diagram](https://open-ephys.github.io/gui-docs/_images/neuropix-pxi-01.png)
+This is a forked version of the [Neuropixels PXI Plugin](https://github.com/open-ephys-plugins/neuropixels-pxi) for Open Ephys GUI, modified to work with the XDAQ acquisition system.
+Some features have been temporarily disabled and will be added back in future releases. Please open an issue or contact [kontex](https://www.kontex.io/contact-us) if you encounter any issues using this plugin.
+
+![Hardware diagram](./Resources/XDAQ-Neuropixels.png)
 
 This plugin makes it possible to stream Neuropixels data from a PXI-based acquisition system into the [Open Ephys GUI](https://github.com/open-ephys/plugin-gui).
 
