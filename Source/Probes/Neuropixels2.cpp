@@ -208,6 +208,9 @@ void Neuropixels2::initialize (bool signalChainIsLoading)
             }
         }
     }
+
+    errorCode = Neuropixels::setHSLed (basestation->slot, headstage->port, false);
+    LOGDD ("Neuropixels::setHSLed: errorCode: ", errorCode);
 }
 
 void Neuropixels2::calibrate()
