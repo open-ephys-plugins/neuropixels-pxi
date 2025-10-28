@@ -618,16 +618,24 @@ void Geometry::NHP2 (int length,
     probeMetadata.availableBanks = {
         Bank::A,
         Bank::B,
-        Bank::C,
-        Bank::D,
-        Bank::E,
-        Bank::F,
-        Bank::G,
-        Bank::H,
-        Bank::I,
-        Bank::J,
-        Bank::K,
-        Bank::L
+        Bank::C
+    };
+
+    if (probeMetadata.type == ProbeType::NHP25 || probeMetadata.type == ProbeType::NHP45)
+    {
+        probeMetadata.availableBanks.add (Bank::D);
+        probeMetadata.availableBanks.add (Bank::E);
+        probeMetadata.availableBanks.add (Bank::F);
+        probeMetadata.availableBanks.add (Bank::G);
+
+        if (probeMetadata.type == ProbeType::NHP45)
+        {
+            probeMetadata.availableBanks.add (Bank::H);
+            probeMetadata.availableBanks.add (Bank::I);
+            probeMetadata.availableBanks.add (Bank::J);
+            probeMetadata.availableBanks.add (Bank::K);
+            probeMetadata.availableBanks.add (Bank::L);
+        }
     };
 
     Array<float> xpositions;
