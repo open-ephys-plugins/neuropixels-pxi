@@ -390,6 +390,8 @@ void PxiBasestation::close()
     probes.clear();
     headstages.clear();
 
+    probesInitialized = false; // reset flag to allow re-initialization
+
     errorCode = Neuropixels::closeBS (slot);
 
     connected_slots.removeFirstMatchingValue (slot);

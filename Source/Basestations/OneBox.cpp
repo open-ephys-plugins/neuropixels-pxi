@@ -162,6 +162,7 @@ void OneBox::searchForProbes() {
 
     probes.clear();
     headstages.clear();
+    probesInitialized = false; // reset flag to allow re-initialization
 
     for (int port = 1; port <= 2; port++)
     {
