@@ -118,6 +118,8 @@ public:
     void setEmissionSite (String wavelength, int site);
     void selectElectrodes (Array<int> electrodes);
 
+    float getMaxPeakToPeakValue() const { return currentMaxPeakToPeak; }
+
     Probe* probe;
 
     Basestation* basestation;
@@ -217,7 +219,7 @@ private:
     Array<BIST> availableBists;
     Array<String> imroFiles;
     Array<bool> imroLoadedFromFolder;
-    
+
     Array<float> amplitudeOptions { 250.0f, 500.0f, 750.0f, 1000.0f };
     float currentMaxPeakToPeak { 500.0f };
 };

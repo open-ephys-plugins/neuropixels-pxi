@@ -113,8 +113,6 @@ ProbeBrowser::ProbeBrowser (NeuropixInterface* parent_) : parent (parent_)
 
     ProbeType probeType = parent->probe->type;
 
-    maxPeakToPeakAmplitude = 500.0f;
-
     isOverZoomRegion = false;
     isOverUpperBorder = false;
     isOverLowerBorder = false;
@@ -242,7 +240,7 @@ String ProbeBrowser::getTooltip()
 {
     if (hoveredElectrodeIndex >= 0 && hoveredElectrodeIndex < parent->electrodeMetadata.size())
         return getElectrodeInfoString (hoveredElectrodeIndex);
-    
+
     return {};
 }
 
@@ -1282,7 +1280,7 @@ void ProbeBrowser::calculateElectrodeColours()
         else
         {
             overviewElectrodeColours.setUnchecked (i, ColourScheme::getColourForNormalizedValue (value / overviewMaxPeakToPeakAmplitude));
-            parent->electrodeMetadata.getReference (i).colour = ColourScheme::getColourForNormalizedValue (value / maxPeakToPeakAmplitude);
+            parent->electrodeMetadata.getReference (i).colour = ColourScheme::getColourForNormalizedValue (value / parent->getMaxPeakToPeakValue());
         }
     }
 
@@ -1336,8 +1334,6 @@ void ProbeBrowser::setMaxPeakToPeakAmplitude (float amp)
 {
     if (displayMode == DisplayMode::OverviewOnly)
         overviewMaxPeakToPeakAmplitude = jmax (amp, 1.0f);
-    else
-        maxPeakToPeakAmplitude = jmax (amp, 1.0f);
 
     if (! isTimerRunning())
         calculateElectrodeColours();
