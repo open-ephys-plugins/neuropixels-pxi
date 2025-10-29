@@ -196,7 +196,7 @@ void WavePlayer::updateWaveform()
 
     background->updateCurrentWaveform (currentPattern);
 
-    dac->setWaveform (currentPattern->samples);
+    //dac->setWaveform (currentPattern->samples);
 }
 
 void WavePlayer::updatePatternSelector()
