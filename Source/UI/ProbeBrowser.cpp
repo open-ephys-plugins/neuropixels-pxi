@@ -804,6 +804,7 @@ void ProbeBrowser::paintOverview (Graphics& g)
     // Electrode labels
     g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.75f));
     g.setFont (FontOptions (12.0f));
+    const float labelYOffset = 6.0f;
     const int skip = jmax (1, channelLabelSkip);
     for (int row = 0; row <= rows; row += skip)
     {
@@ -818,10 +819,9 @@ void ProbeBrowser::paintOverview (Graphics& g)
         if (index >= 0)
         {
             const float depth = parent->electrodeMetadata[index].ypos;
-            g.drawText (String (depth), leftLabelX, (int) (y - 6.0f), axisLabelWidth, 12, Justification::right);
+            g.drawText (String (depth), leftLabelX, (int) (y - labelYOffset), axisLabelWidth, 12, Justification::right);
+            g.drawText (String (index), (int) rightLabelX, (int) (y - labelYOffset), (int) axisLabelWidth, 12, Justification::left);
         }
-
-        g.drawText (String (row), (int) rightLabelX, (int) (y - 6.0f), (int) axisLabelWidth, 12, Justification::left);
     }
 
     // Bank labels
