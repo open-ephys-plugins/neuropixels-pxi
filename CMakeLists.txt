@@ -92,7 +92,10 @@ foreach( src_file IN ITEMS ${SRC_FILES})
 endforeach()
 
 if (MSVC)
-	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Resources/ DESTINATION ${GUI_BIN_DIR}/shared FILES_MATCHING PATTERN "*.dll") 
+	file(GLOB_RECURSE NEUROPIX_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*.dll")
+	if (NEUROPIX_DLLS)
+		install(FILES ${NEUROPIX_DLLS} DESTINATION ${GUI_BIN_DIR}/shared)
+	endif()
 endif()
 
 set(NEUROPIX_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/API)
