@@ -1499,7 +1499,7 @@ void NeuropixInterface::drawLegend (Graphics& g)
 
             for (int i = 0; i < 6; i++)
             {
-                g.drawMultiLineText (String (float (probeBrowser->maxPeakToPeakAmplitude) / 5.0f * float (i)) + " uV", xOffset + 30, yOffset + 22 + 20 * i, 200);
+                g.drawMultiLineText (String (float (currentMaxPeakToPeak) / 5.0f * float (i)) + " uV", xOffset + 30, yOffset + 22 + 20 * i, 200);
             }
 
             for (int i = 0; i < 6; i++)
