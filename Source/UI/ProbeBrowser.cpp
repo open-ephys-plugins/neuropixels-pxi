@@ -417,10 +417,10 @@ int ProbeBrowser::findElectrodeIndexForRow (int row) const
 String ProbeBrowser::getElectrodeInfoString (int index)
 {
     String a;
-    a << "Electrode " << String (parent->electrodeMetadata[index].global_index + 1);
+    a << "Electrode " << String (parent->electrodeMetadata[index].global_index);
     a << "\nBank " << bankToString (parent->electrodeMetadata[index].bank);
 
-    a << ", Channel " << String (parent->electrodeMetadata[index].channel + 1);
+    a << ", Channel " << String (parent->electrodeMetadata[index].channel);
 
     a << "\nY Position: " << String (parent->electrodeMetadata[index].ypos);
 
