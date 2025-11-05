@@ -59,9 +59,9 @@ public:
     {
         viewport->setBounds (getLocalBounds());
 
-        int contentWidth = 1000;
+        int contentWidth = minContentWidth;
 
-        if (getWidth() > 1012)
+        if (getWidth() > minContentWidth + 12)
             contentWidth = getWidth() - 12;
 
         int contentHeight = getHeight() > 820 ? getHeight() : 820;
@@ -74,10 +74,17 @@ public:
         g.fillAll (findColour (ThemeColours::componentBackground));
     }
 
+    void setMinimumContentWidth (int width)
+    {
+        minContentWidth = width;
+        resized();
+    }
+
     SettingsInterface* settingsInterface;
 
 private:
     std::unique_ptr<Viewport> viewport;
+    int minContentWidth = 1000;
 };
 
 /** 

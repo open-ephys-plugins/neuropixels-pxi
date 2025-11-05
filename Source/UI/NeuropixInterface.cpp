@@ -487,7 +487,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         addAndMakeVisible (firmwareToggleButton.get());
 
     bscFirmwareComboBox = std::make_unique<ComboBox> ("bscFirmwareComboBox");
-    bscFirmwareComboBox->setBounds (610, verticalOffset + 70, 375, 22);
+    bscFirmwareComboBox->setBounds (700, verticalOffset + 70, 375, 22);
     bscFirmwareComboBox->addListener (this);
     bscFirmwareComboBox->addItem ("Select file...", 1);
 
@@ -496,7 +496,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
     bscFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD");
     bscFirmwareButton->setRadius (3.0f);
-    bscFirmwareButton->setBounds (990, verticalOffset + 70, 60, 22);
+    bscFirmwareButton->setBounds (1080, verticalOffset + 70, 60, 22);
     bscFirmwareButton->addListener (this);
     bscFirmwareButton->setTooltip ("Upload firmware to selected basestation connect board");
 
@@ -508,13 +508,13 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     else
         bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String (BSC_FIRMWARE_FILENAME) + ") : ");
     bscFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
-    bscFirmwareLabel->setBounds (610, verticalOffset + 43, 500, 20);
+    bscFirmwareLabel->setBounds (700, verticalOffset + 43, 500, 20);
 
     if (thread->type == PXI)
         addChildComponent (bscFirmwareLabel.get());
 
     bsFirmwareComboBox = std::make_unique<ComboBox> ("bscFirmwareComboBox");
-    bsFirmwareComboBox->setBounds (610, verticalOffset + 140, 375, 22);
+    bsFirmwareComboBox->setBounds (700, verticalOffset + 140, 375, 22);
     bsFirmwareComboBox->addListener (this);
     bsFirmwareComboBox->addItem ("Select file...", 1);
 
@@ -523,7 +523,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
     bsFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD");
     bsFirmwareButton->setRadius (3.0f);
-    bsFirmwareButton->setBounds (990, verticalOffset + 140, 60, 22);
+    bsFirmwareButton->setBounds (1080, verticalOffset + 140, 60, 22);
     bsFirmwareButton->addListener (this);
     bsFirmwareButton->setTooltip ("Upload firmware to selected basestation");
 
@@ -535,14 +535,14 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     else
         bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String (BS_FIRMWARE_FILENAME) + "): ");
     bsFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
-    bsFirmwareLabel->setBounds (610, verticalOffset + 113, 500, 20);
+    bsFirmwareLabel->setBounds (700, verticalOffset + 113, 500, 20);
 
     if (thread->type == PXI)
         addChildComponent (bsFirmwareLabel.get());
 
     firmwareInstructionsLabel = std::make_unique<Label> ("FIRMWARE INSTRUCTIONS", "3. Power cycle computer and PXI chassis");
     firmwareInstructionsLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
-    firmwareInstructionsLabel->setBounds (610, verticalOffset + 183, 500, 20);
+    firmwareInstructionsLabel->setBounds (700, verticalOffset + 183, 500, 20);
 
     if (thread->type == PXI)
         addChildComponent (firmwareInstructionsLabel.get());
@@ -1071,6 +1071,11 @@ void NeuropixInterface::buttonClicked (Button* button)
         bsFirmwareLabel->setVisible (state);
 
         firmwareInstructionsLabel->setVisible (state);
+
+        if (state)
+            viewport->setMinimumContentWidth (1150);
+        else
+            viewport->setMinimumContentWidth (1000);
 
         repaint();
     }
