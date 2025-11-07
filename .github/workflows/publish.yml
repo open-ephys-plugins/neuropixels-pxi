@@ -175,6 +175,11 @@ jobs:
                   mv dist/linux-x86_64.zip dist/$linux_new_name
                   echo "Created: dist/$linux_new_name"
 
+                  if [[ "$ref" != xdaq-v* ]]; then
+                      echo "Not a release tag: $ref, skipping upload"
+                      exit 0
+                  fi
+
                   if [[ -z "${{ secrets.ARTIFACTORY_ACCESS_TOKEN  }}" ]]; then
                       echo "No Artifactory API key set, skipping upload"
                       exit 0
