@@ -482,6 +482,8 @@ void SurveyRunner::run()
             setStatusMessage ("Surveying probes... Step " + String (i + 1) + "/" + String (maxSteps));
             LOGD ("SurveyRunner: Step ", i + 1, "/", maxSteps);
 
+            wait (100); // Allow UI to update
+
             int targetIdx = 0;
             for (auto& target : targets)
             {
