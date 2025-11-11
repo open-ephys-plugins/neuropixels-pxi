@@ -590,14 +590,29 @@ void NeuropixThread::applyProbeSettingsQueue()
             message += String::fromUTF8 (" \xe2\x80\xa2 ") + probe->name + " (serial number: " + String (probe->info.serial_number) + ")\n";
         }
 
-        message += "\nADC and Gain calibration files must be located in \"CalibrationInfo\\<serial_number>\" folder in the directory where the Open Ephys GUI was launched. ";
+        message += "\nADC and gain calibration files for each probe must be placed in the probe-specific folder named \"<probe_serial_number>\" inside the CalibrationInfo directory linked below. ";
         message += "The GUI will proceed without calibration. The plugin must be deleted and re-inserted once calibration files have been added";
 
         // Show alert window on the message thread asynchronously
         MessageManager::callAsync ([this, message]
-                                   { auto* alertWindow = new AlertWindow ("Calibration files not found", message, MessageBoxIconType::WarningIcon, nullptr);
-                                   alertWindow->addButton ("OK", 1, KeyPress (KeyPress::returnKey), KeyPress (KeyPress::escapeKey));
-                                   alertWindow->enterModalState (true, nullptr, true); });
+                                   { AlertWindow alertWindow ("Calibration files not found", message, MessageBoxIconType::WarningIcon, nullptr);
+                                   auto folder = CoreServices::getSavedStateDirectory().getChildFile ("CalibrationInfo");
+                                   folder.createDirectory(); // ensure base directory exists
+                                   auto hyperlink = std::make_unique<HyperlinkButton> ("CalibrationInfo directory", URL());
+                                   hyperlink->setName ("");
+                                   hyperlink->setSize (200, 22);
+                                   hyperlink->setTooltip (folder.getFullPathName());
+                                   hyperlink->setWantsKeyboardFocus (false);
+                                   hyperlink->setJustificationType (Justification::centred);
+                                   hyperlink->setColour (HyperlinkButton::ColourIds::textColourId, Colours::deepskyblue);
+                                   hyperlink->onClick = [folder]
+                                   {
+                                       folder.startAsProcess();
+                                   };
+
+                                   alertWindow.addCustomComponent (hyperlink.get());
+                                   alertWindow.addButton ("OK", 1, KeyPress (KeyPress::returnKey), KeyPress (KeyPress::escapeKey));
+                                   alertWindow.runModalLoop(); });
 
         uncalibratedProbes.clear();
         calibrationWarningShown = true;
