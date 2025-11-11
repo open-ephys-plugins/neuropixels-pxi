@@ -568,7 +568,7 @@ void AcquisitionThread::run()
                 for (int j = 0; j < shank_channel_count; j++)
                 {
                     apSamples[packetNum + count * j] =
-                        float (data[packetNum * shank_channel_count + j]) / 4096.0f / 100.0f * 1000000.0f; // convert to microvolts
+                        float (data[packetNum * shank_channel_count + j]) / 4096.0f / 80.0f * 1000000.0f; // convert to microvolts
 
                     // apView->addSample (apSamples[packetNum + count * j], j + shank * 384, shank);
                 }
