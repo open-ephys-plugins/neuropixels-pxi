@@ -329,7 +329,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         availableBists.add (BIST::EMPTY);
         availableBists.add (BIST::SIGNAL); // 2 -- disabled
-        availableBists.add (BIST::NOISE);  // 3 -- disabled
+        availableBists.add (BIST::NOISE); // 3 -- disabled
         availableBists.add (BIST::PSB);
         bistComboBox->addItem ("Test PSB bus", 4);
 
@@ -379,6 +379,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         pasteButton->setBounds (115, 637, 60, 22);
         pasteButton->addListener (this);
         pasteButton->setTooltip ("Paste probe settings");
+        pasteButton->setEnabled (false);
         addAndMakeVisible (pasteButton.get());
 
         applyToAllButton = std::make_unique<UtilityButton> ("APPLY TO ALL");
@@ -1051,8 +1052,8 @@ void NeuropixInterface::buttonClicked (Button* button)
     }
     else if (button == pasteButton.get())
     {
-        applyProbeSettings (canvas->getProbeSettings());
-        CoreServices::updateSignalChain (editor);
+        if (applyProbeSettings (canvas->getProbeSettings()))
+            CoreServices::updateSignalChain (editor);
     }
     else if (button == applyToAllButton.get())
     {
@@ -1352,7 +1353,7 @@ void NeuropixInterface::stopAcquisition()
         copyButton->setEnabled (enabledState);
 
     if (pasteButton != nullptr)
-        pasteButton->setEnabled (enabledState);
+        pasteButton->setEnabled (canvas->getProbeSettings().probeType == probe->type);
 
     if (applyToAllButton != nullptr)
         applyToAllButton->setEnabled (enabledState);
@@ -1562,13 +1563,19 @@ void NeuropixInterface::applyProbeSettingsFromImro (File imroFile)
 
 bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdateProbe)
 {
-    LOGD ("NeuropixInterface applying probe settings for ", p.probe->name, " shouldUpdate: ", shouldUpdateProbe);
-
     if (p.probeType != probe->type)
     {
         CoreServices::sendStatusMessage ("Probe types do not match.");
         return false;
     }
+
+    if (p.probe == nullptr)
+    {
+        CoreServices::sendStatusMessage ("Probe settings invalid.");
+        return false;
+    }
+
+    LOGD ("NeuropixInterface applying probe settings for ", p.probe->name, " shouldUpdate: ", shouldUpdateProbe);
 
     // update display
     if (apGainComboBox != 0)
@@ -1709,6 +1716,12 @@ ProbeSettings NeuropixInterface::getProbeSettings()
     p.probeType = probe->type;
 
     return p;
+}
+
+void NeuropixInterface::setPasteButtonEnabled (bool enabled)
+{
+    if (pasteButton != nullptr)
+        pasteButton->setEnabled (enabled);
 }
 
 void NeuropixInterface::saveParameters (XmlElement* xml)

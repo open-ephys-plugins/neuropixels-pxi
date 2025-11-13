@@ -118,6 +118,8 @@ public:
     void setEmissionSite (String wavelength, int site);
     void selectElectrodes (Array<int> electrodes);
 
+    void setPasteButtonEnabled (bool enabled);
+
     float getMaxPeakToPeakValue() const { return currentMaxPeakToPeak; }
 
     Probe* probe;
