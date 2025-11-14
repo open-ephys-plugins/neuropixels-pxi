@@ -84,7 +84,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         enableViewButton = std::make_unique<UtilityButton> ("VIEW");
         enableViewButton->setRadius (3.0f);
-        enableViewButton->setBounds (580, currentHeight + 2, 45, 18);
+        enableViewButton->setBounds (probe->type == ProbeType::UHD2 ? 500 : 580, currentHeight + 2, 45, 18);
         enableViewButton->addListener (this);
         enableViewButton->setTooltip ("View electrode enabled state");
         addAndMakeVisible (enableViewButton.get());
@@ -94,7 +94,11 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         enableButton->setBounds (500, currentHeight, 65, 22);
         enableButton->addListener (this);
         enableButton->setTooltip ("Enable selected electrodes");
-        addAndMakeVisible (enableButton.get());
+        // Make button invisible for UHD2 probes (as they use presets)
+        if (probe->type == ProbeType::UHD2)
+            addChildComponent (enableButton.get());
+        else
+            addAndMakeVisible (enableButton.get());
 
         currentHeight += 58;
 
