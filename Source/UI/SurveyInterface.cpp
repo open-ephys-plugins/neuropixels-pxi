@@ -419,8 +419,17 @@ int SurveyProbePanel::getOptimalWidth() const
         return 400;
     else if (shankCount == 2)
         return 340;
-    else // 1 shank
-        return 280;
+    else // 1 shank - scale based on column count
+    {
+        const int columns = probe->probeMetadata.columns_per_shank;
+        // Base width for 2 columns is 280, scale proportionally for more columns
+        if (columns <= 2)
+            return 280;
+        else if (columns <= 4)
+            return 340;
+        else // 8+ columns (e.g., UHD2)
+            return 460;
+    }
 }
 
 // --------------------- SurveyRunner -------------------------
@@ -1006,7 +1015,7 @@ void SurveyInterface::saveParameters (XmlElement* xml)
         {
             StringArray bankTokens;
             for (auto bank : row.chosenBanks)
-                bankTokens.add (bankToString (bank));
+                bankTokens.add (row.probe->type == ProbeType::UHD2 ? String (static_cast<int> (bank)) : bankToString (bank));
             probeNode->setAttribute ("banks", bankTokens.joinIntoString (","));
         }
 
@@ -1135,7 +1144,17 @@ void SurveyInterface::loadParameters (XmlElement* xml)
 
             for (const auto& token : bankTokens)
             {
-                Bank bankValue = stringToBank (token);
+                Bank bankValue = Bank::NONE;
+                if (row.probe->type == ProbeType::UHD2)
+                {
+                    int bankNum = token.getIntValue();
+                    bankValue = (bankNum > -1 && bankNum < 16) ? static_cast<Bank> (bankNum) : Bank::NONE;
+                }
+                else
+                {
+                    bankValue = stringToBank (token);
+                }
+
                 if (bankValue != Bank::NONE && row.availableBanks.contains (bankValue))
                     row.chosenBanks.addIfNotAlreadyThere (bankValue);
             }

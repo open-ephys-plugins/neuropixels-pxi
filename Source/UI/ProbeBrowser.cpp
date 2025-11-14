@@ -805,24 +805,33 @@ void ProbeBrowser::paintOverview (Graphics& g)
     g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.75f));
     g.setFont (FontOptions (12.0f));
     const float labelYOffset = 6.0f;
-    const int skip = jmax (1, channelLabelSkip);
-    for (int row = 0; row <= rows; row += skip)
+
+    // Use same logic as paint() method - iterate through electrodes directly
+    int ch = 0;
+    for (int i = 0; i < parent->probeMetadata.electrodes_per_shank; i += channelLabelSkip)
     {
-        const float y = layoutArea.getBottom() - row * electrodeHeight;
+        if (i >= parent->electrodeMetadata.size())
+            break;
+
+        const auto& meta = parent->electrodeMetadata.getReference (i);
+        const float y = layoutArea.getBottom() - meta.row_index * electrodeHeight;
+
         if (y < layoutArea.getY() || y > layoutArea.getBottom())
             continue;
 
         g.drawLine (leftTickStartX, y, leftTickStartX + tickLength, y, 1.0f);
         g.drawLine (layoutArea.getRight(), y, layoutArea.getRight() + tickLength, y, 1.0f);
 
-        const int index = findElectrodeIndexForRow (row);
-        if (index >= 0)
-        {
-            const float depth = parent->electrodeMetadata[index].ypos;
-            g.drawText (String (depth), leftLabelX, (int) (y - labelYOffset), axisLabelWidth, 12, Justification::right);
-            g.drawText (String (index), (int) rightLabelX, (int) (y - labelYOffset), (int) axisLabelWidth, 12, Justification::left);
-        }
+        const float depth = meta.ypos;
+        const int electrodeNumber = ch;
+        g.drawText (String (depth), leftLabelX, (int) (y - labelYOffset), axisLabelWidth, 12, Justification::right);
+        g.drawText (String (electrodeNumber), (int) rightLabelX, (int) (y - labelYOffset), (int) axisLabelWidth, 12, Justification::left);
+
+        ch += channelLabelSkip;
     }
+
+    if (parent->probeMetadata.availableBanks.size() < 2)
+        return;
 
     // Bank labels
     g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.5f));
