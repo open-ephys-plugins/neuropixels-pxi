@@ -506,7 +506,18 @@ void SurveyRunner::run()
                     // Build settings for this combo
                     for (const auto& config : target.electrodeConfigs)
                     {
-                        if (config.containsIgnoreCase ("Bank " + SurveyInterface::bankToString (bank)))
+                        // For UHD2, match numeric bank values (0-15)
+                        String bankString;
+                        if (probe->type == ProbeType::UHD2)
+                        {
+                            bankString = "Bank " + String (static_cast<int> (bank));
+                        }
+                        else
+                        {
+                            bankString = "Bank " + SurveyInterface::bankToString (bank);
+                        }
+
+                        if (config.containsIgnoreCase (bankString))
                         {
                             if (target.shankCount > 1 && config.containsIgnoreCase ("Shank " + String (sh + 1)))
                             {
@@ -1292,12 +1303,24 @@ void SurveyInterface::refreshProbeList()
         r.electrodeConfigs = p->settings.availableElectrodeConfigurations;
         r.selected = true;
 
-        for (const auto& b : p->settings.availableBanks)
+        // Special case for UHD2: use numeric banks 0-15 instead of Bank enum
+        if (p->type == ProbeType::UHD2)
         {
-            if (b < Bank::A || b > Bank::M)
-                continue;
+            // For UHD2, banks are numbered 0-15 in the electrode configurations
+            for (int i = 0; i < 16; i++)
+            {
+                r.availableBanks.add (static_cast<Bank> (i));
+            }
+        }
+        else
+        {
+            for (const auto& b : p->settings.availableBanks)
+            {
+                if (b < Bank::A || b > Bank::M)
+                    continue;
 
-            r.availableBanks.add (b);
+                r.availableBanks.add (b);
+            }
         }
 
         r.shankCount = p->type == ProbeType::QUAD_BASE ? 1 : jmax (1, p->probeMetadata.shank_count);
@@ -1489,7 +1512,12 @@ void SurveyInterface::saveSurveyResultsToJson (const Array<SurveyTarget>& target
 
         Array<var> bankStrings;
         for (auto bank : target.banks)
-            bankStrings.add (bankToString (bank));
+        {
+            if (probe->type == ProbeType::UHD2)
+                bankStrings.add (String (static_cast<int> (bank)));
+            else
+                bankStrings.add (bankToString (bank));
+        }
         probeObj->setProperty (Identifier ("banks_surveyed"), bankStrings);
 
         Array<var> shankIndices;
@@ -1505,13 +1533,22 @@ void SurveyInterface::saveSurveyResultsToJson (const Array<SurveyTarget>& target
             const auto& meta = probe->electrodeMetadata.getReference (idx);
             const size_t index = static_cast<size_t> (idx);
             bool wasSurveyed = (target.banks.isEmpty() || target.banks.contains (meta.bank)) && (target.shanks.isEmpty() || target.shanks.contains (meta.shank));
+            String bankStr = bankToString (meta.bank);
+
+            if (target.probe->type == ProbeType::UHD2 && target.banks.size() > 0)
+            {
+                // For UHD2, banks are numbered 0-15 in the electrode configurations
+                int bankNumber = static_cast<int> (meta.global_index / 384);
+                wasSurveyed = wasSurveyed && target.banks.contains (static_cast<Bank> (bankNumber));
+                bankStr = String (bankNumber);
+            }
 
             DynamicObject::Ptr electrodeObj = new DynamicObject();
             electrodeObj->setProperty (Identifier ("global_index"), meta.global_index);
             electrodeObj->setProperty (Identifier ("shank"), meta.shank);
             electrodeObj->setProperty (Identifier ("column"), meta.column_index);
             electrodeObj->setProperty (Identifier ("row"), meta.row_index);
-            electrodeObj->setProperty (Identifier ("bank"), bankToString (meta.bank));
+            electrodeObj->setProperty (Identifier ("bank"), bankStr);
             electrodeObj->setProperty (Identifier ("is_reference"), meta.type == ElectrodeType::REFERENCE);
             electrodeObj->setProperty (Identifier ("position_x_um"), meta.xpos);
             electrodeObj->setProperty (Identifier ("position_y_um"), meta.ypos);
@@ -1610,7 +1647,7 @@ void SurveyInterface::paintCell (Graphics& g, int rowNumber, int columnId, int w
     else if (columnId == Columns::ColBanks)
     {
         if (table == nullptr || table->getCellComponent (rowNumber, columnId) == nullptr)
-            g.drawText (banksSummary (r.chosenBanks), 4, 0, width - 8, height, Justification::centredLeft);
+            g.drawText (banksSummary (r.chosenBanks, r.probe->type), 4, 0, width - 8, height, Justification::centredLeft);
     }
     else if (columnId == Columns::ColShanks)
     {
@@ -1646,11 +1683,11 @@ Component* SurveyInterface::refreshComponentForCell (int rowNumber, int columnId
         if (btn == nullptr)
         {
             btn = new TextButton();
-            btn->setButtonText (banksSummary (r.chosenBanks));
+            btn->setButtonText (banksSummary (r.chosenBanks, r.probe->type));
             btn->setTooltip ("Select banks");
         }
         btn->setEnabled (r.availableBanks.size() > 0);
-        btn->setButtonText (banksSummary (r.chosenBanks));
+        btn->setButtonText (banksSummary (r.chosenBanks, r.probe->type));
         btn->onClick = [this, rowNumber, btn]()
         {
             showBanksSelector (rowNumber, btn);
@@ -1698,13 +1735,13 @@ String SurveyInterface::bankToString (Bank b)
     return String (bi);
 }
 
-String SurveyInterface::banksSummary (const Array<Bank>& banks) const
+String SurveyInterface::banksSummary (const Array<Bank>& banks, ProbeType probeType) const
 {
     if (banks.size() == 0)
         return "All";
     StringArray parts;
     for (auto b : banks)
-        parts.add (bankToString (b));
+        parts.add (probeType == ProbeType::UHD2 ? String (static_cast<int> (b)) : bankToString (b));
     return parts.joinIntoString (", ");
 }
 
@@ -1731,15 +1768,30 @@ void SurveyInterface::showBanksSelector (int row, Component* anchor)
 
     auto& r = rows.getReference (row);
     StringArray labels;
-    for (auto bank : r.availableBanks)
-        labels.add (bankToString (bank));
+    // For UHD2, use numeric labels; for others, use letter labels
+    if (r.probe != nullptr && r.probe->type == ProbeType::UHD2)
+    {
+        for (auto bank : r.availableBanks)
+            labels.add (String (static_cast<int> (bank)));
+    }
+    else
+    {
+        for (auto bank : r.availableBanks)
+        {
+            int bi = static_cast<int> (bank);
+            if (bi >= 0 && bi <= 12)
+                labels.add (String::charToString ((juce_wchar) ('A' + bi)));
+            else
+                labels.add (String (bi));
+        }
+    }
 
     auto selector = std::make_unique<BankSelectorComponent> (r.availableBanks, labels, r.chosenBanks, [this, row, safeButton] (const Array<Bank>& selection)
                                                              {
                                                                  auto& rowState = rows.getReference (row);
                                                                  rowState.chosenBanks = selection;
                                                                  if (auto* btn = safeButton.getComponent())
-                                                                     btn->setButtonText (banksSummary (rowState.chosenBanks));
+                                                                     btn->setButtonText (banksSummary (rowState.chosenBanks, rowState.probe->type));
                                                                  if (table != nullptr)
                                                                      table->repaintRow (row); });
 
