@@ -119,6 +119,9 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         electrodeConfigurationComboBox->setSelectedId (1, dontSendNotification);
 
+        if (probe->type == ProbeType::UHD2)
+            electrodeConfigurationComboBox->setSelectedId (probe->settings.electrodeConfigurationIndex + 2, dontSendNotification);
+
         addAndMakeVisible (electrodeConfigurationComboBox.get());
 
         currentHeight += 55;
@@ -1603,24 +1606,17 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
 
     if (probe->type == ProbeType::UHD2)
     {
-        Array<int> selection = probe->selectElectrodeConfiguration (electrodeConfigurationComboBox->getText());
+        if (p.electrodeConfigurationIndex >= 0 && p.electrodeConfigurationIndex < electrodeConfigurationComboBox->getNumItems() - 1)
+        {
+            electrodeConfigurationComboBox->setSelectedItemIndex (p.electrodeConfigurationIndex + 1, dontSendNotification);
+            probe->settings.electrodeConfigurationIndex = p.electrodeConfigurationIndex;
+        }
+
+        String configName = electrodeConfigurationComboBox->getText();
+
+        Array<int> selection = probe->selectElectrodeConfiguration (configName);
 
         selectElectrodes (selection);
-
-        probe->settings.clearElectrodeSelection();
-
-        for (auto const electrode : electrodeMetadata)
-        {
-            if (electrode.status == ElectrodeStatus::CONNECTED)
-            {
-                probe->settings.selectedChannel.add (electrode.channel);
-                probe->settings.selectedBank.add (electrode.bank);
-                probe->settings.selectedShank.add (electrode.shank);
-                probe->settings.selectedElectrode.add (electrode.global_index);
-
-                // std::cout << electrode.channel << " : " << electrode.global_index << std::endl;
-            }
-        }
     }
     else
     {
