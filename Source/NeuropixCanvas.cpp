@@ -311,6 +311,25 @@ void NeuropixCanvas::setSelectedBasestation (Basestation* basestation)
 void NeuropixCanvas::storeProbeSettings (ProbeSettings p)
 {
     savedSettings = p;
+
+    if (p.probeType != ProbeType::NONE)
+    {
+        for (auto settingsInterface : settingsInterfaces)
+        {
+            if (settingsInterface->type == SettingsInterface::PROBE_SETTINGS_INTERFACE)
+            {
+                NeuropixInterface* ni = (NeuropixInterface*) settingsInterface;
+                if (ni->probe->type == p.probeType)
+                {
+                    ni->setPasteButtonEnabled (true);
+                }
+                else
+                {
+                    ni->setPasteButtonEnabled (false);
+                }
+            }
+        }
+    }
 }
 
 ProbeSettings NeuropixCanvas::getProbeSettings()

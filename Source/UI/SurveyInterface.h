@@ -149,7 +149,7 @@ private:
     void refreshProbeList();
     void rebuildProbePanels();
     void layoutProbePanels();
-    String banksSummary (const Array<Bank>&) const;
+    String banksSummary (const Array<Bank>&, ProbeType) const;
     String shanksSummary (const Array<int>&, int shankCount) const;
     void showBanksSelector (int row, Component* anchor);
     void showShanksSelector (int row, Component* anchor);

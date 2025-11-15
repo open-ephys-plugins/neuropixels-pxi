@@ -84,7 +84,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         enableViewButton = std::make_unique<UtilityButton> ("VIEW");
         enableViewButton->setRadius (3.0f);
-        enableViewButton->setBounds (580, currentHeight + 2, 45, 18);
+        enableViewButton->setBounds (probe->type == ProbeType::UHD2 ? 500 : 580, currentHeight + 2, 45, 18);
         enableViewButton->addListener (this);
         enableViewButton->setTooltip ("View electrode enabled state");
         addAndMakeVisible (enableViewButton.get());
@@ -94,7 +94,11 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         enableButton->setBounds (500, currentHeight, 65, 22);
         enableButton->addListener (this);
         enableButton->setTooltip ("Enable selected electrodes");
-        addAndMakeVisible (enableButton.get());
+        // Make button invisible for UHD2 probes (as they use presets)
+        if (probe->type == ProbeType::UHD2)
+            addChildComponent (enableButton.get());
+        else
+            addAndMakeVisible (enableButton.get());
 
         currentHeight += 58;
 
@@ -118,6 +122,9 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         }
 
         electrodeConfigurationComboBox->setSelectedId (1, dontSendNotification);
+
+        if (probe->type == ProbeType::UHD2)
+            electrodeConfigurationComboBox->setSelectedId (probe->settings.electrodeConfigurationIndex + 2, dontSendNotification);
 
         addAndMakeVisible (electrodeConfigurationComboBox.get());
 
@@ -329,7 +336,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         availableBists.add (BIST::EMPTY);
         availableBists.add (BIST::SIGNAL); // 2 -- disabled
-        availableBists.add (BIST::NOISE);  // 3 -- disabled
+        availableBists.add (BIST::NOISE); // 3 -- disabled
         availableBists.add (BIST::PSB);
         bistComboBox->addItem ("Test PSB bus", 4);
 
@@ -379,6 +386,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         pasteButton->setBounds (115, 637, 60, 22);
         pasteButton->addListener (this);
         pasteButton->setTooltip ("Paste probe settings");
+        pasteButton->setEnabled (false);
         addAndMakeVisible (pasteButton.get());
 
         applyToAllButton = std::make_unique<UtilityButton> ("APPLY TO ALL");
@@ -1051,8 +1059,8 @@ void NeuropixInterface::buttonClicked (Button* button)
     }
     else if (button == pasteButton.get())
     {
-        applyProbeSettings (canvas->getProbeSettings());
-        CoreServices::updateSignalChain (editor);
+        if (applyProbeSettings (canvas->getProbeSettings()))
+            CoreServices::updateSignalChain (editor);
     }
     else if (button == applyToAllButton.get())
     {
@@ -1352,7 +1360,7 @@ void NeuropixInterface::stopAcquisition()
         copyButton->setEnabled (enabledState);
 
     if (pasteButton != nullptr)
-        pasteButton->setEnabled (enabledState);
+        pasteButton->setEnabled (canvas->getProbeSettings().probeType == probe->type);
 
     if (applyToAllButton != nullptr)
         applyToAllButton->setEnabled (enabledState);
@@ -1562,13 +1570,19 @@ void NeuropixInterface::applyProbeSettingsFromImro (File imroFile)
 
 bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdateProbe)
 {
-    LOGD ("NeuropixInterface applying probe settings for ", p.probe->name, " shouldUpdate: ", shouldUpdateProbe);
-
     if (p.probeType != probe->type)
     {
         CoreServices::sendStatusMessage ("Probe types do not match.");
         return false;
     }
+
+    if (p.probe == nullptr)
+    {
+        CoreServices::sendStatusMessage ("Probe settings invalid.");
+        return false;
+    }
+
+    LOGD ("NeuropixInterface applying probe settings for ", p.probe->name, " shouldUpdate: ", shouldUpdateProbe);
 
     // update display
     if (apGainComboBox != 0)
@@ -1596,24 +1610,17 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
 
     if (probe->type == ProbeType::UHD2)
     {
-        Array<int> selection = probe->selectElectrodeConfiguration (electrodeConfigurationComboBox->getText());
+        if (p.electrodeConfigurationIndex >= 0 && p.electrodeConfigurationIndex < electrodeConfigurationComboBox->getNumItems() - 1)
+        {
+            electrodeConfigurationComboBox->setSelectedItemIndex (p.electrodeConfigurationIndex + 1, dontSendNotification);
+            probe->settings.electrodeConfigurationIndex = p.electrodeConfigurationIndex;
+        }
+
+        String configName = electrodeConfigurationComboBox->getText();
+
+        Array<int> selection = probe->selectElectrodeConfiguration (configName);
 
         selectElectrodes (selection);
-
-        probe->settings.clearElectrodeSelection();
-
-        for (auto const electrode : electrodeMetadata)
-        {
-            if (electrode.status == ElectrodeStatus::CONNECTED)
-            {
-                probe->settings.selectedChannel.add (electrode.channel);
-                probe->settings.selectedBank.add (electrode.bank);
-                probe->settings.selectedShank.add (electrode.shank);
-                probe->settings.selectedElectrode.add (electrode.global_index);
-
-                // std::cout << electrode.channel << " : " << electrode.global_index << std::endl;
-            }
-        }
     }
     else
     {
@@ -1709,6 +1716,12 @@ ProbeSettings NeuropixInterface::getProbeSettings()
     p.probeType = probe->type;
 
     return p;
+}
+
+void NeuropixInterface::setPasteButtonEnabled (bool enabled)
+{
+    if (pasteButton != nullptr)
+        pasteButton->setEnabled (enabled);
 }
 
 void NeuropixInterface::saveParameters (XmlElement* xml)
