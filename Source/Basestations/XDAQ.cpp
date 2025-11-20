@@ -171,12 +171,16 @@ void XDAQ_BS::searchForProbes()
             else if (hsPartNumber == "NPNH_HS_30" || hsPartNumber == "NPNH_HS_31")
             { // 128-ch analog headstage
                 LOGD ("      Found 128-ch analog headstage on port: ", port);
-                headstage = new Headstage_Analog128 (this, port);
+                LOGE ("      This headstage type is not currently supported on XDAQ, contact KonetX for assistance.");
+                // headstage = new Headstage_Analog128 (this, port);
+                headstage = nullptr;
             }
             else if (hsPartNumber == "NPNH_HS_00")
             { // custom 384-ch headstage
                 LOGC ("      Found 384-ch custom headstage on port: ", port);
-                headstage = new Headstage_Custom384 (this, port);
+                LOGE ("      This headstage type is not currently supported on XDAQ, contact KonetX for assistance.");
+                // headstage = new Headstage_Custom384 (this, port);
+                headstage = nullptr;
             }
             else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01")
             { // 2.0 headstage, 2 docks

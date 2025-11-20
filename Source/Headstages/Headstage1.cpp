@@ -90,13 +90,21 @@ Headstage1::Headstage1 (Basestation* bs_, int port) : Headstage (bs_, port)
         }
 
         if (String (partNumber).equalsIgnoreCase ("NP1300"))
+        {
+            LOGE("Probe is not currently supported on XDAQ, contact KonetX for assistance.");
+            return;
             probes.add (new NeuropixelsOpto (basestation, this, flexCables[0]));
+        }
         else if (String (partNumber).equalsIgnoreCase ("NP1110"))
         {
+            LOGE("Probe is not currently supported on XDAQ, contact KonetX for assistance.");
+            return;
             probes.add (new Neuropixels_UHD (basestation, this, flexCables[0]));
         }
         else if (String (partNumber).equalsIgnoreCase ("NP1010") || String (partNumber).equalsIgnoreCase ("NP1011") || String (partNumber).equalsIgnoreCase ("NP1012") || String (partNumber).equalsIgnoreCase ("NP1013") || String (partNumber).equalsIgnoreCase ("NP1015") || String (partNumber).equalsIgnoreCase ("NP1016") || String (partNumber).equalsIgnoreCase ("NP1020") || String (partNumber).equalsIgnoreCase ("NP1022") || String (partNumber).equalsIgnoreCase ("NP1030") || String (partNumber).equalsIgnoreCase ("NP1032"))
         {
+            LOGE("Probe is not currently supported on XDAQ, contact KonetX for assistance.");
+            return;
             probes.add (new Neuropixels_NHP_Active (basestation, this, flexCables[0]));
         }
         else
