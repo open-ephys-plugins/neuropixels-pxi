@@ -66,6 +66,7 @@ Colour ColourScheme::getColourForNormalizedValueInScheme (float val, ColourSchem
         case ColourSchemeId::JET:
             return colourFromJet (val);
     }
+    return Colour();
 }
 
 #pragma mark - ColourScheme utility definitions -

@@ -55,8 +55,12 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE
 
 set_target_properties(${PLUGIN_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-	target_compile_definitions(${PLUGIN_NAME} PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
-	target_compile_definitions(${PLUGIN_NAME} PRIVATE "JUCE_API=__declspec(dllimport)")
+	target_compile_definitions(${PLUGIN_NAME} PRIVATE
+		NOMINMAX
+		WIN32_LEAN_AND_MEAN
+		NOGDI
+		"JUCE_API=__declspec(dllimport)"
+	)
 	target_link_libraries(${PLUGIN_NAME} PRIVATE
 		${GUI_BASE_DIR}/Build/${CONFIGURATION_FOLDER}/open-ephys.lib
 	)
