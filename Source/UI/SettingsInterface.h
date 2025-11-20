@@ -59,12 +59,14 @@ public:
     {
         viewport->setBounds (getLocalBounds());
 
-        int contentWidth = 1000;
+        int contentWidth = minContentWidth;
 
-        if (getWidth() > 1012)
+        if (getWidth() > minContentWidth + 12)
             contentWidth = getWidth() - 12;
 
-        viewport->getViewedComponent()->setSize (contentWidth, 820);
+        int contentHeight = getHeight() > 820 ? getHeight() : 820;
+
+        viewport->getViewedComponent()->setSize (contentWidth, contentHeight);
     }
 
     void paint (Graphics& g) override
@@ -72,10 +74,17 @@ public:
         g.fillAll (findColour (ThemeColours::componentBackground));
     }
 
+    void setMinimumContentWidth (int width)
+    {
+        minContentWidth = width;
+        resized();
+    }
+
     SettingsInterface* settingsInterface;
 
 private:
     std::unique_ptr<Viewport> viewport;
+    int minContentWidth = 1000;
 };
 
 /** 
@@ -92,6 +101,7 @@ public:
         PROBE_SETTINGS_INTERFACE,
         ONEBOX_SETTINGS_INTERFACE,
         BASESTATION_SETTINGS_INTERFACE,
+        SURVEY_SETTINGS_INTERFACE,
         UNKNOWN_SETTINGS_INTERFACE
     };
 

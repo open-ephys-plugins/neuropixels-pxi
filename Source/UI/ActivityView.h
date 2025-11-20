@@ -24,8 +24,11 @@
 #ifndef __ACTIVITYVIEW_H__
 #define __ACTIVITYVIEW_H__
 
+#include <DspLib.h>
 #include <VisualizerEditorHeaders.h>
+#include <cstdint>
 #include <limits>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -44,85 +47,88 @@ Helper class for viewing real-time activity across the probe.
 class ActivityView
 {
 public:
-    ActivityView (int numChannels, int updateInterval_, std::vector<std::vector<int>> blocks_ = {})
-        : updateInterval (updateInterval_)
+    ActivityView (int numChannels,
+                  int updateInterval,
+                  std::vector<std::vector<int>> blocks = {},
+                  int numAdcs = 0,
+                  int totalElectrodes = -1);
+    ~ActivityView() {};
+
+    const float* getPeakToPeakValues();
+
+    void setBandpassFilterEnabled (bool enabled);
+
+    const bool getBandpassFilterEnabled() const { return filterEnabled; }
+
+    void setCommonAverageReferencingEnabled (bool enabled);
+
+    const bool getCommonAverageReferencingEnabled() const { return carEnabled; }
+
+    void addToBuffer (float* samples, int numSamples, int blockIndex = 0);
+
+    void reset (int blockIndex = 0);
+
+    void setChannelToElectrodeMapping (const std::vector<int>& mapping);
+
+    void setSurveyMode (bool enabled, bool reset = true);
+
+    void resetSurveyData();
+
+    struct SurveyStatistics
     {
-        if (blocks_.empty())
-        {
-            std::vector<int> block;
-            for (int i = 0; i < numChannels; i++)
-            {
-                block.push_back (i);
-            }
-            blocks.push_back (block);
-        }
-        else
-        {
-            blocks = blocks_;
-        }
+        std::vector<float> averages;
+        std::vector<double> totals;
+        std::vector<uint64_t> sampleCounts;
+    };
 
-        minChannelValues.resize (numChannels, std::numeric_limits<int>::max());
-        maxChannelValues.resize (numChannels, std::numeric_limits<int>::min());
-        peakToPeakValues.resize (numChannels, 0.0f);
-
-        counters.resize (blocks.size(), 0);
-    }
-
-    const float* getPeakToPeakValues()
-    {
-        return peakToPeakValues.data();
-    }
-
-    void addSample (float sample, int channel, int block = 0)
-    {
-        int blockChannel = blocks[block][0];
-        int& counter = counters[block];
-
-        if (channel == blockChannel)
-        {
-            if (counter == updateInterval)
-            {
-                reset (block);
-                counter = 0;
-            }
-            counter++;
-        }
-
-        if (counter % 10 == 0)
-        {
-            if (sample < minChannelValues[channel])
-            {
-                minChannelValues[channel] = sample;
-                return;
-            }
-
-            if (sample > maxChannelValues[channel])
-            {
-                maxChannelValues[channel] = sample;
-            }
-        }
-    }
-
-    void reset (int blockIndex = 0)
-    {
-        for (auto ch : blocks[blockIndex])
-        {
-            peakToPeakValues[ch] = maxChannelValues[ch] - minChannelValues[ch];
-            minChannelValues[ch] = std::numeric_limits<int>::max();
-            maxChannelValues[ch] = std::numeric_limits<int>::min();
-        }
-
-        counters[blockIndex] = 0;
-    }
+    SurveyStatistics getSurveyStatistics();
 
 private:
-    std::vector<float> minChannelValues;
-    std::vector<float> maxChannelValues;
+    void calculatePeakToPeakValues();
+
+    void applyCommonAverageReferencing (AudioBuffer<float>& buffer, int blockIndex, int numSamples);
+
+    // Thread synchronization
+    CriticalSection bufferMutex;
+
+    int numChannels;
+    int totalElectrodes;
     std::vector<float> peakToPeakValues;
 
+    // JUCE AudioBuffers for sample storage - one per block
+    std::vector<AudioBuffer<float>> sampleBuffers;
+    std::vector<AudioBuffer<float>> filteredBuffers;
+
+    // AbstractFifo - one per block
+    std::vector<std::unique_ptr<AbstractFifo>> abstractFifos;
+
+    int bufferIndex;
+    bool needsUpdate;
+
     std::vector<std::vector<int>> blocks;
+    std::vector<int> channelToElectrode;
     std::vector<int> counters;
     int updateInterval;
+
+    // Bandpass filter state
+    bool filterEnabled;
+    OwnedArray<Dsp::Filter> filters;
+
+    // Common average referencing state
+    bool carEnabled;
+    int numAdcs;
+    std::vector<std::vector<int>> adcGroups; // Maps global channel index to ADC group index
+    std::vector<AudioBuffer<float>> adcBuffers; // One AudioBuffer per block, channels = ADC groups
+
+    // Survey averaging state
+    bool surveyMode;
+    std::vector<double> surveyAccumulation;
+    std::vector<uint64_t> surveySampleCount;
+
+    // 300 Hz low-pass filter
+    const float lowCut = 300.0f;
+    // 6000 Hz high-pass filter
+    const float highCut = 6000.0f;
 };
 
 #endif // __ACTIVITYVIEW_H__

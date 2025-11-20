@@ -76,7 +76,8 @@ public:
 
         DynamicObject::Ptr probe = new DynamicObject();
         DynamicObject::Ptr annotations = new DynamicObject();
-        annotations->setProperty (Identifier ("name"), settings.probe->name);
+        annotations->setProperty (Identifier ("model_name"), settings.probe->info.part_number);
+        annotations->setProperty (Identifier ("description"), settings.probe->name);
         annotations->setProperty (Identifier ("manufacturer"), "imec");
 
         probe->setProperty (Identifier ("ndim"), 2);

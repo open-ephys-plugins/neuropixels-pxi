@@ -128,7 +128,9 @@ bool Neuropixels_QuadBase::open()
             }
         }
 
-        apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks);
+    apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks, probeMetadata.num_adcs, electrodeMetadata.size());
+
+    refreshActivityViewMapping();
     }
 
     return errorCode == Neuropixels::SUCCESS;
@@ -145,6 +147,32 @@ bool Neuropixels_QuadBase::close()
 void Neuropixels_QuadBase::initialize (bool signalChainIsLoading)
 {
     errorCode = checkError (Neuropixels::init (basestation->slot, headstage->port, dock), "init");
+
+    if (errorCode == Neuropixels::ERROR_SR_CHAIN)
+    {
+        LOGC (" Shift register error detected -- possible broken shank");
+
+        checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
+
+        uint8_t shanksOkMask;
+
+        Neuropixels::bistSR (basestation->slot, headstage->port, dock, &shanksOkMask);
+
+        for (int shank = 0; shank < 4; shank++)
+        {
+            if (((shanksOkMask >> shank) & 1) == 0)
+            {
+                LOGC ("Shank ", shank + 1, " appears to be broken.");
+
+                for (int i = 0; i < electrodeMetadata.size(); i++)
+                {
+                    if (electrodeMetadata.getReference (i).shank == shank)
+                        electrodeMetadata.getReference (i).shank_is_programmable = false;
+                }
+            }
+        }
+    }
+
     LOGD ("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 }
 
@@ -369,6 +397,9 @@ void Neuropixels_QuadBase::writeConfiguration()
 
 void Neuropixels_QuadBase::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     if (acquisitionThreads.size() == 0)
     {
         for (int shank = 0; shank < 4; shank++)
@@ -448,6 +479,8 @@ void AcquisitionThread::run()
     last_npx_timestamp = 0;
     passedOneSecond = false;
 
+    bool syncBitStatus = true;
+
     SKIP = probe->sendSync ? 385 : 384;
 
     LOGD ("  Starting thread for shank ", shank);
@@ -473,6 +506,7 @@ void AcquisitionThread::run()
         {
             for (int packetNum = 0; packetNum < count; packetNum++)
             {
+
                 eventCode = packetInfo[packetNum].Status >> 6;
 
                 if (invertSyncLine)
@@ -494,14 +528,49 @@ void AcquisitionThread::run()
                     }
                 }
 
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_COUNT)
+                {
+                    String msg = "NPX PACKET COUNT ERROR on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_SERDES)
+                {
+                    String msg = "NPX SERDES ERROR on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_LOCK)
+                {
+                    String msg = "NPX LOCK ERROR on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_POP)
+                {
+                    String msg = "NPX FIFO OVERFLOW (POP) on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
+                if (packetInfo[packetNum].Status & ELECTRODEPACKET_STATUS_ERR_SYNC)
+                {
+                    String msg = "NPX SYNC ERROR on slot " + String (slot) + ", probe " + String (port) + " at sample number " + String (ap_timestamp);
+                    LOGC (msg);
+                    //probe->basestation->neuropixThread->sendBroadcastMessage (msg);
+                }
+
                 last_npx_timestamp = npx_timestamp;
 
                 for (int j = 0; j < shank_channel_count; j++)
                 {
                     apSamples[packetNum + count * j] =
-                        float (data[packetNum * shank_channel_count + j]) / 4096.0f / 100.0f * 1000000.0f; // convert to microvolts
+                        float (data[packetNum * shank_channel_count + j]) / 4096.0f / 80.0f * 1000000.0f; // convert to microvolts
 
-                    apView->addSample (apSamples[packetNum + count * j], j + shank * 384, shank);
+                    // apView->addSample (apSamples[packetNum + count * j], j + shank * 384, shank);
                 }
 
                 if (sendSync)
@@ -513,8 +582,20 @@ void AcquisitionThread::run()
                 event_codes[packetNum] = eventCode;
             }
 
-            buffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
+            // int64 startTime = 0;
+            // if (shank == 0)
+            // {
+            //     startTime = juce::Time::getHighResolutionTicks();
+            // }
 
+            buffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
+            apView->addToBuffer (apSamples, count, shank);
+
+            // if (shank == 0 && startTime != 0)
+            // {
+            //     float elapsedTime =  Time::highResolutionTicksToSeconds (juce::Time::getHighResolutionTicks() - startTime) * 1000.0f; // elapsed time in milliseconds
+            //     LOGC ("Elapsed time for first AP packet: " + String (elapsedTime) + " ms");
+            // }
         }
         else if (errorCode != Neuropixels::SUCCESS)
         {
@@ -582,8 +663,19 @@ bool Neuropixels_QuadBase::runBist (BIST bistType)
         }
         case BIST::SR:
         {
-            if (Neuropixels::bistSR (slot, port, dock) == Neuropixels::SUCCESS)
+            uint8_t shanksOkMask;
+
+            if (Neuropixels::bistSR (slot, port, dock, &shanksOkMask) == Neuropixels::SUCCESS)
                 returnValue = true;
+            else
+            {
+                LOGD ("SR BIST failed with shank mask: ", (int) shanksOkMask);
+                LOGC ("shank 1 status: ", shanksOkMask & 1);
+                LOGC ("shank 2 status: ", (shanksOkMask >> 1) & 1);
+                LOGC ("shank 3 status: ", (shanksOkMask >> 2) & 1);
+                LOGC ("shank 4 status: ", (shanksOkMask >> 3) & 1);
+            }
+
             break;
         }
         case BIST::EEPROM:

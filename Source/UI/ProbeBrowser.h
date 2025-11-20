@@ -28,13 +28,29 @@
 
 #include "NeuropixInterface.h"
 
+/** 
+
+    Interactive graphical interface for viewing and selecting probe electrodes
+
+*/
 class ProbeBrowser : public Component,
-                     public Timer
+                     public Timer,
+                     public TooltipClient   
 {
 public:
+    enum class DisplayMode
+    {
+        Interactive,
+        OverviewOnly
+    };
+
+    /** Constructor */
     ProbeBrowser (NeuropixInterface*);
+
+    /** Destructor */
     virtual ~ProbeBrowser();
 
+    // Mouse interaction methods
     void mouseMove (const MouseEvent& event);
     void mouseDown (const MouseEvent& event);
     void mouseDrag (const MouseEvent& event);
@@ -43,16 +59,29 @@ public:
 
     MouseCursor getMouseCursor();
 
+    /** Timer callback for updating activity visualization */
     void timerCallback();
 
+    /** Main paint method */
     void paint (Graphics& g);
 
+    /** Returns tooltip text for the hovered electrode */
+    String getTooltip() override;
+
+    /** Switch between interactive and overview-only render modes */
+    void setDisplayMode (DisplayMode mode);
+    DisplayMode getDisplayMode() const { return displayMode; }
+
+    /** Draw annotation overlays */
     void drawAnnotations (Graphics& g);
 
+    // Zoom control methods
     int getZoomHeight();
     int getZoomOffset();
-
     void setZoomHeightAndOffset (int, int);
+
+    /** Set max peak-to-peak amplitude */
+    void setMaxPeakToPeakAmplitude (float);
 
     ActivityToView activityToView;
     float maxPeakToPeakAmplitude;
@@ -70,6 +99,8 @@ private:
     bool isOverElectrode;
     bool isSelectionActive;
 
+    Rectangle<int> selectionBox;
+
     int initialOffset;
     int initialHeight;
     int lowerBound;
@@ -78,10 +109,11 @@ private:
     int minZoomHeight;
     int maxZoomHeight;
     int shankOffset;
-    int leftEdge;
-    int rightEdge;
     int channelLabelSkip;
     int pixelHeight;
+
+    float leftEdge;
+    float rightEdge;
 
     int lowestElectrode;
     int highestElectrode;
@@ -93,15 +125,30 @@ private:
     MouseCursor::StandardCursorType cursorType;
 
     String electrodeInfoString;
+    int hoveredElectrodeIndex = -1;
 
+    // Local electrode colours for Overview mode
+    Array<Colour> overviewElectrodeColours;
+    float overviewMaxPeakToPeakAmplitude = 500.0f;
+
+    // Helper methods
+    void paintOverview (Graphics& g);
     Colour getElectrodeColour (int index);
+    void calculateElectrodeColours();
     int getNearestElectrode (int x, int y);
     Array<int> getElectrodesWithinBounds (int x, int y, int w, int h);
     String getElectrodeInfoString (int index);
+    int findElectrodeIndexForRow (int row) const;
 
-    std::unique_ptr<TooltipWindow> tooltipWindow;
+    void handleLeftMouseDown (const MouseEvent& event);
+    void handleRightMouseDown (const MouseEvent& event);
+    void handleZoomDrag (const MouseEvent& event);
+    void handleSelectionDrag (const MouseEvent& event);
+    void clampZoomValues();
 
     NeuropixInterface* parent;
+
+    DisplayMode displayMode { DisplayMode::Interactive };
 };
 
 #endif // __PROBEBROWSER_H__

@@ -145,11 +145,11 @@ void Geometry::NP1 (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.name = "Neuropixels 1.0";
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = 1;
@@ -182,7 +182,7 @@ void Geometry::NP1 (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.column_index = i % 2;
         metadata.row_index = i / 2;
         metadata.isSelected = false;
-        metadata.colour = Colours::lightgrey;
+        metadata.colour = Colour (160, 160, 160);
 
         if (i < 384)
         {
@@ -232,11 +232,11 @@ void Geometry::NP2 (int shank_count, int adc_bits, Array<ElectrodeMetadata>& ele
     probeMetadata.adc_bits = adc_bits;
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = shank_count;
@@ -271,6 +271,7 @@ void Geometry::NP2 (int shank_count, int adc_bits, Array<ElectrodeMetadata>& ele
         metadata.row_index = metadata.shank_local_index / 2;
 
         metadata.isSelected = false;
+        metadata.colour = Colour (160, 160, 160);
 
         if (shank_count == 1)
         {
@@ -519,11 +520,11 @@ void Geometry::NHP1 (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.name = "Neuropixels NHP - Passive";
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = 1;
@@ -561,6 +562,7 @@ void Geometry::NHP1 (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.status = ElectrodeStatus::CONNECTED;
 
         metadata.isSelected = false;
+        metadata.colour = Colour (160, 160, 160);
 
         electrodeMetadata.add (metadata);
     }
@@ -592,11 +594,11 @@ void Geometry::NHP2 (int length,
     }
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     if (length == 10)
@@ -616,16 +618,24 @@ void Geometry::NHP2 (int length,
     probeMetadata.availableBanks = {
         Bank::A,
         Bank::B,
-        Bank::C,
-        Bank::D,
-        Bank::E,
-        Bank::F,
-        Bank::G,
-        Bank::H,
-        Bank::I,
-        Bank::J,
-        Bank::K,
-        Bank::L
+        Bank::C
+    };
+
+    if (probeMetadata.type == ProbeType::NHP25 || probeMetadata.type == ProbeType::NHP45)
+    {
+        probeMetadata.availableBanks.add (Bank::D);
+        probeMetadata.availableBanks.add (Bank::E);
+        probeMetadata.availableBanks.add (Bank::F);
+        probeMetadata.availableBanks.add (Bank::G);
+
+        if (probeMetadata.type == ProbeType::NHP45)
+        {
+            probeMetadata.availableBanks.add (Bank::H);
+            probeMetadata.availableBanks.add (Bank::I);
+            probeMetadata.availableBanks.add (Bank::J);
+            probeMetadata.availableBanks.add (Bank::K);
+            probeMetadata.availableBanks.add (Bank::L);
+        }
     };
 
     Array<float> xpositions;
@@ -677,6 +687,8 @@ void Geometry::NHP2 (int length,
             metadata.type = ElectrodeType::ELECTRODE;
         }
 
+        metadata.colour = Colour (160, 160, 160);
+
         electrodeMetadata.add (metadata);
     }
 }
@@ -717,11 +729,11 @@ void Geometry::UHDPassive (int numColumns,
     probeMetadata.switchable = false;
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 10, 542);
-    path.lineTo (27 + 20, 514);
-    path.lineTo (27 + 20, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 10, 542);
+    path.lineTo (67 + 20, 514);
+    path.lineTo (67 + 20, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = 1;
@@ -754,6 +766,8 @@ void Geometry::UHDPassive (int numColumns,
 
         metadata.isSelected = false;
 
+        metadata.colour = Colour (160, 160, 160);
+
         electrodeMetadata.add (metadata);
     }
 }
@@ -767,11 +781,11 @@ void Geometry::UHDActive (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.switchable = false;
 
     Path path;
-    path.startNewSubPath (27, 23);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 10, 542);
-    path.lineTo (27 + 20, 514);
-    path.lineTo (27 + 20, 23);
+    path.startNewSubPath (61, 23);
+    path.lineTo (61, 514);
+    path.lineTo (61 + 10, 542);
+    path.lineTo (61 + 20, 514);
+    path.lineTo (61 + 20, 23);
     path.closeSubPath();
 
     int numRows = 768;
@@ -6965,6 +6979,8 @@ void Geometry::UHDActive (Array<ElectrodeMetadata>& electrodeMetadata,
 
         metadata.isSelected = false;
 
+        metadata.colour = Colour (160, 160, 160);
+
         electrodeMetadata.add (metadata);
     }
 }
@@ -6977,11 +6993,11 @@ void Geometry::OPTO (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.name = "Neuropixels Opto";
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = 1;
@@ -7014,7 +7030,7 @@ void Geometry::OPTO (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.column_index = i % 2;
         metadata.row_index = i / 2;
         metadata.isSelected = false;
-        metadata.colour = Colours::lightgrey;
+        metadata.colour = Colour (160, 160, 160);
 
         if (i < 384)
         {
@@ -7076,11 +7092,11 @@ void Geometry::QuadBase (Array<ElectrodeMetadata>& electrodeMetadata,
     probeMetadata.name = "Neuropixels 2.0 Quad Base";
 
     Path path;
-    path.startNewSubPath (27, 31);
-    path.lineTo (27, 514);
-    path.lineTo (27 + 5, 522);
-    path.lineTo (27 + 10, 514);
-    path.lineTo (27 + 10, 31);
+    path.startNewSubPath (67, 31);
+    path.lineTo (67, 514);
+    path.lineTo (67 + 5, 522);
+    path.lineTo (67 + 10, 514);
+    path.lineTo (67 + 10, 31);
     path.closeSubPath();
 
     probeMetadata.shank_count = shank_count;
@@ -7218,6 +7234,8 @@ void Geometry::QuadBase (Array<ElectrodeMetadata>& electrodeMetadata,
         metadata.channel = metadata.shank_local_index % 384;
 
         metadata.type = ElectrodeType::ELECTRODE; // disable internal reference
+
+        metadata.colour = Colour (160, 160, 160);
 
         electrodeMetadata.add (metadata);
     }

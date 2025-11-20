@@ -102,15 +102,19 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 1 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 2 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 3 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 4 Bank D");
             settings.availableElectrodeConfigurations.add ("All Shanks 1-96");
             settings.availableElectrodeConfigurations.add ("All Shanks 97-192");
             settings.availableElectrodeConfigurations.add ("All Shanks 193-288");
@@ -153,7 +157,9 @@ bool Neuropixels2::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = std::make_unique<ActivityView> (384, 3000);
+    apView = std::make_unique<ActivityView> (384, 3000, std::vector<std::vector<int>>(), probeMetadata.num_adcs, electrodeMetadata.size());
+
+    refreshActivityViewMapping();
 
     return errorCode == Neuropixels::SUCCESS;
 }
@@ -168,8 +174,44 @@ bool Neuropixels2::close()
 
 void Neuropixels2::initialize (bool signalChainIsLoading)
 {
-    checkError (Neuropixels::init (basestation->slot, headstage->port, dock),
+    errorCode = checkError (Neuropixels::init (basestation->slot, headstage->port, dock),
                 "init: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
+
+    checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
+    uint8_t shanksOkMask;
+    errorCode = Neuropixels::bistSR (basestation->slot, headstage->port, dock, &shanksOkMask);
+
+    if (errorCode != Neuropixels::SUCCESS)
+    {
+        LOGC (" Shift register error detected -- possible broken shank");
+
+        int shankCount;
+        if (settings.probeType == ProbeType::NP2_4)
+        {
+            shankCount = 4;
+        }
+        else
+        {
+            shankCount = 1;
+        }
+
+        for (int shank = 0; shank < shankCount; shank++)
+        {
+            if (((shanksOkMask >> shank) & 1) == 0)
+            {
+                LOGC ("Shank ", shank + 1, " appears to be broken.");
+
+                for (int i = 0; i < electrodeMetadata.size(); i++)
+                {
+                    if (electrodeMetadata.getReference (i).shank == shank)
+                        electrodeMetadata.getReference (i).shank_is_programmable = false;
+                }
+            }
+        }
+    }
+
+    errorCode = Neuropixels::setHSLed (basestation->slot, headstage->port, false);
+    LOGDD ("Neuropixels::setHSLed: errorCode: ", errorCode);
 }
 
 void Neuropixels2::calibrate()
@@ -289,6 +331,13 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
             selection.add (i);
         }
     }
+    else if (config.equalsIgnoreCase ("Shank 1 Bank D"))
+    {
+        for (int i = 896; i < 1280; i++)
+        {
+            selection.add (i);
+        }
+    }
     else if (config.equalsIgnoreCase ("Shank 2 Bank A"))
     {
         int startElectrode = 1280;
@@ -310,6 +359,15 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
     else if (config.equalsIgnoreCase ("Shank 2 Bank C"))
     {
         int startElectrode = 1280 + 384 * 2;
+
+        for (int i = startElectrode; i < startElectrode + 384; i++)
+        {
+            selection.add (i);
+        }
+    }
+    else if (config.equalsIgnoreCase ("Shank 2 Bank D"))
+    {
+        int startElectrode = 1280 + 896;
 
         for (int i = startElectrode; i < startElectrode + 384; i++)
         {
@@ -343,6 +401,15 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
             selection.add (i);
         }
     }
+    else if (config.equalsIgnoreCase ("Shank 3 Bank D"))
+    {
+        int startElectrode = 1280 * 2 + 896;
+
+        for (int i = startElectrode; i < startElectrode + 384; i++)
+        {
+            selection.add (i);
+        }
+    }
     else if (config.equalsIgnoreCase ("Shank 4 Bank A"))
     {
         int startElectrode = 1280 * 3;
@@ -364,6 +431,15 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
     else if (config.equalsIgnoreCase ("Shank 4 Bank C"))
     {
         int startElectrode = 1280 * 3 + 384 * 2;
+
+        for (int i = startElectrode; i < startElectrode + 384; i++)
+        {
+            selection.add (i);
+        }
+    }
+    else if (config.equalsIgnoreCase ("Shank 4 Bank D"))
+    {
+        int startElectrode = 1280 * 3 + 896;
 
         for (int i = startElectrode; i < startElectrode + 384; i++)
         {
@@ -613,11 +689,16 @@ void Neuropixels2::setAllReferences()
 
 void Neuropixels2::writeConfiguration()
 {
-    checkError(Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false) , "writeProbeConfiguration");
+
+    errorCode = checkError(Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false) , "writeProbeConfiguration");
+
 }
 
 void Neuropixels2::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     ap_timestamp = 0;
     apBuffer->clear();
 
@@ -687,7 +768,7 @@ void Neuropixels2::run()
                     apSamples[j * count + packetNum] =
                         float (data[packetNum * 384 + j]) / bitScaling / amplifierGain * 1000000.0f; // convert to microvolts
 
-                    apView->addSample (apSamples[(j * count) + packetNum], j);
+                    // apView->addSample (apSamples[(j * count) + packetNum], j);
                 }
 
                 ap_timestamps[packetNum] = ap_timestamp++;
@@ -698,6 +779,7 @@ void Neuropixels2::run()
             }
 
             apBuffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, count);
+            apView->addToBuffer (apSamples, count);
         }
         else if (errorCode != Neuropixels::SUCCESS)
         {
@@ -764,8 +846,19 @@ bool Neuropixels2::runBist (BIST bistType)
         }
         case BIST::SR:
         {
-            if (Neuropixels::bistSR (slot, port, dock) == Neuropixels::SUCCESS)
+            uint8_t shanksOkMask;
+
+            if (Neuropixels::bistSR (slot, port, dock, &shanksOkMask) == Neuropixels::SUCCESS)
                 returnValue = true;
+            else
+            {
+                LOGD ("SR BIST failed with shank mask: ", (int) shanksOkMask);
+                LOGC ("shank 1 status: ", shanksOkMask & 1);
+                LOGC ("shank 2 status: ", (shanksOkMask >> 1) & 1);
+                LOGC ("shank 3 status: ", (shanksOkMask >> 2) & 1);
+                LOGC ("shank 4 status: ", (shanksOkMask >> 3) & 1);
+
+            }
             break;
         }
         case BIST::EEPROM:

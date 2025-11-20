@@ -25,6 +25,15 @@
 #include "../Headstages/SimulatedHeadstage.h"
 #include "Geometry.h"
 
+// Initialize static member
+int64 SimulatedProbe::globalTimerStart = Time::getMillisecondCounterHiRes();
+
+int SimulatedProbe::getGlobalEventCode()
+{
+    double currentMsModS = fmod(Time::getMillisecondCounterHiRes() - globalTimerStart, 1000.0);
+    return (currentMsModS < 500) ? 1 : 0;
+}
+
 void SimulatedProbe::getInfo()
 {
     info.part_number = "Simulated probe";
@@ -201,15 +210,19 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 1 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 2 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 3 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank C");
+            settings.availableElectrodeConfigurations.add ("Shank 4 Bank D");
             settings.availableElectrodeConfigurations.add ("All Shanks 1-96");
             settings.availableElectrodeConfigurations.add ("All Shanks 97-192");
             settings.availableElectrodeConfigurations.add ("All Shanks 193-288");
@@ -242,8 +255,10 @@ bool SimulatedProbe::open()
     lfp_timestamp = 0;
     eventCode = 0;
 
-    apView = std::make_unique<ActivityView> (384, 3000);
-    lfpView = std::make_unique<ActivityView> (384, 250);
+    apView = std::make_unique<ActivityView> (384, 3000, std::vector<std::vector<int>>(), probeMetadata.num_adcs, electrodeMetadata.size());
+    lfpView = std::make_unique<ActivityView> (384, 250, std::vector<std::vector<int>>(), probeMetadata.num_adcs, electrodeMetadata.size());
+
+    refreshActivityViewMapping();
 
     return true;
 }
@@ -409,6 +424,13 @@ Array<int> SimulatedProbe::selectElectrodeConfiguration (String config)
             selection.add (i);
         }
     }
+    else if (config.equalsIgnoreCase ("Shank 1 Bank D"))
+    {
+        for (int i = 896; i < 1280; i++)
+        {
+            selection.add (i);
+        }
+    }
     else if (config.equalsIgnoreCase ("Shank 2 Bank A"))
     {
         int startElectrode = 1280;
@@ -430,6 +452,15 @@ Array<int> SimulatedProbe::selectElectrodeConfiguration (String config)
     else if (config.equalsIgnoreCase ("Shank 2 Bank C"))
     {
         int startElectrode = 1280 + 384 * 2;
+
+        for (int i = startElectrode; i < startElectrode + 384; i++)
+        {
+            selection.add (i);
+        }
+    }
+    else if (config.equalsIgnoreCase ("Shank 2 Bank D"))
+    {
+        int startElectrode = 1280 + 896;
 
         for (int i = startElectrode; i < startElectrode + 384; i++)
         {
@@ -463,6 +494,15 @@ Array<int> SimulatedProbe::selectElectrodeConfiguration (String config)
             selection.add (i);
         }
     }
+    else if (config.equalsIgnoreCase ("Shank 3 Bank D"))
+    {
+        int startElectrode = 1280 * 2 + 896;
+
+        for (int i = startElectrode; i < startElectrode + 384; i++)
+        {
+            selection.add (i);
+        }
+    }
     else if (config.equalsIgnoreCase ("Shank 4 Bank A"))
     {
         int startElectrode = 1280 * 3;
@@ -484,6 +524,15 @@ Array<int> SimulatedProbe::selectElectrodeConfiguration (String config)
     else if (config.equalsIgnoreCase ("Shank 4 Bank C"))
     {
         int startElectrode = 1280 * 3 + 384 * 2;
+
+        for (int i = startElectrode; i < startElectrode + 384; i++)
+        {
+            selection.add (i);
+        }
+    }
+    else if (config.equalsIgnoreCase ("Shank 4 Bank D"))
+    {
+        int startElectrode = 1280 * 3 + 896;
 
         for (int i = startElectrode; i < startElectrode + 384; i++)
         {
@@ -770,6 +819,9 @@ void SimulatedProbe::writeConfiguration()
 
 void SimulatedProbe::startAcquisition()
 {
+    if (surveyModeActive && ! isEnabledForSurvey)
+        return;
+
     ap_timestamp = 0;
     lfp_timestamp = 0;
     apBuffer->clear();
@@ -800,6 +852,7 @@ bool SimulatedProbe::runBist (BIST bistType)
 
 void SimulatedProbe::run()
 {
+
     while (! threadShouldExit())
     {
         int64 start = Time::getHighResolutionTicks();
@@ -812,24 +865,18 @@ void SimulatedProbe::run()
                 {
                     apSamples[j * (12 * MAXPACKETS) + i + (packetNum * 12)] = (simulatedData.ap_band[ap_timestamp % 3000] + float (j * 2) - ap_offsets[j][0])
                                                                               * (float ((ap_timestamp + j * 78) % 60000) / 60000.0f);
-                    apView->addSample (apSamples[j * (12 * MAXPACKETS) + i + (packetNum * 12)], j);
+                    // apView->addSample (apSamples[j * (12 * MAXPACKETS) + i + (packetNum * 12)], j);
 
                     if (i == 0)
                     {
                         lfpSamples[(j * MAXPACKETS) + packetNum] = simulatedData.lfp_band[lfp_timestamp % 250] * float (j % 24) / 24.0f - lfp_offsets[j][0];
-                        lfpView->addSample (lfpSamples[(j * MAXPACKETS) + packetNum], j);
+                        // lfpView->addSample (lfpSamples[(j * MAXPACKETS) + packetNum], j);
                     }
                 }
 
-                ap_timestamps[i + packetNum * 12] = ap_timestamp++;
+                eventCode = getGlobalEventCode();
 
-                if (ap_timestamp % 15000 == 0)
-                {
-                    if (eventCode == 0)
-                        eventCode = 1;
-                    else
-                        eventCode = 0;
-                }
+                ap_timestamps[i + packetNum * 12] = ap_timestamp++;
 
                 event_codes[i + packetNum * 12] = eventCode;
 
@@ -842,12 +889,18 @@ void SimulatedProbe::run()
 
             if (sendSync)
                 lfpSamples[(384 * MAXPACKETS) + packetNum] = (float) eventCode;
+
+
         }
 
         apBuffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, 12 * MAXPACKETS);
+        apView->addToBuffer (apSamples, 12 * MAXPACKETS);
 
         if (generatesLfpData())
+        {
             lfpBuffer->addToBuffer (lfpSamples, lfp_timestamps, timestamp_s, lfp_event_codes, MAXPACKETS);
+            lfpView->addToBuffer (lfpSamples, MAXPACKETS);
+        }
 
         if (ap_offsets[0][0] == 0)
         {

@@ -118,6 +118,10 @@ public:
     void setEmissionSite (String wavelength, int site);
     void selectElectrodes (Array<int> electrodes);
 
+    void setPasteButtonEnabled (bool enabled);
+
+    float getMaxPeakToPeakValue() const { return currentMaxPeakToPeak; }
+
     Probe* probe;
 
     Basestation* basestation;
@@ -137,6 +141,7 @@ private:
     std::unique_ptr<ComboBox> referenceComboBox;
     std::unique_ptr<ComboBox> filterComboBox;
     std::unique_ptr<ComboBox> activityViewComboBox;
+    std::unique_ptr<ComboBox> activityViewAmplitudeComboBox;
     std::unique_ptr<ComboBox> redEmissionSiteComboBox;
     std::unique_ptr<ComboBox> blueEmissionSiteComboBox;
 
@@ -183,6 +188,8 @@ private:
     std::unique_ptr<UtilityButton> referenceViewButton;
     std::unique_ptr<UtilityButton> bankViewButton;
     std::unique_ptr<UtilityButton> activityViewButton;
+    std::unique_ptr<UtilityButton> activityViewFilterButton;
+    std::unique_ptr<UtilityButton> activityViewCARButton;
 
     std::unique_ptr<UtilityButton> annotationButton;
     std::unique_ptr<UtilityButton> bistButton;
@@ -214,6 +221,9 @@ private:
     Array<BIST> availableBists;
     Array<String> imroFiles;
     Array<bool> imroLoadedFromFolder;
+
+    Array<float> amplitudeOptions { 250.0f, 500.0f, 750.0f, 1000.0f };
+    float currentMaxPeakToPeak { 500.0f };
 };
 
 /**

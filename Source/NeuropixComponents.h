@@ -27,6 +27,7 @@
 #include <DataThreadHeaders.h>
 #include <stdio.h>
 #include <string.h>
+#include <vector>
 
 #include <NeuropixAPI.hpp>
 
@@ -48,8 +49,7 @@ class NeuropixInterface;
 
 struct ComponentInfo
 {
-    Neuropixels::HardwareID hardwareID
-    {
+    Neuropixels::HardwareID hardwareID {
         0, // SerialNumber
         "", // ProductNumber
         "", // version_major
@@ -250,6 +250,7 @@ struct ElectrodeMetadata
     int global_index;
     int shank_local_index;
     int shank;
+    bool shank_is_programmable = true; // true if shank is likely intact
     int column_index;
     int channel;
     int row_index;
@@ -356,7 +357,6 @@ public:
         info.version = String (version_major) + "."
                        + String (version_minor) + "."
                        + String (version_patch);
-
     }
 
     bool isActive;
@@ -529,6 +529,7 @@ public:
     void updateSettings (ProbeSettings p)
     {
         settings = p;
+        refreshActivityViewMapping();
     }
 
     /** Updates the naming scheme */
@@ -589,12 +590,104 @@ public:
             return lfpView->getPeakToPeakValues();
     }
 
+    ActivityView::SurveyStatistics getSurveyStatistics (ActivityToView view)
+    {
+        if (view == ActivityToView::APVIEW && apView)
+            return apView->getSurveyStatistics();
+
+        if (view == ActivityToView::LFPVIEW && lfpView)
+            return lfpView->getSurveyStatistics();
+
+        return ActivityView::SurveyStatistics {};
+    }
+
+    void setActivityViewFilterState (bool shouldFilter)
+    {
+        if (apView)
+            apView->setBandpassFilterEnabled (shouldFilter);
+
+        if (lfpView)
+            lfpView->setBandpassFilterEnabled (shouldFilter);
+    }
+
+    const bool getActivityViewFilterState() const
+    {
+        if (apView)
+            return apView->getBandpassFilterEnabled();
+
+        if (lfpView)
+            return lfpView->getBandpassFilterEnabled();
+
+        return false;
+    }
+
+    void setActivityViewCARState (bool shouldUseCar)
+    {
+        if (apView)
+            apView->setCommonAverageReferencingEnabled (shouldUseCar);
+
+        if (lfpView)
+            lfpView->setCommonAverageReferencingEnabled (shouldUseCar);
+    }
+
+    const bool getActivityViewCARState() const
+    {
+        if (apView)
+            return apView->getCommonAverageReferencingEnabled();
+
+        if (lfpView)
+            return lfpView->getCommonAverageReferencingEnabled();
+
+        return false;
+    }
+
+    void setSurveyMode (bool enabled, bool reset = true)
+    {
+        if (apView)
+            apView->setSurveyMode (enabled, reset);
+
+        if (lfpView)
+            lfpView->setSurveyMode (enabled, reset);
+
+        surveyModeActive = enabled;
+    }
+
+    void setEnabledForSurvey (bool enabled)
+    {
+        isEnabledForSurvey = enabled;
+    }
+
+    bool getEnabledForSurvey() const
+    {
+        return isEnabledForSurvey;
+    }
+
 protected:
     std::unique_ptr<ActivityView> apView;
     std::unique_ptr<ActivityView> lfpView;
 
+    void refreshActivityViewMapping()
+    {
+        if (settings.selectedElectrode.size() != channel_count)
+            return;
+
+        std::vector<int> mapping;
+        mapping.reserve ((size_t) channel_count);
+
+        for (int i = 0; i < channel_count; ++i)
+            mapping.push_back (settings.selectedElectrode[i]);
+
+        if (apView)
+            apView->setChannelToElectrodeMapping (mapping);
+
+        if (lfpView)
+            lfpView->setChannelToElectrodeMapping (mapping);
+    }
+
     uint64 eventCode;
     Array<int> gains; // available gain values
+    bool isEnabledForSurvey = false;
+    bool surveyModeActive = false;
 };
 
 class Basestation;
