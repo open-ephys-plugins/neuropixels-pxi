@@ -400,6 +400,8 @@ void Neuropixels1::stopAcquisition()
 
 void Neuropixels1::run()
 {
+    double timestamp_s[MAXPACKETS];
+    uint64_t last_npx_timestamp = 0;
     while (! threadShouldExit())
     {
         int count = MAXPACKETS;
@@ -423,13 +425,16 @@ void Neuropixels1::run()
                     if (invertSyncLine)
                         eventCode = ~eventCode;
 
-                    uint32_t npx_timestamp = packet[packetNum].timestamp[i];
+                    const auto npx_timestamp = packet[packetNum].timestamp[i];
+                    static_assert(sizeof (npx_timestamp) == sizeof (last_npx_timestamp), "Timestamp size mismatch");
 
-                    uint32_t timestamp_jump = npx_timestamp - last_npx_timestamp;
+                    const auto timestamp_jump = npx_timestamp > last_npx_timestamp ?
+                        npx_timestamp - last_npx_timestamp :
+                        (std::numeric_limits<decltype(npx_timestamp)>::max() - last_npx_timestamp) + npx_timestamp;
 
-                    if (timestamp_jump > MAX_ALLOWABLE_TIMESTAMP_JUMP)
+                    if (timestamp_jump > MAX_ALLOWABLE_TIMESTAMP_JUMP * 15)
                     {
-                        if (passedOneSecond && timestamp_jump < MAX_HEADSTAGE_CLK_SAMPLE)
+                        if (passedOneSecond)
                         {
                             String msg = "NPX TIMESTAMP JUMP: " + String (timestamp_jump) + ", expected 3 or 4...Possible data loss on slot " + String (basestation->slot_c) + ", probe " + String (headstage->port_c) + " at sample number " + String (ap_timestamp);
 
@@ -470,6 +475,7 @@ void Neuropixels1::run()
 
                 lfp_timestamps[packetNum] = lfp_timestamp++;
                 lfp_event_codes[packetNum] = eventCode;
+                timestamp_s[packetNum] = packet[packetNum].timestamp[0] / 1e6;
 
                 if (sendSync)
                     lfpSamples[(384 * count) + packetNum] = (float) eventCode;

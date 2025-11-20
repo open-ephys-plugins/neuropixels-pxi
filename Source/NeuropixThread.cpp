@@ -1121,7 +1121,8 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
                 "description",
                 "identifier",
 
-                info.sample_rate
+                info.sample_rate,
+                true
 
             };
 
