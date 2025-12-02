@@ -1,6 +1,3 @@
-[submodule "libxdaq-dist"]
-	path = libxdaq-dist
-	url = https://github.com/kontex-neuro/libxdaq-dist.git
 [submodule "plugin-GUI"]
 	path = plugin-GUI
 	url = https://github.com/open-ephys/plugin-GUI.git

@@ -67,8 +67,8 @@ jobs:
               run: |
                   conan config install .github/conan_profiles/${{ matrix.os }}-${{ matrix.arch }} -tf profiles
                   git submodule update --init --recursive
-                  conan create libxdaq-dist --profile:all ${{ matrix.os }}-${{ matrix.arch }} -s build_type=Release --build=missing
-                  conan create Resources/xdaq_npapi --profile:all ${{ matrix.os }}-${{ matrix.arch }} -s build_type=Release --build=missing
+                  git clone https://github.com/kontex-neuro/kontex-conan.git kontex-conan
+                  conan remote add --force kontex-neuro ./kontex-conan
 
             - name: Configure plugin-GUI
               run: |
