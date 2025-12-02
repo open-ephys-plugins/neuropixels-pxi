@@ -189,6 +189,8 @@ void XDAQ_BS::searchForProbes()
             }
             else
             {
+                if (hsPartNumber.isNotEmpty())
+                    LOGE ("      Unknown headstage part number '", hsPartNumber, "' detected on port: ", port);
                 headstage = nullptr;
             }
             headstages.set (port - 1, headstage, true);
