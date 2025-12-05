@@ -195,12 +195,44 @@ void NeuropixelsOpto::calibrate()
     if (! probeDirectory.exists())
     {
         LOGD ("!!! Calibration files not found for probe serial number: ", info.serial_number);
+        isCalibrated = false;
         return;
     }
 
-    String adcFile = probeDirectory.getChildFile (String (info.serial_number) + "_ADCCalibration.csv").getFullPathName();
-    String gainFile = probeDirectory.getChildFile (String (info.serial_number) + "_gainCalValues.csv").getFullPathName();
-    String opticalFile = probeDirectory.getChildFile (String (info.serial_number) + "_optoCalibration.csv").getFullPathName();
+    if (! probeDirectory.hasReadAccess())
+    {
+        LOGE ("No read access to calibration directory: ", probeDirectory.getFullPathName());
+        isCalibrated = false;
+        return;
+    }
+
+    auto adcPath = probeDirectory.getChildFile (String (info.serial_number) + "_ADCCalibration.csv");
+    if (! adcPath.existsAsFile())
+    {
+        LOGE ("ADC calibration file not found for probe serial number: ", info.serial_number);
+        isCalibrated = false;
+        return;
+    }
+
+    auto gainPath = probeDirectory.getChildFile (String (info.serial_number) + "_gainCalValues.csv");
+    if (! gainPath.existsAsFile())
+    {
+        LOGE ("Gain calibration file not found for probe serial number: ", info.serial_number);
+        isCalibrated = false;
+        return;
+    }
+
+    auto opticalPath = probeDirectory.getChildFile (String (info.serial_number) + "_optoCalibration.csv");
+    if (! opticalPath.existsAsFile())
+    {
+        LOGE ("Optical calibration file not found for probe serial number: ", info.serial_number);
+        isCalibrated = false;
+        return;
+    }
+
+    String adcFile = adcPath.getFullPathName();
+    String gainFile = gainPath.getFullPathName();
+    String opticalFile = opticalPath.getFullPathName();
 
     LOGDD ("ADC file: ", adcFile);
 
@@ -213,6 +245,7 @@ void NeuropixelsOpto::calibrate()
     else
     {
         LOGD ("!!! Unsuccessful ADC calibration, failed with error code: ", errorCode);
+        isCalibrated = false;
         return;
     }
 
@@ -227,6 +260,7 @@ void NeuropixelsOpto::calibrate()
     else
     {
         LOGD ("!!! Unsuccessful gain calibration, failed with error code: ", errorCode);
+        isCalibrated = false;
         return;
     }
 
@@ -241,6 +275,7 @@ void NeuropixelsOpto::calibrate()
     else
     {
         LOGD ("!!! Unsuccessful optical calibration, failed with error code: ", errorCode);
+        isCalibrated = false;
         return;
     }
 

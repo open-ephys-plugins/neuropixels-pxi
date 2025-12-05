@@ -215,6 +215,8 @@ void Neuropixels2::initialize (bool signalChainIsLoading)
 
 void Neuropixels2::calibrate()
 {
+    LOGD ("Calibrating probe...");
+
     File baseDirectory = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
     File calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
     File probeDirectory = calibrationDirectory.getChildFile (String (info.serial_number));
@@ -230,10 +232,26 @@ void Neuropixels2::calibrate()
     if (! probeDirectory.exists())
     {
         LOGD ("!!! Calibration files not found for probe serial number: ", info.serial_number);
+        isCalibrated = false;
         return;
     }
 
-    String gainFile = probeDirectory.getChildFile (String (info.serial_number) + "_gainCalValues.csv").getFullPathName();
+    if (! probeDirectory.hasReadAccess())
+    {
+        LOGE ("No read access to calibration directory: ", probeDirectory.getFullPathName());
+        isCalibrated = false;
+        return;
+    }
+
+    auto gainPath = probeDirectory.getChildFile (String (info.serial_number) + "_gainCalValues.csv");
+    if (! gainPath.existsAsFile())
+    {
+        LOGE ("Gain calibration file not found for probe serial number: ", info.serial_number);
+        isCalibrated = false;
+        return;
+    }
+
+    String gainFile = gainPath.getFullPathName();
 
     LOGD ("Gain file: ", gainFile);
 
@@ -246,6 +264,7 @@ void Neuropixels2::calibrate()
     else
     {
         LOGD ("Unsuccessful gain calibration, failed with error code: ", errorCode);
+        isCalibrated = false;
     }
 
     errorCode = Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false);
