@@ -195,6 +195,37 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
                 referenceComboBox->addItem (probe->settings.availableReferences[i], i + 1);
             }
 
+            // if NP2_4 probe then find any broken shanks and disable tip reference option for those shanks
+            if (probe->type == ProbeType::NP2_4 && referenceComboBox != nullptr)
+            {
+                Array<bool> shankProgrammable;
+                shankProgrammable.insertMultiple (0, true, probeMetadata.shank_count);
+
+                for (const auto& em : probe->electrodeMetadata)
+                {
+                    // If any electrode reports its shank as non-programmable, mark the whole shank as non-programmable
+                    if (! em.shank_is_programmable)
+                        shankProgrammable.set (em.shank, false);
+                }
+
+                // Disable "Tip" reference items corresponding to broken/non-programmable shanks
+                for (int i = 0; i < probeMetadata.shank_count; ++i)
+                {
+                    if (! shankProgrammable[i])
+                    {
+                        // Find and disable tip reference option for this shank
+                        for (int index = 0; index <= referenceComboBox->getNumItems(); ++index)
+                        {
+                            if (referenceComboBox->getItemText (index).equalsIgnoreCase (String (i + 1) + ": Tip"))
+                            {
+                                referenceComboBox->setItemEnabled (index + 1, false);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             referenceComboBox->setSelectedId (probe->settings.referenceIndex + 1, dontSendNotification);
             addAndMakeVisible (referenceComboBox.get());
 
@@ -1138,7 +1169,10 @@ void NeuropixInterface::setLfpGain (int index)
 
 void NeuropixInterface::setReference (int index)
 {
-    referenceComboBox->setSelectedId (index + 1, true);
+    if (referenceComboBox->isItemEnabled (index + 1))
+        referenceComboBox->setSelectedId (index + 1, true);
+    else
+        CoreServices::sendStatusMessage ("Unable to set reference to " + probe->settings.availableReferences[index]);
 }
 
 void NeuropixInterface::setApFilterState (bool state)
@@ -1600,7 +1634,18 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
     }
 
     if (referenceComboBox != 0)
-        referenceComboBox->setSelectedId (p.referenceIndex + 1, dontSendNotification);
+    {
+        if (probe->type == ProbeType::NP2_4)
+        {
+            int itemId = referenceComboBox->getItemId (p.referenceIndex);
+            if (referenceComboBox->isItemEnabled (itemId))
+                referenceComboBox->setSelectedId (p.referenceIndex + 1, dontSendNotification);
+        }
+        else
+        {
+            referenceComboBox->setSelectedId (p.referenceIndex + 1, dontSendNotification);
+        }
+    }
 
     for (int i = 0; i < electrodeMetadata.size(); i++)
     {

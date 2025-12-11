@@ -688,6 +688,12 @@ void Neuropixels2::setAllReferences()
 
     for (int channel = 0; channel < channel_count; channel++)
     {
+        // For NP2 multishank probes with external references, set the shank according to the channel
+        if (type == ProbeType::NP2_4 && refId == Neuropixels::EXT_REF)
+        {
+            shank = settings.selectedShank[channel];
+        }
+
         if (checkError (Neuropixels::setReference (basestation->slot,
                                                    headstage->port,
                                                    dock,
