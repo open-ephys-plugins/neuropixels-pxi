@@ -686,29 +686,30 @@ void Neuropixels2::setAllReferences()
 
     LOGC ("Setting reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", selectedRef);
 
-    for (int channel = 0; channel < channel_count; channel++)
+    for (int channel_idx = 0; channel_idx < channel_count; channel_idx++)
     {
         // For NP2 multishank probes with external references, set the shank according to the channel
         if (type == ProbeType::NP2_4 && refId == Neuropixels::EXT_REF)
         {
-            shank = settings.selectedShank[channel];
+            shank = settings.selectedShank[channel_idx];
+            //std::cout << "Shank for channel " << settings.selectedChannel[channel_idx] << " is " << shank << std::endl;
         }
 
-        if (checkError (Neuropixels::setReference (basestation->slot,
-                                                   headstage->port,
-                                                   dock,
-                                                   channel,
-                                                   shank,
-                                                   refId,
-                                                   refElectrodeBank),
-                        "setReference")
-            != Neuropixels::SUCCESS)
-        {
-            LOGD ("Failed to set reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", selectedRef);
-        }
+        errorCode = Neuropixels::setReference (basestation->slot,
+                                                           headstage->port,
+                                                           dock,
+                                                           settings.selectedChannel[channel_idx],
+                                                           shank,
+                                                           refId,
+                                                           refElectrodeBank);
+
+    }
+
+    if (errorCode != Neuropixels::SUCCESS)
+    {
+        LOGE ("Failed to set reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", selectedRef);
     }
         
-
 }
 
 void Neuropixels2::writeConfiguration()
