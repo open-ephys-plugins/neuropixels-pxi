@@ -2275,6 +2275,12 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
 
 void NeuropixInterface::showDamagedShankWarning()
 {
+    if (probe == nullptr)
+        return;
+
+    if (probe->isSurveyModeActive())
+        return;
+
     String message = "One or more selected electrodes for " + probe->getName() + " are located on a shank that may be damaged. "
                      "Although data acquisition can proceed, there is no guarantee these electrodes will be selected as intended.";
 
