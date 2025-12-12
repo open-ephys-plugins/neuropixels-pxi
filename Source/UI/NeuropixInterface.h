@@ -218,6 +218,9 @@ private:
     void drawLegend (Graphics& g);
     void drawAnnotations (Graphics& g);
 
+    /* Thread-safe method to show bad site warning */
+    void showDamagedShankWarning();
+
     Array<Annotation> annotations;
 
     Array<int> getSelectedElectrodes();

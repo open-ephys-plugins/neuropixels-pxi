@@ -638,6 +638,19 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     // addAndMakeVisible(annotationColourSelector);
 
     updateInfoString();
+
+    // Check for damaged shanks on Quad Base probes and show warning if any found
+    if (probe != nullptr && probe->type == ProbeType::QUAD_BASE)
+    {
+        for (int i = 0; i < probe->electrodeMetadata.size(); ++i)
+        {
+            if (! probe->electrodeMetadata[i].shank_is_programmable)
+            {
+                showDamagedShankWarning();
+                break;
+            }
+        }
+    }
 }
 
 NeuropixInterface::~NeuropixInterface()
@@ -1259,6 +1272,7 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
     }
     else
     {
+        bool electrodeFromBrokenShankSelected = false;
         for (int i = 0; i < electrodes.size(); i++)
         {
             Bank bank = electrodeMetadata[electrodes[i]].bank;
@@ -1291,6 +1305,10 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
                         if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
                         {
                             electrodeMetadata.getReference (j).status = ElectrodeStatus::CONNECTED;
+                            if (electrodeMetadata[j].shank_is_programmable == false)
+                            {
+                                electrodeFromBrokenShankSelected = true;
+                            }
                         }
 
                         else
@@ -1300,6 +1318,11 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
                     }
                 }
             }
+        }
+
+        if (electrodeFromBrokenShankSelected)
+        {
+            showDamagedShankWarning();
         }
     }
 
@@ -1691,6 +1714,7 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
     else
     {
         // update selection state
+        bool electrodeFromBrokenShankSelected = false;
         for (int i = 0; i < p.selectedChannel.size(); i++)
         {
             Bank bank = p.selectedBank[i];
@@ -1702,8 +1726,18 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
                 if (electrodeMetadata[j].channel == channel && electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
                 {
                     electrodeMetadata.getReference (j).status = ElectrodeStatus::CONNECTED;
+
+                    if (electrodeMetadata[j].shank_is_programmable == false)
+                    {
+                        electrodeFromBrokenShankSelected = true;
+                    }
                 }
             }
+        }
+
+        if (electrodeFromBrokenShankSelected && probe->type != ProbeType::QUAD_BASE)
+        {
+            showDamagedShankWarning();
         }
     }
 
@@ -2237,6 +2271,22 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
 
         applyProbeSettings (settings, false);
     }
+}
+
+void NeuropixInterface::showDamagedShankWarning()
+{
+    String message = "One or more selected electrodes for " + probe->getName() + " are located on a shank that may be damaged. "
+                     "Although data acquisition can proceed, there is no guarantee these electrodes will be selected as intended.";
+
+    if (probe->type == ProbeType::NP2_4)
+    {
+        message += "\n\nIf possible, please select electrodes on shanks that appear yellow in the probe display.";
+    }
+
+    MessageManager::callAsync ([message]()
+                               { AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
+                                                                   "Warning: damaged shank detected.",
+                                                                   message); });
 }
 
 // --------------------------------------
