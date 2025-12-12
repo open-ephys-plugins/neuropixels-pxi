@@ -77,6 +77,16 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         probeEnableButton->addListener (this);
         addAndMakeVisible (probeEnableButton.get());
 
+        calibrationStatusValue = std::make_unique<Label> ("CALIBRATION STATUS", "UNCALIBRATED");
+        calibrationStatusValue->setFont (FontOptions ("Inter", "Regular", 12.0f));
+        calibrationStatusValue->setBounds (800, currentHeight + 25, 120, 22);
+        calibrationStatusValue->setJustificationType (Justification::centred);
+        calibrationStatusValue->setColour (Label::textColourId, Colours::white);
+        calibrationStatusValue->setInterceptsMouseClicks (false, false);
+        addAndMakeVisible (calibrationStatusValue.get());
+
+        updateCalibrationStatusIndicator();
+
         electrodesLabel = std::make_unique<Label> ("ELECTRODES", "ELECTRODES");
         electrodesLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
         electrodesLabel->setBounds (496, currentHeight - 20, 100, 20);
@@ -632,6 +642,17 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
 NeuropixInterface::~NeuropixInterface()
 {
+}
+
+void NeuropixInterface::updateCalibrationStatusIndicator()
+{
+    if (calibrationStatusValue == nullptr || probe == nullptr)
+        return;
+
+    const bool calibrated = probe->isCalibrated;
+    calibrationStatusValue->setText (calibrated ? "CALIBRATED" : "UNCALIBRATED", dontSendNotification);
+    calibrationStatusValue->setColour (Label::backgroundColourId, calibrated ? Colour (32, 118, 62) : Colour (166, 44, 44));
+    calibrationStatusValue->setColour (Label::textColourId, Colours::white);
 }
 
 void NeuropixInterface::updateInfoString()
@@ -1950,6 +1971,7 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
             }
 
             xmlNode->setAttribute ("isEnabled", bool (probe->isEnabled));
+            xmlNode->setAttribute ("isCalibrated", bool (probe->isCalibrated));
         }
     }
 }

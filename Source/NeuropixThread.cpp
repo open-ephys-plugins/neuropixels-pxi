@@ -555,6 +555,11 @@ void NeuropixThread::applyProbeSettingsQueue()
 
             settings.probe->calibrate();
 
+            if (settings.probe->ui != nullptr)
+            {
+                settings.probe->ui->updateCalibrationStatusIndicator();
+            }
+
             settings.probe->writeConfiguration();
 
             if (settings.probe->isEnabled)

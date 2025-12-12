@@ -110,6 +110,9 @@ public:
     /** Updates the info string on the right-hand side of the component */
     void updateInfoString();
 
+    /** Updates the calibration status indicator */
+    void updateCalibrationStatusIndicator();
+
     /** Set parameters */
     void setApGain (int index);
     void setLfpGain (int index);
@@ -157,6 +160,7 @@ private:
     std::unique_ptr<Viewport> infoLabelView;
     std::unique_ptr<Label> nameLabel;
     std::unique_ptr<Label> infoLabel;
+    std::unique_ptr<Label> calibrationStatusValue;
     std::unique_ptr<Label> lfpGainLabel;
     std::unique_ptr<Label> apGainLabel;
     std::unique_ptr<Label> electrodesLabel;
