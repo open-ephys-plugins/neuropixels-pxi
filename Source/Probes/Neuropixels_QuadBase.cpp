@@ -193,10 +193,26 @@ void Neuropixels_QuadBase::calibrate()
     if (! probeDirectory.exists())
     {
         LOGD ("!!! Calibration files not found for probe serial number: ", info.serial_number);
+        isCalibrated = false;
         return;
     }
 
-    String gainFile = probeDirectory.getChildFile (String (info.serial_number) + "_gainCalValues.csv").getFullPathName();
+    if (! probeDirectory.hasReadAccess())
+    {
+        LOGE ("No read access to calibration directory: ", probeDirectory.getFullPathName());
+        isCalibrated = false;
+        return;
+    }
+
+    auto gainPath = probeDirectory.getChildFile (String (info.serial_number) + "_gainCalValues.csv");
+    if (! gainPath.existsAsFile())
+    {
+        LOGE ("Gain calibration file not found for probe serial number: ", info.serial_number);
+        isCalibrated = false;
+        return;
+    }
+
+    String gainFile = gainPath.getFullPathName();
 
     LOGD ("Gain file: ", gainFile);
 
@@ -209,6 +225,7 @@ void Neuropixels_QuadBase::calibrate()
     else
     {
         LOGD ("Unsuccessful gain calibration, failed with error code: ", errorCode);
+        isCalibrated = false;
     }
 
     errorCode = checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");

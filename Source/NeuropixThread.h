@@ -30,7 +30,7 @@
 
 #include "NeuropixComponents.h"
 
-#define PLUGIN_VERSION "2.0.2"
+#define PLUGIN_VERSION "2.0.3"
 
 #define MINSTREAMBUFFERSIZE (1024 * 32)
 #define MAXSTREAMBUFFERSIZE (1024 * 1024 * 32)

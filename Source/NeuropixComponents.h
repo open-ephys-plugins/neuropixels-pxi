@@ -659,6 +659,11 @@ public:
         return isEnabledForSurvey;
     }
 
+    bool isSurveyModeActive() const
+    {
+        return surveyModeActive;
+    }
+
 protected:
     std::unique_ptr<ActivityView> apView;
     std::unique_ptr<ActivityView> lfpView;

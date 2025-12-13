@@ -77,6 +77,16 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         probeEnableButton->addListener (this);
         addAndMakeVisible (probeEnableButton.get());
 
+        calibrationStatusValue = std::make_unique<Label> ("CALIBRATION STATUS", "UNCALIBRATED");
+        calibrationStatusValue->setFont (FontOptions ("Inter", "Regular", 12.0f));
+        calibrationStatusValue->setBounds (800, currentHeight + 25, 120, 22);
+        calibrationStatusValue->setJustificationType (Justification::centred);
+        calibrationStatusValue->setColour (Label::textColourId, Colours::white);
+        calibrationStatusValue->setInterceptsMouseClicks (false, false);
+        addAndMakeVisible (calibrationStatusValue.get());
+
+        updateCalibrationStatusIndicator();
+
         electrodesLabel = std::make_unique<Label> ("ELECTRODES", "ELECTRODES");
         electrodesLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
         electrodesLabel->setBounds (496, currentHeight - 20, 100, 20);
@@ -193,6 +203,37 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
             for (int i = 0; i < probe->settings.availableReferences.size(); i++)
             {
                 referenceComboBox->addItem (probe->settings.availableReferences[i], i + 1);
+            }
+
+            // if NP2_4 probe then find any broken shanks and disable tip reference option for those shanks
+            if (probe->type == ProbeType::NP2_4 && referenceComboBox != nullptr)
+            {
+                Array<bool> shankProgrammable;
+                shankProgrammable.insertMultiple (0, true, probeMetadata.shank_count);
+
+                for (const auto& em : probe->electrodeMetadata)
+                {
+                    // If any electrode reports its shank as non-programmable, mark the whole shank as non-programmable
+                    if (! em.shank_is_programmable)
+                        shankProgrammable.set (em.shank, false);
+                }
+
+                // Disable "Tip" reference items corresponding to broken/non-programmable shanks
+                for (int i = 0; i < probeMetadata.shank_count; ++i)
+                {
+                    if (! shankProgrammable[i])
+                    {
+                        // Find and disable tip reference option for this shank
+                        for (int index = 0; index <= referenceComboBox->getNumItems(); ++index)
+                        {
+                            if (referenceComboBox->getItemText (index).equalsIgnoreCase (String (i + 1) + ": Tip"))
+                            {
+                                referenceComboBox->setItemEnabled (index + 1, false);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
             referenceComboBox->setSelectedId (probe->settings.referenceIndex + 1, dontSendNotification);
@@ -597,10 +638,34 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     // addAndMakeVisible(annotationColourSelector);
 
     updateInfoString();
+
+    // Check for damaged shanks on Quad Base probes and show warning if any found
+    if (probe != nullptr && probe->type == ProbeType::QUAD_BASE)
+    {
+        for (int i = 0; i < probe->electrodeMetadata.size(); ++i)
+        {
+            if (! probe->electrodeMetadata[i].shank_is_programmable)
+            {
+                showDamagedShankWarning();
+                break;
+            }
+        }
+    }
 }
 
 NeuropixInterface::~NeuropixInterface()
 {
+}
+
+void NeuropixInterface::updateCalibrationStatusIndicator()
+{
+    if (calibrationStatusValue == nullptr || probe == nullptr)
+        return;
+
+    const bool calibrated = probe->isCalibrated;
+    calibrationStatusValue->setText (calibrated ? "CALIBRATED" : "UNCALIBRATED", dontSendNotification);
+    calibrationStatusValue->setColour (Label::backgroundColourId, calibrated ? Colour (32, 118, 62) : Colour (166, 44, 44));
+    calibrationStatusValue->setColour (Label::textColourId, Colours::white);
 }
 
 void NeuropixInterface::updateInfoString()
@@ -1138,7 +1203,10 @@ void NeuropixInterface::setLfpGain (int index)
 
 void NeuropixInterface::setReference (int index)
 {
-    referenceComboBox->setSelectedId (index + 1, true);
+    if (referenceComboBox->isItemEnabled (index + 1))
+        referenceComboBox->setSelectedId (index + 1, true);
+    else
+        CoreServices::sendStatusMessage ("Unable to set reference to " + probe->settings.availableReferences[index]);
 }
 
 void NeuropixInterface::setApFilterState (bool state)
@@ -1204,6 +1272,7 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
     }
     else
     {
+        bool electrodeFromBrokenShankSelected = false;
         for (int i = 0; i < electrodes.size(); i++)
         {
             Bank bank = electrodeMetadata[electrodes[i]].bank;
@@ -1236,6 +1305,10 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
                         if (electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
                         {
                             electrodeMetadata.getReference (j).status = ElectrodeStatus::CONNECTED;
+                            if (electrodeMetadata[j].shank_is_programmable == false)
+                            {
+                                electrodeFromBrokenShankSelected = true;
+                            }
                         }
 
                         else
@@ -1245,6 +1318,11 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
                     }
                 }
             }
+        }
+
+        if (electrodeFromBrokenShankSelected)
+        {
+            showDamagedShankWarning();
         }
     }
 
@@ -1600,7 +1678,18 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
     }
 
     if (referenceComboBox != 0)
-        referenceComboBox->setSelectedId (p.referenceIndex + 1, dontSendNotification);
+    {
+        if (probe->type == ProbeType::NP2_4)
+        {
+            int itemId = referenceComboBox->getItemId (p.referenceIndex);
+            if (referenceComboBox->isItemEnabled (itemId))
+                referenceComboBox->setSelectedId (p.referenceIndex + 1, dontSendNotification);
+        }
+        else
+        {
+            referenceComboBox->setSelectedId (p.referenceIndex + 1, dontSendNotification);
+        }
+    }
 
     for (int i = 0; i < electrodeMetadata.size(); i++)
     {
@@ -1625,6 +1714,7 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
     else
     {
         // update selection state
+        bool electrodeFromBrokenShankSelected = false;
         for (int i = 0; i < p.selectedChannel.size(); i++)
         {
             Bank bank = p.selectedBank[i];
@@ -1636,8 +1726,18 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
                 if (electrodeMetadata[j].channel == channel && electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == shank)
                 {
                     electrodeMetadata.getReference (j).status = ElectrodeStatus::CONNECTED;
+
+                    if (electrodeMetadata[j].shank_is_programmable == false)
+                    {
+                        electrodeFromBrokenShankSelected = true;
+                    }
                 }
             }
+        }
+
+        if (electrodeFromBrokenShankSelected && probe->type != ProbeType::QUAD_BASE)
+        {
+            showDamagedShankWarning();
         }
     }
 
@@ -1905,6 +2005,7 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
             }
 
             xmlNode->setAttribute ("isEnabled", bool (probe->isEnabled));
+            xmlNode->setAttribute ("isCalibrated", bool (probe->isCalibrated));
         }
     }
 }
@@ -2170,6 +2271,28 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
 
         applyProbeSettings (settings, false);
     }
+}
+
+void NeuropixInterface::showDamagedShankWarning()
+{
+    if (probe == nullptr)
+        return;
+
+    if (probe->isSurveyModeActive())
+        return;
+
+    String message = "One or more selected electrodes for " + probe->getName() + " are located on a shank that may be damaged. "
+                     "Although data acquisition can proceed, there is no guarantee these electrodes will be selected as intended.";
+
+    if (probe->type == ProbeType::NP2_4)
+    {
+        message += "\n\nIf possible, please select electrodes on shanks that appear yellow in the probe display.";
+    }
+
+    MessageManager::callAsync ([message]()
+                               { AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
+                                                                   "Warning: damaged shank detected.",
+                                                                   message); });
 }
 
 // --------------------------------------
