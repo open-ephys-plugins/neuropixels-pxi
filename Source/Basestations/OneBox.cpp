@@ -51,6 +51,8 @@ OneBox::OneBox (NeuropixThread* neuropixThread, int serial_number_) : Basestatio
 
     serial_number = serial_number_;
 
+    int next_slot = first_available_slot + existing_oneboxes.size();
+
     if (! existing_oneboxes.contains (serial_number))
     {
         existing_oneboxes.add (serial_number);
@@ -59,10 +61,9 @@ OneBox::OneBox (NeuropixThread* neuropixThread, int serial_number_) : Basestatio
     else
     {
         LOGC ("OneBox with serial number ", serial_number, " already connected!");
+        serial_number = -1; // remove serial number to prevent another connection
         return;
     }
-
-    int next_slot = first_available_slot + existing_oneboxes.size() - 1;
 
     LOGD ("Mapping OneBox with serial number ", serial_number, " to slot ", next_slot);
 
@@ -103,11 +104,16 @@ OneBox::OneBox (NeuropixThread* neuropixThread, int serial_number_) : Basestatio
 
 OneBox::~OneBox()
 {
-    /* As of API 3.31, closing a v3 basestation does not turn off the SMA output */
-    setSyncAsInput();
-    close();
 
-    existing_oneboxes.removeFirstMatchingValue (serial_number);
+    if (serial_number != -1)
+    {
+        /* As of API 3.31, closing a v3 basestation does not turn off the SMA output */
+        setSyncAsInput();
+        close();
+
+        existing_oneboxes.removeFirstMatchingValue (serial_number);
+    }
+
 }
 
 bool OneBox::open()

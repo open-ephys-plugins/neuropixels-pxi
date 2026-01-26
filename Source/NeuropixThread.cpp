@@ -168,7 +168,6 @@ void Initializer::run()
                     else
                     {
                         LOGC ("  Could not open OneBox");
-                        setStatusMessage ("Could not open OneBox");
                         delete bs;
                     }
                 }
