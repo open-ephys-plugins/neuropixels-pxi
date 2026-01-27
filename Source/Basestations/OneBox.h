@@ -90,6 +90,7 @@ public:
     void triggerWaveplayer (bool shouldStart);
 
     static Array<int> existing_oneboxes;
+    static int next_available_slot;
     int serial_number = -1;
 
     const int first_available_slot = 16;

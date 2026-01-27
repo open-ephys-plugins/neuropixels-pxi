@@ -34,6 +34,7 @@
 #define MAXLEN 50
 
 Array<int> OneBox::existing_oneboxes = Array<int>();
+int OneBox::next_available_slot = 16;
 
 void OneBox::getInfo()
 {
@@ -51,7 +52,6 @@ OneBox::OneBox (NeuropixThread* neuropixThread, int serial_number_) : Basestatio
 
     serial_number = serial_number_;
 
-    int next_slot = first_available_slot + existing_oneboxes.size();
 
     if (! existing_oneboxes.contains (serial_number))
     {
@@ -64,6 +64,7 @@ OneBox::OneBox (NeuropixThread* neuropixThread, int serial_number_) : Basestatio
         serial_number = -1; // remove serial number to prevent another connection
         return;
     }
+    const int next_slot = next_available_slot++;
 
     LOGD ("Mapping OneBox with serial number ", serial_number, " to slot ", next_slot);
 
