@@ -5,7 +5,7 @@ ninja/[>=1.12.0]
 [requires]
 fmt/10.2.1
 spdlog/1.13.0
-libxdaqnp/0.6.1
+libxdaqnp/0.7.0
 
 [generators]
 CMakeDeps

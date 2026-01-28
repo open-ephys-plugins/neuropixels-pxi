@@ -26,9 +26,142 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../Headstages/Headstage1.h"
 #include "../Headstages/Headstage2.h"
-#include "../Headstages/Headstage_Analog128.h"
-#include "../Headstages/Headstage_Custom384.h"
-#include "../Headstages/Headstage_QuadBase.h"
+
+struct XDAQADC : public DataSource
+{
+    constexpr static int XDAQ_NUM_ADCS = 8;
+    constexpr static int XDAQ_MAXPACKETS = 64;
+
+    XDAQADC (Basestation* bs) : DataSource (bs), bitVolts (10.0f / 32768.0f)
+    {
+        channel_count = XDAQ_NUM_ADCS;
+        sample_rate = 30003.000300030002;
+        sourceType = DataSourceType::ADC;
+        status = SourceStatus::CONNECTED;
+        LOGD ("Initializing XDAQADC");
+    }
+
+    String getName() override { return "ADC"; }
+    void getInfo() override {}
+    bool open() override { return true; }
+    bool close() override { return true; }
+
+    void initialize (bool signalChainIsLoading) override {}
+
+    void startAcquisition() override
+    {
+        apBuffer->clear();
+        LOGD ("  Starting ADC thread.");
+        startThread();
+    }
+
+    void stopAcquisition() override
+    {
+        int packetsAvailable = 0;
+        int headroom = 0;
+        if (auto r = Neuropixels::ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom); r != Neuropixels::SUCCESS)
+        {
+            LOGD ("ADC_getPacketFifoStatus error code: ", r);
+            return;
+        }
+        while (packetsAvailable > 0)
+        {
+            Neuropixels::PacketInfo packetInfo[XDAQ_MAXPACKETS];
+            int count = (packetsAvailable > XDAQ_MAXPACKETS) ? XDAQ_MAXPACKETS : packetsAvailable;
+            std::int16_t data[XDAQ_MAXPACKETS * XDAQ_NUM_ADCS];
+            if (auto r = Neuropixels::ADC_readPackets (basestation->slot,
+                                                       &packetInfo[0],
+                                                       &data[0],
+                                                       XDAQ_NUM_ADCS,
+                                                       count,
+                                                       &count);
+                r != Neuropixels::SUCCESS)
+            {
+                LOGD ("readPackets error code: ", r, " for ADCs during stopAcquisition");
+                break;
+            }
+            if (auto r = Neuropixels::ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom); r != Neuropixels::SUCCESS)
+            {
+                LOGD ("ADC_getPacketFifoStatus error code: ", r);
+                break;
+            }
+        }
+        LOGD ("  Stopping ADC thread.");
+    }
+
+    float getChannelGain (int channel)
+    {
+        if (channel < 0 || channel >= channel_count)
+            return -1;
+        return bitVolts;
+    }
+
+    void run() override
+    {
+        int sample_number = 0;
+
+        while (! threadShouldExit())
+        {
+            std::int16_t data[XDAQ_MAXPACKETS * XDAQ_NUM_ADCS];
+            Neuropixels::PacketInfo packetInfo[XDAQ_MAXPACKETS];
+            int count = XDAQ_MAXPACKETS;
+            float adcSamples[XDAQ_NUM_ADCS * XDAQ_MAXPACKETS];
+            int64 sample_numbers[XDAQ_MAXPACKETS];
+            double timestamps[XDAQ_MAXPACKETS];
+            uint64 event_codes[XDAQ_MAXPACKETS];
+
+            errorCode = Neuropixels::ADC_readPackets (basestation->slot,
+                                                      &packetInfo[0],
+                                                      &data[0],
+                                                      XDAQ_NUM_ADCS,
+                                                      count,
+                                                      &count);
+
+            if (errorCode == Neuropixels::SUCCESS && count > 0)
+            {
+                for (int packetNum = 0; packetNum < count; packetNum++)
+                {
+                    uint64 eventCode = packetInfo[packetNum].Status >> 6;
+
+                    for (int j = 0; j < XDAQ_NUM_ADCS; j++)
+                    {
+                        adcSamples[j * count + packetNum] = (float (data[packetNum * XDAQ_NUM_ADCS + j])) * bitVolts;
+                    }
+
+                    sample_numbers[packetNum] = sample_number++;
+                    event_codes[packetNum] = eventCode;
+                }
+
+                apBuffer->addToBuffer (adcSamples,
+                                       sample_numbers,
+                                       timestamps,
+                                       event_codes,
+                                       count);
+            }
+            else if (errorCode != Neuropixels::SUCCESS)
+            {
+                LOGD ("readPackets error code: ", errorCode, " for ADCs");
+            }
+
+            int packetsAvailable;
+            int headroom;
+
+            if (auto r = Neuropixels::ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom); r != Neuropixels::SUCCESS)
+            {
+                LOGD ("ADC_getPacketFifoStatus error code: ", r);
+                break;
+            }
+
+            if (packetsAvailable < XDAQ_MAXPACKETS)
+            {
+                auto wait = int ((XDAQ_MAXPACKETS - packetsAvailable) * 1000 * 1000 / sample_rate);
+                std::this_thread::sleep_for (std::chrono::microseconds (wait));
+            }
+        }
+    }
+
+    const float bitVolts;
+};
 
 void XDAQ_BS::getInfo()
 {
@@ -117,8 +250,7 @@ bool XDAQ_BS::open()
 
         LOGD ("    Found ", probes.size(), probes.size() == 1 ? " probe." : " probes.");
 
-        // adcSource = new OneBoxADC(this);
-        // dacSource = new OneBoxDAC(this);
+        adcSource = std::make_unique<XDAQADC> (this);
     }
     else
     {
@@ -227,8 +359,8 @@ void XDAQ_BS::searchForProbes()
 Array<DataSource*> XDAQ_BS::getAdditionalDataSources()
 {
     Array<DataSource*> sources;
-    // sources.add((DataSource*) adcSource);
-    //sources.add((DataSource*) dacSource);
+    if (adcSource != nullptr)
+        sources.add ((DataSource*) adcSource.get());
 
     return sources;
 }
@@ -246,8 +378,11 @@ void XDAQ_BS::initialize (bool signalChainIsLoading)
         probesInitialized = true;
     }
 
-    // LOGD ("Initializing ADC source on slot ", slot);
-    // adcSource->initialize (signalChainIsLoading);
+    if (adcSource != nullptr)
+    {
+        LOGD ("Initializing ADC source on slot ", slot);
+        adcSource->initialize (signalChainIsLoading);
+    }
 
     errorCode = checkError (Neuropixels::arm (slot), "arm slot " + String (slot));
 
@@ -408,7 +543,8 @@ void XDAQ_BS::startAcquisition()
         probe->startAcquisition();
     }
 
-    //adcSource->startAcquisition();
+    if (adcSource != nullptr)
+        adcSource->startAcquisition();
 
     LOGD ("XDAQ software trigger");
     errorCode = Neuropixels::setSWTrigger (slot);
@@ -421,7 +557,8 @@ void XDAQ_BS::stopAcquisition()
         probe->stopAcquisition();
     }
 
-    // adcSource->stopAcquisition();
+    if (adcSource != nullptr)
+        adcSource->stopAcquisition();
 
     errorCode = Neuropixels::arm (slot);
 }

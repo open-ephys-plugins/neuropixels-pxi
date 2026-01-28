@@ -24,6 +24,8 @@
 
 #include "../NeuropixComponents.h"
 
+class XDAQADC;
+
 /** 
 	Communicates with a XDAQ
 */
@@ -79,14 +81,5 @@ public:
     /** Returns any non-probe data sources (e.g. ADCs)*/
     Array<DataSource*> getAdditionalDataSources() override;
 
-    /** Triggers the Waveplayer output */
-    // void triggerWaveplayer (bool shouldStart);
-
-    // static Array<int> existing_oneboxes;
-    // int serial_number = -1;
-
-    // const int first_available_slot = 16;
-
-    // std::unique_ptr<OneBoxADC> adcSource;
-    // std::unique_ptr<OneBoxDAC> dacSource;
+    std::unique_ptr<XDAQADC> adcSource;
 };
