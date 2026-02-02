@@ -57,36 +57,8 @@ struct XDAQADC : public DataSource
 
     void stopAcquisition() override
     {
-        int packetsAvailable = 0;
-        int headroom = 0;
-        if (auto r = Neuropixels::ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom); r != Neuropixels::SUCCESS)
-        {
-            LOGD ("ADC_getPacketFifoStatus error code: ", r);
-            return;
-        }
-        while (packetsAvailable > 0)
-        {
-            Neuropixels::PacketInfo packetInfo[XDAQ_MAXPACKETS];
-            int count = (packetsAvailable > XDAQ_MAXPACKETS) ? XDAQ_MAXPACKETS : packetsAvailable;
-            std::int16_t data[XDAQ_MAXPACKETS * XDAQ_NUM_ADCS];
-            if (auto r = Neuropixels::ADC_readPackets (basestation->slot,
-                                                       &packetInfo[0],
-                                                       &data[0],
-                                                       XDAQ_NUM_ADCS,
-                                                       count,
-                                                       &count);
-                r != Neuropixels::SUCCESS)
-            {
-                LOGD ("readPackets error code: ", r, " for ADCs during stopAcquisition");
-                break;
-            }
-            if (auto r = Neuropixels::ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom); r != Neuropixels::SUCCESS)
-            {
-                LOGD ("ADC_getPacketFifoStatus error code: ", r);
-                break;
-            }
-        }
-        LOGD ("  Stopping ADC thread.");
+        LOGD(" Stopping ADC thread.");
+        stopThread(1000);
     }
 
     float getChannelGain (int channel)
@@ -158,6 +130,37 @@ struct XDAQADC : public DataSource
                 std::this_thread::sleep_for (std::chrono::microseconds (wait));
             }
         }
+
+        int packetsAvailable = 0;
+        int headroom = 0;
+        if (auto r = Neuropixels::ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom); r != Neuropixels::SUCCESS)
+        {
+            LOGD ("ADC_getPacketFifoStatus error code: ", r);
+            return;
+        }
+        while (packetsAvailable > 0)
+        {
+            Neuropixels::PacketInfo packetInfo[XDAQ_MAXPACKETS];
+            int count = (packetsAvailable > XDAQ_MAXPACKETS) ? XDAQ_MAXPACKETS : packetsAvailable;
+            std::int16_t data[XDAQ_MAXPACKETS * XDAQ_NUM_ADCS];
+            if (auto r = Neuropixels::ADC_readPackets (basestation->slot,
+                                                       &packetInfo[0],
+                                                       &data[0],
+                                                       XDAQ_NUM_ADCS,
+                                                       count,
+                                                       &count);
+                r != Neuropixels::SUCCESS)
+            {
+                LOGD ("readPackets error code: ", r, " for ADCs during stopAcquisition");
+                break;
+            }
+            if (auto r = Neuropixels::ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom); r != Neuropixels::SUCCESS)
+            {
+                LOGD ("ADC_getPacketFifoStatus error code: ", r);
+                break;
+            }
+        }
+        LOGD (" ADC thread stopped.");
     }
 
     const float bitVolts;
