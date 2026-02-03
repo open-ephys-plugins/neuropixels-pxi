@@ -1923,8 +1923,29 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
 
             ProbeSettings p = getProbeSettings();
 
+            // Create sorted indices based on channel number
+            Array<int> sortedIndices;
             for (int i = 0; i < p.selectedChannel.size(); i++)
+                sortedIndices.add (i);
+
+            // Sort indices by channel number
+            for (int i = 0; i < sortedIndices.size() - 1; i++)
             {
+                for (int j = i + 1; j < sortedIndices.size(); j++)
+                {
+                    if (p.selectedChannel[sortedIndices[j]] < p.selectedChannel[sortedIndices[i]])
+                    {
+                        int temp = sortedIndices[i];
+                        sortedIndices.set (i, sortedIndices[j]);
+                        sortedIndices.set (j, temp);
+                    }
+                }
+            }
+
+            for (int idx = 0; idx < sortedIndices.size(); idx++)
+            {
+                int i = sortedIndices[idx];
+
                 int bank = int (p.selectedBank[i]);
                 int shank = p.selectedShank[i];
                 int channel = p.selectedChannel[i];

@@ -91,8 +91,29 @@ public:
         else
             file.appendText ("(" + imroPartId + "," + imroChannelCount + ")");
 
+        // Create sorted indices based on channel number
+        Array<int> sortedIndices;
         for (int i = 0; i < settings.selectedChannel.size(); i++)
+            sortedIndices.add (i);
+
+        // Sort indices by channel number
+        for (int i = 0; i < sortedIndices.size() - 1; i++)
         {
+            for (int j = i + 1; j < sortedIndices.size(); j++)
+            {
+                if (settings.selectedChannel[sortedIndices[j]] < settings.selectedChannel[sortedIndices[i]])
+                {
+                    int temp = sortedIndices[i];
+                    sortedIndices.set (i, sortedIndices[j]);
+                    sortedIndices.set (j, temp);
+                }
+            }
+        }
+
+        for (int idx = 0; idx < sortedIndices.size(); idx++)
+        {
+            int i = sortedIndices[idx];
+
             String channelInfo = "(" + String (settings.selectedChannel[i]); // channel
 
             if (settings.probeType == ProbeType::NP2_4 || settings.probeType == ProbeType::QUAD_BASE)
