@@ -127,6 +127,30 @@ void Probe::updateNamingScheme (ProbeNameConfig::NamingScheme scheme)
     }
 }
 
+void Probe::refreshActivityViewMapping()
+{
+
+    if (settings.selectedElectrode.size() != channel_count)
+        return;
+
+    std::vector<int> mapping;
+    mapping.resize ((size_t) channel_count);
+
+    for (int i = 0; i < channel_count; ++i)
+    {
+        int channelIndex = settings.selectedChannel[i];
+        int selectedElectrode = settings.selectedElectrode[i];
+        //LOGD ("  Channel ", channelIndex, " mapped to electrode ", selectedElectrode);
+        mapping[channelIndex] = selectedElectrode;
+    }
+
+    if (apView)
+        apView->setChannelToElectrodeMapping (mapping);
+
+    if (lfpView)
+        lfpView->setChannelToElectrodeMapping (mapping);
+}
+
 FirmwareUpdater::FirmwareUpdater (Basestation* basestation_, File firmwareFile_, FirmwareType type)
     : ThreadWithProgressWindow ("Firmware Update...", true, false),
       basestation (basestation_),
