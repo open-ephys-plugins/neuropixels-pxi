@@ -27,6 +27,7 @@
 #include "NeuropixThread.h"
 #include "UI/NeuropixInterface.h"
 #include "UI/OneBoxInterface.h"
+#include "UI/XDAQADCInterface.h"
 #include "UI/SurveyInterface.h"
 
 SettingsUpdater* SettingsUpdater::currentThread = nullptr;
@@ -169,13 +170,20 @@ void NeuropixCanvas::populateSourceTabs (Basestation* basestation, CustomTabComp
         }
         else if (source->sourceType == DataSourceType::ADC && source->basestation == basestation)
         {
-            OneBoxInterface* oneBoxInterface = new OneBoxInterface (source, thread, editor, this);
-            settingsInterfaces.add (oneBoxInterface);
+            SettingsInterface* adcInterface;
+            if (basestation->type == BasestationType::XDAQ)
+            {
+                adcInterface = new XDAQADCInterface (source, thread, editor, this);
+            }
+            else
+            {
+                adcInterface = new OneBoxInterface (source, thread, editor, this);
+            }
+            settingsInterfaces.add (adcInterface);
 
-            //addChildComponent(oneBoxInterface->viewport.get());
             basestationTab->addTab (" " + source->getName() + " ",
                                     findColour (ThemeColours::componentBackground),
-                                    oneBoxInterface->viewport.get(),
+                                    adcInterface->viewport.get(),
                                     false);
 
             topLevelTabIndex.add (topLevelTabNumber);

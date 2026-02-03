@@ -644,8 +644,7 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
         }
 
         // inputOutputSyncSelector->setVisible (true);
-        desiredWidth = 100 * basestations.size() + 20;
-        // desiredWidth = 100 * basestations.size() + 120;
+        desiredWidth = 100 * basestations.size() + 80;
     }
     else
     {
@@ -722,7 +721,7 @@ void NeuropixEditor::drawBasestations (Array<Basestation*> basestations)
 
         Array<DataSource*> additionalDataSources = basestations[i]->getAdditionalDataSources(); // can return null
 
-        for (int j = 0; j < additionalDataSources.size(); j++)
+        for (int j = 0; j < 0; j++)
         {
             LOGD ("Creating source button for ADCs");
 

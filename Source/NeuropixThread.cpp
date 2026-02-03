@@ -1067,9 +1067,9 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
 
             if (info.type == stream_type::ADC)
             {
-                streamName = "OneBox-ADC";
-                description = "OneBox ADC data stream";
-                identifier = "onebox.adc";
+                streamName = "XDAQ-ADC";
+                description = "XDAQ ADC data stream";
+                identifier = "xdaq.adc";
             }
 
             else if (info.type == stream_type::AP_BAND)
