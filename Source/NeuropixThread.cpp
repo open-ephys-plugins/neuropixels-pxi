@@ -1076,8 +1076,8 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
 
             DataStream::Settings settings {
                 streamName,
-                "description",
-                "identifier",
+                description,
+                identifier,
 
                 info.sample_rate
 
