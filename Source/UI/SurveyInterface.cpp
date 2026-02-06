@@ -778,6 +778,9 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     addAndMakeVisible (*probeViewport);
 
     refreshProbeList();
+
+    // Ensure initial layout is performed
+    resized();
 }
 
 void SurveyInterface::paint (Graphics& g)
@@ -860,8 +863,13 @@ void SurveyInterface::paint (Graphics& g)
 
 void SurveyInterface::resized()
 {
+
+    LOGC ("SurveyInterface::resized() called. Width=", getWidth(), " Height=", getHeight());
+    LOGC ("Current leftPanelCollapsed state: ", leftPanelCollapsed);
+
     const int leftPanelX = 10;
     const int topMargin = 50;
+
     const bool showSettings = ! leftPanelCollapsed;
 
     const int toggleWidth = 24;
