@@ -864,9 +864,6 @@ void SurveyInterface::paint (Graphics& g)
 void SurveyInterface::resized()
 {
 
-    LOGC ("SurveyInterface::resized() called. Width=", getWidth(), " Height=", getHeight());
-    LOGC ("Current leftPanelCollapsed state: ", leftPanelCollapsed);
-
     const int leftPanelX = 10;
     const int topMargin = 50;
 
