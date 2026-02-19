@@ -841,8 +841,8 @@ void Neuropixels2::run()
 
 bool Neuropixels2::runBist (BIST bistType)
 {
-    close();
-    open();
+    // close();
+    // open();
 
     int slot = basestation->slot;
     int port = headstage->port;
@@ -872,8 +872,9 @@ bool Neuropixels2::runBist (BIST bistType)
         case BIST::SR:
         {
             uint8_t shanksOkMask;
+            Neuropixels::NP_ErrorCode errorCode = Neuropixels::bistSR (slot, port, dock, &shanksOkMask);
 
-            if (Neuropixels::bistSR (slot, port, dock, &shanksOkMask) == Neuropixels::SUCCESS)
+            if (errorCode == Neuropixels::SUCCESS)
                 returnValue = true;
             else
             {
@@ -884,6 +885,7 @@ bool Neuropixels2::runBist (BIST bistType)
                 LOGC ("shank 4 status: ", (shanksOkMask >> 3) & 1);
 
             }
+            checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
             break;
         }
         case BIST::EEPROM:
@@ -925,9 +927,9 @@ bool Neuropixels2::runBist (BIST bistType)
             CoreServices::sendStatusMessage ("Test not found.");
     }
 
-    close();
-    open();
-    initialize (false);
+    // close();
+    // open();
+    // initialize (false);
 
     return returnValue;
 }
