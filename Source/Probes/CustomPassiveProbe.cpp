@@ -502,8 +502,6 @@ void CustomPassiveProbe::run()
 
 bool CustomPassiveProbe::runBist (BIST bistType)
 {
-    close();
-    open();
 
     int slot = basestation->slot;
     int port = headstage->port;
@@ -575,12 +573,14 @@ bool CustomPassiveProbe::runBist (BIST bistType)
             CoreServices::sendStatusMessage ("Test not found.");
     }
 
-    close();
-    open();
+    // Re-initialize probe after running
     initialize (false);
+    setAllGains();
+    setAllReferences();
+    setApFilterState();
+    selectElectrodes();
+    writeConfiguration();
 
-    errorCode = Neuropixels::setSWTrigger (slot);
-    errorCode = Neuropixels::arm (slot);
 
     return returnValue;
 }

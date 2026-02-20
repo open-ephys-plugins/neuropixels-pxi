@@ -546,8 +546,6 @@ void Neuropixels1::run()
 
 bool Neuropixels1::runBist (BIST bistType)
 {
-    // close();
-    // open();
 
     int slot = basestation->slot;
     int port = headstage->port;
@@ -578,8 +576,6 @@ bool Neuropixels1::runBist (BIST bistType)
         {
             if (Neuropixels::bistSR (slot, port, dock) == Neuropixels::SUCCESS)
                 returnValue = true;
-
-            checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
             break;
         }
         case BIST::EEPROM:
@@ -621,12 +617,13 @@ bool Neuropixels1::runBist (BIST bistType)
             CoreServices::sendStatusMessage ("Test not found.");
     }
 
-    // close();
-    // open();
-    // initialize (false);
-
-    // errorCode = Neuropixels::setSWTrigger (slot);
-    // errorCode = Neuropixels::arm (slot);
+    // Re-initialize probe after running
+    initialize (false);
+    setAllGains();
+    setAllReferences();
+    setApFilterState();
+    selectElectrodes();
+    writeConfiguration();
 
     return returnValue;
 }

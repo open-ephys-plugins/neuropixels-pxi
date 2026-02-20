@@ -650,8 +650,6 @@ void AcquisitionThread::run()
 
 bool Neuropixels_QuadBase::runBist (BIST bistType)
 {
-    close();
-    open();
 
     int slot = basestation->slot;
     int port = headstage->port;
@@ -734,9 +732,11 @@ bool Neuropixels_QuadBase::runBist (BIST bistType)
             CoreServices::sendStatusMessage ("Test not found.");
     }
 
-    close();
-    open();
+    // Re-initialize probe after running
     initialize (false);
+    setAllReferences();
+    selectElectrodes();
+    writeConfiguration();
 
     return returnValue;
 }

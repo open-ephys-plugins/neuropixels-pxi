@@ -841,8 +841,6 @@ void Neuropixels2::run()
 
 bool Neuropixels2::runBist (BIST bistType)
 {
-    // close();
-    // open();
 
     int slot = basestation->slot;
     int port = headstage->port;
@@ -927,9 +925,11 @@ bool Neuropixels2::runBist (BIST bistType)
             CoreServices::sendStatusMessage ("Test not found.");
     }
 
-    // close();
-    // open();
-    // initialize (false);
+    // Re-initialize probe after running
+    initialize (false);
+    setAllReferences();
+    selectElectrodes();
+    writeConfiguration();
 
     return returnValue;
 }

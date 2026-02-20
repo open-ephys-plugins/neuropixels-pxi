@@ -759,9 +759,6 @@ void Neuropixels_UHD::run()
 
 bool Neuropixels_UHD::runBist (BIST bistType)
 {
-    close();
-    open();
-
     int slot = basestation->slot;
     int port = headstage->port;
 
@@ -832,12 +829,14 @@ bool Neuropixels_UHD::runBist (BIST bistType)
             CoreServices::sendStatusMessage ("Test not found.");
     }
 
-    close();
-    open();
+    // Re-initialize probe after running
     initialize (false);
+    setAllGains();
+    setAllReferences();
+    setApFilterState();
+    selectElectrodes();
+    writeConfiguration();
 
-    errorCode = Neuropixels::setSWTrigger (slot);
-    errorCode = Neuropixels::arm (slot);
 
     return returnValue;
 }

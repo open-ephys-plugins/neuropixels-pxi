@@ -396,9 +396,6 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         availableBists.add (BIST::HB);
         bistComboBox->addItem ("Test Heartbeat", 9);
 
-        availableBists.add (BIST::BS);
-        bistComboBox->addItem ("Test Basestation", 10);
-
         bistComboBox->setSelectedId (1, dontSendNotification);
         addAndMakeVisible (bistComboBox.get());
 

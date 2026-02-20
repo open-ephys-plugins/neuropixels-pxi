@@ -436,9 +436,6 @@ void Neuropixels_NHP_Passive::run()
 
 bool Neuropixels_NHP_Passive::runBist (BIST bistType)
 {
-    close();
-    open();
-
     int slot = basestation->slot;
     int port = headstage->port;
 
@@ -509,12 +506,13 @@ bool Neuropixels_NHP_Passive::runBist (BIST bistType)
             CoreServices::sendStatusMessage ("Test not found.");
     }
 
-    close();
-    open();
+    // Re-initialize probe after running
     initialize (false);
-
-    errorCode = Neuropixels::setSWTrigger (slot);
-    errorCode = Neuropixels::arm (slot);
+    setAllGains();
+    setAllReferences();
+    setApFilterState();
+    selectElectrodes();
+    writeConfiguration();
 
     return returnValue;
 }
