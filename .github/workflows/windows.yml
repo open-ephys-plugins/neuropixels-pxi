@@ -14,9 +14,11 @@ jobs:
 
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.base_ref == 'main')
     runs-on: windows-latest
+    outputs:
+      zipfile: ${{ steps.package.outputs.zipfile }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: setup
       run: |
         cd ../..
@@ -33,27 +35,22 @@ jobs:
         cmake -G "Visual Studio 17 2022" -A x64 .. 
       shell: bash
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
     - name: build-plugin
       run: |
         cd Build
         msbuild INSTALL.vcxproj -p:Configuration=Release -p:Platform=x64
       shell: cmd
-# TODO: Perform some basic testing before publishing...
-#    - name: test
-#      run: cd build && ctest
-    - name: deploy
-      if: github.ref == 'refs/heads/main'
+    - name: package-plugin
+      id: package
       env:
-        ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
-        build_dir: "Build/Release"
         package: NeuropixelsPXI-windows
       run: |
         plugin_api=$(grep -rnw ../../plugin-GUI/Source -e '#define PLUGIN_API_VER' | grep -Eo "[0-9]*" | tail -1)
         tag=$(grep -w Source/NeuropixThread.h -e '#define PLUGIN_VERSION' | grep -Eo "[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z]+)?")
         new_plugin_ver=$tag-API$plugin_api
         mkdir plugins
-        cp $build_dir/*.dll plugins
+        cp Build/Release/*.dll plugins
         if [ -d "Resources" ]
         then
           mkdir shared
@@ -65,5 +62,32 @@ jobs:
         then
           powershell Compress-Archive -U -Path "shared" -DestinationPath ${zipfile}
         fi
+        echo "zipfile=${zipfile}" >> "$GITHUB_OUTPUT"
+      shell: bash
+    - name: upload zip artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: NeuropixelsPXI-windows
+        path: ${{ steps.package.outputs.zipfile }}
+        archive: false
+# TODO: Perform some basic testing before publishing...
+#    - name: test
+#      run: cd build && ctest
+  deploy:
+    needs: build-windows
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+
+    steps:
+    - name: download zip artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: NeuropixelsPXI-windows
+        path: .
+    - name: deploy
+      env:
+        ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
+        zipfile: ${{ needs.build-windows.outputs.zipfile }}
+      run: |
         curl -H "X-JFrog-Art-Api:$ARTIFACTORY_ACCESS_TOKEN" -T $zipfile "https://openephys.jfrog.io/artifactory/NeuropixelsPXI-plugin/windows/$zipfile"
       shell: bash
