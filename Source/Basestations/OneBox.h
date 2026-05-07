@@ -93,8 +93,6 @@ public:
     static int next_available_slot;
     int serial_number = -1;
 
-    const int first_available_slot = 16;
-
     std::unique_ptr<OneBoxADC> adcSource;
     std::unique_ptr<OneBoxDAC> dacSource;
 };

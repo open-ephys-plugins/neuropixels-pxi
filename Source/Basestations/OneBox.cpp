@@ -34,7 +34,7 @@
 #define MAXLEN 50
 
 Array<int> OneBox::existing_oneboxes = Array<int>();
-int OneBox::next_available_slot = 16;
+int OneBox::next_available_slot = 20; // Start at slot 20 to avoid conflicts with PXI cards, which occupy slots 2-18
 
 void OneBox::getInfo()
 {
@@ -190,7 +190,7 @@ void OneBox::searchForProbes() {
 
             if (hsPartNumber == "NP2_HS_30") // 1.0 headstage, only one dock
             {
-                LOGD ("      Found 1.0 single-dock headstage on port: ", port);
+                LOGC ("      Found 1.0 single-dock headstage on port: ", port);
                 headstage = new Headstage1 (this, port);
                 if (headstage->testModule != nullptr)
                 {
@@ -199,7 +199,7 @@ void OneBox::searchForProbes() {
             }
             else if (hsPartNumber == "NPNH_HS_30" || hsPartNumber == "NPNH_HS_31") // 128-ch analog headstage
             {
-                LOGD ("      Found 128-ch analog headstage on port: ", port);
+                LOGC ("      Found 128-ch analog headstage on port: ", port);
                 headstage = new Headstage_Analog128 (this, port);
             }
             else if (hsPartNumber == "NPNH_HS_00") // custom 384-ch headstage
@@ -209,7 +209,7 @@ void OneBox::searchForProbes() {
             }
             else if (hsPartNumber == "NPM_HS_30" || hsPartNumber == "NPM_HS_31" || hsPartNumber == "NPM_HS_01") // 2.0 headstage, 2 docks
             {
-                LOGD ("      Found 2.0 dual-dock headstage on port: ", port);
+                LOGC ("      Found 2.0 dual-dock headstage on port: ", port);
                 headstage = new Headstage2 (this, port);
             }
             else if (hsPartNumber == "NPM_HS_32") //QuadBase headstage

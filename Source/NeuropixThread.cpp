@@ -36,6 +36,9 @@
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
 #define FORCE_SIMULATION_MODE false
 
+static constexpr int pxiSlotMin = 2;
+static constexpr int pxiSlotMax = 18;
+
 DataThread* NeuropixThread::createDataThread (SourceNode* sn, DeviceType type)
 {
     return new NeuropixThread (sn, type);
@@ -54,57 +57,54 @@ void Initializer::run()
 {
     setProgress (-1); // endless moving progress bar
 
-    Neuropixels::scanBS();
-    Neuropixels::basestationID list[16];
-    int count = getDeviceList (&list[0], 16);
+    Neuropixels::NP_ErrorCode scanEC = Neuropixels::scanBS();
+    if (scanEC != Neuropixels::SUCCESS)
+    {
+        LOGC ("Error scanning for basestations, , error code: ", Neuropixels::getErrorMessage (scanEC));
+        CoreServices::sendStatusMessage ("Error scanning for basestations");
+        return;
+    }
 
-    LOGC ("  Found ", count, " device", count == 1 ? "." : "s.");
+    Neuropixels::basestationID list[16];
 
     Array<int> slotIDs;
 
     if (! FORCE_SIMULATION_MODE)
     {
-        int countForType = 0;
-        for (int i = 0; i < count; i++)
+        // Open PXI basestations first
+        if (type == PXI)
         {
-            Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo (list[i].ID, &list[i]);
-
-            LOGD ("Device ID: ", list[i].ID, ", Platform ID: ", list[i].platformid);
-
-            if (list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
-                countForType++;
-            else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX)
-                countForType++;
-        }
-
-        setStatusMessage ("Found " + String (countForType) + " device" + (countForType == 1 ? "." : "s."));
-
-        int deviceNum = 0;
-
-        for (int i = 0; i < count; i++)
-        {
-            if (threadShouldExit())
-                break;
-
-            int slotID;
-
-            Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo (list[i].ID, &list[i]);
-
-            LOGD ("Device ID: ", list[i].ID, ", Platform ID: ", list[i].platformid);
-
-            bool foundSlot = Neuropixels::tryGetSlotID (&list[i], &slotID);
-
-            if (foundSlot)
+            int countForType = 0;
+            for (int slot = pxiSlotMin; slot <= pxiSlotMax; slot++)
             {
-                LOGD ("  Slot ID: ", slotID);
-            }
-            else
-            {
-                LOGD ("  Could not find slot ID");
+                Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo (slot, &list[0]);
+
+                LOGD ("Device ID: ", list[0].ID, ", Platform ID: ", list[0].platformid, ", Slot: ", slot, ", Error code: ", ec);
+
+                if (list[0].platformid == Neuropixels::NPPlatform_PXI && ec == Neuropixels::SUCCESS)
+                {
+                    slotIDs.add (slot);
+                    countForType++;
+                }
             }
 
-            if (foundSlot && list[i].platformid == Neuropixels::NPPlatform_PXI && type == PXI)
+            setProgress (0.1); // set progress to 10% after scanning for devices
+
+            for (int i = 0; i < slotIDs.size(); i++)
             {
+                LOGC ("  Found PXI basestation on slot ", slotIDs[i]);
+            }
+
+            LOGC ("Found ", countForType, " PXI basestation(s).");
+            setStatusMessage ("Found " + String (countForType) + " PXI basestation" + (countForType == 1 ? "." : "s."));
+
+            int deviceNum = 0;
+
+            for (auto slotID : slotIDs)
+            {
+                if (threadShouldExit())
+                    break;
+
                 deviceNum++;
                 LOGC ("  Opening device on slot ", slotID);
                 setStatusMessage ("Opening basestation on PXI slot " + String (slotID) + " (" + String (deviceNum) + "/" + String (countForType) + ")");
@@ -115,26 +115,9 @@ void Initializer::run()
 
                     if (bs->open()) //returns true if Basestation firmware >= 2.0
                     {
-                        int insertionIndex = 0;
+                        LOGC ("  Insertion index:", deviceNum);
 
-                        if (slotIDs.size() > 0)
-                        {
-                            insertionIndex = slotIDs.size();
-
-                            LOGC ("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex - 1]);
-
-                            while (insertionIndex > 0 && slotIDs[insertionIndex - 1] > slotID)
-                            {
-                                LOGC ("Moving backward...");
-                                insertionIndex--;
-                                LOGC ("  Checking ", insertionIndex, ": ", slotIDs[insertionIndex - 1]);
-                            }
-                        }
-
-                        LOGC ("Insertion index:", insertionIndex);
-
-                        basestations.insert (insertionIndex, bs);
-                        slotIDs.insert (insertionIndex, slotID);
+                        basestations.insert (deviceNum, bs);
 
                         LOGC ("  Adding basestation");
                         setStatusMessage ("Adding basestation found on PXI slot " + String (slotID));
@@ -146,14 +129,26 @@ void Initializer::run()
                         delete bs;
                     }
                 }
-            }
-            else if (list[i].platformid == Neuropixels::NPPlatform_USB && type == ONEBOX)
-            {
-                deviceNum++;
-                setStatusMessage ("Opening OneBox with serial number " + String (list[i].ID));
 
-                if (! threadShouldExit())
+                setProgress (0.1 + 0.8 * ((float) deviceNum / slotIDs.size())); // update progress bar as basestations are opened
+            }
+
+            setProgress (1.0); // set progress to 100% after all basestations have been opened
+        }
+        else if (type == ONEBOX)
+        {
+            int count = getDeviceList (&list[0], 16);
+            LOGC ("  Found ", count, " device", count == 1 ? "." : "s.");
+
+            for (int i = 0; i < count; i++)
+            {
+                if (threadShouldExit())
+                    break;
+
+                if (! threadShouldExit() && list[i].platformid == Neuropixels::NPPlatform_USB)
                 {
+                    LOGC ("  Found OneBox with serial number ", list[i].ID);
+
                     Basestation* bs = new OneBox (neuropixThread, list[i].ID);
 
                     if (bs->open())
@@ -172,10 +167,6 @@ void Initializer::run()
                     }
                 }
             }
-            else
-            {
-                LOGC ("   Slot ", slotID, " did not match desired platform.");
-            }
         }
     }
 }
@@ -188,7 +179,6 @@ void Initializer::threadComplete (bool userPressedCancel)
         basestations.clear();
     }
 }
-
 
 NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (sn),
                                                                     type (type_),
@@ -1256,7 +1246,7 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
                 {
                     // non-UHD probes
                     electrodeMetadataIndex = info.probe->settings.selectedElectrode[chIndex];
-                } 
+                }
                 else
                 {
                     // UHD-specific
@@ -1272,7 +1262,7 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
                     }
 
                     electrodeMetadataIndex = electrodeIndex;
-                } 
+                }
 
                 float xpos = info.probe->electrodeMetadata[electrodeMetadataIndex].xpos;
                 float ypos = info.probe->electrodeMetadata[electrodeMetadataIndex].ypos;
@@ -1290,10 +1280,10 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
 
                 // Add actual ypos as metadata
                 MetadataDescriptor yposDescriptor (MetadataDescriptor::MetadataType::FLOAT,
-                                               1,
-                                               "ypos",
-                                               "Channel y-position (relative to shank tip)",
-                                               "channel.ypos");
+                                                   1,
+                                                   "ypos",
+                                                   "Channel y-position (relative to shank tip)",
+                                                   "channel.ypos");
 
                 MetadataValue yposValue (MetadataDescriptor::MetadataType::FLOAT, 1);
                 yposValue.setValue (ypos);
@@ -1302,10 +1292,10 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
 
                 // Add electrode index as metadata
                 MetadataDescriptor selectedElectrodeDescriptor (MetadataDescriptor::MetadataType::UINT16,
-                                               1,
-                                               "electrode_index",
-                                               "Electrode index for this channel",
-                                               "neuropixels.electrode_index");
+                                                                1,
+                                                                "electrode_index",
+                                                                "Electrode index for this channel",
+                                                                "neuropixels.electrode_index");
 
                 MetadataValue selectedElectrodeValue (MetadataDescriptor::MetadataType::UINT16, 1);
                 selectedElectrodeValue.setValue ((uint16) selectedElectrode);
@@ -1313,7 +1303,6 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
                 continuousChannels->getLast()->addMetadata (selectedElectrodeDescriptor, selectedElectrodeValue);
 
                 //LOGD ("ch: ", ch, " name: ", name, " shank: ", shankIndex, " depth: ", depth, " xpos: ", xpos, " ypos: ", ypos, " electrode: ", selectedElectrode);
-                
             }
 
         } // end channel loop
