@@ -160,10 +160,6 @@ FirmwareUpdater::FirmwareUpdater (Basestation* basestation_, File firmwareFile_,
 
     FirmwareUpdater::totalFirmwareBytes = (float) firmwareFile_.getSize();
 
-    auto window = getAlertWindow();
-    window->setColour (AlertWindow::textColourId, Colours::white);
-    window->setColour (AlertWindow::backgroundColourId, Colour::fromRGB (50, 50, 50));
-
     firmwareFilePath = firmwareFile_.getFullPathName();
 
     LOGD ("Firmware path: ", firmwareFilePath);
