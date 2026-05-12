@@ -88,8 +88,6 @@ void Initializer::run()
                 }
             }
 
-            setProgress (0.1); // set progress to 10% after scanning for devices
-
             for (int i = 0; i < slotIDs.size(); i++)
             {
                 LOGC ("  Found PXI basestation on slot ", slotIDs[i]);
@@ -129,11 +127,7 @@ void Initializer::run()
                         delete bs;
                     }
                 }
-
-                setProgress (0.1 + 0.8 * ((float) deviceNum / slotIDs.size())); // update progress bar as basestations are opened
             }
-
-            setProgress (1.0); // set progress to 100% after all basestations have been opened
         }
         else if (type == ONEBOX)
         {
