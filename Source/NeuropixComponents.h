@@ -313,6 +313,8 @@ public:
     /** Constructor */
     NeuropixComponent() {}
 
+    virtual ~NeuropixComponent() = default;
+
     /** Pure virtual method for getting component info */
     virtual void getInfo() = 0;
 
