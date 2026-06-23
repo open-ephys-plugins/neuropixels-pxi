@@ -89,7 +89,14 @@ endif()
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-		set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE C:/ProgramData/Open\ Ephys)
+		# Normalize backslashes from %LOCALAPPDATA% to forward slashes so the path is a
+		# valid CMake/CPack string (avoids "Invalid escape sequence" warnings).
+		if(DEFINED ENV{LOCALAPPDATA})
+    		file(TO_CMAKE_PATH "$ENV{LOCALAPPDATA}/Open Ephys" XDAQ_NP_WIN_INSTALL_PREFIX)
+		else()
+    		file(TO_CMAKE_PATH "$ENV{USERPROFILE}/AppData/Local/Open Ephys" XDAQ_NP_WIN_INSTALL_PREFIX)
+		endif()
+		set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE "${XDAQ_NP_WIN_INSTALL_PREFIX}")
 		set(PLUGIN_INSTALL_DIR plugins-api10 CACHE STRING "Plugin installation directory" FORCE)
 		set(SHARED_INSTALL_DIR shared-api10 CACHE STRING "Shared installation directory" FORCE)
 	elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
@@ -136,40 +143,29 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	)
 endif()
 
+# Optional redistributable installer (CPack)
+# option(XDAQ_NP_BUILD_INSTALLER "Build a redistributable installer package" OFF)
 
-# ----------------------------------------------------------------------------
-# Standalone Windows installer (CPack + NSIS)
-#
-# Produces a self-contained installer .exe for customers who cannot install the
-# plugin through the Open Ephys GUI plugin installer. It drops the plugin and its
-# runtime into the per-user Open Ephys data directory:
-#     %LOCALAPPDATA%\Open Ephys\plugins-api10
-#     %LOCALAPPDATA%\Open Ephys\shared-api10
-#
-# Requires NSIS (https://nsis.sourceforge.io) on the build machine.
-#
-# Build it (after configuring with -DXDAQ_NP_BUILD_INSTALLER=ON):
-#     cmake --build build/Release --config Release --target package
-# ----------------------------------------------------------------------------
-if(XDAQ_NP_BUILD_INSTALLER AND ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-	set(CPACK_GENERATOR "NSIS")
-	set(CPACK_PACKAGE_NAME "XDAQ-Neuropixels")
+if(XDAQ_NP_BUILD_INSTALLER)
+	set(CPACK_PACKAGE_NAME "${PLUGIN_NAME}")
 	set(CPACK_PACKAGE_VENDOR "KonteX Neuroscience")
-	set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-	set(CPACK_PACKAGE_FILE_NAME "XDAQ-Neuropixels-${PROJECT_VERSION}-windows-x64-installer")
+	set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 	set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "XDAQ-Neuropixels plugin for the Open Ephys GUI")
 
-	# Install under %LOCALAPPDATA%\Open Ephys (the per-user Open Ephys data dir).
-	# Full target path = ${CPACK_NSIS_INSTALL_ROOT}\${CPACK_PACKAGE_INSTALL_DIRECTORY}.
-	set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA")
-	set(CPACK_PACKAGE_INSTALL_DIRECTORY "Open Ephys")
-
-	set(CPACK_NSIS_DISPLAY_NAME "XDAQ-Neuropixels Plugin")
-	set(CPACK_NSIS_PACKAGE_NAME "XDAQ-Neuropixels Plugin ${PROJECT_VERSION}")
-	# Remove a previously installed version before installing the new one.
-	set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
-	# This is a drop-in for an existing data dir; don't offer to modify PATH.
-	set(CPACK_NSIS_MODIFY_PATH OFF)
+	if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+		set(CPACK_GENERATOR "NSIS")
+		set(CPACK_PACKAGE_FILE_NAME "${PLUGIN_NAME}-${PROJECT_VERSION}-windows-x64-installer")
+		# Install into the per-user Local AppData where the Open Ephys GUI loads plugins.
+		# The NSIS installer elevates to admin and switches to the "all users" shell
+		# context, which makes $LOCALAPPDATA resolve to C:\ProgramData. $PROFILE is NOT
+		# affected by the shell context, so $PROFILE\AppData\Local always resolves to the
+		# real C:\Users\<user>\AppData\Local for both the directory page and the install.
+		# Backslashes are doubled so they survive the CPackConfig.cmake round-trip and
+		# emit single backslashes into the generated .nsi script.
+		set(CPACK_NSIS_INSTALL_ROOT [[$PROFILE\\AppData\\Local]])
+		set(CPACK_PACKAGE_INSTALL_DIRECTORY "Open Ephys")
+		set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+	endif()
 
 	include(CPack)
 endif()

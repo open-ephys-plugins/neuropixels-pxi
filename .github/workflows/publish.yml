@@ -74,7 +74,7 @@ jobs:
                     --team-id "$PROD_MACOS_NOTARIZATION_TEAM_ID" \
                     --password "$PROD_MACOS_NOTARIZATION_PWD"
 
-                  echo "Submitting for notarization"                  
+                  echo "Submitting for notarization"
                   ditto -c -k --keepParent \
                     dist/mac-universal/plugins/XDAQ-Neuropixels.bundle \
                     dist/mac-universal/XDAQ-Neuropixels.bundle.zip
@@ -104,15 +104,22 @@ jobs:
 
                   spctl -a -vvv dist/mac-universal-verify/plugins/XDAQ-Neuropixels.bundle
 
+            - name: Package macOS universal bundle (unsigned)
+              run: |
+                  set -e
+                  ditto -c -k --keepParent --rsrc --extattr dist/mac-universal/plugins dist/mac-universal.zip
+
             - name: Upload merged macOS bundle
               uses: actions/upload-artifact@v7
               with:
                   name: mac-universal
                   path: dist/mac-universal.zip
 
-    publish:
-        runs-on: ubuntu-24.04
-        needs: [merge_macos]
+    publish_windows:
+        runs-on: windows-2022
+        defaults:
+            run:
+                shell: bash
 
         steps:
             - name: Checkout code
@@ -126,18 +133,13 @@ jobs:
                     -e '#define PLUGIN_API_VER' | \
                     sed -E 's/^#define[[:space:]]+PLUGIN_API_VER[[:space:]]+([0-9]+)/\1/') >> $GITHUB_ENV
 
-            - name: Download all artifacts
+            - name: Download windows artifact
               uses: actions/download-artifact@v8
               with:
+                  name: windows-x86_64
                   path: dist
 
-            - name: Flatten dist folder
-              run: |
-                  find dist -name '*.zip' -exec mv {} dist/ \;
-                  find dist -mindepth 1 -type d -exec rm -rf {} +
-                  ls -la dist
-
-            - name: Upload to Artifactory
+            - name: Prepare windows zip
               run: |
                   set -e
 
@@ -151,58 +153,184 @@ jobs:
                   upload_tag="${ref#xdaq-v}"
                   api_ver="$PLUGIN_API"
 
-                  if [[ -z dist/windows-x86_64 ]]; then
-                        echo "Missing dist/windows-x86_64"
-                        exit 1
+                  if [[ ! -f dist/windows-x86_64.zip ]]; then
+                      echo "Missing dist/windows-x86_64.zip"
+                      exit 1
                   fi
                   win_new_name="XDAQ-Neuropixels-windows_${upload_tag}-API${api_ver}.zip"
-                  mv dist/windows-x86_64.zip dist/$win_new_name
+                  mv dist/windows-x86_64.zip "dist/$win_new_name"
                   echo "Created: dist/$win_new_name"
+                  echo "WIN_ZIP=$win_new_name" >> $GITHUB_ENV
+
+            - name: Repack windows zip
+              shell: pwsh
+              run: |
+                  $ErrorActionPreference = 'Stop'
 
                   # FIXME: remove hack
-                  # repack windows zip so the plugins/XDAQ-Neuropixels.dll  is the first entry instead of plugins/
-                  unzip -q dist/$win_new_name -d dist/windows-repack
-                  rm dist/$win_new_name
-                  cd dist/windows-repack
-                  zip -r -D ../$win_new_name .
-                  cd ../..
-                  rm -rf dist/windows-repack
-                  zipinfo "dist/$win_new_name"
-                  if [[ -z dist/mac-universal ]]; then
-                        echo "Missing dist/mac-universal"
-                        exit 1
+                  # repack windows zip so plugins/XDAQ-Neuropixels.dll is the first entry instead of plugins/
+                  Expand-Archive -Path "dist/$env:WIN_ZIP" -DestinationPath 'dist/windows-repack' -Force
+                  Remove-Item "dist/$env:WIN_ZIP"
+                  Compress-Archive -Path 'dist/windows-repack/*' -DestinationPath "dist/$env:WIN_ZIP" -Force
+                  Remove-Item 'dist/windows-repack' -Recurse -Force
+
+            - name: Upload to Artifactory
+              env:
+                  ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
+              run: |
+                  set -e
+
+                  ref="${{ github.ref_name }}"
+                  if [[ "$ref" != xdaq-v* ]]; then
+                      echo "Not a release tag: $ref, skipping upload"
+                      exit 0
+                  fi
+
+                  if [[ -z "$ARTIFACTORY_ACCESS_TOKEN" ]]; then
+                      echo "No Artifactory API key set, skipping upload"
+                      exit 0
+                  fi
+
+                  curl -fSL -H "X-JFrog-Art-Api:$ARTIFACTORY_ACCESS_TOKEN" -T "dist/$WIN_ZIP" \
+                    "https://openephys.jfrog.io/artifactory/XDAQ-Neuropixels-plugin/windows/$WIN_ZIP"
+
+            - name: Upload dist folder
+              uses: actions/upload-artifact@v7
+              with:
+                  name: dist-windows
+                  path: dist
+
+    publish_mac:
+        runs-on: macos-15
+        needs: [merge_macos]
+        defaults:
+            run:
+                shell: bash
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6
+
+            - name: Extract API Version
+              run: |
+                  set -e
+                  git submodule update --init
+                  echo PLUGIN_API=$(grep plugin-GUI/Source/Processors/PluginManager/OpenEphysPlugin.h \
+                    -e '#define PLUGIN_API_VER' | \
+                    sed -E 's/^#define[[:space:]]+PLUGIN_API_VER[[:space:]]+([0-9]+)/\1/') >> $GITHUB_ENV
+
+            - name: Download mac artifact
+              uses: actions/download-artifact@v8
+              with:
+                  name: mac-universal
+                  path: dist
+
+            - name: Upload to Artifactory
+              env:
+                  ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
+              run: |
+                  set -e
+
+                  # Ensure this is a tag in the form xdaq-v*
+                  ref="${{ github.ref_name }}"
+                  if [[ "$ref" != xdaq-v* ]]; then
+                      echo "Not a release tag: $ref"
+                      ref="xdaq-v0.0.0"  # Default to a dummy version if not a valid tag
+                  fi
+
+                  upload_tag="${ref#xdaq-v}"
+                  api_ver="$PLUGIN_API"
+
+                  if [[ ! -f dist/mac-universal.zip ]]; then
+                      echo "Missing dist/mac-universal.zip"
+                      exit 1
                   fi
                   mac_new_name="XDAQ-Neuropixels-mac_${upload_tag}-API${api_ver}.zip"
-                  mv dist/mac-universal.zip dist/$mac_new_name
+                  mv dist/mac-universal.zip "dist/$mac_new_name"
                   echo "Created: dist/$mac_new_name"
 
-                  if [[ -z dist/linux-x86_64 ]]; then
-                          echo "Missing dist/linux-x86_64"
-                          exit 1
+                  if [[ "$ref" != xdaq-v* ]]; then
+                      echo "Not a release tag: $ref, skipping upload"
+                      exit 0
+                  fi
+
+                  if [[ -z "$ARTIFACTORY_ACCESS_TOKEN" ]]; then
+                      echo "No Artifactory API key set, skipping upload"
+                      exit 0
+                  fi
+
+                  curl -fSL -H "X-JFrog-Art-Api:$ARTIFACTORY_ACCESS_TOKEN" -T "dist/$mac_new_name" \
+                    "https://openephys.jfrog.io/artifactory/XDAQ-Neuropixels-plugin/mac/$mac_new_name"
+
+            - name: Upload dist folder
+              uses: actions/upload-artifact@v7
+              with:
+                  name: dist-mac
+                  path: dist
+
+    publish_linux:
+        runs-on: ubuntu-24.04
+        defaults:
+            run:
+                shell: bash
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6
+
+            - name: Extract API Version
+              run: |
+                  set -e
+                  git submodule update --init
+                  echo PLUGIN_API=$(grep plugin-GUI/Source/Processors/PluginManager/OpenEphysPlugin.h \
+                    -e '#define PLUGIN_API_VER' | \
+                    sed -E 's/^#define[[:space:]]+PLUGIN_API_VER[[:space:]]+([0-9]+)/\1/') >> $GITHUB_ENV
+
+            - name: Download linux artifact
+              uses: actions/download-artifact@v8
+              with:
+                  name: linux-x86_64
+                  path: dist
+
+            - name: Upload to Artifactory
+              env:
+                  ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
+              run: |
+                  set -e
+
+                  # Ensure this is a tag in the form xdaq-v*
+                  ref="${{ github.ref_name }}"
+                  if [[ "$ref" != xdaq-v* ]]; then
+                      echo "Not a release tag: $ref"
+                      ref="xdaq-v0.0.0"  # Default to a dummy version if not a valid tag
+                  fi
+
+                  upload_tag="${ref#xdaq-v}"
+                  api_ver="$PLUGIN_API"
+
+                  if [[ ! -f dist/linux-x86_64.zip ]]; then
+                      echo "Missing dist/linux-x86_64.zip"
+                      exit 1
                   fi
                   linux_new_name="XDAQ-Neuropixels-linux_${upload_tag}-API${api_ver}.zip"
-                  mv dist/linux-x86_64.zip dist/$linux_new_name
+                  mv dist/linux-x86_64.zip "dist/$linux_new_name"
                   echo "Created: dist/$linux_new_name"
 
                   if [[ "$ref" != xdaq-v* ]]; then
                       echo "Not a release tag: $ref, skipping upload"
                       exit 0
                   fi
-                  
-                  if [[ -z "${{ secrets.ARTIFACTORY_ACCESS_TOKEN  }}" ]]; then
+
+                  if [[ -z "$ARTIFACTORY_ACCESS_TOKEN" ]]; then
                       echo "No Artifactory API key set, skipping upload"
                       exit 0
                   fi
 
-                  curl -H "X-JFrog-Art-Api:${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}" -T "dist/$win_new_name" \
-                    "https://openephys.jfrog.io/artifactory/XDAQ-Neuropixels-plugin/windows/$win_new_name"
-                  curl -H "X-JFrog-Art-Api:${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}" -T "dist/$mac_new_name" \
-                    "https://openephys.jfrog.io/artifactory/XDAQ-Neuropixels-plugin/mac/$mac_new_name"
-                  curl -H "X-JFrog-Art-Api:${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}" -T "dist/$linux_new_name" \
+                  curl -fSL -H "X-JFrog-Art-Api:$ARTIFACTORY_ACCESS_TOKEN" -T "dist/$linux_new_name" \
                     "https://openephys.jfrog.io/artifactory/XDAQ-Neuropixels-plugin/linux/$linux_new_name"
 
             - name: Upload dist folder
               uses: actions/upload-artifact@v7
               with:
-                  name: dist
+                  name: dist-linux
                   path: dist
