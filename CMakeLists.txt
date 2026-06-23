@@ -10,7 +10,7 @@ endif()
 get_filename_component(GUI_BASE_DIR ${GUI_BASE_DIR} ABSOLUTE)
 
 set(PLUGIN_NAME XDAQ-Neuropixels)
-project(${PLUGIN_NAME} VERSION 0.5.0 LANGUAGES CXX)
+project(${PLUGIN_NAME} VERSION 0.5.1 LANGUAGES CXX)
 
 option(XDAQ_NP_BUILD_INSTALLER "Configure a CPack/NSIS Windows installer" OFF)
 
