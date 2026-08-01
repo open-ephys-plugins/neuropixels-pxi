@@ -128,9 +128,9 @@ bool Neuropixels_QuadBase::open()
             }
         }
 
-    apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks, probeMetadata.num_adcs, electrodeMetadata.size());
+        apView = std::make_unique<ActivityView> (384 * 4, 3000, blocks, probeMetadata.num_adcs, electrodeMetadata.size());
 
-    refreshActivityViewMapping();
+        refreshActivityViewMapping();
     }
 
     return errorCode == Neuropixels::SUCCESS;
@@ -523,7 +523,6 @@ void AcquisitionThread::run()
         {
             for (int packetNum = 0; packetNum < count; packetNum++)
             {
-
                 eventCode = packetInfo[packetNum].Status >> 6;
 
                 if (invertSyncLine)
@@ -650,7 +649,6 @@ void AcquisitionThread::run()
 
 bool Neuropixels_QuadBase::runBist (BIST bistType)
 {
-
     int slot = basestation->slot;
     int port = headstage->port;
 

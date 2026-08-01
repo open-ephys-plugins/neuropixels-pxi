@@ -130,7 +130,9 @@ void Probe::updateNamingScheme (ProbeNameConfig::NamingScheme scheme)
 void Probe::refreshActivityViewMapping()
 {
 
-    if (settings.selectedElectrode.size() != channel_count)
+    if (settings.selectedChannel.size() != channel_count
+        || settings.selectedElectrode.size() != channel_count
+        || (type == ProbeType::QUAD_BASE && settings.selectedShank.size() != channel_count))
         return;
 
     std::vector<int> mapping;
@@ -139,6 +141,10 @@ void Probe::refreshActivityViewMapping()
     for (int i = 0; i < channel_count; ++i)
     {
         int channelIndex = settings.selectedChannel[i];
+
+        if (type == ProbeType::QUAD_BASE)
+            channelIndex += settings.selectedShank[i] * 384;
+
         int selectedElectrode = settings.selectedElectrode[i];
         //LOGD ("  Channel ", channelIndex, " mapped to electrode ", selectedElectrode);
         mapping[channelIndex] = selectedElectrode;
