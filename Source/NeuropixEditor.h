@@ -76,6 +76,9 @@ public:
     /** Destructor */
     ~SlotButton() {}
 
+    /** Exposes inventory as read-only UIA text, not as an invokable button. */
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
+
     bool isEnabled;
 
 private:
@@ -157,6 +160,9 @@ public:
     /** Checks whether the status has changed */
     void timerCallback();
 
+    /** Exposes probe inventory as read-only UIA text, not as a toggle. */
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
+
     DataSource* dataSource;
     Basestation* basestation;
     bool connected;
@@ -166,6 +172,9 @@ public:
 private:
     /** Draws the button */
     void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown);
+
+    /** Updates read-only status text without changing the stable UIA ID. */
+    void updateInventoryAccessibilityStatus();
 
     SourceStatus status;
     DataSourceType sourceType;

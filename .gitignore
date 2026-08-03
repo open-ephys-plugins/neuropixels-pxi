@@ -8,6 +8,7 @@
 # 2. Platform specific build related
 
 Builds/*/*
+/Build-AgentInventory*/
 
 
 # 3. OS-specific files

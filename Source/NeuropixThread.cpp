@@ -23,6 +23,7 @@
 
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
+#include "AgentInventory.h"
 
 #include "Basestations/OneBox.h"
 #include "Basestations/PxiBasestation.h"
@@ -35,6 +36,22 @@
 
 //Helpful for debugging when PXI system is connected but don't want to connect to real probes
 #define FORCE_SIMULATION_MODE false
+
+namespace
+{
+std::string basestationTypeName (BasestationType type)
+{
+    switch (type)
+    {
+        case BasestationType::PXI: return "PXI";
+        case BasestationType::OPTO: return "OPTO";
+        case BasestationType::ONEBOX: return "ONEBOX";
+        case BasestationType::SIMULATED: return "SIMULATED";
+    }
+
+    return "UNKNOWN";
+}
+}
 
 DataThread* NeuropixThread::createDataThread (SourceNode* sn, DeviceType type)
 {
@@ -707,39 +724,36 @@ Array<Probe*> NeuropixThread::getProbes()
 
 String NeuropixThread::getProbeInfoString()
 {
-    DynamicObject output;
+    neuropix::agent::Inventory inventory;
+    inventory.plugin = "Neuropix-PXI";
+    inventory.version = PLUGIN_VERSION;
 
-    output.setProperty (Identifier ("plugin"),
-                        var ("Neuropix-PXI"));
-    output.setProperty (Identifier ("version"),
-                        var (PLUGIN_VERSION));
-
-    Array<var> probes;
+    for (auto basestation : getBasestations())
+    {
+        inventory.basestations.push_back ({ basestation->slot,
+                                            basestationTypeName (basestation->type),
+                                            basestation->info.part_number.toStdString(),
+                                            basestation->info.boot_version.toStdString() });
+    }
 
     for (auto probe : getProbes())
     {
-        DynamicObject::Ptr p = new DynamicObject();
+        const bool disabled = ! probe->isEnabled
+                              || probe->getStatus() == SourceStatus::DISABLED;
 
-        p->setProperty (Identifier ("name"), probe->displayName);
-        p->setProperty (Identifier ("type"), probe->probeMetadata.name);
-        p->setProperty (Identifier ("slot"), probe->basestation->slot);
-        p->setProperty (Identifier ("port"), probe->headstage->port);
-        p->setProperty (Identifier ("dock"), probe->dock);
-
-        p->setProperty (Identifier ("part_number"), probe->info.part_number);
-        p->setProperty (Identifier ("serial_number"), String (probe->info.serial_number));
-
-        p->setProperty (Identifier ("is_calibrated"), probe->isCalibrated);
-
-        probes.add (p.get());
+        inventory.probes.push_back ({ probe->displayName.toStdString(),
+                                      probe->probeMetadata.name.toStdString(),
+                                      { probe->basestation->slot,
+                                        probe->headstage->port,
+                                        probe->dock },
+                                      probe->info.part_number.toStdString(),
+                                      std::to_string (probe->info.serial_number),
+                                      probe->isCalibrated,
+                                      probe->isValid,
+                                      disabled });
     }
 
-    output.setProperty (Identifier ("probes"), probes);
-
-    MemoryOutputStream f;
-    output.writeAsJSON (f, JSON::FormatOptions {}.withIndentLevel (0).withSpacing (JSON::Spacing::singleLine).withMaxDecimalPlaces (4));
-
-    return f.toString();
+    return String (neuropix::agent::serializeInventory (inventory));
 }
 
 Array<DataSource*> NeuropixThread::getDataSources()

@@ -23,10 +23,27 @@
 
 #include "NeuropixEditor.h"
 
+#include "AgentInventory.h"
 #include "NeuropixCanvas.h"
 #include "NeuropixComponents.h"
 #include "NeuropixThread.h"
 #include "UI/NeuropixInterface.h"
+
+namespace
+{
+String readableBasestationType (BasestationType type)
+{
+    switch (type)
+    {
+        case BasestationType::PXI: return "PXI";
+        case BasestationType::OPTO: return "OPTO";
+        case BasestationType::ONEBOX: return "ONEBOX";
+        case BasestationType::SIMULATED: return "SIMULATED";
+    }
+
+    return "UNKNOWN";
+}
+}
 
 RefreshButton::RefreshButton() : Button ("Refresh")
 {
@@ -66,6 +83,22 @@ SlotButton::SlotButton (Basestation* bs, NeuropixThread* thread_) : Button (Stri
     thread = thread_;
     basestation = bs;
     slot = basestation->slot;
+
+    setComponentID (String (neuropix::agent::basestationAutomationId (slot)));
+    setTitle ("Neuropixels basestation inventory");
+    setDescription (String (neuropix::agent::basestationStatusText (
+        { slot,
+          readableBasestationType (basestation->type).toStdString(),
+          basestation->info.part_number.toStdString(),
+          basestation->info.boot_version.toStdString() })));
+    setHelpText ("Read-only basestation identity and status.");
+    setAccessible (true);
+}
+
+std::unique_ptr<AccessibilityHandler> SlotButton::createAccessibilityHandler()
+{
+    return std::make_unique<AccessibilityHandler> (
+        *this, AccessibilityRole::staticText);
 }
 
 void SlotButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown)
@@ -239,7 +272,57 @@ SourceButton::SourceButton (int id_, DataSource* source_, Basestation* basestati
 
     setRadioGroupId (979);
 
+    if (sourceType == DataSourceType::PROBE)
+    {
+        auto* probe = static_cast<Probe*> (dataSource);
+        const neuropix::agent::Locator locator {
+            probe->basestation->slot, probe->headstage->port, probe->dock
+        };
+        setComponentID (String (neuropix::agent::probeAutomationId (locator)));
+        setTitle ("Neuropixels probe inventory");
+        setHelpText ("Read-only probe identity and status.");
+        setAccessible (true);
+        updateInventoryAccessibilityStatus();
+    }
+
     startTimer (500); // update probe status and fifo monitor every 500 ms
+}
+
+void SourceButton::updateInventoryAccessibilityStatus()
+{
+    if (sourceType != DataSourceType::PROBE || dataSource == nullptr)
+        return;
+
+    auto* probe = static_cast<Probe*> (dataSource);
+    const neuropix::agent::Locator locator {
+        probe->basestation->slot, probe->headstage->port, probe->dock
+    };
+    const bool disabled = ! probe->isEnabled
+                          || probe->getStatus() == SourceStatus::DISABLED;
+    const String statusText (neuropix::agent::probeStatusText (
+        { probe->displayName.toStdString(),
+          probe->probeMetadata.name.toStdString(),
+          locator,
+          probe->info.part_number.toStdString(),
+          std::to_string (probe->info.serial_number),
+          probe->isCalibrated,
+          probe->isValid,
+          disabled }));
+
+    if (getDescription() != statusText)
+    {
+        setDescription (statusText);
+        invalidateAccessibilityHandler();
+    }
+}
+
+std::unique_ptr<AccessibilityHandler> SourceButton::createAccessibilityHandler()
+{
+    if (sourceType == DataSourceType::PROBE)
+        return std::make_unique<AccessibilityHandler> (
+            *this, AccessibilityRole::staticText);
+
+    return ToggleButton::createAccessibilityHandler();
 }
 
 void SourceButton::setSelectedState (bool state)
@@ -354,6 +437,7 @@ void SourceButton::timerCallback()
     if (dataSource != nullptr)
     {
         setSourceStatus (dataSource->getStatus());
+        updateInventoryAccessibilityStatus();
     }
 }
 
