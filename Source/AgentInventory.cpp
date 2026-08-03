@@ -86,7 +86,8 @@ std::string serializeInventory (const Inventory& inventory)
         output << ',';
         appendString (output, "serial_number", probe.serialNumber);
         output << ",\"is_calibrated\":" << (probe.calibrated ? "true" : "false")
-               << ",\"available\":" << (probe.available ? "true" : "false")
+               << ",\"supported\":" << (probe.supported ? "true" : "false")
+               << ",\"status\":\"" << probeStatusToString (probe.status) << '\"'
                << ",\"disabled\":" << (probe.disabled ? "true" : "false")
                << '}';
     }
@@ -109,6 +110,22 @@ std::string probeAutomationId (const Locator& locator)
            + ".dock_" + std::to_string (locator.dock);
 }
 
+std::string probeStatusToString (ProbeStatus status)
+{
+    switch (status)
+    {
+        case ProbeStatus::DISCONNECTED: return "DISCONNECTED";
+        case ProbeStatus::CONNECTING: return "CONNECTING";
+        case ProbeStatus::CONNECTED: return "CONNECTED";
+        case ProbeStatus::UPDATING: return "UPDATING";
+        case ProbeStatus::ACQUIRING: return "ACQUIRING";
+        case ProbeStatus::RECORDING: return "RECORDING";
+        case ProbeStatus::DISABLED: return "DISABLED";
+    }
+
+    return "UNKNOWN";
+}
+
 std::string basestationStatusText (const BasestationInventory& basestation)
 {
     return "slot=" + std::to_string (basestation.slot)
@@ -125,7 +142,8 @@ std::string probeStatusText (const ProbeInventory& probe)
            + "; type=" + probe.type
            + "; part_number=" + probe.partNumber
            + "; serial_number=" + probe.serialNumber
-           + "; available=" + (probe.available ? "true" : "false")
+           + "; supported=" + (probe.supported ? "true" : "false")
+           + "; status=" + probeStatusToString (probe.status)
            + "; disabled=" + (probe.disabled ? "true" : "false")
            + "; calibrated=" + (probe.calibrated ? "true" : "false");
 }

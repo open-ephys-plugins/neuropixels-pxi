@@ -23,7 +23,7 @@
 
 #include "NeuropixEditor.h"
 
-#include "AgentInventory.h"
+#include "AgentInventoryAdapter.h"
 #include "NeuropixCanvas.h"
 #include "NeuropixComponents.h"
 #include "NeuropixThread.h"
@@ -307,6 +307,7 @@ void SourceButton::updateInventoryAccessibilityStatus()
           std::to_string (probe->info.serial_number),
           probe->isCalibrated,
           probe->isValid,
+          neuropix::agent::probeStatusFromSource (probe->getStatus()),
           disabled }));
 
     if (getDescription() != statusText)

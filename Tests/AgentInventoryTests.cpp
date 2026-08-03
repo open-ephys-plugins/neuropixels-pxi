@@ -3,6 +3,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -45,6 +46,7 @@ int main()
                                   "123456789",
                                   true,
                                   true,
+                                  ProbeStatus::CONNECTED,
                                   false });
 
     const std::string expectedJson =
@@ -53,7 +55,8 @@ int main()
         "\"firmware_version\":\"3.0226\"}],\"probes\":[{\"name\":\"Probe-A\","
         "\"type\":\"Neuropixels 2.0 Single Shank\",\"slot\":2,\"port\":1,\"dock\":2,"
         "\"part_number\":\"PRB2_1_2_0640_0\",\"serial_number\":\"123456789\","
-        "\"is_calibrated\":true,\"available\":true,\"disabled\":false}]}";
+        "\"is_calibrated\":true,\"supported\":true,\"status\":\"CONNECTED\","
+        "\"disabled\":false}]}";
     expectEqual (serializeInventory (inventory),
                  expectedJson,
                  "golden JSON preserves NP INFO and exposes read-only inventory");
@@ -100,18 +103,34 @@ int main()
     expectEqual (status,
                  "slot=2; port=1; dock=2; type=Neuropixels 2.0 Single Shank; "
                  "part_number=PRB2_1_2_0640_0; serial_number=123456789; "
-                 "available=true; disabled=false; calibrated=true",
+                 "supported=true; status=CONNECTED; disabled=false; calibrated=true",
                  "probe UIA dynamic status is readable separately from its stable ID");
     expectEqual (basestationStatusText (inventory.basestations.front()),
                  "slot=2; type=PXI; part_number=BS-0001; firmware_version=3.0226",
                  "basestation UIA status exposes only source-backed readable fields");
-    expectTrue (firstId.find ("available") == std::string::npos
+    expectTrue (firstId.find ("supported") == std::string::npos
+                    && firstId.find ("status") == std::string::npos
                     && firstId.find ("calibrated") == std::string::npos,
                 "probe UIA stable ID excludes dynamic status values");
+
+    const std::pair<ProbeStatus, const char*> statuses[] {
+        { ProbeStatus::DISCONNECTED, "DISCONNECTED" },
+        { ProbeStatus::CONNECTING, "CONNECTING" },
+        { ProbeStatus::CONNECTED, "CONNECTED" },
+        { ProbeStatus::UPDATING, "UPDATING" },
+        { ProbeStatus::ACQUIRING, "ACQUIRING" },
+        { ProbeStatus::RECORDING, "RECORDING" },
+        { ProbeStatus::DISABLED, "DISABLED" }
+    };
+
+    for (const auto& [value, expected] : statuses)
+        expectEqual (probeStatusToString (value),
+                     expected,
+                     "every official SourceStatus has a stable string");
 
     if (failures != 0)
         return 1;
 
-    std::cout << "PASS 11 inventory contract checks\n";
+    std::cout << "PASS 18 inventory contract checks\n";
     return 0;
 }

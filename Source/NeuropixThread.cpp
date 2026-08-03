@@ -23,7 +23,7 @@
 
 #include "NeuropixThread.h"
 #include "NeuropixEditor.h"
-#include "AgentInventory.h"
+#include "AgentInventoryAdapter.h"
 
 #include "Basestations/OneBox.h"
 #include "Basestations/PxiBasestation.h"
@@ -750,6 +750,7 @@ String NeuropixThread::getProbeInfoString()
                                       std::to_string (probe->info.serial_number),
                                       probe->isCalibrated,
                                       probe->isValid,
+                                      neuropix::agent::probeStatusFromSource (probe->getStatus()),
                                       disabled });
     }
 
