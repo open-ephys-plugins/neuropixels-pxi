@@ -461,8 +461,7 @@ void SurveyRunner::run()
     int maxSteps = 0;
     for (const auto& tgt : targets)
     {
-        auto* p = tgt.probe;
-        maxSteps = jmax (maxSteps, tgt.banks.size() * tgt.shanks.size());
+        maxSteps = jmax (maxSteps, tgt.surveyConfigs.size());
     }
 
     const double invMaxSteps = maxSteps > 0 ? 1.0 / static_cast<double> (maxSteps) : 0.0;
@@ -478,10 +477,8 @@ void SurveyRunner::run()
 
     setStatusMessage ("Surveying probes...");
 
-    Array<int> bankIndices;
-    bankIndices.insertMultiple (0, 0, targets.size());
-    Array<int> shanksIndices;
-    shanksIndices.insertMultiple (0, 0, targets.size());
+    Array<int> configIndices;
+    configIndices.insertMultiple (0, 0, targets.size());
 
     for (int i = 0; i < maxSteps; ++i)
     {
@@ -504,55 +501,18 @@ void SurveyRunner::run()
 
                 Probe* probe = target.probe;
 
-                if (shanksIndices[targetIdx] < target.shanks.size()
-                    && bankIndices[targetIdx] < target.banks.size())
+                if (configIndices[targetIdx] < target.surveyConfigs.size())
                 {
-                    int sh = target.shanks[shanksIndices[targetIdx]];
-                    Bank bank = target.banks[bankIndices[targetIdx]];
+                    const String config = target.surveyConfigs[configIndices[targetIdx]];
 
-                    LOGD ("SurveyRunner: Applying settings to probe ", probe->getName().toRawUTF8(), " - Bank=", SurveyInterface::bankToString (bank).toRawUTF8(), " Shank=", sh + 1);
+                    LOGD ("SurveyRunner: Applying settings to probe ", probe->getName().toRawUTF8(), " - Configuration=", config.toRawUTF8());
 
-                    // Build settings for this combo
-                    for (const auto& config : target.electrodeConfigs)
-                    {
-                        // For UHD2, match numeric bank values (0-15)
-                        String bankString;
-                        if (probe->type == ProbeType::UHD2)
-                        {
-                            bankString = "Bank " + String (static_cast<int> (bank));
-                        }
-                        else
-                        {
-                            bankString = "Bank " + SurveyInterface::bankToString (bank);
-                        }
+                    auto selected = probe->selectElectrodeConfiguration (config);
+                    const MessageManagerLock mmLock;
+                    probe->ui->selectElectrodes (selected);
+                    LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
 
-                        if (config.containsIgnoreCase (bankString))
-                        {
-                            if (target.shankCount > 1 && config.containsIgnoreCase ("Shank " + String (sh + 1)))
-                            {
-                                auto selected = probe->selectElectrodeConfiguration (config);
-                                const MessageManagerLock mmLock;
-                                probe->ui->selectElectrodes (selected);
-                                LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
-                                break;
-                            }
-                            else if (target.shankCount == 1)
-                            {
-                                auto selected = probe->selectElectrodeConfiguration (config);
-                                const MessageManagerLock mmLock;
-                                probe->ui->selectElectrodes (selected);
-                                LOGD ("SurveyRunner: Selected configuration ", config.toRawUTF8(), " for probe ", probe->getName().toRawUTF8());
-                                break;
-                            }
-                        }
-                    }
-
-                    bankIndices.set (targetIdx, bankIndices[targetIdx] + 1);
-                    if (bankIndices[targetIdx] >= target.banks.size())
-                    {
-                        bankIndices.set (targetIdx, 0);
-                        shanksIndices.set (targetIdx, shanksIndices[targetIdx] + 1);
-                    }
+                    configIndices.set (targetIdx, configIndices[targetIdx] + 1);
                 }
                 else
                 {
@@ -753,10 +713,11 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
 
     table = std::make_unique<TableListBox> ("Survey Table", this);
     table->getHeader().addColumn ("Use", Columns::ColSelect, 30);
-    table->getHeader().addColumn ("Probe", Columns::ColName, 100);
+    table->getHeader().addColumn ("Probe", Columns::ColName, 85);
     table->getHeader().addColumn ("Type", Columns::ColType, 120);
-    table->getHeader().addColumn ("Banks", Columns::ColBanks, 120);
-    table->getHeader().addColumn ("Shanks", Columns::ColShanks, 100);
+    table->getHeader().addColumn ("Banks", Columns::ColBanks, 105);
+    table->getHeader().addColumn ("Shanks", Columns::ColShanks, 70);
+    table->getHeader().addColumn ("Overlap", Columns::ColOverlap, 60);
     table->setAutoSizeMenuOptionShown (false);
     table->getHeader().setInterceptsMouseClicks (false, false);
     table->setOutlineThickness (1);
@@ -1010,6 +971,7 @@ void SurveyInterface::saveParameters (XmlElement* xml)
         probeNode->setAttribute ("type", String (probeTypeToString (row.probe->type)));
         probeNode->setAttribute ("type_id", static_cast<int> (row.probe->type));
         probeNode->setAttribute ("selected", row.selected);
+        probeNode->setAttribute ("include_overlapping_banks", row.includeOverlappingBanks);
 
         const bool useAllBanks = row.chosenBanks.isEmpty();
         if (useAllBanks)
@@ -1130,6 +1092,8 @@ void SurveyInterface::loadParameters (XmlElement* xml)
         auto& row = rows.getReference (matchedRowIndex);
 
         row.selected = probeNode->getBoolAttribute ("selected", row.selected);
+        row.includeOverlappingBanks = row.hasOverlappingBanks
+                          && probeNode->getBoolAttribute ("include_overlapping_banks", false);
 
         row.chosenBanks.clear();
         String banksString = probeNode->getStringAttribute ("banks", "All");
@@ -1327,6 +1291,15 @@ void SurveyInterface::refreshProbeList()
         r.electrodeConfigs = p->settings.availableElectrodeConfigurations;
         r.selected = true;
 
+        for (const auto& config : r.electrodeConfigs)
+        {
+            if (config.contains (" + "))
+            {
+                r.hasOverlappingBanks = true;
+                break;
+            }
+        }
+
         // Special case for UHD2: use numeric banks 0-15 instead of Bank enum
         if (p->type == ProbeType::UHD2)
         {
@@ -1434,6 +1407,45 @@ void SurveyInterface::launchSurvey()
                 t.shanks.add (i); // empty => all shanks
         }
         t.shankCount = r.shankCount;
+
+        for (const int shank : t.shanks)
+        {
+            for (const Bank bank : t.banks)
+            {
+                const int bankIndex = static_cast<int> (bank);
+                String configPrefix;
+                String bankName;
+
+                if (r.probe->type == ProbeType::UHD2)
+                {
+                    configPrefix = "8 x 48: ";
+                    bankName = String (bankIndex);
+                }
+                else
+                {
+                    if (t.shankCount > 1)
+                        configPrefix = "Shank " + String (shank + 1) + " ";
+
+                    bankName = bankToString (bank);
+                }
+
+                const String bankConfig = configPrefix + "Bank " + bankName;
+                if (t.electrodeConfigs.contains (bankConfig))
+                    t.surveyConfigs.add (bankConfig);
+
+                const Bank nextBank = static_cast<Bank> (bankIndex + 1);
+                if (r.includeOverlappingBanks && t.banks.contains (nextBank))
+                {
+                    const String nextBankName = r.probe->type == ProbeType::UHD2
+                                                    ? String (bankIndex + 1)
+                                                    : bankToString (nextBank);
+                    const String overlapConfig = bankConfig + " + " + nextBankName;
+
+                    if (t.electrodeConfigs.contains (overlapConfig))
+                        t.surveyConfigs.add (overlapConfig);
+                }
+            }
+        }
 
         targets.add (t);
     }
@@ -1735,6 +1747,22 @@ Component* SurveyInterface::refreshComponentForCell (int rowNumber, int columnId
             showShanksSelector (rowNumber, btn);
         };
         return btn;
+    }
+
+    if (columnId == Columns::ColOverlap)
+    {
+        ToggleButton* tb = dynamic_cast<ToggleButton*> (existing);
+        if (tb == nullptr)
+            tb = new ToggleButton (" ");
+
+        tb->setTooltip (r.hasOverlappingBanks ? "Survey configurations spanning adjacent banks" : "Overlapping bank configurations are not available for this probe");
+        tb->setEnabled (r.hasOverlappingBanks);
+        tb->setToggleState (r.includeOverlappingBanks, dontSendNotification);
+        tb->onClick = [this, rowNumber, tb]()
+        {
+            rows.getReference (rowNumber).includeOverlappingBanks = tb->getToggleState();
+        };
+        return tb;
     }
 
     return nullptr;

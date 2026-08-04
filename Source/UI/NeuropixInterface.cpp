@@ -1238,6 +1238,12 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
     {
         LOGD ("UHD2 SELECTING ELECTRODES");
 
+        if (electrodeConfigurationComboBox != nullptr
+            && isPositiveAndBelow (probe->settings.electrodeConfigurationIndex, probe->settings.availableElectrodeConfigurations.size()))
+        {
+            electrodeConfigurationComboBox->setSelectedItemIndex (probe->settings.electrodeConfigurationIndex + 1, dontSendNotification);
+        }
+
         for (int i = 0; i < electrodeMetadata.size(); i++)
         {
             electrodeMetadata.getReference (i).shank_is_programmable = probe->electrodeMetadata.getReference (i).shank_is_programmable;

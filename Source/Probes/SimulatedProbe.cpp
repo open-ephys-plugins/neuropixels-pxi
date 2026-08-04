@@ -134,23 +134,40 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
             if (type != ProbeType::UHD1 && type != ProbeType::NHP1)
             {
                 settings.availableElectrodeConfigurations.add ("Bank A");
+                settings.availableElectrodeConfigurations.add ("Bank A + B");
                 settings.availableElectrodeConfigurations.add ("Bank B");
+
+                if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
+                    settings.availableElectrodeConfigurations.add ("Bank B + C");
+
                 settings.availableElectrodeConfigurations.add ("Bank C");
 
                 if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
                 {
+                    settings.availableElectrodeConfigurations.add ("Bank C + D");
                     settings.availableElectrodeConfigurations.add ("Bank D");
+                    settings.availableElectrodeConfigurations.add ("Bank D + E");
                     settings.availableElectrodeConfigurations.add ("Bank E");
+                    settings.availableElectrodeConfigurations.add ("Bank E + F");
                     settings.availableElectrodeConfigurations.add ("Bank F");
-                    settings.availableElectrodeConfigurations.add ("Bank G");
 
                     if (type == ProbeType::NHP45)
                     {
+                        settings.availableElectrodeConfigurations.add ("Bank F + G");
+                        settings.availableElectrodeConfigurations.add ("Bank G");
+                        settings.availableElectrodeConfigurations.add ("Bank G + H");
                         settings.availableElectrodeConfigurations.add ("Bank H");
+                        settings.availableElectrodeConfigurations.add ("Bank H + I");
                         settings.availableElectrodeConfigurations.add ("Bank I");
+                        settings.availableElectrodeConfigurations.add ("Bank I + J");
                         settings.availableElectrodeConfigurations.add ("Bank J");
+                        settings.availableElectrodeConfigurations.add ("Bank J + K");
                         settings.availableElectrodeConfigurations.add ("Bank K");
                         settings.availableElectrodeConfigurations.add ("Bank L");
+                    }
+                    else
+                    {
+                        settings.availableElectrodeConfigurations.add ("Bank G");
                     }
                 }
 
@@ -179,7 +196,9 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
             settings.availableReferences.add ("Tip");
 
             settings.availableElectrodeConfigurations.add ("Bank A");
+            settings.availableElectrodeConfigurations.add ("Bank A + B");
             settings.availableElectrodeConfigurations.add ("Bank B");
+            settings.availableElectrodeConfigurations.add ("Bank B + C");
             settings.availableElectrodeConfigurations.add ("Bank C");
             settings.availableElectrodeConfigurations.add ("Bank D");
         }
@@ -208,19 +227,27 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
             //settings.availableReferences.add("4: 1280");
 
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank A");
+            settings.availableElectrodeConfigurations.add ("Shank 1 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank B");
+            settings.availableElectrodeConfigurations.add ("Shank 1 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A");
+            settings.availableElectrodeConfigurations.add ("Shank 2 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B");
+            settings.availableElectrodeConfigurations.add ("Shank 2 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A");
+            settings.availableElectrodeConfigurations.add ("Shank 3 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B");
+            settings.availableElectrodeConfigurations.add ("Shank 3 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A");
+            settings.availableElectrodeConfigurations.add ("Shank 4 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B");
+            settings.availableElectrodeConfigurations.add ("Shank 4 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank D");
             settings.availableElectrodeConfigurations.add ("All Shanks 1-96");
@@ -294,6 +321,16 @@ void SimulatedProbe::selectElectrodes()
 Array<int> SimulatedProbe::selectElectrodeConfiguration (String config)
 {
     LOGC ("Selecting electrode configuration for simulated probe: ", config);
+
+    if (config.contains (" + ") && type != ProbeType::UHD2)
+    {
+        int electrodeOffset = 0;
+
+        if (config.startsWithIgnoreCase ("Shank "))
+            electrodeOffset = (config.substring (6).getIntValue() - 1) * 1280;
+
+        return getHalfBankOverlapSelection (config, electrodeOffset);
+    }
 
     Array<int> selection;
 

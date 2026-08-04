@@ -113,6 +113,7 @@ NeuropixelsOpto::NeuropixelsOpto (Basestation* bs, Headstage* hs, Flex* fl) : Pr
                                     Bank::L };
 
         settings.availableElectrodeConfigurations.add ("Bank A");
+        settings.availableElectrodeConfigurations.add ("Bank A + B");
         settings.availableElectrodeConfigurations.add ("Bank B");
         settings.availableElectrodeConfigurations.add ("Bank C");
         settings.availableElectrodeConfigurations.add ("Single Column");
@@ -329,6 +330,9 @@ void NeuropixelsOpto::selectElectrodes()
 
 Array<int> NeuropixelsOpto::selectElectrodeConfiguration (String config)
 {
+    if (config.contains (" + "))
+        return getHalfBankOverlapSelection (config);
+
     Array<int> selection;
 
     if (config.equalsIgnoreCase ("Bank A"))

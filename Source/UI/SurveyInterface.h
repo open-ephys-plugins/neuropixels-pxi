@@ -85,6 +85,7 @@ struct SurveyTarget
 {
     Probe* probe { nullptr };
     Array<String> electrodeConfigs;
+    Array<String> surveyConfigs;
     Array<int> electrodesToRestore;
     Array<Bank> banks;
     Array<int> shanks;
@@ -187,7 +188,8 @@ private:
         ColName = 2,
         ColType = 3,
         ColBanks = 4,
-        ColShanks = 5
+        ColShanks = 5,
+        ColOverlap = 6
     };
 
     struct RowState
@@ -199,6 +201,8 @@ private:
         int shankCount { 1 };
         Array<Bank> chosenBanks; // empty means all
         Array<int> chosenShanks; // empty means all
+        bool hasOverlappingBanks { false };
+        bool includeOverlappingBanks { false };
     };
 
     Array<RowState> rows;

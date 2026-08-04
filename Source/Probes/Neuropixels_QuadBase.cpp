@@ -90,7 +90,9 @@ Neuropixels_QuadBase::Neuropixels_QuadBase (Basestation* bs, Headstage* hs, Flex
         settings.availableReferences.add ("Ground");
 
         settings.availableElectrodeConfigurations.add ("Bank A");
+        settings.availableElectrodeConfigurations.add ("Bank A + B");
         settings.availableElectrodeConfigurations.add ("Bank B");
+        settings.availableElectrodeConfigurations.add ("Bank B + C");
         settings.availableElectrodeConfigurations.add ("Bank C");
         settings.availableElectrodeConfigurations.add ("Bank D");
         settings.availableElectrodeConfigurations.add ("Single column");
@@ -271,6 +273,14 @@ void Neuropixels_QuadBase::selectElectrodes()
 Array<int> Neuropixels_QuadBase::selectElectrodeConfiguration (String config)
 {
     Array<int> selection;
+
+    if (config.contains (" + "))
+    {
+        for (int shank = 0; shank < 4; ++shank)
+            selection.addArray (getHalfBankOverlapSelection (config, shank * 1280));
+
+        return selection;
+    }
 
     if (config.equalsIgnoreCase ("Bank A"))
     {

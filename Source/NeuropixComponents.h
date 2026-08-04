@@ -671,6 +671,7 @@ protected:
     std::unique_ptr<ActivityView> lfpView;
 
     void refreshActivityViewMapping();
+    static Array<int> getHalfBankOverlapSelection (const String& config, int electrodeOffset = 0);
 
     uint64 eventCode;
     Array<int> gains; // available gain values

@@ -300,6 +300,8 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     if (index == -1)
         return defaultReturnValue;
 
+    settings.electrodeConfigurationIndex = index;
+
     settings.selectedElectrode.clear();
 
     for (int i = 0; i < 384; i++)

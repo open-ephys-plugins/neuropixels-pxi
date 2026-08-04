@@ -157,6 +157,18 @@ void Probe::refreshActivityViewMapping()
         lfpView->setChannelToElectrodeMapping (mapping);
 }
 
+Array<int> Probe::getHalfBankOverlapSelection (const String& config, int electrodeOffset)
+{
+    Array<int> selection;
+    const int bankIndex = config[config.indexOf ("Bank ") + 5] - 'A';
+    const int firstElectrode = electrodeOffset + bankIndex * 384 + 192;
+
+    for (int electrode = firstElectrode; electrode < firstElectrode + 384; ++electrode)
+        selection.add (electrode);
+
+    return selection;
+}
+
 FirmwareUpdater::FirmwareUpdater (Basestation* basestation_, File firmwareFile_, FirmwareType type)
     : ThreadWithProgressWindow ("Firmware Update...", true, false),
       basestation (basestation_),
