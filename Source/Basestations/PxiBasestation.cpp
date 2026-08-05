@@ -37,7 +37,7 @@ void PxiBasestation::getInfo()
 {
     Neuropixels::firmware_Info firmwareInfo;
 
-    Neuropixels::bs_getFirmwareInfo (slot, &firmwareInfo);
+    Neuropixels::np_bs_getFirmwareInfo (slot, &firmwareInfo);
 
     info.boot_version = String (firmwareInfo.major) + "." + String (firmwareInfo.minor) + String (firmwareInfo.build);
 
@@ -49,14 +49,14 @@ void BasestationConnectBoard_v3::getInfo()
     int version_major;
     int version_minor;
 
-    errorCode = Neuropixels::getBSCHardwareID (basestation->slot, &info.hardwareID);
+    errorCode = Neuropixels::np_getBSCHardwareID (basestation->slot, &info.hardwareID);
 
     info.version = String (info.hardwareID.version_Major) 
         + "." + String (info.hardwareID.version_Minor);
     info.serial_number = info.hardwareID.SerialNumber;
 
     Neuropixels::firmware_Info firmwareInfo;
-    Neuropixels::bsc_getFirmwareInfo (basestation->slot, &firmwareInfo);
+    Neuropixels::np_bsc_getFirmwareInfo (basestation->slot, &firmwareInfo);
     info.boot_version = String (firmwareInfo.major) + "." + String (firmwareInfo.minor) + String (firmwareInfo.build);
 }
 
@@ -78,24 +78,24 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
 {
     bool detected = false;
 
-    Neuropixels::NP_ErrorCode errorCode = Neuropixels::openPort (slot, port);
+    Neuropixels::NP_ErrorCode errorCode = Neuropixels::np_openPort (slot, port);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
-        LOGE ("Neuropixels::openPort slot ", slot, " port ", port, ": ", Neuropixels::getErrorMessage (errorCode));
+        LOGE ("Neuropixels::openPort slot ", slot, " port ", port, ": ", Neuropixels::np_getErrorMessage (errorCode));
     }
 
-    errorCode = Neuropixels::detectHeadStage (slot, port, &detected); // check for headstage on port
+    errorCode = Neuropixels::np_detectHeadStage (slot, port, &detected); // check for headstage on port
 
     if (errorCode != Neuropixels::SUCCESS)
     {
-        LOGE ("Neuropixels::detectHeadStage slot ", slot, " port ", port, ": ", Neuropixels::getErrorMessage (errorCode));
+        LOGE ("Neuropixels::detectHeadStage slot ", slot, " port ", port, ": ", Neuropixels::np_getErrorMessage (errorCode));
     }
 
     if (detected && errorCode == Neuropixels::SUCCESS)
     {
         Neuropixels::HardwareID hardwareID;
-        Neuropixels::getHeadstageHardwareID (slot, port, &hardwareID);
+        Neuropixels::np_getHeadstageHardwareID (slot, port, &hardwareID);
 
         String hsPartNumber = String (hardwareID.ProductNumber);
 
@@ -146,7 +146,7 @@ ThreadPoolJob::JobStatus PortChecker::runJob()
             LOGC ("  No headstage detected on port: ", port);
         }
 
-        errorCode = Neuropixels::closePort (slot, port); // close port
+        errorCode = Neuropixels::np_closePort (slot, port); // close port
 
         headstage = nullptr;
     }
@@ -165,7 +165,7 @@ bool PxiBasestation::open()
 		return false;
 	}
 
-    errorCode = Neuropixels::openBS (slot);
+    errorCode = Neuropixels::np_openBS (slot);
 
     if (errorCode == Neuropixels::VERSION_MISMATCH)
     {
@@ -314,7 +314,7 @@ void PxiBasestation::initialize (bool signalChainIsLoading)
     }
 
     LOGD ("Arming basestation");
-    Neuropixels::arm (slot);
+    Neuropixels::np_arm (slot);
     LOGD ("Arming complete");
 
 }
@@ -323,43 +323,43 @@ void PxiBasestation::print_switchmatrix()
 {
     bool isConnected;
 
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXI0, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXI0, &isConnected);
     LOGC ("Slot ", slot, " connection between StatusBit and PXI0: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, &isConnected);
     LOGC ("Slot ", slot, " connection between StatusBit and SMA: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, &isConnected);
     LOGC ("Slot ", slot, " connection between StatusBit and SyncClk: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_None, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_None, &isConnected);
     LOGC ("Slot ", slot, " connection between StatusBit and None: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_TimeStampClk, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_TimeStampClk, &isConnected);
     LOGC ("Slot ", slot, " connection between StatusBit and TimestampClk: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SWTrigger1, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SWTrigger1, &isConnected);
     LOGC ("Slot ", slot, " connection between StatusBit and SWTrigger1: ", isConnected);
 
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_PXI0, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_PXI0, &isConnected);
     LOGC ("Slot ", slot, " connection between PXI0 and PXI0: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SMA, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SMA, &isConnected);
     LOGC ("Slot ", slot, " connection between PXI0 and SMA: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SyncClk, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SyncClk, &isConnected);
     LOGC ("Slot ", slot, " connection between PXI0 and SyncClk: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_None, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_None, &isConnected);
     LOGC ("Slot ", slot, " connection between PXI0 and None: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_TimeStampClk, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_TimeStampClk, &isConnected);
     LOGC ("Slot ", slot, " connection between PXI0 and TimestampClk: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SWTrigger1, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SWTrigger1, &isConnected);
     LOGC ("Slot ", slot, " connection between PXI0 and SWTrigger1: ", isConnected);
 
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXI0, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXI0, &isConnected);
     LOGC ("Slot ", slot, " connection between SMA and PXI0: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SMA, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SMA, &isConnected);
     LOGC ("Slot ", slot, " connection between SMA and SMA: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, &isConnected);
     LOGC ("Slot ", slot, " connection between SMA and SyncClk: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_None, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_None, &isConnected);
     LOGC ("Slot ", slot, " connection between SMA and None: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_TimeStampClk, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_TimeStampClk, &isConnected);
     LOGC ("Slot ", slot, " connection between SMA and TimestampClk: ", isConnected);
-    Neuropixels::switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SWTrigger1, &isConnected);
+    Neuropixels::np_switchmatrix_get (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SWTrigger1, &isConnected);
     LOGC ("Slot ", slot, " connection between SMA and SWTrigger1: ", isConnected);
 }
 
@@ -378,7 +378,7 @@ void PxiBasestation::close()
     {
         try
         {
-            errorCode = Neuropixels::closeBS (slot);
+            errorCode = Neuropixels::np_closeBS (slot);
             LOGC (" Closing probe ", probe->info.hardwareID.SerialNumber,
                 " on slot ", slot, " w/ error code: ", errorCode);
         }
@@ -392,7 +392,7 @@ void PxiBasestation::close()
 
     probesInitialized = false; // reset flag to allow re-initialization
 
-    errorCode = Neuropixels::closeBS (slot);
+    errorCode = Neuropixels::np_closeBS (slot);
 
     connected_slots.removeFirstMatchingValue (slot);
 
@@ -475,12 +475,12 @@ void PxiBasestation::setSyncAsPassive()
 {
     LOGC ("Setting slot ", slot, " sync as passive.");
 
-    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit), "switchmatrix_clear SM_Output_StatusBit");
-    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA), "switchmatrix_clear SM_Output_SMA");
-    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_PXI0), "switchmatrix_clear SM_Output_PXISYNC");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit), "switchmatrix_clear SM_Output_StatusBit");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_SMA), "switchmatrix_clear SM_Output_SMA");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_PXI0), "switchmatrix_clear SM_Output_PXISYNC");
 
-    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXI0, true), "switchmatrix_set SM_Input_PXISYNC --> SM_Output_StatusBit");
-    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXI0, true), "switchmatrix_set SM_Input_PXISYNC --> SM_Output_SMA");
+    checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_PXI0, true), "switchmatrix_set SM_Input_PXISYNC --> SM_Output_StatusBit");
+    checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_PXI0, true), "switchmatrix_set SM_Input_PXISYNC --> SM_Output_SMA");
 
     if (invertOutput)
     {
@@ -497,12 +497,12 @@ void PxiBasestation::setSyncAsInput()
 {
     LOGC ("Setting slot ", slot, " sync as input.");
 
-    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit), "switchmatrix_clear SM_Output_StatusBit");
-    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA), "switchmatrix_clear SM_Output_SMA");
-    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_PXI0), "switchmatrix_clear SM_Output_PXI0");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit), "switchmatrix_clear SM_Output_StatusBit");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_SMA), "switchmatrix_clear SM_Output_SMA");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_PXI0), "switchmatrix_clear SM_Output_PXI0");
 
-    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, true), "switchmatrix_set SM_Input_SMA --> SM_Output_StatusBit");
-    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SMA, true), "switchmatrix_set SM_Input_SMA --> SM_Output_PXI0");
+    checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, true), "switchmatrix_set SM_Input_SMA --> SM_Output_StatusBit");
+    checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SMA, true), "switchmatrix_set SM_Input_SMA --> SM_Output_PXI0");
 
     //print_switchmatrix();
 }
@@ -516,15 +516,15 @@ void PxiBasestation::setSyncAsOutput (int freqIndex)
 {
     LOGC ("Setting slot ", slot, " sync as output.");
 
-    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit), "switchmatrix_clear SM_Output_StatusBit");
-    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA), "switchmatrix_clear SM_Output_SMA");
-    checkError (Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_PXI0), "switchmatrix_clear SM_Output_PXI0");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit), "switchmatrix_clear SM_Output_StatusBit");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_SMA), "switchmatrix_clear SM_Output_SMA");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_PXI0), "switchmatrix_clear SM_Output_PXI0");
 
-    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, true), "switchmatrix_set SM_Input_SyncClk --> SM_Output_StatusBit");
-    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SyncClk, true), "switchmatrix_set SM_Input_SyncClk --> SM_Output_PXI0");
-    checkError (Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true), "switchmatrix_set SM_Input_SyncClk --> SM_Output_SMA");
+    checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, true), "switchmatrix_set SM_Input_SyncClk --> SM_Output_StatusBit");
+    checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SyncClk, true), "switchmatrix_set SM_Input_SyncClk --> SM_Output_PXI0");
+    checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true), "switchmatrix_set SM_Input_SyncClk --> SM_Output_SMA");
 
-    errorCode = checkError(Neuropixels::setSyncClockFrequency (slot, syncFrequencies[freqIndex]), "setSyncClockFrequency");
+    errorCode = checkError(Neuropixels::np_setSyncClockFrequency (slot, syncFrequencies[freqIndex]), "setSyncClockFrequency");
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -568,7 +568,7 @@ void PxiBasestation::startAcquisition()
             probe->startAcquisition();
     }
 
-    errorCode = Neuropixels::setSWTrigger (slot);
+    errorCode = Neuropixels::np_setSWTrigger (slot);
 }
 
 void PxiBasestation::stopAcquisition()
@@ -612,11 +612,11 @@ void PxiBasestation::selectEmissionSite (int port, int dock, String wavelength, 
             return;
         }
 
-        errorCode = Neuropixels::setEmissionSite (slot, port, dock, wv, site);
+        errorCode = Neuropixels::np_setEmissionSite (slot, port, dock, wv, site);
 
         LOGD (wavelength, " site ", site, " selected with error code ", errorCode);
 
-        errorCode = Neuropixels::getEmissionSite (slot, port, dock, wv, &site);
+        errorCode = Neuropixels::np_getEmissionSite (slot, port, dock, wv, &site);
 
         LOGD (wavelength, " actual site: ", site, " selected with error code ", errorCode);
     }

@@ -30,7 +30,7 @@
 
 void Neuropixels_UHD::getInfo()
 {
-    errorCode = checkError (Neuropixels::getProbeHardwareID (headstage->basestation->slot,
+    errorCode = checkError (Neuropixels::np_getProbeHardwareID (headstage->basestation->slot,
                                                              headstage->port,
                                                              dock,
                                                              &info.hardwareID),
@@ -124,7 +124,7 @@ Neuropixels_UHD::Neuropixels_UHD (Basestation* bs, Headstage* hs, Flex* fl) : Pr
 bool Neuropixels_UHD::open()
 {
     LOGC ("Opening probe...");
-    errorCode = Neuropixels::openProbe (basestation->slot, headstage->port, dock);
+    errorCode = Neuropixels::np_openProbe (basestation->slot, headstage->port, dock);
 
     LOGC ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
@@ -142,7 +142,7 @@ bool Neuropixels_UHD::open()
 
 bool Neuropixels_UHD::close()
 {
-    errorCode = Neuropixels::closeProbe (basestation->slot, headstage->port, dock);
+    errorCode = Neuropixels::np_closeProbe (basestation->slot, headstage->port, dock);
     LOGD ("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
     return errorCode == Neuropixels::SUCCESS;
@@ -150,15 +150,15 @@ bool Neuropixels_UHD::close()
 
 void Neuropixels_UHD::initialize (bool signalChainIsLoading)
 {
-    errorCode = Neuropixels::init (basestation->slot, headstage->port, dock);
+    errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, true);
     LOGD ("Neuropixels::init: errorCode: ", errorCode);
 
-    checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
-    errorCode = Neuropixels::bistSR (basestation->slot, headstage->port, dock);
+    if (! canContinueAfterProbeConfiguration (errorCode, "init"))
+        return;
 
-    if (errorCode != Neuropixels::SUCCESS)
+    if (errorCode == Neuropixels::PROBE_DEGRADATION_ERROR)
     {
-        LOGC (" Shift register error detected -- possible broken shank");
+        LOGC ("Probe degradation detected; marking the shank unprogrammable.");
 
         for (int i = 0; i < electrodeMetadata.size(); i++)
         {
@@ -166,10 +166,10 @@ void Neuropixels_UHD::initialize (bool signalChainIsLoading)
         }
     }
 
-    errorCode = Neuropixels::setOPMODE (basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
+    errorCode = Neuropixels::np_setOPMODE (basestation->slot, headstage->port, dock, Neuropixels::RECORDING);
     LOGD ("Neuropixels::setOPMODE: errorCode: ", errorCode);
 
-    errorCode = Neuropixels::setHSLed (basestation->slot, headstage->port, false);
+    errorCode = Neuropixels::np_setHSLed (basestation->slot, headstage->port, false);
     LOGDD ("Neuropixels::setHSLed: errorCode: ", errorCode);
 }
 
@@ -223,7 +223,7 @@ void Neuropixels_UHD::calibrate()
     String gainFile = gainPath.getFullPathName();
     LOGDD ("ADC file: ", adcFile);
 
-    errorCode = Neuropixels::setADCCalibration (basestation->slot, headstage->port, adcFile.toRawUTF8());
+    errorCode = Neuropixels::np_setADCCalibration (basestation->slot, headstage->port, adcFile.toRawUTF8());
 
     if (errorCode == 0)
     {
@@ -238,7 +238,7 @@ void Neuropixels_UHD::calibrate()
 
     LOGDD ("Gain file: ", gainFile);
 
-    errorCode = Neuropixels::setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
+    errorCode = Neuropixels::np_setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
 
     if (errorCode == 0)
     {
@@ -259,7 +259,7 @@ void Neuropixels_UHD::printSettings()
     int apGainIndex;
     int lfpGainIndex;
 
-    Neuropixels::getGain (basestation->slot, headstage->port, dock, 32, &apGainIndex, &lfpGainIndex);
+    Neuropixels::np_getGain (basestation->slot, headstage->port, dock, 32, &apGainIndex, &lfpGainIndex);
 
     LOGD ("Current settings for probe on slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " AP=", settings.availableApGains[apGainIndex], " LFP=", settings.availableLfpGains[lfpGainIndex], " REF=", settings.availableReferences[settings.referenceIndex]);
 }
@@ -311,7 +311,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     {
         LOGC ("Neuropixels UHD selecting column pattern: ALL");
         // select columnar configuration
-        checkError (Neuropixels::selectColumnPattern (
+        checkError (Neuropixels::np_selectColumnPattern (
                         basestation->slot,
                         headstage->port,
                         dock,
@@ -323,7 +323,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     {
         LOGC ("Neuropixels UHD selecting column pattern: OUTER"); // index 16 and 17
         // select columnar configuration
-        checkError (Neuropixels::selectColumnPattern (
+        checkError (Neuropixels::np_selectColumnPattern (
                         basestation->slot,
                         headstage->port,
                         dock,
@@ -340,7 +340,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select all groups at this bank index
         for (int group = 0; group < groupsPerBank; group++)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -356,7 +356,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G2, G6, G10, G14, G18, G22 from bank 0
         for (int group = 2; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -366,7 +366,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G0, G4, G8, G12, G16, G20 from bank 1
         for (int group = 0; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -376,7 +376,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G3, G7, G11, G15, G19, G23 from bank 2
         for (int group = 3; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -386,7 +386,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G1, G5, G9, G13, G17, G21 from bank 3
         for (int group = 1; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -403,7 +403,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G2, G6, G10, G14, G18, G22 from bank 0
         for (int group = 2; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -413,7 +413,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G3, G7, G11, G15, G19, G23 from bank 0
         for (int group = 3; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -423,7 +423,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G0, G4, G8, G12, G16, G20 from bank 1
         for (int group = 0; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -433,7 +433,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G1, G5, G9, G13, G17, G21 from bank 1
         for (int group = 1; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -450,7 +450,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G2, G6, G10, G14, G18, G22 from bank 1
         for (int group = 2; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -460,7 +460,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G3, G7, G11, G15, G19, G23 from bank 1
         for (int group = 3; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -470,7 +470,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G0, G4, G8, G12, G16, G20 from bank 0
         for (int group = 0; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -480,7 +480,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 
         // Select G1, G5, G9, G13, G17, G21 from bank 0
         for (int group = 1; group < groupsPerBank; group += 4)
-            checkError (Neuropixels::selectElectrodeGroup (
+            checkError (Neuropixels::np_selectElectrodeGroup (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -524,7 +524,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
         {
             int G = start_group + group * 4;
 
-            checkError (Neuropixels::selectElectrodeGroupMask (
+            checkError (Neuropixels::np_selectElectrodeGroupMask (
                             basestation->slot, // slot
                             headstage->port, // port
                             dock, // dock
@@ -540,7 +540,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 void Neuropixels_UHD::setApFilterState()
 {
     for (int channel = 0; channel < 384; channel++)
-        checkError(Neuropixels::setAPCornerFrequency (basestation->slot,
+        checkError(Neuropixels::np_setAPCornerFrequency (basestation->slot,
                                            headstage->port,
                                            dock,
                                            channel,
@@ -554,11 +554,11 @@ void Neuropixels_UHD::setAllGains()
 
     for (int channel = 0; channel < 384; channel++)
     {
-        checkError(Neuropixels::setGain (basestation->slot, 
-            headstage->port, 
-            dock, 
-            channel, 
-            settings.apGainIndex, 
+        checkError(Neuropixels::np_setGain (basestation->slot,
+            headstage->port,
+            dock,
+            channel,
+            settings.apGainIndex,
             settings.lfpGainIndex), "setGain");
     }
 }
@@ -592,7 +592,7 @@ void Neuropixels_UHD::setAllReferences()
     }
 
     for (int channel = 0; channel < 384; channel++)
-        checkError(Neuropixels::setReference (basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank), "setReference");
+        checkError(Neuropixels::np_setReference (basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank), "setReference");
 }
 
 void Neuropixels_UHD::writeConfiguration()
@@ -600,7 +600,7 @@ void Neuropixels_UHD::writeConfiguration()
     if (basestation->isBusy())
         basestation->waitForThreadToExit();
 
-    errorCode = checkError(Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
+    errorCode = checkError(Neuropixels::np_writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
 
     if (errorCode == Neuropixels::SUCCESS)
     {
@@ -645,7 +645,7 @@ void Neuropixels_UHD::run()
     {
         int count = MAXPACKETS;
 
-        errorCode = Neuropixels::readElectrodeData (
+        errorCode = Neuropixels::np_readElectrodeData (
             basestation->slot,
             headstage->port,
             dock,
@@ -741,7 +741,7 @@ void Neuropixels_UHD::run()
         int packetsAvailable;
         int headroom;
 
-        Neuropixels::getElectrodeDataFifoState (
+        Neuropixels::np_getElectrodeDataFifoState (
             basestation->slot,
             headstage->port,
             dock,
@@ -770,46 +770,39 @@ bool Neuropixels_UHD::runBist (BIST bistType)
     {
         case BIST::SIGNAL:
         {
-            if (Neuropixels::bistSignal (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistSignal (slot, port, dock) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
         case BIST::NOISE:
         {
-            if (Neuropixels::bistNoise (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistNoise (slot, port, dock) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
         case BIST::PSB:
         {
-            if (Neuropixels::bistPSB (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistPSB (slot, port, dock) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
-        case BIST::SR:
+        case BIST::CONFIG:
         {
-            if (Neuropixels::bistSR (slot, port, dock) == Neuropixels::SUCCESS)
-                returnValue = true;
+            returnValue = runConfigurationBistAndRestore() == Neuropixels::SUCCESS;
             break;
         }
         case BIST::EEPROM:
         {
-            if (Neuropixels::bistEEPROM (slot, port) == Neuropixels::SUCCESS)
-                returnValue = true;
-            break;
-        }
-        case BIST::I2C:
-        {
-            if (Neuropixels::bistI2CMM (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistEEPROM (slot, port) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
         case BIST::SERDES:
         {
             int errors;
-            Neuropixels::bistStartPRBS (slot, port);
+            Neuropixels::np_bistStartPRBS (slot, port);
             std::this_thread::sleep_for (std::chrono::milliseconds (200));
-            Neuropixels::bistStopPRBS (slot, port, &errors);
+            Neuropixels::np_bistStopPRBS (slot, port, &errors);
 
             if (errors == 0)
                 returnValue = true;
@@ -817,13 +810,13 @@ bool Neuropixels_UHD::runBist (BIST bistType)
         }
         case BIST::HB:
         {
-            if (Neuropixels::bistHB (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistHB (slot, port, dock) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
         case BIST::BS:
         {
-            if (Neuropixels::bistBS (slot) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistBS (slot) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }

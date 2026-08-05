@@ -31,7 +31,7 @@
 
 void Headstage1::getInfo()
 {
-    errorCode = Neuropixels::getHeadstageHardwareID (basestation->slot,
+    errorCode = Neuropixels::np_getHeadstageHardwareID (basestation->slot,
                                                      port,
                                                      &info.hardwareID);
 
@@ -43,7 +43,7 @@ void Headstage1::getInfo()
 
 void Flex1::getInfo()
 {
-    errorCode = Neuropixels::getFlexHardwareID (headstage->basestation->slot,
+    errorCode = Neuropixels::np_getFlexHardwareID (headstage->basestation->slot,
                                                 headstage->port,
                                                 dock,
                                                 &info.hardwareID);
@@ -73,9 +73,9 @@ Headstage1::Headstage1 (Basestation* bs_, int port) : Headstage (bs_, port)
 
         Neuropixels::HardwareID hardwareID;
 
-        errorCode = Neuropixels::getProbeHardwareID (basestation->slot, 
-            port, 
-            1, 
+        errorCode = Neuropixels::np_getProbeHardwareID (basestation->slot,
+            port,
+            1,
             &hardwareID);
 
         String partNumber = String (hardwareID.ProductNumber);
@@ -122,7 +122,7 @@ bool Headstage1::hasTestModule()
 {
     int vmajor;
     int vminor;
-    return Neuropixels::HST_GetVersion (basestation->slot, port, &vmajor, &vminor) == Neuropixels::SUCCESS;
+    return Neuropixels::np_HST_GetVersion (basestation->slot, port, &vmajor, &vminor) == Neuropixels::SUCCESS;
 }
 
 void Headstage1::runTestModule()
@@ -205,55 +205,55 @@ void HeadstageTestModule_v3::showResults()
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_VDD_A1V2()
 {
-    return Neuropixels::HSTestVDDA1V2 (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestVDDA1V2 (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_VDD_A1V8()
 {
-    return Neuropixels::HSTestVDDA1V8 (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestVDDA1V8 (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_VDD_D1V2()
 {
-    return Neuropixels::HSTestVDDD1V2 (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestVDDD1V2 (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_VDD_D1V8()
 {
-    return Neuropixels::HSTestVDDD1V8 (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestVDDD1V8 (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_MCLK()
 {
-    return Neuropixels::HSTestMCLK (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestMCLK (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_PCLK()
 {
-    return Neuropixels::HSTestPCLK (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestPCLK (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_PSB()
 {
-    return Neuropixels::HSTestPSB (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestPSB (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_I2C()
 {
-    return Neuropixels::HSTestI2C (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestI2C (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_NRST()
 {
-    return Neuropixels::HSTestNRST (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestNRST (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_REC_NRESET()
 {
-    return Neuropixels::HSTestREC_NRESET (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestREC_NRESET (basestation->slot, headstage->port);
 }
 
 Neuropixels::NP_ErrorCode HeadstageTestModule_v3::test_SIGNAL()
 {
-    return Neuropixels::HSTestOscillator (basestation->slot, headstage->port);
+    return Neuropixels::np_HSTestOscillator (basestation->slot, headstage->port);
 }

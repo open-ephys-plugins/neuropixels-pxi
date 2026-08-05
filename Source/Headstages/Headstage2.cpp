@@ -28,7 +28,7 @@
 
 void Headstage2::getInfo()
 {
-    errorCode = Neuropixels::getHeadstageHardwareID (basestation->slot,
+    errorCode = Neuropixels::np_getHeadstageHardwareID (basestation->slot,
                                                      port,
                                                      &info.hardwareID);
 
@@ -41,7 +41,7 @@ void Headstage2::getInfo()
 
 void Flex2::getInfo()
 {
-    errorCode = Neuropixels::getFlexHardwareID (headstage->basestation->slot,
+    errorCode = Neuropixels::np_getFlexHardwareID (headstage->basestation->slot,
                                                 headstage->port,
                                                 dock,
                                                 &info.hardwareID);
@@ -58,13 +58,13 @@ Headstage2::Headstage2 (Basestation* bs_, int port) : Headstage (bs_, port)
 
     int count;
 
-    Neuropixels::getHSSupportedProbeCount (basestation->slot, port, &count);
+    Neuropixels::np_getHSSupportedProbeCount (basestation->slot, port, &count);
 
     for (int dock = 1; dock <= count; dock++)
     {
         bool flexDetected;
 
-        Neuropixels::detectFlex (basestation->slot, port, dock, &flexDetected);
+        Neuropixels::np_detectFlex (basestation->slot, port, dock, &flexDetected);
 
         if (flexDetected)
         {

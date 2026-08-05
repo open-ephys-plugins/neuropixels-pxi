@@ -40,7 +40,7 @@ void OneBox::getInfo()
 {
     Neuropixels::firmware_Info firmwareInfo;
 
-    errorCode = Neuropixels::bs_getFirmwareInfo (slot, &firmwareInfo);
+    errorCode = Neuropixels::np_bs_getFirmwareInfo (slot, &firmwareInfo);
 
     info.boot_version = String (firmwareInfo.major) + "." + String (firmwareInfo.minor) + String (firmwareInfo.build);
     info.part_number = String (firmwareInfo.name);
@@ -68,8 +68,8 @@ OneBox::OneBox (NeuropixThread* neuropixThread, int serial_number_) : Basestatio
 
     LOGD ("Mapping OneBox with serial number ", serial_number, " to slot ", next_slot);
 
-    errorCode = Neuropixels::mapBS (serial_number, next_slot); // assign to slot ID
-    errorCode = Neuropixels::openBS (next_slot);
+    errorCode = Neuropixels::np_mapBS (serial_number, next_slot); // assign to slot ID
+    errorCode = Neuropixels::np_openBS (next_slot);
 
     if (errorCode == Neuropixels::NO_SLOT)
     {
@@ -122,7 +122,7 @@ bool OneBox::open()
     if (serial_number == -1)
         return false;
 
-    errorCode = Neuropixels::openBS (slot);
+    errorCode = Neuropixels::np_openBS (slot);
 
     if (errorCode == Neuropixels::VERSION_MISMATCH)
     {
@@ -175,12 +175,12 @@ void OneBox::searchForProbes() {
     {
         bool detected = false;
 
-        errorCode = Neuropixels::detectHeadStage (slot, port, &detected); // check for headstage on port
+        errorCode = Neuropixels::np_detectHeadStage (slot, port, &detected); // check for headstage on port
 
         if (detected && errorCode == Neuropixels::SUCCESS)
         {
             Neuropixels::HardwareID hardwareID;
-            Neuropixels::getHeadstageHardwareID (slot, port, &hardwareID);
+            Neuropixels::np_getHeadstageHardwareID (slot, port, &hardwareID);
 
             String hsPartNumber = String (hardwareID.ProductNumber);
 
@@ -246,7 +246,7 @@ void OneBox::searchForProbes() {
                 LOGDD ("  No headstage detected on port: ", port);
             }
 
-            errorCode = Neuropixels::closePort (slot, port); // close port
+            errorCode = Neuropixels::np_closePort (slot, port); // close port
 
             headstages.add (nullptr);
         }
@@ -266,7 +266,7 @@ void OneBox::initialize (bool signalChainIsLoading)
 {
 
     LOGD ("Initializing OneBox on slot ", slot);
-    Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
+    Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
 
     LOGD ("Initializing probes on slot ", slot);
     if (! probesInitialized)
@@ -282,7 +282,7 @@ void OneBox::initialize (bool signalChainIsLoading)
     LOGD ("Initializing ADC source on slot ", slot);
     adcSource->initialize (signalChainIsLoading);
 
-    errorCode = checkError(Neuropixels::arm (slot), "arm slot " + String(slot));
+    errorCode = checkError(Neuropixels::np_arm (slot), "arm slot " + String(slot));
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -299,10 +299,10 @@ void OneBox::close()
     LOGD ("Closing OneBox on slot: ", slot);
     for (auto probe : probes)
     {
-        checkError (Neuropixels::closeProbe (slot, probe->headstage->port, probe->dock), "closeProbe");
+        checkError (Neuropixels::np_closeProbe (slot, probe->headstage->port, probe->dock), "closeProbe");
     }
 
-    checkError(Neuropixels::closeBS (slot), "closeBS slot " + String(slot));
+    checkError(Neuropixels::np_closeBS (slot), "closeBS slot " + String(slot));
 
 }
 
@@ -310,21 +310,21 @@ void OneBox::setSyncAsInput()
 {
     LOGC ("Setting slot ", slot, " sync as input.");
 
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit);
+    errorCode = Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC ("Failed to clear SM_Output_StatusBit on slot ", slot, ", error code = ", errorCode);
     }
 
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA);
+    errorCode = Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_SMA);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC ("Failed to clear SM_Output_SMA on slot ", slot, ", error code = ", errorCode);
     }
 
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, true);
+    errorCode = Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SMA, true);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -341,35 +341,35 @@ void OneBox::setSyncAsOutput (int freqIndex)
 {
     LOGC ("Setting slot ", slot, " sync as output.");
 
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit);
+    errorCode = Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_StatusBit);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC ("Failed to clear SM_Output_StatusBit on slot ", slot, ", error code = ", errorCode);
     }
 
-    errorCode = Neuropixels::switchmatrix_clear (slot, Neuropixels::SM_Output_SMA);
+    errorCode = Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_SMA);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC ("Failed to clear SM_Output_SMA1 on slot ", slot, ", error code = ", errorCode);
     }
 
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, true);
+    errorCode = Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_StatusBit, Neuropixels::SM_Input_SyncClk, true);
     
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC ("Failed to connect SM_Output_StatusBit and SM_Input_SyncClk on slot ", slot, ", error code = ", errorCode);
     }
     
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true);
+    errorCode = Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_SMA, Neuropixels::SM_Input_SyncClk, true);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGC ("Failed to connect SM_Output_SMA1 and SM_Input_SyncClk on slot ", slot, ", error code = ", errorCode);
     }
 
-    errorCode = Neuropixels::setSyncClockFrequency (slot, syncFrequencies[freqIndex]);
+    errorCode = Neuropixels::np_setSyncClockFrequency (slot, syncFrequencies[freqIndex]);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -424,12 +424,12 @@ void OneBox::startAcquisition()
 
     adcSource->startAcquisition();
 
-    errorCode = Neuropixels::switchmatrix_set (slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
+    errorCode = Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true);
 
     LOGD ("OneBox software trigger");
-    checkError (Neuropixels::setSWTrigger (slot), "setSWTrigger slot " + String (slot));
-    checkError (Neuropixels::arm (slot), "arm slot " + String (slot));
-    errorCode = Neuropixels::setSWTrigger (slot);
+    checkError (Neuropixels::np_setSWTrigger (slot), "setSWTrigger slot " + String (slot));
+    checkError (Neuropixels::np_arm (slot), "arm slot " + String (slot));
+    errorCode = Neuropixels::np_setSWTrigger (slot);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -447,5 +447,5 @@ void OneBox::stopAcquisition()
 
     adcSource->stopAcquisition();
 
-    errorCode = Neuropixels::arm (slot);
+    errorCode = Neuropixels::np_arm (slot);
 }

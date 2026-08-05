@@ -35,7 +35,7 @@ OneBoxDAC::OneBoxDAC (Basestation* bs_) : DataSource (bs_)
 
 void OneBoxDAC::initialize (bool signalChainIsLoading)
 {
-    checkError(Neuropixels::waveplayer_setSampleFrequency (basestation->slot,
+    checkError(Neuropixels::np_waveplayer_setSampleFrequency (basestation->slot,
                                                             30000.0f),
                 "waveplayer_setSampleFrequency");
 }
@@ -67,14 +67,14 @@ void OneBoxDAC::setWaveform (Array<float> samples)
     for (int i = 0; i < 100; i++)
         samples_t.add (0);
 
-    checkError(Neuropixels::waveplayer_writeBuffer (basestation->slot, samples_t.getRawDataPointer(), samples_t.size()), "waveplayer_writeBuffer");
+    checkError(Neuropixels::np_waveplayer_writeBuffer (basestation->slot, samples_t.getRawDataPointer(), samples_t.size()), "waveplayer_writeBuffer");
 
-    checkError(Neuropixels::waveplayer_arm (basestation->slot, true), "waveplayer_arm");
+    checkError(Neuropixels::np_waveplayer_arm (basestation->slot, true), "waveplayer_arm");
 }
 
 void OneBoxDAC::playWaveform()
 {
-    checkError (Neuropixels::setSWTriggerEx (basestation->slot, Neuropixels::swtrigger2), "setSWTriggerEx");
+    checkError (Neuropixels::np_setSWTriggerEx (basestation->slot, Neuropixels::swtrigger2), "setSWTriggerEx");
 
     LOGC ("Playing waveform");
 }
@@ -93,21 +93,21 @@ void OneBoxDAC::configureDataPlayer (int DACChannel, int portID, int dockID, int
     else
         sourceType = Neuropixels::SourceLFP;
 
-    errorCode = Neuropixels::DAC_setProbeSniffer (basestation->slot, DACChannel, portID, dockID, channelnr, sourcetype);
+    errorCode = Neuropixels::np_DAC_setProbeSniffer (basestation->slot, DACChannel, portID, dockID, channelnr, sourcetype);
 
     LOGC ("DAC_setProbeSniffer error code: ", errorCode);
 }
 
 void OneBoxDAC::disableOutput (int chan)
 {
-    errorCode = Neuropixels::DAC_enableOutput (basestation->slot, chan, false);
+    errorCode = Neuropixels::np_DAC_enableOutput (basestation->slot, chan, false);
 
     LOGC ("Disabling DAC ", chan);
 }
 
 void OneBoxDAC::enableOutput (int chan)
 {
-    errorCode = Neuropixels::DAC_enableOutput (basestation->slot, chan, true);
+    errorCode = Neuropixels::np_DAC_enableOutput (basestation->slot, chan, true);
 
     LOGC ("Enabling DAC ", chan);
 }

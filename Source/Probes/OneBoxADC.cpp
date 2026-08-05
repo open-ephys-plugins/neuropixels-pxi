@@ -40,7 +40,7 @@ OneBoxADC::OneBoxADC (Basestation* bs, OneBoxDAC* dac_) : DataSource (bs),
 
     LOGD ("Initializing OneBoxADC");
 
-    errorCode = Neuropixels::ADC_enableProbe (basestation->slot, true);
+    errorCode = Neuropixels::np_ADC_enableProbe (basestation->slot, true);
 
     if (errorCode != Neuropixels::SUCCESS)
     {
@@ -56,7 +56,7 @@ OneBoxADC::OneBoxADC (Basestation* bs, OneBoxDAC* dac_) : DataSource (bs),
         useAsDigitalInput[i] = false;
         waveplayerTrigger[i] = false;
 
-        Neuropixels::DAC_enableOutput (basestation->slot, i, false);
+        Neuropixels::np_DAC_enableOutput (basestation->slot, i, false);
         setAdcThresholdLevel (AdcThresholdLevel::ONE_VOLT, i);
         setAdcComparatorState (AdcComparatorState::COMPARATOR_OFF, i);
     }
@@ -127,25 +127,25 @@ void OneBoxADC::setAdcInputRange (AdcInputRange range)
     switch (range)
     {
         case AdcInputRange::PLUSMINUS2PT5V:
-            Neuropixels::ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_2_5V);
+            Neuropixels::np_ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_2_5V);
             bitVolts = 2.5f / float (pow (2, 15));
             inputRange = AdcInputRange::PLUSMINUS2PT5V;
             break;
 
         case AdcInputRange::PLUSMINUS5V:
-            Neuropixels::ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_5V);
+            Neuropixels::np_ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_5V);
             bitVolts = 5.0f / float (pow (2, 15));
             inputRange = AdcInputRange::PLUSMINUS5V;
             break;
 
         case AdcInputRange::PLUSMINUS10V:
-            Neuropixels::ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_10V);
+            Neuropixels::np_ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_10V);
             bitVolts = 10.0f / float (pow (2, 15));
             inputRange = AdcInputRange::PLUSMINUS10V;
             break;
 
         default:
-            Neuropixels::ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_5V);
+            Neuropixels::np_ADC_setVoltageRange (basestation->slot, Neuropixels::ADC_RANGE_5V);
             bitVolts = 5.0f / float (pow (2, 15));
             inputRange = AdcInputRange::PLUSMINUS5V;
             break;
@@ -173,21 +173,21 @@ void OneBoxADC::setAdcThresholdLevel (AdcThresholdLevel level, int channel)
     switch (level)
     {
         case AdcThresholdLevel::ONE_VOLT:
-            Neuropixels::ADC_setComparatorThreshold (basestation->slot,
+            Neuropixels::np_ADC_setComparatorThreshold (basestation->slot,
                                                      channel,
                                                      0.5f,
                                                      1.0f);
             thresholdLevels[channel] = AdcThresholdLevel::ONE_VOLT;
             break;
         case AdcThresholdLevel::THREE_VOLTS:
-            Neuropixels::ADC_setComparatorThreshold (basestation->slot,
+            Neuropixels::np_ADC_setComparatorThreshold (basestation->slot,
                                                      channel,
                                                      1.5f,
                                                      3.0f);
             thresholdLevels[channel] = AdcThresholdLevel::THREE_VOLTS;
             break;
         default:
-            Neuropixels::ADC_setComparatorThreshold (basestation->slot,
+            Neuropixels::np_ADC_setComparatorThreshold (basestation->slot,
                                                      channel,
                                                      0.5f,
                                                      1.0f);
@@ -271,7 +271,7 @@ void OneBoxADC::run()
         double timestamps[MAXPACKETS];
         uint64 event_codes[MAXPACKETS];
 
-        errorCode = Neuropixels::ADC_readPackets (basestation->slot,
+        errorCode = Neuropixels::np_ADC_readPackets (basestation->slot,
                                                   &packetInfo[0],
                                                   &data[0],
                                                   NUM_ADCS_AND_COMPARATORS,
@@ -313,7 +313,7 @@ void OneBoxADC::run()
             LOGD ("readPackets error code: ", errorCode, " for ADCs");
         }
 
-        Neuropixels::ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom);
+        Neuropixels::np_ADC_getPacketFifoStatus (basestation->slot, &packetsAvailable, &headroom);
 
         if (packetsAvailable < MAXPACKETS)
         {

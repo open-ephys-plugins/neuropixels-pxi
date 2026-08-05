@@ -381,20 +381,17 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         availableBists.add (BIST::PSB);
         bistComboBox->addItem ("Test PSB bus", 4);
 
-        availableBists.add (BIST::SR);
-        bistComboBox->addItem ("Test shift registers", 5);
+        availableBists.add (BIST::CONFIG);
+        bistComboBox->addItem ("Test probe configuration", 5);
 
         availableBists.add (BIST::EEPROM);
         bistComboBox->addItem ("Test EEPROM", 6);
 
-        availableBists.add (BIST::I2C);
-        bistComboBox->addItem ("Test I2C", 7);
-
         availableBists.add (BIST::SERDES);
-        bistComboBox->addItem ("Test Serdes", 8);
+        bistComboBox->addItem ("Test Serdes", 7);
 
         availableBists.add (BIST::HB);
-        bistComboBox->addItem ("Test Heartbeat", 9);
+        bistComboBox->addItem ("Test Heartbeat", 8);
 
         bistComboBox->setSelectedId (1, dontSendNotification);
         addAndMakeVisible (bistComboBox.get());

@@ -195,12 +195,11 @@ enum class BIST
     SIGNAL = 1,
     NOISE = 2,
     PSB = 3,
-    SR = 4,
+    CONFIG = 4,
     EEPROM = 5,
-    I2C = 6,
-    SERDES = 7,
-    HB = 8,
-    BS = 9
+    SERDES = 6,
+    HB = 7,
+    BS = 8
 };
 
 enum class FirmwareType
@@ -326,7 +325,7 @@ public:
     {
         if (error != Neuropixels::SUCCESS)
         {
-            LOGE (function, ": ", Neuropixels::getErrorMessage (error));
+            LOGE (function, ": ", Neuropixels::np_getErrorMessage (error));
         }
 
         return error;
@@ -351,7 +350,7 @@ public:
         int version_major;
         int version_minor;
         int version_patch;
-        Neuropixels::getAPIVersion (&version_major, &version_minor, &version_patch);
+        Neuropixels::np_getAPIVersion (&version_major, &version_minor, &version_patch);
 
         info.version = String (version_major) + "."
                        + String (version_minor) + "."
@@ -669,6 +668,9 @@ public:
 protected:
     std::unique_ptr<ActivityView> apView;
     std::unique_ptr<ActivityView> lfpView;
+
+    bool canContinueAfterProbeConfiguration (Neuropixels::NP_ErrorCode result, const String& operation);
+    Neuropixels::NP_ErrorCode runConfigurationBistAndRestore (uint8_t* shankOkMask = nullptr);
 
     void refreshActivityViewMapping();
     static Array<int> getHalfBankOverlapSelection (const String& config, int electrodeOffset = 0);

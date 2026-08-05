@@ -30,7 +30,7 @@
 
 void Neuropixels2::getInfo()
 {
-    errorCode = checkError (Neuropixels::getProbeHardwareID (headstage->basestation->slot,
+    errorCode = checkError (Neuropixels::np_getProbeHardwareID (headstage->basestation->slot,
                                                              headstage->port,
                                                              dock,
                                                              &info.hardwareID),
@@ -159,7 +159,7 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
 
 bool Neuropixels2::open()
 {
-    checkError (Neuropixels::openProbe (basestation->slot, headstage->port, dock),
+    checkError (Neuropixels::np_openProbe (basestation->slot, headstage->port, dock),
                 "openProbe: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
 
     ap_timestamp = 0;
@@ -175,7 +175,7 @@ bool Neuropixels2::open()
 
 bool Neuropixels2::close()
 {
-    checkError (Neuropixels::closeProbe (basestation->slot, headstage->port, dock),
+    checkError (Neuropixels::np_closeProbe (basestation->slot, headstage->port, dock),
                 "closeProbe: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
 
     return errorCode == Neuropixels::SUCCESS;
@@ -183,43 +183,48 @@ bool Neuropixels2::close()
 
 void Neuropixels2::initialize (bool signalChainIsLoading)
 {
-    errorCode = checkError (Neuropixels::init (basestation->slot, headstage->port, dock),
+    errorCode = checkError (Neuropixels::np_init (basestation->slot, headstage->port, dock, true),
                 "init: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
 
-    checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
-    uint8_t shanksOkMask;
-    errorCode = Neuropixels::bistSR (basestation->slot, headstage->port, dock, &shanksOkMask);
+    if (! canContinueAfterProbeConfiguration (errorCode, "init"))
+        return;
 
-    if (errorCode != Neuropixels::SUCCESS)
+    if (errorCode == Neuropixels::PROBE_DEGRADATION_ERROR)
     {
-        LOGC (" Shift register error detected -- possible broken shank");
-
-        int shankCount;
         if (settings.probeType == ProbeType::NP2_4)
         {
-            shankCount = 4;
+            uint8_t shanksOkMask = 0;
+            errorCode = runConfigurationBistAndRestore (&shanksOkMask);
+
+            if (! canContinueAfterProbeConfiguration (errorCode, "bistConfig"))
+                return;
+
+            for (int shank = 0; shank < 4; shank++)
+            {
+                if (((shanksOkMask >> shank) & 1) == 0)
+                {
+                    LOGC ("Shank ", shank + 1, " appears to be broken.");
+
+                    for (int i = 0; i < electrodeMetadata.size(); i++)
+                    {
+                        if (electrodeMetadata.getReference (i).shank == shank)
+                            electrodeMetadata.getReference (i).shank_is_programmable = false;
+                    }
+                }
+            }
         }
         else
         {
-            shankCount = 1;
-        }
+            LOGC ("Probe degradation detected; marking the shank unprogrammable.");
 
-        for (int shank = 0; shank < shankCount; shank++)
-        {
-            if (((shanksOkMask >> shank) & 1) == 0)
+            for (int i = 0; i < electrodeMetadata.size(); i++)
             {
-                LOGC ("Shank ", shank + 1, " appears to be broken.");
-
-                for (int i = 0; i < electrodeMetadata.size(); i++)
-                {
-                    if (electrodeMetadata.getReference (i).shank == shank)
-                        electrodeMetadata.getReference (i).shank_is_programmable = false;
-                }
+                electrodeMetadata.getReference (i).shank_is_programmable = false;
             }
         }
     }
 
-    errorCode = Neuropixels::setHSLed (basestation->slot, headstage->port, false);
+    errorCode = Neuropixels::np_setHSLed (basestation->slot, headstage->port, false);
     LOGDD ("Neuropixels::setHSLed: errorCode: ", errorCode);
 }
 
@@ -265,7 +270,7 @@ void Neuropixels2::calibrate()
 
     LOGD ("Gain file: ", gainFile);
 
-    errorCode = checkError (Neuropixels::setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8()), "setGainCalibration");
+    errorCode = checkError (Neuropixels::np_setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8()), "setGainCalibration");
 
     if (errorCode == 0)
     {
@@ -277,7 +282,7 @@ void Neuropixels2::calibrate()
         isCalibrated = false;
     }
 
-    errorCode = Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false);
+    errorCode = Neuropixels::np_writeProbeConfiguration (basestation->slot, headstage->port, dock, false);
 
     if (! errorCode == Neuropixels::SUCCESS)
     {
@@ -303,7 +308,7 @@ void Neuropixels2::selectElectrodes()
 
     for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
     {
-        checkError(Neuropixels::selectElectrode (basestation->slot,
+        checkError(Neuropixels::np_selectElectrode (basestation->slot,
                                            headstage->port,
                                            dock,
                                            settings.selectedChannel[ch],
@@ -694,7 +699,7 @@ void Neuropixels2::setAllReferences()
         // disconnect the four shank switches first
         for (int shank = 0; shank < 4; shank++)
         {
-            Neuropixels::setReference (basestation->slot,
+            Neuropixels::np_setReference (basestation->slot,
                                        headstage->port,
                                        dock,
                                        0,
@@ -715,7 +720,7 @@ void Neuropixels2::setAllReferences()
             //std::cout << "Shank for channel " << settings.selectedChannel[channel_idx] << " is " << shank << std::endl;
         }
 
-        errorCode = Neuropixels::setReference (basestation->slot,
+        errorCode = Neuropixels::np_setReference (basestation->slot,
                                                            headstage->port,
                                                            dock,
                                                            settings.selectedChannel[channel_idx],
@@ -735,7 +740,7 @@ void Neuropixels2::setAllReferences()
 void Neuropixels2::writeConfiguration()
 {
 
-    errorCode = checkError(Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false) , "writeProbeConfiguration");
+    errorCode = checkError(Neuropixels::np_writeProbeConfiguration (basestation->slot, headstage->port, dock, false) , "writeProbeConfiguration");
 
 }
 
@@ -770,7 +775,7 @@ void Neuropixels2::run()
     {
         int count = MAXPACKETS;
 
-        errorCode = Neuropixels::readPackets (
+        errorCode = Neuropixels::np_readPackets (
             basestation->slot,
             headstage->port,
             dock,
@@ -840,7 +845,7 @@ void Neuropixels2::run()
         int packetsAvailable;
         int headroom;
 
-        Neuropixels::getPacketFifoStatus (
+        Neuropixels::np_getPacketFifoStatus (
             basestation->slot,
             headstage->port,
             dock,
@@ -871,59 +876,39 @@ bool Neuropixels2::runBist (BIST bistType)
     {
         case BIST::SIGNAL:
         {
-            if (Neuropixels::bistSignal (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistSignal (slot, port, dock) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
         case BIST::NOISE:
         {
-            if (Neuropixels::bistNoise (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistNoise (slot, port, dock) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
         case BIST::PSB:
         {
-            if (Neuropixels::bistPSB (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistPSB (slot, port, dock) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
-        case BIST::SR:
+        case BIST::CONFIG:
         {
-            uint8_t shanksOkMask;
-            Neuropixels::NP_ErrorCode errorCode = Neuropixels::bistSR (slot, port, dock, &shanksOkMask);
-
-            if (errorCode == Neuropixels::SUCCESS)
-                returnValue = true;
-            else
-            {
-                LOGD ("SR BIST failed with shank mask: ", (int) shanksOkMask);
-                LOGC ("shank 1 status: ", shanksOkMask & 1);
-                LOGC ("shank 2 status: ", (shanksOkMask >> 1) & 1);
-                LOGC ("shank 3 status: ", (shanksOkMask >> 2) & 1);
-                LOGC ("shank 4 status: ", (shanksOkMask >> 3) & 1);
-
-            }
-            checkError (Neuropixels::writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
+            returnValue = runConfigurationBistAndRestore() == Neuropixels::SUCCESS;
             break;
         }
         case BIST::EEPROM:
         {
-            if (Neuropixels::bistEEPROM (slot, port) == Neuropixels::SUCCESS)
-                returnValue = true;
-            break;
-        }
-        case BIST::I2C:
-        {
-            if (Neuropixels::bistI2CMM (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistEEPROM (slot, port) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
         case BIST::SERDES:
         {
             int errors;
-            Neuropixels::bistStartPRBS (slot, port);
+            Neuropixels::np_bistStartPRBS (slot, port);
             std::this_thread::sleep_for (std::chrono::milliseconds (200));
-            Neuropixels::bistStopPRBS (slot, port, &errors);
+            Neuropixels::np_bistStopPRBS (slot, port, &errors);
 
             if (errors == 0)
                 returnValue = true;
@@ -931,13 +916,13 @@ bool Neuropixels2::runBist (BIST bistType)
         }
         case BIST::HB:
         {
-            if (Neuropixels::bistHB (slot, port, dock) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistHB (slot, port, dock) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }
         case BIST::BS:
         {
-            if (Neuropixels::bistBS (slot) == Neuropixels::SUCCESS)
+            if (Neuropixels::np_bistBS (slot) == Neuropixels::SUCCESS)
                 returnValue = true;
             break;
         }

@@ -57,10 +57,10 @@ void Initializer::run()
 {
     setProgress (-1); // endless moving progress bar
 
-    Neuropixels::NP_ErrorCode scanEC = Neuropixels::scanBS();
+    Neuropixels::NP_ErrorCode scanEC = Neuropixels::np_scanBS();
     if (scanEC != Neuropixels::SUCCESS)
     {
-        LOGC ("Error scanning for basestations, , error code: ", Neuropixels::getErrorMessage (scanEC));
+        LOGC ("Error scanning for basestations, , error code: ", Neuropixels::np_getErrorMessage (scanEC));
         CoreServices::sendStatusMessage ("Error scanning for basestations");
         return;
     }
@@ -77,7 +77,7 @@ void Initializer::run()
             int countForType = 0;
             for (int slot = pxiSlotMin; slot <= pxiSlotMax; slot++)
             {
-                Neuropixels::NP_ErrorCode ec = Neuropixels::getDeviceInfo (slot, &list[0]);
+                Neuropixels::NP_ErrorCode ec = Neuropixels::np_getDeviceInfo (slot, &list[0]);
 
                 LOGD ("Device ID: ", list[0].ID, ", Platform ID: ", list[0].platformid, ", Slot: ", slot, ", Error code: ", ec);
 
@@ -131,7 +131,7 @@ void Initializer::run()
         }
         else if (type == ONEBOX)
         {
-            int count = getDeviceList (&list[0], 16);
+            int count = Neuropixels::np_getDeviceList (&list[0], 16);
             LOGC ("  Found ", count, " device", count == 1 ? "." : "s.");
 
             for (int i = 0; i < count; i++)
@@ -197,7 +197,7 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
         Neuropixels::ftdi_driver_version_t requiredFtdiDriverVersion;
         bool is_driver_present, is_version_ok;
 
-        Neuropixels::checkFtdiDriver (&requiredFtdiDriverVersion,
+        Neuropixels::np_checkFtdiDriver (&requiredFtdiDriverVersion,
                                       &currentFtdiDriverVersion,
                                       &is_driver_present,
                                       &is_version_ok);
@@ -220,7 +220,7 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
             {
                 AlertWindow::showMessageBox (AlertWindow::WarningIcon,
                                              "FTDI driver version mismatch",
-                                             "The installed FTDI driver version is not compatible with the OneBox. \n\nPlease close the GUI, install driver version 1.3.0.10, and then restart the GUI.\n\nSee the Open Ephys GUI documentation site for installation instructions.",
+                                             "The installed FTDI driver version is not compatible with the OneBox. \n\nPlease close the GUI, install driver version 1.4.0.1, and then restart the GUI.\n\nSee the Open Ephys GUI documentation site for installation instructions.",
                                              "OK");
             }
         }
@@ -630,8 +630,8 @@ void NeuropixThread::initializeBasestations (bool signalChainIsLoading)
         basestation->initialize (signalChainIsLoading); // prepares probes for acquisition; may be slow
     }
 
-    //Neuropixels::setParameter (Neuropixels::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
-    //Neuropixels::setParameter (Neuropixels::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
+    //Neuropixels::np_setParameter (Neuropixels::NP_PARAM_BUFFERSIZE, MAXSTREAMBUFFERSIZE);
+    //Neuropixels::np_setParameter (Neuropixels::NP_PARAM_BUFFERCOUNT, MAXSTREAMBUFFERCOUNT);
 
     initializationComplete = true;
 }

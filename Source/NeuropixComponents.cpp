@@ -50,6 +50,76 @@ Probe::Probe (Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_)
     }
 }
 
+bool Probe::canContinueAfterProbeConfiguration (Neuropixels::NP_ErrorCode result, const String& operation)
+{
+    if (result == Neuropixels::SUCCESS)
+        return true;
+
+    if (result == Neuropixels::PROBE_DEGRADATION_ERROR)
+    {
+        LOGC ("Probe degradation detected during ", operation, " on slot ", basestation->slot,
+              " port ", headstage->port, " dock ", dock, "; continuing with usable shanks.");
+        return true;
+    }
+
+    if (result == Neuropixels::PROBE_CONFIGURATION_FAILURE)
+    {
+        LOGE ("Probe configuration failed during ", operation, " on slot ", basestation->slot,
+              " port ", headstage->port, " dock ", dock, ".");
+    }
+    else
+    {
+        LOGE ("Probe initialization terminated during ", operation, " on slot ", basestation->slot,
+              " port ", headstage->port, " dock ", dock, ": ", Neuropixels::np_getErrorMessage (result));
+    }
+
+    isEnabled = false;
+    setStatus (SourceStatus::DISABLED);
+    return false;
+}
+
+Neuropixels::NP_ErrorCode Probe::runConfigurationBistAndRestore (uint8_t* shankOkMask)
+{
+    uint8_t returnedShankOkMask = 0;
+    const auto bistResult = Neuropixels::np_bistConfig (basestation->slot,
+                                                        headstage->port,
+                                                        dock,
+                                                        &returnedShankOkMask);
+
+    if (bistResult == Neuropixels::SUCCESS)
+    {
+        LOGD ("Configuration BIST passed with shank mask: ", (int) returnedShankOkMask);
+    }
+    else if (bistResult == Neuropixels::PROBE_DEGRADATION_ERROR)
+    {
+        LOGC ("Configuration BIST detected probe degradation; shank mask: ", (int) returnedShankOkMask);
+    }
+    else if (bistResult == Neuropixels::PROBE_CONFIGURATION_FAILURE)
+    {
+        LOGE ("Configuration BIST detected base/configuration failure; shank mask: ", (int) returnedShankOkMask);
+    }
+    else
+    {
+        LOGE ("Configuration BIST terminated: ", Neuropixels::np_getErrorMessage (bistResult));
+    }
+
+    if (shankOkMask != nullptr
+        && (bistResult == Neuropixels::SUCCESS
+            || bistResult == Neuropixels::PROBE_DEGRADATION_ERROR
+            || bistResult == Neuropixels::PROBE_CONFIGURATION_FAILURE))
+    {
+        *shankOkMask = returnedShankOkMask;
+    }
+
+    const auto restoreResult = checkError (Neuropixels::np_writeProbeConfiguration (basestation->slot,
+                                                                                     headstage->port,
+                                                                                     dock,
+                                                                                     false),
+                                           "restoreProbeConfigurationAfterBist");
+
+    return restoreResult == Neuropixels::SUCCESS ? bistResult : restoreResult;
+}
+
 void Probe::updateOffsets (float* samples, int64 timestamp, bool isApBand)
 {
     if (isApBand && timestamp > 30000 * 5) // wait for amplifiers to settle
@@ -213,9 +283,10 @@ void FirmwareUpdater::run()
         }
         else
         {
-            Neuropixels::bsc_updateFirmware (basestation->slot,
+            Neuropixels::np_bsc_updateFirmware (basestation->slot,
                                              firmwareFilePath.getCharPointer(),
-                                             firmwareUpdateCallback);
+                                             firmwareUpdateCallback,
+                                             false);
         }
     }
 
@@ -232,9 +303,10 @@ void FirmwareUpdater::run()
         }
         else
         {
-            Neuropixels::bs_updateFirmware (basestation->slot,
+            Neuropixels::np_bs_updateFirmware (basestation->slot,
                                             firmwareFilePath.getCharPointer(),
-                                            firmwareUpdateCallback);
+                                            firmwareUpdateCallback,
+                                            false);
         }
     }
 }

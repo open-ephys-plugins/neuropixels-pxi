@@ -1,5 +1,5 @@
 /********************************
- * Copyright (C) Imec 2024      *
+ * Copyright (C) Imec 2025      *
  *                              *
  * Neuropixels C/C++ API header *
  ********************************/
@@ -15,13 +15,24 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define NP_EXPORT __declspec(dllexport)
-#define NP_CALLBACK __stdcall
+#ifdef NP_DLL_EXPORT
+#define NP_EXPORT extern "C" __declspec(dllexport)
+#else
+#ifndef __cplusplus
+#define NP_EXPORT __declspec(dllimport)
+#else
+#define NP_EXPORT extern "C" __declspec(dllimport)
+#endif
+#endif
 
+#define NP_APIC __stdcall
+
+#ifdef __cplusplus
 /**
  * @brief Main Neuropixels API namespace. All external functions are included in this namespace.
  */
 namespace Neuropixels {
+#endif
 
     /** Flag set of hardware basestation selection. */
     typedef enum {
@@ -37,17 +48,17 @@ namespace Neuropixels {
      * This struct is a return value only
      * The combination of \c platformid and \c ID form a unique tuple to identify a basestation
      */
-    struct basestationID {
+    typedef struct basestationID {
         NPPlatformID_t platformid; /**< Type of basestation platform. Can be USB/PXI */
         int   ID; /**< Unique ID for the specific platform. Each platform has its own  */
-    };
+    }basestationID;
 
-    struct firmware_Info {
+    typedef struct firmware_Info {
         int major;
         int minor;
         int build;
         char name[64];
-    };
+    }firmware_Info;
 
     typedef struct {
         int vmajor;
@@ -84,11 +95,11 @@ namespace Neuropixels {
         SourceSt3 = 3 /**<Source for Channel 1152-1535 for NP2.0 quad-base.*/
     } streamsource_t;
 
-    struct PacketInfo {
+    typedef struct PacketInfo {
         uint32_t Timestamp; /**<Timestamp from the 100kHz clock */
         uint16_t Status; /**<The status word */
         uint16_t payloadlength; /**<Length of the payload*/
-    };
+    }PacketInfo;
 
     /**
      * Neuropix API error codes
@@ -121,7 +132,6 @@ namespace Neuropixels {
         NO_LOCK = 24,/**< missing serializer clock, probably a bad cable or connection */
         WRONG_AP = 25,/**< AP gain number out of range */
         WRONG_LFP = 26,/**< LFP gain number out of range */
-        ERROR_SR_CHAIN = 27,/**< Validation of SRChain data upload failed */
         IO_ERROR = 30,/**< a data stream IO error occurred. */
         NO_SLOT = 31,/**< no Neuropix board found at the specified slot number */
         WRONG_SLOT = 32,/**<  the specified slot is out of bound */
@@ -148,6 +158,8 @@ namespace Neuropixels {
         PROGRAMMING_FAILED = 56, /**< Firmware programming failed (e.g.: incorrect readback) */
         NO_IMU = 57, /**< Function requires a connected IMU but none was detected */
         DESERIALIZER_MODE_ERROR = 58, /**< Deserializer was powered on with incorrect configuration */
+        PROBE_DEGRADATION_ERROR = 59, /**< Probe degradation detected */
+        PROBE_CONFIGURATION_FAILURE = 62, /**< Probe cannot be configured */
         NOTSUPPORTED = 0xFE,/**<  the function is not supported */
         NOTIMPLEMENTED = 0xFF/**<  the function is not implemented */
     }NP_ErrorCode;
@@ -302,6 +314,11 @@ namespace Neuropixels {
         SERDES_ERROR_COUNT_1024,
     } serdes_error_count_t;
 
+    typedef enum {
+        SERDES_DEV_SERIALIZER,  //!< headstage serializer
+        SERDES_DEV_DESERIALIZER //!< basestation serializer
+    } serdes_device_t;
+
     typedef void* np_streamhandle_t;
 
     typedef void* probeinfo_result_t;
@@ -311,19 +328,19 @@ namespace Neuropixels {
     /**
      * \brief Returns the major, minor and patch version number of the API library.
      */
-    NP_EXPORT void getAPIVersion(int* version_major, int* version_minor, int* version_patch);
+    NP_EXPORT void NP_APIC np_getAPIVersion(int* version_major, int* version_minor, int* version_patch);
     /**
      * \brief Returns the full version string of the API library
      *
      * @param[out] buffer:   The destination buffer.
      * @param[in]  size:     The size of the destination buffer.
      */
-    NP_EXPORT size_t getAPIVersionFull(char* buffer, size_t size);
+    NP_EXPORT size_t NP_APIC np_getAPIVersionFull(char* buffer, size_t size);
 
     /**
      * \brief Returns the minimum required FTDI Driver version number that is expected by the API library
      */
-    NP_EXPORT void getMinimumFtdiDriverVersion(int* version_major, int* version_minor, int* version_build);
+    NP_EXPORT void NP_APIC np_getMinimumFtdiDriverVersion(int* version_major, int* version_minor, int* version_build);
 
     /**
      * \brief Checks if FTDI Driver is installed and the version of the driver is okay for the API.
@@ -342,7 +359,7 @@ namespace Neuropixels {
      * @param[out] is_driver_present:   True if we were able to determine the installed driver version.
      * @param[out] is_version_ok:       True if the installed driver version meets the minimum requirements.
      */
-    NP_EXPORT void checkFtdiDriver(ftdi_driver_version_t* required,
+    NP_EXPORT void NP_APIC np_checkFtdiDriver(ftdi_driver_version_t* required,
                                    ftdi_driver_version_t* current,
                                    bool* is_driver_present,
                                    bool* is_version_ok);
@@ -360,7 +377,7 @@ namespace Neuropixels {
      * @param bsc_supported[out] True if current BSC firmware is supported by the API
      * @returns NOTSUPPORTED if slotID is not a PXIe slot
      */
-    NP_EXPORT NP_ErrorCode checkBasestationSupported(int slotID, firmware_Info* carrier, firmware_Info* bsc, bool* carrier_supported, bool* bsc_supported);
+    NP_EXPORT NP_ErrorCode NP_APIC np_checkBasestationSupported(int slotID, firmware_Info* carrier, firmware_Info* bsc, bool* carrier_supported, bool* bsc_supported);
 
     /**
      * \brief Read the last error message.
@@ -369,7 +386,7 @@ namespace Neuropixels {
      * @param[in]  buffer_size: Size of the destination buffer.
      * @returns Amount of characters written to the destination buffer.
      */
-    NP_EXPORT size_t getLastErrorMessage(char* buffer, size_t buffer_size);
+    NP_EXPORT size_t NP_APIC np_getLastErrorMessage(char* buffer, size_t buffer_size);
 
     /**
      * \brief Get an error message for a given error code.
@@ -377,49 +394,49 @@ namespace Neuropixels {
      * @param[in] code: Error code.
      * @returns const char pointer to string containing error message.
      */
-    NP_EXPORT const char* getErrorMessage(NP_ErrorCode code);
+    NP_EXPORT const char* NP_APIC np_getErrorMessage(NP_ErrorCode code);
 
     /**
-     * \brief Get a cached list of available devices. Use 'scanBS' to update this list.
+     * \brief Get a cached list of available devices. Use 'np_scanBS' to update this list.
      *
-     * Note that this list contains all discovered devices. Use 'mapBS' to map a device to a 'slot'.
+     * Note that this list contains all discovered devices. Use 'np_mapBS' to map a device to a 'slot'.
      *
      * @param[out] list:  Output list of available devices.
      * @param[in]  count: Entry count of list buffer.
      * @returns Amount of devices found.
      */
-    NP_EXPORT int getDeviceList(struct basestationID* list, int count);
+    NP_EXPORT int NP_APIC np_getDeviceList(struct basestationID* list, int count);
 
     /**
      * \brief Get the basestation info descriptor for a mapped device.
      */
-    NP_EXPORT NP_ErrorCode getDeviceInfo(int slotID, struct basestationID* info);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getDeviceInfo(int slotID, struct basestationID* info);
 
     /**
      * \brief Try to get the associated slotID.
-     * @param[in] bsid:   Basestation ID (use #getDeviceList to retrieve list of known devices).
+     * @param[in] bsid:   Basestation ID (use #np_getDeviceList to retrieve list of known devices).
      * @param[in] slotID: ID for slot in the PXIe chassis or the virtual slot for OneBox.
      * @returns true if the bsid is found and mapped to a slot, false otherwise.
      */
-    NP_EXPORT bool tryGetSlotID(const basestationID* bsid, int* slotID);
+    NP_EXPORT bool NP_APIC np_tryGetSlotID(const basestationID* bsid, int* slotID);
 
     /**
      * \brief scans the USB ports for OneBox systems and checks the slots in a PXIe chassis (if connected) for PXIe Acquisition modules.
-     * The function populates a list with devices, which can be accessed using the #getDeviceList function.
+     * The function populates a list with devices, which can be accessed using the #np_getDeviceList function.
      */
-    NP_EXPORT NP_ErrorCode scanBS(void);
+    NP_EXPORT NP_ErrorCode NP_APIC np_scanBS(void);
 
     /**
      * \brief Maps a specific basestation device to a slot.
      *
-     * If a device with the specified platform and serial number is discovered (using #scanBS), it will be automatically
+     * If a device with the specified platform and serial number is discovered (using #np_scanBS), it will be automatically
      * mapped to the specified slot.
      * Note: A PXI basestation device is automatically mapped to a slot corresponding to its PXI geographic location
      *
      * @param[in] serial_number: Serial number of the basestation.
      * @param[in] slotID:   ID for slot in the PXIe chassis or the virtual slot for OneBox.
      */
-    NP_EXPORT NP_ErrorCode mapBS(int serial_number, int slotID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_mapBS(int serial_number, int slotID);
 
     /**
      * Unmaps a basestation mapped to slot.
@@ -427,7 +444,7 @@ namespace Neuropixels {
      * @param[in] slotID: ID for slot in the PXIe chassis or the virtual slot for OneBox.
      * @returns NO_SLOT if slot is not mapped.
      */
-    NP_EXPORT NP_ErrorCode unmapBS(int slotID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_unmapBS(int slotID);
 
     typedef enum {
         NP_PARAM_INPUT_LATENCY_US = 1,  //!< Desired input buffer latency in micro-seconds
@@ -441,19 +458,19 @@ namespace Neuropixels {
     /**
      * \brief Set the value of a system-wide parameter.
      */
-    NP_EXPORT NP_ErrorCode setParameter(np_parameter_t paramID, int value);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setParameter(np_parameter_t paramID, int value);
     /**
      * \brief Get the value of a system-wide parameter.
      */
-    NP_EXPORT NP_ErrorCode getParameter(np_parameter_t paramID, int* value);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getParameter(np_parameter_t paramID, int* value);
     /**
      * \brief Set the value of a system-wide parameter.
      */
-    NP_EXPORT NP_ErrorCode setParameter_double(np_parameter_t paramID, double value);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setParameter_double(np_parameter_t paramID, double value);
     /**
      * \brief Get the value of a system-wide parameter.
      */
-    NP_EXPORT NP_ErrorCode getParameter_double(np_parameter_t paramID, double* value);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getParameter_double(np_parameter_t paramID, double* value);
 
     /***** Probe Info / Metadata Functions ***************************************************/
 
@@ -464,7 +481,7 @@ namespace Neuropixels {
      * function can be used to get all stored field names. Those field names can later on be used to aquire the actual values.
      * \code{.c}
      * size_t num_fields;
-     * char** field_names = probeInfo_GetAllFieldNames(&num_fields);
+     * char** field_names = np_probeInfo_GetAllFieldNames(&num_fields);
      * for (int i=0; i<num_fields; i++) {
      *     printf("%s, ", field_names[i]);
      * }
@@ -472,15 +489,15 @@ namespace Neuropixels {
      * \param[out] Number of fields in returned string array
      * \returns Array of strings with field names
      */
-    NP_EXPORT char** probeInfo_GetAllFieldNames(size_t* numFields);
+    NP_EXPORT char** NP_APIC np_probeInfo_GetAllFieldNames(size_t* numFields);
 
     /**
      * \brief Query probe info by a part number search string.
      * \details Query the system by a probe product number for more probe information by using a simple search string. \n
      * The \ref qResult of type \c probeinfo_result_t is a sort iterator for the pattern matching table rows.\n
-     * Functions \ref probeInfoResult_GetValueByField and \ref probeInfoResult_GetAllFieldsAndValues can be used to retrieve
+     * Functions \ref np_probeInfoResult_GetValueCpyByField and \ref np_probeInfoResult_GetAllFieldsAndValues can be used to retrieve
      * values from the current row where the result iterator points to.
-     * To advance the result iterator function \ref probeInfoResult_NextRecord is used.\n
+     * To advance the result iterator function \ref np_probeInfoResult_NextRecord is used.\n
      * <b>Query syntax</b>\n
      * The query string supports \b * and \b ? wildcards, use \c "*" to get information of all supported probes.\n
      * The question mark character is used for an arbitrary character in the search string, for example \c "NP20?3" would
@@ -488,25 +505,25 @@ namespace Neuropixels {
      * would find all Neuropixels 2.0 probes (mouse).\n
      *
      * \b Important
-     * The \c probeinfo_result_t object must be deallocated when not used anymore using \ref probeInfoResult_Free
+     * The \c probeinfo_result_t object must be deallocated when not used anymore using \ref np_probeInfoResult_Free
      *
      * \code{.c}
      * probeinfo_result_t q_res = NULL;
-     * NP_ErrorCode err = probeInfo_QueryPn("NP1??2", &q_res);
+     * NP_ErrorCode err = np_probeInfo_QueryPn("NP1??2", &q_res);
      * \endcode
      *
      * \param[in] queryStr Part number query, accepting \c * and \c ? placeholders.
      * \param[in,out] qResult Result object of query.
      * \returns Error code, 0 on success.
      */
-    NP_EXPORT NP_ErrorCode probeInfo_QueryPn(const char* queryStr, probeinfo_result_t* qResult);
+    NP_EXPORT NP_ErrorCode NP_APIC np_probeInfo_QueryPn(const char* queryStr, probeinfo_result_t* qResult);
 
     /**
      * \brief Get the number of matching part numbers of a probeInfo-query
      * \param qResult Query result to use.
      * \param[out] count Number of matches in result.
      */
-    NP_EXPORT NP_ErrorCode probeInfoResult_Count(probeinfo_result_t qResult, size_t* count);
+    NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_Count(probeinfo_result_t qResult, size_t* count);
 
     /**
      * \brief Get the string value for a specified field-name from the current record in the query result.
@@ -515,7 +532,7 @@ namespace Neuropixels {
      * \param[out] fieldValue Pointer to char pointer where result should point to.
      */
 
-    NP_EXPORT NP_ErrorCode probeInfoResult_GetValueByField(probeinfo_result_t qResult, const char* fieldName, char** fieldValue);
+    NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_GetValueByField(probeinfo_result_t qResult, const char* fieldName, char** fieldValue);
     /**
      * \brief Get the copied string value for a specified field-name from the current record in the query result.
      * \param qResult Query result
@@ -523,7 +540,7 @@ namespace Neuropixels {
      * \param fieldValue Pointer to string where result should be copied to.
      * \param maxStrLen Maximum number of bytes available in \ref fieldValue
      */
-    NP_EXPORT NP_ErrorCode probeInfoResult_GetValueByField(probeinfo_result_t qResult, const char* fieldName, char* fieldValue, const size_t maxStrLen);
+    NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_GetValueCpyByField(probeinfo_result_t qResult, const char* fieldName, char* fieldValue, const size_t maxStrLen);
 
     /**
      * \brief Get all field names and values of the current result-record in a probe-query result
@@ -539,50 +556,50 @@ namespace Neuropixels {
      size_t num_res;
      probeinfo_result_t q_res = NULL;
 
-     probeInfo_QueryPn("NP202?", &q_res);
+     np_probeInfo_QueryPn("NP202?", &q_res);
      probeInfoResult(q_res, &num_res);
      if (num_res > 0) {
-          probeInfoResult_GetAllFieldsAndValues(res, &field_names, &values, &num_fields);
+          np_probeInfoResult_GetAllFieldsAndValues(res, &field_names, &values, &num_fields);
           printf("%s: %s", field_names[0], values[0]);
      }
      \endcode
      */
-    NP_EXPORT NP_ErrorCode probeInfoResult_GetAllFieldsAndValues(probeinfo_result_t qResult, char*** fields, char*** values, size_t* num_fields);
+    NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_GetAllFieldsAndValues(probeinfo_result_t qResult, char*** fields, char*** values, size_t* num_fields);
 
     /**
      * \brief Deallocate memory used by a query-result object
      * \param qResult Pointer to \c probeinfo_result_t object.
      */
-    NP_EXPORT NP_ErrorCode probeInfoResult_Free(probeinfo_result_t* qResult);
+    NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_Free(probeinfo_result_t* qResult);
 
     /**
      * \brief Advance to next record in query result.
      * \details Advances the internal iterator to the next record of the query result.
      * If the current record is the last record calling argument \ref success will be false.
-     * Use function \ref probeInfoResult_Reset() to reset the internal iterator.
+     * Use function \ref np_probeInfoResult_Reset() to reset the internal iterator.
      *
      * \code{.c}
          probeinfo_result_t q_res = NULL;
          bool ok;
          char str[50] {0};
-         probeInfo_QueryPn("NP20*", &q_res);
+         np_probeInfo_QueryPn("NP20*", &q_res);
          do {
-             probeInfoResult_GetValueByField(q_res, "Description", str, 50);
+             np_probeInfoResult_GetValueCpyByField(q_res, "Description", str, 50);
              printf("%s ", str);
          }
-         while (probeInfoResult_NextRecord(q_res, &ok) == SUCCESS && ok==true);
+         while (np_probeInfoResult_NextRecord(q_res, &ok) == SUCCESS && ok==true);
      * \endcode
      *
      * \param qResult Query result
      * \param[out] success true if next record exits, false if no further record exits in query result.
      */
-    NP_EXPORT NP_ErrorCode probeInfoResult_NextRecord(probeinfo_result_t qResult, bool* success);
+    NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_NextRecord(probeinfo_result_t qResult, bool* success);
 
     /**
      * \brief Reset the internal record iterator to the first record
      * \param qResult
      */
-    NP_EXPORT NP_ErrorCode probeInfoResult_Reset(probeinfo_result_t qResult);
+    NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_Reset(probeinfo_result_t qResult);
 
     /***** Basestation board/Slot Functions **************************************************/
 
@@ -592,33 +609,33 @@ namespace Neuropixels {
      * @param[in] slotID: which slot in the PXIe chassis or the virtual slot for OneBox to detect.
      * @param[out] detected: True if basestation found.
      */
-    NP_EXPORT NP_ErrorCode detectBS(int slotID, bool* detected);
+    NP_EXPORT NP_ErrorCode NP_APIC np_detectBS(int slotID, bool* detected);
     /**
      * \brief Opens the basestation at the specified slot.
-     *        The basestation needs to be mapped to a slot first (see mapBS).
+     *        The basestation needs to be mapped to a slot first (see np_mapBS).
      *
      * @param[in] slotID: which slot in the PXIe chassis or the virtual slot for OneBox to open.
      */
-    NP_EXPORT NP_ErrorCode openBS(int slotID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_openBS(int slotID);
     /**
      * \brief Closes a basestation and release all associated resources.
      *
      * @param[in] slotID: which slot in the PXIe chassis or the virtual slot for OneBox to close.
      */
-    NP_EXPORT NP_ErrorCode closeBS(int slotID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_closeBS(int slotID);
     /**
      * \brief Set the basestation in a 'armed' state. In a armed state, the basestation
      *        is ready to start acquisition after a trigger.
      *
      * @param[in] slotID: which slot in the PXIe chassis or the virtual slot for OneBox to arm
      */
-    NP_EXPORT NP_ErrorCode arm(int slotID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_arm(int slotID);
     /**
      * \brief Force a trigger on software trigger 1.
      *
      * @param[in] slotID: which slot in the PXIe chassis or the virtual slot for OneBox to trigger
      */
-    NP_EXPORT NP_ErrorCode setSWTrigger(int slotID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setSWTrigger(int slotID);
 
     /**
      * \brief Force software triggers on multiple software trigger channels. Onebox supports 2 trigger channels, PXI only 1
@@ -626,7 +643,7 @@ namespace Neuropixels {
      * @param[in] slotID: ID for slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] trigger_flags: A mask of software triggers to set.
      */
-    NP_EXPORT NP_ErrorCode setSWTriggerEx(int slotID, swtriggerflags_t trigger_flags);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setSWTriggerEx(int slotID, swtriggerflags_t trigger_flags);
 
     /**
      * \brief Connect/disconnect a switch matrix input to/from an output signal.
@@ -636,31 +653,31 @@ namespace Neuropixels {
      * @param[in] input: Input Signal.
      * @param[in] connect:  true if to connect, false if to disconnect.
      */
-    NP_EXPORT NP_ErrorCode switchmatrix_set(int slotID, switchmatrixoutput_t output, switchmatrixinput_t input, bool connect);
+    NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_set(int slotID, switchmatrixoutput_t output, switchmatrixinput_t input, bool connect);
     /**
      * \brief Get the switch matrix input to a output signal connection state.
      */
-    NP_EXPORT NP_ErrorCode switchmatrix_get(int slotID, switchmatrixoutput_t output, switchmatrixinput_t input, bool* is_connected);
+    NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_get(int slotID, switchmatrixoutput_t output, switchmatrixinput_t input, bool* is_connected);
     /**
      * \brief Clear all connections to a switch matrix output signal.
      */
-    NP_EXPORT NP_ErrorCode switchmatrix_clear(int slotID, switchmatrixoutput_t output);
+    NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_clear(int slotID, switchmatrixoutput_t output);
     /**
      * \brief Set the inversion of the Switch Matrix input signal.
      */
-    NP_EXPORT NP_ErrorCode switchmatrix_setInputInversion(int slotID, switchmatrixinput_t input, bool invert);
+    NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_setInputInversion(int slotID, switchmatrixinput_t input, bool invert);
     /**
      * \brief Read the Switch Matrix input signal inversion setting.
      */
-    NP_EXPORT NP_ErrorCode switchmatrix_getInputInversion(int slotID, switchmatrixinput_t input, bool* invert);
+    NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_getInputInversion(int slotID, switchmatrixinput_t input, bool* invert);
     /**
      * \brief Set the inversion of the Switch Matrix output signal.
      */
-    NP_EXPORT NP_ErrorCode switchmatrix_setOutputInversion(int slotID, switchmatrixoutput_t output, bool invert);
+    NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_setOutputInversion(int slotID, switchmatrixoutput_t output, bool invert);
     /**
      * \brief Get the inversion setting of the Switch Matrix output signal.
      */
-    NP_EXPORT NP_ErrorCode switchmatrix_getOutputInversion(int slotID, switchmatrixoutput_t output, bool* invert);
+    NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_getOutputInversion(int slotID, switchmatrixoutput_t output, bool* invert);
     /**
      * \brief Set edge sensitivity of a switch matrix output line.
      * 
@@ -670,11 +687,11 @@ namespace Neuropixels {
      * @param[in] output: Output signal.
      * @param[in] edge: Set the edge sensitivity to rising or falling.
      */
-    NP_EXPORT NP_ErrorCode switchmatrix_setOutputTriggerEdge(int slotID, switchmatrixoutput_t output, triggeredge_t edge);
+    NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_setOutputTriggerEdge(int slotID, switchmatrixoutput_t output, triggeredge_t edge);
     /**
      * \brief Gets edge sensitivity of a switch matrix output line.
      */
-    NP_EXPORT NP_ErrorCode switchmatrix_getOutputTriggerEdge(int slotID, switchmatrixoutput_t output, triggeredge_t* edge);
+    NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_getOutputTriggerEdge(int slotID, switchmatrixoutput_t output, triggeredge_t* edge);
 
     /**
      * \brief Set the frequency of the internal sync clock.
@@ -688,7 +705,7 @@ namespace Neuropixels {
      * @param[in] frequency: Target frequency in Hz
      * @returns PARAMETER_INVALID if the target frequency is out-of-bounds or otherwise illegal
      */
-    NP_EXPORT NP_ErrorCode setSyncClockFrequency(int slotID, double frequency);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setSyncClockFrequency(int slotID, double frequency);
 
     /**
      * \brief Get the actual frequency of the internal sync clock.
@@ -696,7 +713,7 @@ namespace Neuropixels {
      * @param[in] slotID: ID for slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[out] frequency: Pointer to result
      */
-    NP_EXPORT NP_ErrorCode getSyncClockFrequency(int slotID, double* frequency);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getSyncClockFrequency(int slotID, double* frequency);
 
     /**
      * \brief Set the period of the internal sync clock.
@@ -705,7 +722,7 @@ namespace Neuropixels {
      * @param[in] period_ms: Target period in milliseconds
      * @returns PARAMETER_INVALID if period is out-of-bounds or otherwise illegal
      */
-    NP_EXPORT NP_ErrorCode setSyncClockPeriod(int slotID, int period_ms);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setSyncClockPeriod(int slotID, int period_ms);
 
     /**
      * \brief Get the period of the internal sync clock.
@@ -713,7 +730,7 @@ namespace Neuropixels {
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[out] period_ms: Pointer to result
      */
-    NP_EXPORT NP_ErrorCode getSyncClockPeriod(int slotID, int* period_ms);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getSyncClockPeriod(int slotID, int* period_ms);
 
     typedef enum {
         NP_DATAMODE_OFF = 0, 
@@ -724,29 +741,40 @@ namespace Neuropixels {
     /**
      * \brief Sets the Datamode of the basestation port.
      */
-    NP_EXPORT NP_ErrorCode setDataMode(int slotID, int portID, np_datamode_t mode);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setDataMode(int slotID, int portID, np_datamode_t mode);
     /**
      * \brief Gets the Datamode of the basestation port.
      */ 
-    NP_EXPORT NP_ErrorCode getDataMode(int slotID, int portID, np_datamode_t* mode);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getDataMode(int slotID, int portID, np_datamode_t* mode);
 
     /**
      * \brief Get the basestation temperature (in degrees Celsius)
      */
-    NP_EXPORT NP_ErrorCode bs_getTemperature(int slotID, double* temperature_degC);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bs_getTemperature(int slotID, double* temperature_degC);
     /**
      * \brief Get the basestation firmware version info
      */
-    NP_EXPORT NP_ErrorCode bs_getFirmwareInfo(int slotID, struct firmware_Info* info);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bs_getFirmwareInfo(int slotID, struct firmware_Info* info);
 
     /**
      * \brief Update the basestation firmware.
      *
+     * When programming a "raw" firmware blob (i.e. a BIN file) then `allow_unsafe` must be set to true.
+     * If `allow_unsafe` is false, only firmware package files with proper headers (i.e. NPFW files) are accepted.
+     *
+     * When a firmware package file is used, the API will validate the header, checksums, and also verify that
+     * the firmware is intended for the detected basestation.
+     *
+     * Important: even when allow_unsafe is true, the API will still perform the validation above when a firmware
+     * package file is used. As such the API cannot be forced to program an invalid firmware package. The API
+     * can only be force to program a binary firmware blob.
+     *
      * @param[in] slotID: ID for slot in the PXIe.
      * @param[in] filename: Firmware binary file.
      * @param[in] callback: (optional, may be null). Progress callback function. if callback returns 0, the update aborts.
+     * @param[in] allow_unsafe If true, will allow programming raw firmware blobs
      */
-    NP_EXPORT NP_ErrorCode bs_updateFirmware(int slotID, const char* filename, int (*callback)(size_t bytes_written));
+    NP_EXPORT NP_ErrorCode NP_APIC np_bs_updateFirmware(int slotID, const char* filename, int (*callback)(size_t bytes_written), bool allow_unsafe);
 
     /**
      * \brief sets the firmware for the basestation version to the required version.
@@ -755,7 +783,7 @@ namespace Neuropixels {
      * @param[in] callback: (optional, may be null). Progress callback function. if callback returns 0, the update
      * aborts.
      */
-    NP_EXPORT NP_ErrorCode bs_resetFirmware(int slotID, int (*callback)(size_t bytes_written));
+    NP_EXPORT NP_ErrorCode NP_APIC np_bs_resetFirmware(int slotID, int (*callback)(size_t bytes_written));
 
     /**
      * \brief Get the size of the built-in firmware blob for the basestation.
@@ -768,26 +796,38 @@ namespace Neuropixels {
      *          FAILED if the type of basestation could not be established,\n
      *          PARAMETER_INVALID if size is NULL.
      */
-    NP_EXPORT NP_ErrorCode bs_getFirmwareSize(int slotID, size_t* size);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bs_getFirmwareSize(int slotID, size_t* size);
 
     /**
      * \brief (Only on PXI platform) Get the basestation connect board temperature (in degrees Celsius).
      */
-    NP_EXPORT NP_ErrorCode bsc_getTemperature(int slotID, double* temperature_degC);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bsc_getTemperature(int slotID, double* temperature_degC);
     /**
      * \brief (Only on PXI platform) Get the basestation connect board firmware version info.
      */
-    NP_EXPORT NP_ErrorCode bsc_getFirmwareInfo(int slotID, struct firmware_Info* info);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bsc_getFirmwareInfo(int slotID, struct firmware_Info* info);
 
     /**
      * \brief Update the basestation connect board firmware.
      *
+     * When programming a "raw" firmware blob (i.e. a BIN file) then `allow_unsafe` must be set to true.
+     * If `allow_unsafe` is false, only firmware package files with proper headers (i.e. NPFW files) are accepted.
+     *
+     * When a firmware package file is used, the API will validate the header, checksums, and also verify that
+     * the firmware is intended for the detected basestation.
+     *
+     * Important: even when allow_unsafe is true, the API will still perform the validation above when a firmware
+     * package file is used. As such the API cannot be forced to program an invalid firmware package. The API
+     * can only be force to program a binary firmware blob.
+     *
      * @param[in] slotID: ID for slot in the PXIe chassis.
      * @param[in] filename: Firmware binary file.
      * @param[in] callback: (optional, may be null). Progress callback function. if callback returns 0, the update aborts.
-     * @returns SUCCESS if successful, PROGRAMMINGABORTED if aborted by the callback returning 0, PROGRAMMING_FAILED if the firmware image was incorrect after programming
+     * @param[in] allow_unsafe If true, will allow programming raw firmware blobs
+     * @returns SUCCESS if successful, PROGRAMMINGABORTED if aborted by the callback returning 0, PROGRAMMING_FAILED if
+     * the firmware image was incorrect after programming
      */
-    NP_EXPORT NP_ErrorCode bsc_updateFirmware(int slotID, const char* filename, int (*callback)(size_t bytes_written));
+    NP_EXPORT NP_ErrorCode NP_APIC np_bsc_updateFirmware(int slotID, const char* filename, int (*callback)(size_t bytes_written), bool allow_unsafe);
 
     /**
      * \brief sets the firmware version of the basestation connect board to the required version.
@@ -796,7 +836,7 @@ namespace Neuropixels {
      * @param[in] callback: (optional, may be null). Progress callback function. if callback returns 0, the update
      * aborts.
      */
-    NP_EXPORT NP_ErrorCode bsc_resetFirmware(int slotID, int (*callback)(size_t bytes_written));
+    NP_EXPORT NP_ErrorCode NP_APIC np_bsc_resetFirmware(int slotID, int (*callback)(size_t bytes_written));
 
     /**
      * \brief Get the size of the built-in firmware blob for the basestation connect board.
@@ -809,7 +849,31 @@ namespace Neuropixels {
      *          FAILED if the type of BSC could not be established,\n
      *          PARAMETER_INVALID if size is NULL.
      */
-    NP_EXPORT NP_ErrorCode bsc_getFirmwareSize(int slotID, size_t* size);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bsc_getFirmwareSize(int slotID, size_t* size);
+
+    /**
+     * \brief Get the size of the deflated firmware blob contained in a firmware package file.
+     *
+     * A firmware package file (an NPFW file, as used by \ref np_bs_updateFirmware and
+     * \ref np_bsc_updateFirmware) contains a compressed firmware blob. During programming this blob
+     * is deflated and written to the device's memory. This function returns the size (in bytes) of
+     * that deflated blob.
+     *
+     * The returned size equals the maximum value that the progress callback of
+     * \ref np_bs_updateFirmware / \ref np_bsc_updateFirmware will report through its
+     * `bytes_written` parameter. It can therefore be used as the denominator to render a progress
+     * bar while the update is in progress.
+     *
+     * Only firmware package files with a valid header (NPFW files) are accepted. Raw binary firmware
+     * blobs (BIN files) are not supported and will result in FILE_IO_ERR.
+     *
+     * @param[in] filename: Firmware package file.
+     * @param[out] size: Size of the deflated firmware blob in bytes.
+     * @returns SUCCESS if successful,\n
+     *          PARAMETER_INVALID if filename or size is NULL,\n
+     *          FILE_IO_ERR if the file could not be opened or is not a valid firmware package.
+     */
+    NP_EXPORT NP_ErrorCode NP_APIC np_getFirmwarePackageSize(const char* filename, size_t* size);
 
     /**
      * @brief Get a OneBox's firmware version info
@@ -817,7 +881,7 @@ namespace Neuropixels {
      * @param[out] info Firmware version info
      * @return NOTSUPPORTED if target slot is not a OneBox
      */
-    NP_EXPORT NP_ErrorCode ob_getFirmwareInfo(int slotID, struct firmware_Info* info);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ob_getFirmwareInfo(int slotID, struct firmware_Info* info);
 
     /**
      * \brief Read firmware metadata from headstage.
@@ -826,17 +890,28 @@ namespace Neuropixels {
      * @param[in] portID: ID for basestation port. Valid range 1 to 4 for PXIe, 1 to 2 for OneBox
      * @param[out] info: Pointer to result.
      */
-    NP_EXPORT NP_ErrorCode hs_getFirmwareInfo(int slotID, int portID, firmware_Info* info);
+    NP_EXPORT NP_ErrorCode NP_APIC np_hs_getFirmwareInfo(int slotID, int portID, firmware_Info* info);
 
     /**
      * \brief Update the headstage firmware.
+     *
+     * When programming a "raw" firmware blob (i.e. a BIN file) then `allow_unsafe` must be set to true.
+     * If `allow_unsafe` is false, only firmware package files with proper headers (i.e. NPFW files) are accepted.
+     *
+     * When a firmware package file is used, the API will validate the header, checksums, and also verify that
+     * the firmware is intended for the detected headstage.
+     *
+     * Important: even when allow_unsafe is true, the API will still perform the validation above when a firmware
+     * package file is used. As such the API cannot be forced to program an invalid firmware package. The API
+     * can only be force to program a binary firmware blob.
      *
      * @param[in] slotID: ID for slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: ID for basestation port. Valid range 1 to 4 for PXIe, 1 to 2 for OneBox
      * @param[in] filename: Firmware binary file.
      * @param[in] read_check: Read back firmware and compare.
+     * @param[in] allow_unsafe If true, will allow programming raw firmware blobs
      */
-    NP_EXPORT NP_ErrorCode hs_updateFirmware(int slotID, int portID, const char* filename, bool read_check);
+    NP_EXPORT NP_ErrorCode NP_APIC np_hs_updateFirmware(int slotID, int portID, const char* filename, bool read_check, bool allow_unsafe);
 
     /**
      * \brief Get the amount of ports on the basestation connect board.
@@ -845,7 +920,7 @@ namespace Neuropixels {
      * @param[out] count: output parameter, amount of available ports.
      * @returns SUCCESS if successful.
      */
-    NP_EXPORT NP_ErrorCode getBSCSupportedPortCount(int slotID, int* count);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getBSCSupportedPortCount(int slotID, int* count);
     /**
      * \brief Get the amount of probes the connected headstage supports
      *
@@ -854,7 +929,7 @@ namespace Neuropixels {
      * @param[out] count: output parameter, amount of flex/probes
      * @returns SUCCESS if successful.
      */
-    NP_EXPORT NP_ErrorCode getHSSupportedProbeCount(int slotID, int portID, int* count);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getHSSupportedProbeCount(int slotID, int portID, int* count);
 
     /**
      * \brief Opens the port on the basestation
@@ -863,7 +938,7 @@ namespace Neuropixels {
      * @param[in] portID: ID for basestation port. Valid range 1 to 4 for PXIe, 1 to 2 for OneBox
      * @returns SUCCESS if successful.
      */
-    NP_EXPORT NP_ErrorCode openPort(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_openPort(int slotID, int portID);
     /**
      * \brief Closes the port on the basestation
      *
@@ -871,7 +946,7 @@ namespace Neuropixels {
      * @param[in] portID: ID for basestation port. Valid range 1 to 4 for PXIe, 1 to 2 for OneBox
      * @returns SUCCESS if successful.
      */
-    NP_EXPORT NP_ErrorCode closePort(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_closePort(int slotID, int portID);
     /**
      * \brief Detects if a headstage is present or not.
      *
@@ -880,7 +955,7 @@ namespace Neuropixels {
      * @param[out] detected: true if headstage is detected, false if not.
      * @returns SUCCESS if successful.
      */
-    NP_EXPORT NP_ErrorCode detectHeadStage(int slotID, int portID, bool* detected);
+    NP_EXPORT NP_ErrorCode NP_APIC np_detectHeadStage(int slotID, int portID, bool* detected);
     /**
      * \brief Detects if flex is present or not.
      *
@@ -890,11 +965,11 @@ namespace Neuropixels {
      * @param[out] detected: True if headstage is detected, false if not.
      * @returns SUCCESS if successful.
      */
-    NP_EXPORT NP_ErrorCode detectFlex(int slotID, int portID, int dockID, bool* detected);
+    NP_EXPORT NP_ErrorCode NP_APIC np_detectFlex(int slotID, int portID, int dockID, bool* detected);
     /**
      * \brief Enable or disable the headstage LED.
      */
-    NP_EXPORT NP_ErrorCode setHSLed(int slotID, int portID, bool enable);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setHSLed(int slotID, int portID, bool enable);
 
     /***** Probe functions *******************************************************************/
 
@@ -905,19 +980,33 @@ namespace Neuropixels {
      * @param[in] portID: ID of the port on the basestation.
      * @param[in] dockID: ID of the dock of the probe on the headstage.
      */
-    NP_EXPORT NP_ErrorCode openProbe(int slotID, int portID, int dockID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_openProbe(int slotID, int portID, int dockID);
     /**
      * \brief Closes the connection to the probe.
      */
-    NP_EXPORT NP_ErrorCode closeProbe(int slotID, int portID, int dockID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_closeProbe(int slotID, int portID, int dockID);
     /**
      * \brief Resets the connected probe to the default settings.
      * 
-     * Loads the default settings for configuration registers and memory map; and subsequently initialize the probe in recording mode:
+    * Loads the default settings for configuration registers and memory map; and
+     * subsequently initialize the probe in recording mode:
      *  - Configure the probe shank to the default electrode configuration.
      *  - Configure the probe base to the default channel configuration.
+     *
+     * The complete probe will always be configured. Should an issue be detected with the probe
+     * at any point then the procedure will continue but return an error at the end:
+     * - PROBE_DEGRADATION_ERROR: suspected issue with probe, but probe may still be usable
+     * - PROBE_CONFIGURATION_FAILURE: suspected issue with probe, probe may not be usable anymore
+     *
+     * Note that the procedure can still be terminated early due to unforeseen errors,
+     * such as but not limited to TIMEOUT and UART_ACK_ERROR.
+     *
+     * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
+     * @param[in] portID: Id of the port on the basestation. (1..4)
+     * @param[in] dockID: Id of the dock of the probe on the headstage. (1..2 (for NPM))
+     * @param[in] read_check: verify the configuration if true, not if false.
      */
-    NP_EXPORT NP_ErrorCode init(int slotID, int portID, int dockID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_init(int slotID, int portID, int dockID, bool read_check);
     
     /**
      * \brief Writes the probe configuration
@@ -931,13 +1020,21 @@ namespace Neuropixels {
      *   - bandwidth setting,
      *   - standby setting
      *
+     * The complete probe will always be configured. Should an issue be detected with the probe
+     * at any point then the procedure will continue but return an error at the end:
+     * - PROBE_DEGRADATION_ERROR: suspected issue with probe, but probe may still be usable
+     * - PROBE_CONFIGURATION_FAILURE: suspected issue with probe, probe may not be usable anymore
+     *
+     * Note that the procedure can still be terminated early due to unforeseen errors,
+     * such as but not limited to TIMEOUT and UART_ACK_ERROR.
+     *
      * @param[in] slotID: ID of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: ID of the port on the basestation.
      * @param[in] dockID: ID of the dock of the probe on the headstage.
      * @param[in] read_check: verify the configuration if true, not if false.
      */
-    NP_EXPORT NP_ErrorCode writeProbeConfiguration(int slotID, int portID, int dockID, bool read_check);
-    
+    NP_EXPORT NP_ErrorCode NP_APIC np_writeProbeConfiguration(int slotID, int portID, int dockID, bool read_check);
+
     /**
      * @brief Commited channel configuration
      */
@@ -964,9 +1061,8 @@ namespace Neuropixels {
      * the `configuration` array will match the channel so configuration[0] contains
      * the configuration of channel 0, and so on.
      *
-     * Note that when during the last call of `writeProbeConfiguration` something went wrong,
-     * the configuration returned by this function may not be valid as parts of it may have
-     * been overwritten during the earlier failed attempt.
+     * Note that when during the last call of `np_writeProbeConfiguration` something went wrong, the actual
+     * configuration used by the probe may be unknown. In such cases, this function will return NODATA.
      *
      * \note This function is not supported for UHD2 probes.
      *
@@ -975,9 +1071,9 @@ namespace Neuropixels {
      * @param[in] dockID: ID of the dock of the probe on the headstage.
      * @param[in] channel_count: Number of channels to get the configuration for.
      * @param[out] configuration: Array of ProbeChannelConfiguration structs (must match channel_count in size).
-     * @return NODATA if no configuration committed.
+     * @return NODATA if no or unknown configuration committed.
      */
-    NP_EXPORT NP_ErrorCode getCommittedProbeConfiguration(
+    NP_EXPORT NP_ErrorCode NP_APIC np_getCommittedProbeConfiguration(
         int slotID, int portID, int dockID, int channel_count, ProbeChannelConfiguration* configuration);
 
     /**
@@ -989,7 +1085,7 @@ namespace Neuropixels {
      * @param[in] portID: Id of the port on the basestation.
      * @param[in] filename: the filename for the calibration file.
      */
-    NP_EXPORT NP_ErrorCode setADCCalibration(int slotID, int portID, const char* filename);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setADCCalibration(int slotID, int portID, const char* filename);
     /**
      * \brief Loads the gain correction parameters from the provided calibration csv file to the probe.
      *
@@ -998,13 +1094,13 @@ namespace Neuropixels {
      * @param[in] dockID: Id of the dock of the probe on the headstage.
      * @param[in] filename: the filename for the calibration file.
      */
-    NP_EXPORT NP_ErrorCode setGainCalibration(int slotID, int portID, int dockID, const char* filename);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setGainCalibration(int slotID, int portID, int dockID, const char* filename);
 
 // <NP1 Specific>
 #define NP1_PROBE_CHANNEL_COUNT 384
 #define NP1_PROBE_SUPERFRAMESIZE 12
 #define NP1_PROBE_ADC_COUNT 32
-#define NP1_PROBE_ADC_SAMPLE_RATE 390'000
+#define NP1_PROBE_ADC_SAMPLE_RATE 390000
 
 // These macros are for the status byte
 #define ELECTRODEPACKET_STATUS_TRIGGER    (1<<0)
@@ -1035,7 +1131,7 @@ namespace Neuropixels {
      * @param[out] actual_amount: the amount of data packets received.
      * @param[out] requested_amount: the requested amount of data packets.
      */
-    NP_EXPORT NP_ErrorCode readElectrodeData(int slotID, int portID, int dockID, struct electrodePacket* packets, int* actual_amount, int requested_amount);
+    NP_EXPORT NP_ErrorCode NP_APIC np_readElectrodeData(int slotID, int portID, int dockID, struct electrodePacket* packets, int* actual_amount, int requested_amount);
     /**
      * \brief reads the amount of packets available in the RAM FIFO.
      *
@@ -1045,7 +1141,7 @@ namespace Neuropixels {
      * @param[out] packets_available: returns the amount unread of packets in the FIFO. NULL allowed for no return.
      * @param[out] headroom: returns the amount of space left in the FIFO. NULL allowed for no return.
      */
-    NP_EXPORT NP_ErrorCode getElectrodeDataFifoState (int slotID, int portID, int dockID, int* packets_available, int* headroom);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getElectrodeDataFifoState (int slotID, int portID, int dockID, int* packets_available, int* headroom);
 // </NP1 Specific>
 
     /**
@@ -1060,7 +1156,7 @@ namespace Neuropixels {
      * @param[in] dockID: Id of the dock of the probe on the headstage.
      * @param[in] enable: enables the test signal
      */
-    NP_EXPORT NP_ErrorCode setTestSignal(int slotID, int portID, int dockID, bool enable);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setTestSignal(int slotID, int portID, int dockID, bool enable);
     /**
      * \brief Sets the operating mode of the probe. 
      *
@@ -1069,7 +1165,7 @@ namespace Neuropixels {
      * @param[in] dockID: Id of the dock of the probe on the headstage.
      * @param[in] mode: operating mode of the probe.
      */
-    NP_EXPORT NP_ErrorCode setOPMODE(int slotID, int portID, int dockID, probe_opmode_t mode);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setOPMODE(int slotID, int portID, int dockID, probe_opmode_t mode);
 
     /**
      * \brief Sets the calibration mode of the probe
@@ -1079,7 +1175,7 @@ namespace Neuropixels {
      * @param[in] dockID: Id of the dock of the probe on the headstage.
      * @param[in] mode: calibration mode
      */
-    NP_EXPORT NP_ErrorCode setCALMODE(int slotID, int portID, int dockID, testinputmode_t mode);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setCALMODE(int slotID, int portID, int dockID, testinputmode_t mode);
     /**
      * \brief sets the REC_NRESET signal to the probe. This signal sets the probes' channel in reset state.
      *
@@ -1087,7 +1183,7 @@ namespace Neuropixels {
      * @param[in] portID: Id of the port on the basestation.
      * @param[in] state: requested REC_NRESET state
      */
-    NP_EXPORT NP_ErrorCode setREC_NRESET(int slotID, int portID, bool state);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setREC_NRESET(int slotID, int portID, bool state);
 
     /**
      * \brief Read a single packet data from the specified fifo.
@@ -1105,7 +1201,7 @@ namespace Neuropixels {
      * @param[out] actual_read: optional output parameter that returns the amount of channels unpacked for a single timestamp.
      * @returns SUCCESS if successful. Note that this function also returns SUCCESS if no data was available (samplesread returns ==0).
      */
-    NP_EXPORT NP_ErrorCode readPacket(int slotID, int portID, int dockID, streamsource_t source, struct PacketInfo* pck_info, int16_t* data, int requested_channel_count, int* actual_read);
+    NP_EXPORT NP_ErrorCode NP_APIC np_readPacket(int slotID, int portID, int dockID, streamsource_t source, struct PacketInfo* pck_info, int16_t* data, int requested_channel_count, int* actual_read);
 
     /**
      * \brief Read multiple packets from the specified fifo.
@@ -1124,7 +1220,7 @@ namespace Neuropixels {
      * @param[out] packets_read: Number of packets read from the fifo.
      * @returns SUCCESS if successful. Note that this function also returns SUCCESS if no data was available (samplesread returns ==0).
      */
-    NP_EXPORT NP_ErrorCode readPackets(int slotID, int portID, int dockID, streamsource_t source, struct PacketInfo* pck_info, int16_t* data, int channel_count, int packet_count, int* packets_read);
+    NP_EXPORT NP_ErrorCode NP_APIC np_readPackets(int slotID, int portID, int dockID, streamsource_t source, struct PacketInfo* pck_info, int16_t* data, int channel_count, int packet_count, int* packets_read);
 
     /**
      * \brief The amount of packets in the RAM FIFO.
@@ -1136,7 +1232,7 @@ namespace Neuropixels {
      * @param[out] packets_available: returns the number of unread packets in the FIFO. NULL allowed for no return.
      * @param[out] headroom: returns the amount of space left in the FIFO. NULL allowed for no return.
      */
-    NP_EXPORT NP_ErrorCode getPacketFifoStatus(int slotID, int portID, int dockID, streamsource_t source, int* packets_available, int* headroom);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getPacketFifoStatus(int slotID, int portID, int dockID, streamsource_t source, int* packets_available, int* headroom);
 
     /*********** Probe Channel functions ***********************************************************/
     /**
@@ -1158,7 +1254,7 @@ namespace Neuropixels {
      * 
      * It also applies gain correction factors as applied in the BSC FPGA. 
      * 
-     * It will not apply this change to the probe until 'writeProbeConfiguration' is called.
+     * It will not apply this change to the probe until 'np_writeProbeConfiguration' is called.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
@@ -1167,7 +1263,7 @@ namespace Neuropixels {
      * @param[in] ap_gain_select: The AP gain value. (0 to 7)
      * @param[in] lfg_gain_select: The LFP gain value. (0 to 7)
      */
-    NP_EXPORT NP_ErrorCode setGain(int slotID, int portID, int dockID, int channel, int ap_gain_select, int lfg_gain_select);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setGain(int slotID, int portID, int dockID, int channel, int ap_gain_select, int lfg_gain_select);
     /**
      * \brief Gets the gain parameters from the given channel.
      * 
@@ -1180,7 +1276,7 @@ namespace Neuropixels {
      * @param[out] ap_gain_select: The AP gain value. (0 to 7)
      * @param[out] lfg_gain_select: The LFP gain value. (0 to 7)
      */
-    NP_EXPORT NP_ErrorCode getGain(int slotID, int portID, int dockID, int channel, int* ap_gain_select, int* lfg_gain_select);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getGain(int slotID, int portID, int dockID, int channel, int* ap_gain_select, int* lfg_gain_select);
     /**
      * \brief Maps an electrode bank to a channel. 
      * 
@@ -1190,7 +1286,7 @@ namespace Neuropixels {
      * 
      * Setting the bank parameter to 0xFF clears all previous connections made. 
      * 
-     * It will not apply this change to the probe until '\ref writeProbeConfiguration' is called.
+     * It will not apply this change to the probe until '\ref np_writeProbeConfiguration' is called.
      * 
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
@@ -1199,7 +1295,7 @@ namespace Neuropixels {
      * @param[in] shank: The shank number (valid range 0 to 3, depending on probe type).
      * @param[in] bank: The electrode bank number to connect to (valid range: 0 to 11, depending on probe type, or 0xFF).
      */
-    NP_EXPORT NP_ErrorCode selectElectrode(int slotID, int portID, int dockID, int channel, int shank, int bank);
+    NP_EXPORT NP_ErrorCode NP_APIC np_selectElectrode(int slotID, int portID, int dockID, int channel, int shank, int bank);
     /**
      * \brief Maps multiple electrode banks to a channel.
      *
@@ -1207,7 +1303,7 @@ namespace Neuropixels {
      *
      * setting the bank parameter to 0xFF clears all previous connections made.
      * 
-     * It will not apply this change to the probe until '\ref writeProbeConfiguration' is called.
+     * It will not apply this change to the probe until '\ref np_writeProbeConfiguration' is called.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
@@ -1216,7 +1312,7 @@ namespace Neuropixels {
      * @param[in] shank: The shank number (valid range 0 to 3, depending on probe type).
      * @param[in] bank_mask: Electrode bank numbers to connect. (BankA to BankL, depending on probe type)
      */
-    NP_EXPORT NP_ErrorCode selectElectrodeMask(int slotID, int portID, int dockID, int channel, int shank, electrodebanks_t bank_mask);
+    NP_EXPORT NP_ErrorCode NP_APIC np_selectElectrodeMask(int slotID, int portID, int dockID, int channel, int shank, electrodebanks_t bank_mask);
     /**
      * \brief Set the reference input per probe
      *
@@ -1229,7 +1325,7 @@ namespace Neuropixels {
      *
      * Please refer to the specific probe manuals for allowed combinations.
      *
-     * It will not apply this change to the probe until '\ref writeProbeConfiguration' is called.
+     * It will not apply this change to the probe until '\ref np_writeProbeConfiguration' is called.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
@@ -1239,7 +1335,7 @@ namespace Neuropixels {
      * @param[in] reference: the selected reference input (valid range: 0 to 3, depending on probe type).
      * @param[in] int_ref_electrode_bank: the selected internal reference electrode (valid range: 0 to 3 or 0xFF, depending on probe type).
      */
-    NP_EXPORT NP_ErrorCode setReference(int slotID, int portID, int dockID, int channel, int shank, channelreference_t reference, int int_ref_electrode_bank);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setReference(int slotID, int portID, int dockID, int channel, int shank, channelreference_t reference, int int_ref_electrode_bank);
     /**
      * \brief Sets the high-pass corner frequency can be programmed for each AP channel individually.
      *
@@ -1248,7 +1344,7 @@ namespace Neuropixels {
      * The high-pass corner frequency setting of the probe is
      * programmed via the probes' base configuration register.
      * 
-     * It will not apply this change to the probe until '\ref writeProbeConfiguration' is called.
+     * It will not apply this change to the probe until '\ref np_writeProbeConfiguration' is called.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
@@ -1256,7 +1352,7 @@ namespace Neuropixels {
      * @param[in] channel: The channel number. (0 to 383)
      * @param[in] disable_high_pass: true for disabling the 300Hz high-pass cut-off filter, false for enabling
      */
-    NP_EXPORT NP_ErrorCode setAPCornerFrequency(int slotID, int portID, int dockID, int channel, bool disable_high_pass);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setAPCornerFrequency(int slotID, int portID, int dockID, int channel, bool disable_high_pass);
 
     /**
      * \brief set each channel individually in stand-by mode.
@@ -1264,7 +1360,7 @@ namespace Neuropixels {
      * In standby mode the channel amplifiers are disabled.
      * The channel is still output on the PSB data bus.
      *
-      * It will not apply this change to the probe until '\ref writeProbeConfiguration' is called.
+      * It will not apply this change to the probe until '\ref np_writeProbeConfiguration' is called.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
@@ -1272,7 +1368,7 @@ namespace Neuropixels {
      * @param[in] channel: The channel number. (0 to 383)
      * @param[in] standby: True for stand-by.
      */
-    NP_EXPORT NP_ErrorCode setStdb(int slotID, int portID, int dockID, int channel, bool standby);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setStdb(int slotID, int portID, int dockID, int channel, bool standby);
 
     /**
      * \brief Enables/disables half the electrode columns on the shank.
@@ -1283,14 +1379,14 @@ namespace Neuropixels {
      * the user must first set which column pattern of electrodes on the shank is activated.
      * If the function is called, all existing channel group to electrode group connections are removed.
      * 
-     * It will not apply this change to the probe until '\ref writeProbeConfiguration' is called.
+     * It will not apply this change to the probe until '\ref np_writeProbeConfiguration' is called.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
      * @param[in] dockID: Id of the dock of the probe on the headstage. (1..2 (for NPM))
      * @param[in] pattern: The electrode column patterns to enable.
      */
-    NP_EXPORT NP_ErrorCode selectColumnPattern(int slotID, int portID, int dockID, columnpattern_t pattern);
+    NP_EXPORT NP_ErrorCode NP_APIC np_selectColumnPattern(int slotID, int portID, int dockID, columnpattern_t pattern);
 
     /**
      * \brief Connect a single bank to a channel group.
@@ -1301,7 +1397,7 @@ namespace Neuropixels {
      * Calling this function disconnects any previously connected bank(s) to the selected channel group.
      * If the parameter 'bank' is set to 0xFF the channel_group is disconnected from all banks.
      * 
-     * It will not apply this change to the probe until '\ref writeProbeConfiguration' is called.
+     * It will not apply this change to the probe until '\ref np_writeProbeConfiguration' is called.
      * 
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
@@ -1309,7 +1405,7 @@ namespace Neuropixels {
      * @param[in] channel_group: Channel group to connect, can have value from 0 to 23.
      * @param[in] bank: Bank to connect, can have value from 0 to 15.
      */
-    NP_EXPORT NP_ErrorCode selectElectrodeGroup(int slotID, int portID, int dockID, int channel_group, int bank);
+    NP_EXPORT NP_ErrorCode NP_APIC np_selectElectrodeGroup(int slotID, int portID, int dockID, int channel_group, int bank);
     /**
      * \brief Connect a maximum of two banks to channel group.
      *
@@ -1318,7 +1414,7 @@ namespace Neuropixels {
      * In the case the EN_A or EN_B bit in the shank register is set low,
      * it is allowed to connect a channel group to maximum two banks.
      * 
-     * It will not apply this change to the probe until '\ref writeProbeConfiguration' is called.
+     * It will not apply this change to the probe until '\ref np_writeProbeConfiguration' is called.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
@@ -1326,7 +1422,7 @@ namespace Neuropixels {
      * @param[in] channel_group: Channel group to connect, can have value from 0 to 23.
      * @param[in] mask: Banks to connect, combining maximum two values.
      */
-    NP_EXPORT NP_ErrorCode selectElectrodeGroupMask(int slotID, int portID, int dockID, int channel_group, electrodebanks_t mask);
+    NP_EXPORT NP_ErrorCode NP_APIC np_selectElectrodeGroupMask(int slotID, int portID, int dockID, int channel_group, electrodebanks_t mask);
 
     /** Onebox AUXilary IO functions */
 
@@ -1338,25 +1434,25 @@ namespace Neuropixels {
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] data: A buffer of length (len) of 16 bit signed data samples.
-     * @param[in] len: Amount of samples in 'data'. If len is 0 the current sample data is invalidated and calling \ref waveplayer_arm will fail.
+     * @param[in] len: Amount of samples in 'data'. If len is 0 the current sample data is invalidated and calling \ref np_waveplayer_arm will fail.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device. NODATA if data-length is 0.
 
      */
-    NP_EXPORT NP_ErrorCode waveplayer_writeBuffer(int slotID, const int16_t* data, unsigned int len);
+    NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_writeBuffer(int slotID, const int16_t* data, unsigned int len);
 
     /**
      * \brief Arm the Waveplayer.
      *
-     * This prepares the output SMA channel to playback the waveform programmed with '\ref waveplayer_writeBuffer' by routing output DAC0 to the SMA output and re-setting it to 0 V,
-     * even when no sample-data was set by '\ref waveplayer_writeBuffer'.
-     * The Waveplayer playback is triggered by a signal in the switch matrix (see \ref switchmatrix_set) or by the software trigger.
+     * This prepares the output SMA channel to playback the waveform programmed with '\ref np_waveplayer_writeBuffer' by routing output DAC0 to the SMA output and re-setting it to 0 V,
+     * even when no sample-data was set by '\ref np_waveplayer_writeBuffer'.
+     * The Waveplayer playback is triggered by a signal in the switch matrix (see \ref np_switchmatrix_set) or by the software trigger.
      * By default, \ref SM_Input_SWTrigger2 is bound as the WavePlayer software trigger.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
-     * @param[in] single_shot: If true, the Waveplayer will play the programmed waveform once after trigger. if false, the waveform is repeat until rearmed in other mode or \ref waveplayer_stop is called.
-     * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device. NODATA if no sample data has been assigned using '\ref waveplayer_writeBuffer'.
+     * @param[in] single_shot: If true, the Waveplayer will play the programmed waveform once after trigger. if false, the waveform is repeat until rearmed in other mode or \ref np_waveplayer_stop is called.
+     * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device. NODATA if no sample data has been assigned using '\ref np_waveplayer_writeBuffer'.
      */
-    NP_EXPORT NP_ErrorCode waveplayer_arm(int slotID, bool single_shot);
+    NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_arm(int slotID, bool single_shot);
 
     /**
      * \brief Stop playback of Waveplayer
@@ -1367,7 +1463,7 @@ namespace Neuropixels {
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device.
      */
-    NP_EXPORT NP_ErrorCode waveplayer_stop(int slotID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_stop(int slotID);
 
     /**
      * \brief Set the actual Waveplayer's sampling frequency in Hz.
@@ -1376,7 +1472,7 @@ namespace Neuropixels {
      * @param[in] frequency_Hz: The target sample frequency in Hz.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode waveplayer_setSampleFrequency(int slotID, double frequency_Hz);
+    NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_setSampleFrequency(int slotID, double frequency_Hz);
 
     /**
      * \brief Get the actual Waveplayer's sampling frequency in Hz
@@ -1385,7 +1481,7 @@ namespace Neuropixels {
      * @param[out] frequency_Hz: The target sample frequency in Hz.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode waveplayer_getSampleFrequency(int slotID, double* frequency_Hz);
+    NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_getSampleFrequency(int slotID, double* frequency_Hz);
 
     /**
      * \brief Directly reads the voltage of a particular ADC channel.
@@ -1395,30 +1491,30 @@ namespace Neuropixels {
      * @param[out] voltage: Return voltage of the ADC Channel in volts.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode ADC_read(int slotID, int ADC_channel, double* voltage);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_read(int slotID, int ADC_channel, double* voltage);
 
     /**
      * \brief Directly reads the ADC comparator output state.
      *
-     * The low/high comparator threshold values can be set using #ADC_setComparatorThreshold.
+     * The low/high comparator threshold values can be set using #np_ADC_setComparatorThreshold.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] ADC_channel: The ADC channel to read the data from (valid range 0 to 11).
      * @param[out] state: Returns the comparator output state. True for high, false for low.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode ADC_readComparator(int slotID, int ADC_channel, bool* state);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_readComparator(int slotID, int ADC_channel, bool* state);
 
     /**
      * \brief Directly reads the ADC comparator state of all ADC channels in a single output word.
      *
-     * The low/high comparator threshold values can be set using #ADC_setComparatorThreshold.
+     * The low/high comparator threshold values can be set using #np_ADC_setComparatorThreshold.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[out] flags: A word containing the comparator state of each ADC channel (bit0 = ADCCH0, bit 1 = ADCCH1, etc...).
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device.
      */
-    NP_EXPORT NP_ErrorCode ADC_readComparators(int slotID, uint32_t* flags);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_readComparators(int slotID, uint32_t* flags);
 
     /**
      * \brief Enable or disables the auxiliary ADC probe.
@@ -1426,26 +1522,26 @@ namespace Neuropixels {
      * Regardless of whether or not the ADC probe is enabled, the OneBox will actively sample the ADC.
      * When the ADC probe is enabled however, a stream of ADC and comparator data is sent to the PC together
      * with other data streams such as those from neural probes.
-     * Data from the ADC and comparators can also be read using functions like #ADC_read and #ADC_readComparator,
+     * Data from the ADC and comparators can also be read using functions like #np_ADC_read and #np_ADC_readComparator,
      * even if the ADC probe is disabled.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] enable: True to enable, false to disable.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device.
      */
-    NP_EXPORT NP_ErrorCode ADC_enableProbe(int slotID, bool enable);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_enableProbe(int slotID, bool enable);
 
     /**
      * \brief Get the LSB to voltage conversion factor and bit depth for the ADC probe channel.
      *
-     * This conversion changes with programmed ADC range (via #ADC_setVoltageRange).
+     * This conversion changes with programmed ADC range (via #np_ADC_setVoltageRange).
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[out] lsb_to_voltage: Conversion factor to convert 16 bit signed value to voltage.
      * @param[out] bit_depth: Optional return value that indicates the number of bits in the ADC stream.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device.
      */
-    NP_EXPORT NP_ErrorCode ADC_getStreamConversionFactor(int slotID, double* lsb_to_voltage, int* bit_depth);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getStreamConversionFactor(int slotID, double* lsb_to_voltage, int* bit_depth);
 
     /**
      * \brief Set the ADC comparator low/high threshold voltages per channel.
@@ -1460,7 +1556,7 @@ namespace Neuropixels {
      * @param[in] v_high: High comparator threshold voltage. Comparator state will toggle to 1 if the input is above this value.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device.
      */
-    NP_EXPORT NP_ErrorCode ADC_setComparatorThreshold(int slotID, int ADC_channel, double v_low, double v_high);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_setComparatorThreshold(int slotID, int ADC_channel, double v_low, double v_high);
 
     /**
      * \brief Get the programmed ADC comparator low/high threshold voltages.
@@ -1471,7 +1567,7 @@ namespace Neuropixels {
      * @param[out] v_high: Get the high comparator threshold voltage. Comparator state will toggle to 1 if the input is above this value.
      * @returns SUCCESS if successful. NOTSUPPORTED if this functionality is not supported by the device.
      */
-    NP_EXPORT NP_ErrorCode ADC_getComparatorThreshold(int slotID, int ADC_channel, double* v_low, double* v_high);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getComparatorThreshold(int slotID, int ADC_channel, double* v_low, double* v_high);
 
     /**
      * Enum to configure ADC voltage range.
@@ -1494,7 +1590,7 @@ namespace Neuropixels {
      *         NOTSUPPORTED if this functionality is not supported by the device.
      *         PARAMETER_INVALID if the range is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode ADC_setVoltageRange(int slotID, ADCrange_t range);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_setVoltageRange(int slotID, ADCrange_t range);
 
     /**
      * \brief Get the programmed ADC Voltage range.
@@ -1504,7 +1600,7 @@ namespace Neuropixels {
      * @return SUCCESS if successful.
      *         NOTSUPPORTED if this functionality is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode ADC_getVoltageRange(int slotID, ADCrange_t* range);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getVoltageRange(int slotID, ADCrange_t* range);
 
     /**
      * \brief Set a DAC channel to a fixed voltage.
@@ -1514,7 +1610,7 @@ namespace Neuropixels {
      * @param[in] voltage: The requested fixed output voltage in volts.
      * @returns SUCCESS if successful. WRONG_DACCHANNEL if channel out of bound, NOTSUPPORTED if this functionality is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode DAC_setVoltage(int slotID, int DAC_channel, double voltage);
+    NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setVoltage(int slotID, int DAC_channel, double voltage);
 
     /**
      * \brief Set multiple DAC output's voltages.
@@ -1524,13 +1620,13 @@ namespace Neuropixels {
      * @param[in] voltages: Pointer to array with 12 voltage entries.
      * @returns SUCCESS if successful. PARAMETER_INVALID if a voltage setting is out of bounds [-5V, 5V], NOTSUPPORTED if this functionality is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode DAC_setVoltages(int slotID, uint16_t DAC_channel_mask, double* voltages);
+    NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setVoltages(int slotID, uint16_t DAC_channel_mask, double* voltages);
 
 
     /**
      * \brief Set a DAC channel in digital tracking mode, and program its low and high voltage.
      *
-     * In this mode, the DAC channel acts as an output of the switch matrix (See #switchmatrix_set).
+     * In this mode, the DAC channel acts as an output of the switch matrix (See #np_switchmatrix_set).
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] DAC_channel: The DAC channel to configure.
@@ -1538,7 +1634,7 @@ namespace Neuropixels {
      * @param[in] v_low: DAC voltage for Digital 'L'. default is 0 volt.
      * @returns SUCCESS if successful. WRONG_DACCHANNEL if channel out of bound, NOTSUPPORTED if this functionality is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode DAC_setDigitalLevels(int slotID, int DAC_channel, double v_high, double v_low);
+    NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setDigitalLevels(int slotID, int DAC_channel, double v_high, double v_low);
 
     /**
      * \brief Enable DAC channel output on SDR connector.
@@ -1548,7 +1644,7 @@ namespace Neuropixels {
      * @param[in] state: True to enable output, false for high impedance.
      * @returns SUCCESS if successful. WRONG_DACCHANNEL if channel out of bound, NOTSUPPORTED if this functionality is not supported by the device
      */
-    NP_EXPORT NP_ErrorCode DAC_enableOutput(int slotID, int DAC_channel, bool state);
+    NP_EXPORT NP_ErrorCode NP_APIC np_DAC_enableOutput(int slotID, int DAC_channel, bool state);
 
     /**
      * \brief Set a DAC channel in probe sniffing mode.
@@ -1563,14 +1659,14 @@ namespace Neuropixels {
      * @param[in] source_type: Source stream. (Default AP)
      * @returns SUCCESS if successful. WRONG_DACCHANNEL if channel out of bound, NOTSUPPORTED if this functionality is not supported by the device.
      */
-    NP_EXPORT NP_ErrorCode DAC_setProbeSniffer(int slotID, int DAC_channel, int portID, int dockID, int channel, streamsource_t source_type);
+    NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setProbeSniffer(int slotID, int DAC_channel, int portID, int dockID, int channel, streamsource_t source_type);
 
     /**
      * \brief Read multiple packets from the auxiliary ADC probe stream (non-blocking and thread-safe).
      *
      * The OneBox actively samples an onboard 12-channel ADC to which external signals can be connected using the SDR connector.
-     * Each ADC channel is also fed into a comparator which can be configured through #ADC_setComparatorThreshold.
-     * When enabled through #ADC_enableProbe, the OneBox will send a packet stream of ADC and comparator data to the computer,
+     * Each ADC channel is also fed into a comparator which can be configured through #np_ADC_setComparatorThreshold.
+     * When enabled through #np_ADC_enableProbe, the OneBox will send a packet stream of ADC and comparator data to the computer,
      * which can be read using this function.
      *
      * Each packet of the stream contains 24 samples:
@@ -1580,7 +1676,7 @@ namespace Neuropixels {
      * It is possible to only read the first N samples from each packet by setting the \p channel_count parameter to a value lower than 24.
      *
      * The ADC counts, which are 16-bit signed integers, can be converted to voltages by multiplying them with a conversion factor.
-     * This conversion factor can be retrieved using #ADC_getStreamConversionFactor.
+     * This conversion factor can be retrieved using #np_ADC_getStreamConversionFactor.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[out] pck_info: Output data containing additional packet data: timestamp, stream status, and payload length.
@@ -1591,7 +1687,7 @@ namespace Neuropixels {
      * @param[out] packets_read: Number of packets read from the fifo.
      * @returns SUCCESS if successful. Note that this function also returns SUCCESS if no data was available (samplesread returns ==0). NOTSUPPORTED if this functionality is not supported by the device.
      */
-    NP_EXPORT NP_ErrorCode ADC_readPackets(int slotID, struct PacketInfo* pck_info, int16_t* data, int channel_count, int packet_count, int* packets_read);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_readPackets(int slotID, struct PacketInfo* pck_info, int16_t* data, int channel_count, int packet_count, int* packets_read);
 
     /**
      * \brief Get status (available packets and remaining capacity) of auxiliary ADC probe stream FIFO.
@@ -1602,7 +1698,7 @@ namespace Neuropixels {
      * @param[out] packets_avaialble: number of packets available for read.
      * @param[out] headroom: remaining capacity of the FIFO.
      */
-    NP_EXPORT NP_ErrorCode ADC_getPacketFifoStatus(int slotID, int* packets_avaialble, int* headroom);
+    NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getPacketFifoStatus(int slotID, int* packets_avaialble, int* headroom);
 
     /******************** Built In Self Test ****************************/
     /**
@@ -1614,7 +1710,7 @@ namespace Neuropixels {
      *          NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot, \n
      *          WRONG_SLOT in case a slot number outside the valid range is entered, \n
      */
-    NP_EXPORT NP_ErrorCode bistBS(int slotID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistBS(int slotID);
 
     /**
      * \brief headstage heartbeat (HB) test
@@ -1636,7 +1732,7 @@ namespace Neuropixels {
      *          WRONG_SLOT in case a slot number outside the valid range is entered, \n
      *          WRONG_PORT in case a port number outside the valid range is entered. \n
      */
-    NP_EXPORT NP_ErrorCode bistHB(int slotID, int portID, int dockID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistHB(int slotID, int portID, int dockID);
 
     /**
      * \brief Start Serdes PRBS test.
@@ -1649,7 +1745,7 @@ namespace Neuropixels {
      *          WRONG_SLOT in case a slot number outside the valid range is entered, \n
      *          WRONG_PORT in case a port number outside the valid range is entered. \n
      */
-    NP_EXPORT NP_ErrorCode bistStartPRBS(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistStartPRBS(int slotID, int portID);
 
     /**
      * @brief Stop Serdes PRBS test.
@@ -1663,7 +1759,7 @@ namespace Neuropixels {
      *          WRONG_SLOT in case a slot number outside the valid range is entered, \n
      *          WRONG_PORT in case a port number outside the valid range is entered. \n
      */
-    NP_EXPORT NP_ErrorCode bistStopPRBS(int slotID, int portID, int* prbs_err);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistStopPRBS(int slotID, int portID, int* prbs_err);
 
     /**
      * @brief Read intermediate Serdes PRBS test result
@@ -1677,23 +1773,7 @@ namespace Neuropixels {
      *          WRONG_SLOT in case a slot number outside the valid range is entered, \n
      *          WRONG_PORT in case a port number outside the valid range is entered. \n
      */
-    NP_EXPORT NP_ErrorCode bistReadPRBS(int slotID, int portID, int* prbs_err);
-
-    /**
-     * \brief Test I2C memory map access.
-     *
-     * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
-     * @param[in] portID: Id of the port on the basestation. (1..4)
-     * @param[in] dockID: Id of the dock of the probe on the headstage. (1..2 (for NPM))
-     * @returns SUCCESS if successful, \n
-     *          NO_LINK if no datalink, \n
-     *          NO_SLOT if no Neuropixel card is plugged in the selected PXI chassis slot, \n
-     *          WRONG_SLOT in case a slot number outside the valid range is entered, \n
-     *          in case a port number outside the valid range is entered, \n
-     *          NO_ACK in case no acknowledgment is received, \n
-     *          READBACK_ERROR in case the written and read-back word are not the same. \n
-     */
-    NP_EXPORT NP_ErrorCode bistI2CMM(int slotID, int portID, int dockID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistReadPRBS(int slotID, int portID, int* prbs_err);
 
     /**
      * \brief Test all EEPROMs (Flex, headstage, BSC). by verifying a write/readback cycle on an unused memory location.
@@ -1712,42 +1792,72 @@ namespace Neuropixels {
      *          NO_ACK_BSC in case no acknowledgment is received from the BSC eeprom, \n
      *          READBACK_ERROR_BSC in case the written and read-back word are not the same from the BSC eeprom. \n
      */
-    NP_EXPORT NP_ErrorCode bistEEPROM(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistEEPROM(int slotID, int portID);
 
     /**
-     * \brief Test the shift registers
+     * \brief Test configuration of probe.
      *
-     * This test verifies the functionality of the shank and base shift registers.
-     * The function configures the shift register two or more times with the same code.
-     * After the 2nd write cycle the SR_OUT_OK bit in the STATUS register is read.
-     * If OK, the shift register configuration was successful.
-     * The test is done for all applicable SR chain registers.
-     * The configuration code used for the test is a dedicated code (to make sure the bits are not all 0 or 1).
-     * Optional parameter \ref shanksOkMask can be used to determine which shanks have passed and which have failed.
-     * Each bit in the returned mask stands for a shank starting with bit 0 for shank 1.
-     * A set bit (1) means the shank passed the test.
+     * This test consists out of two test sections:
+     * 1. a probe memory map test, and
+     * 2. a probe configuration tests
+     *
+     * The first section has three outcomes:
+     * - Success: test proceeded without any issues
+     * - Failure: could not read-modify-write memory map, probe may be unusable (causes `PROBE_CONFIGURATION_FAILURE`,
+     *            see also note 3)
+     * - Termination: test terminated early due to unforeseen issue (e.g. communication-related failures such
+     *                as `TIMEOUT`)
+     *
+     * The second section also has three outcomes:
+     * - Success: whole probe could be configured without any issues
+     * - Failure: issue(s) detected during probe configuration:
+     *   - `PROBE_DEGRADATION_ERROR`: issue(s) likely located in shank, probe may still be usable
+     *   - `PROBE_CONFIGURATION_FAILURE`: issue(s) likely located in base, probe may be unusable (see note 3)
+     * - Termination: test terminated early due to unforeseen issue (e.g. communication-related failures such
+     *                as `TIMEOUT` or `UART_ACK_ERROR`)
+     *
+     * Should a termination occur in any section, it will cause the whole BIST to terminate and render its results
+     * inconclusive.
+     *
+     * Should a failure occur during the first section, the second section will still be executed.
+     * However, the result of the BIST will in any case be `PROBE_CONFIGURUATION_FAILURE`.
+     *
+     * The BIST will always return the most severe error, with `PROBE_CONFIGURATION_FAILURE` being more severe
+     * than `PROBE_DEGRADATION_ERROR`
+     *
+     * The optional parameter \ref shankOkMask can be used for multi-shank probes, and will be populated during the
+     * second section of the test. Each bit in the returned mask stands for a shank, with bit 0 representing shank 1,
+     * bit 1 shank 2, and so forth. A set bit (1) means the shank passed the test. On QB probes, each bit represents a
+     * shank/base pair.
      *
      * Note 1: this test overwrites and does not restore the data stored in the SR chains before the test.
-     * Use writeProbeConfiguration to restore the configuration.
+     * Use `np_writeProbeConfiguration` to restore the configuration.
      *
-     * Note 2: with 2C and other multi-shank probes the test will be executed for all SR chains of
-     * shanks **unless** unexpected failures occur. This means that the value of the shanksOkMask
-     * is valid if and only if the test returns SUCCESS or ERROR_SR_CHAIN. Should it return any
-     * other error code, such as TIMEOUT, the test will have been aborted.
+     * Note 2: the test will always be executed for the whole probe, **unless** unexpected failures occur.
+     * This means that the value of the shankOkMask is valid if and only if one of the following error codes is
+     * returned: `SUCCESS`, `PROBE_DEGRADATION_ERROR`, or `PROBE_CONFIGURATION_FAILURE`.
+     *
+     * Note 3: for QB probes no distinction is made between `PROBE_DEGRADATION_ERROR` and `PROBE_CONFIGURATION_FAILURE`.
+     * Only the former will be returned. This is due to the unique architecture of the probe.
+     *
+     * Note 4: for probes which do not have a programmable shank (e.g. NHP1 and UHD1), `shankOkMask` will be set to 1.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
      * @param[in] dockID: Id of the dock of the probe on the headstage. (1..2 (for NPM))
-     * @param[in,out] shanksOkMask: If pointer is set (not NULL) it will return a bit-mask for each shank that passed
+     * @param[out] shankOkMask: If pointer is set (not NULL) it will return a bit-mask for each shank that passed (QB:
+     *                          shank/base pair).
      * @returns SUCCESS if successful,\n
      *          NO_LINK if no datalink,\n
      *          NO_SLOT if no Neuropix card is plugged in the selected PXI chassis slot,\n
      *          TIMEOUT when there are communication failures,\n
+     *          UART_ACK_ERROR when there are communication failures,\n
      *          WRONG_SLOT in case a slot number outside the valid range is entered,\n
      *          WRONG_PORT in case a port number outside the valid range is entered,\n
-     *          ERROR_SR_CHAIN in case the SR_OUT_OK bit is not okay.\n
+     *          PROBE_DEGRADATION_ERROR in case of suspected issue with probe, but probe may still be usable,\n
+     *          PROBE_CONFIGURATION_FAILURE in case of suspected issue with probe, probe may not be usable any more\n
      */
-    NP_EXPORT NP_ErrorCode bistSR(int slotID, int portID, int dockID, uint8_t* shanksOkMask = NULL);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistConfig(int slotID, int portID, int dockID, uint8_t* shankOkMask);
 
     /**
      * \brief Test the PSB bus on the headstage.
@@ -1765,7 +1875,7 @@ namespace Neuropixels {
      *          WRONG_SLOT in case a slot number outside the valid range is entered, \n
      *          WRONG_PORT in case a port number outside the valid range is entered. \n
      */
-    NP_EXPORT NP_ErrorCode bistPSB(int slotID, int portID, int dockID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistPSB(int slotID, int portID, int dockID);
 
     /**
      * \brief The probe is configured for noise analysis.
@@ -1784,73 +1894,73 @@ namespace Neuropixels {
      *          WRONG_SLOT in case a slot number outside the valid range is entered, \n
      *          WRONG_PORT in case a port number outside the valid range is entered. \n
      */
-    NP_EXPORT NP_ErrorCode bistNoise(int slotID, int portID, int dockID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistNoise(int slotID, int portID, int dockID);
     /**
      * \brief The probe is configured for recording of a test signal which is generated on the HS.
      * This configuration is done via the shank and base configuration registers.
      * The AP data signal is recorded, and the frequency and amplitude of the recorded signal are extracted for each electrode.
      *
-     * The probe passes the signal test if at least 90% of the electrodes show a signal within the frequency and amplitude
+     * The probe passes the signal test if at least 85% of the electrodes show a signal within the frequency and amplitude
      * tolerance. The API function returns a pass/fail value.
      *
-     * Do not load the ADC calibration parameters to the probe prior to calling the bistSignal function.
+     * Do not load the ADC calibration parameters to the probe prior to calling the np_bistSignal function.
      * The tolerances on the amplitude test are set for an uncalibrated probe.
      * The test requires more than 30 seconds to complete.
      *
      * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
      * @param[in] portID: Id of the port on the basestation. (1..4)
      * @param[in] dockID: Id of the dock of the probe on the headstage. (1..2 (for NPM))
-     * @returns Success if successful, BIST_ERROR if less than 90% of probes give good signal.
+     * @returns Success if successful, BIST_ERROR if less than 85% of probes give good signal.
      */
-    NP_EXPORT NP_ErrorCode bistSignal(int slotID, int portID, int dockID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_bistSignal(int slotID, int portID, int dockID);
 
     /******************** Headstage tester API functions ****************************/
     /**
      * \brief Gets the headstage Tester's (HST) version.
      */
-    NP_EXPORT NP_ErrorCode HST_GetVersion(int slotID, int portID, int* version_major, int* version_minor);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HST_GetVersion(int slotID, int portID, int* version_major, int* version_minor);
     /**
      * \brief Checks if the HS dock contains an analog 1.2 V supply signal within the required tolerance
      * 
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria
      */
-    NP_EXPORT NP_ErrorCode HSTestVDDA1V2(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestVDDA1V2(int slotID, int portID);
     /**
      * \brief Checks if the HS dock contains an digital 1.2 V supply signal within the required tolerance
      *
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria
      */
-    NP_EXPORT NP_ErrorCode HSTestVDDD1V2(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestVDDD1V2(int slotID, int portID);
     /**
      * \brief Checks if the HS dock contains an analog 1.8 V supply signal within the required tolerance
      *
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria
      */
-    NP_EXPORT NP_ErrorCode HSTestVDDA1V8(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestVDDA1V8(int slotID, int portID);
     /**
      * \brief Checks if the HS dock contains an digital 1.8 V supply signal within the required tolerance
      *
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria
      */
-    NP_EXPORT NP_ErrorCode HSTestVDDD1V8(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestVDDD1V8(int slotID, int portID);
     /**
      * \brief Tests the functionality of the test signal generator.
      *
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria
      */
-    NP_EXPORT NP_ErrorCode HSTestOscillator(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestOscillator(int slotID, int portID);
     /**
      * \brief Checks if the master clock (MCLK) signal on the headstage is present.
      *
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria
      */
-    NP_EXPORT NP_ErrorCode HSTestMCLK(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestMCLK(int slotID, int portID);
     /**
      * \brief Tests the functionality of the probe clock pin (PCLK) on the headstage dock.
      *
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria
      */
-    NP_EXPORT NP_ErrorCode HSTestPCLK(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestPCLK(int slotID, int portID);
     /**
      * \brief Tests the connectivity of the neural data bus.
      * 
@@ -1858,25 +1968,25 @@ namespace Neuropixels {
      * 
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria. 
      */
-    NP_EXPORT NP_ErrorCode HSTestPSB(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestPSB(int slotID, int portID);
     /**
      * \brief Tests the functionality of the I2C bus.
      *
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria.
      */
-    NP_EXPORT NP_ErrorCode HSTestI2C(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestI2C(int slotID, int portID);
     /**
      * \brief Tests the functionality of the reset signal (NRST) on the headstage.
      *
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria.
      */
-    NP_EXPORT NP_ErrorCode HSTestNRST(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestNRST(int slotID, int portID);
     /**
      * \brief Tests the functionality of the reset signal (REC_NRESET) on the headstage.
      *
      * @returns SUCCESS if the test passes, BIST_ERROR if the test doesn't pass the criteria.
      */
-    NP_EXPORT NP_ErrorCode HSTestREC_NRESET(int slotID, int portID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_HSTestREC_NRESET(int slotID, int portID);
 
 // Configuration
 
@@ -1892,43 +2002,43 @@ namespace Neuropixels {
     /**
      * \brief Gets the basestation's driver ID.
      */
-    NP_EXPORT NP_ErrorCode getBasestationDriverID(int slotID, char* name, size_t len);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getBasestationDriverID(int slotID, char* name, size_t len);
     /**
      * \brief Gets the headstage's driver ID.
      */
-    NP_EXPORT NP_ErrorCode getHeadstageDriverID(int slotID, int portID, char* name, size_t len);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getHeadstageDriverID(int slotID, int portID, char* name, size_t len);
     /**
      * \brief Gets the Flex's driver ID.
      */
-    NP_EXPORT NP_ErrorCode getFlexDriverID(int slotID, int portID, int dockID, char* name, size_t len);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getFlexDriverID(int slotID, int portID, int dockID, char* name, size_t len);
     /**
      * \brief Gets the Probe's driver ID.
      */
-    NP_EXPORT NP_ErrorCode getProbeDriverID(int slotID, int portID, int dockID, char* name, size_t len);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getProbeDriverID(int slotID, int portID, int dockID, char* name, size_t len);
 
      /**
      * \brief Gets the basestation Connect Board's hardware ID.
      */
-    NP_EXPORT NP_ErrorCode getBSCHardwareID(int slotID, struct HardwareID* pHwid);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getBSCHardwareID(int slotID, struct HardwareID* pHwid);
     /**
      * \brief Gets the headstage's hardware ID.
      */
-    NP_EXPORT NP_ErrorCode getHeadstageHardwareID(int slotID, int portID, struct HardwareID* pHwid);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getHeadstageHardwareID(int slotID, int portID, struct HardwareID* pHwid);
     /**
      * \brief Gets the Flex's hardware ID.
      */
-    NP_EXPORT NP_ErrorCode getFlexHardwareID(int slotID, int portID, int dockID, struct HardwareID* pHwid);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getFlexHardwareID(int slotID, int portID, int dockID, struct HardwareID* pHwid);
     /**
      * \brief Reading the probes' S/N and P/N using the structure HardwareID. 
      * 
      * The parameters version_Major and version_Minor are not applicable and remain 0.
      */
-    NP_EXPORT NP_ErrorCode getProbeHardwareID(int slotID, int portID, int dockID, struct HardwareID* pHwid);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getProbeHardwareID(int slotID, int portID, int dockID, struct HardwareID* pHwid);
 
     /**
      * \brief Configure the headstage serializer error generator for testing error detection and correction.
      * This is a hardware feature of the MAX9271 serializer. Once configured the generator can be enabled
-     * using \ref enableSerDesErrorGenerator
+     * using \ref np_enableSerDesErrorGenerator
      * \param slotID Basestation slot ID
      * \param portID Port-ID to use
      * \param error_rate At which rate errors should be generated.
@@ -1939,7 +2049,7 @@ namespace Neuropixels {
      *          WRONG_SLOT in case a slot number outside the valid range is entered, \n
      *          WRONG_PORT in case a port number outside the valid range is entered. \n
      */
-    NP_EXPORT NP_ErrorCode configureSerDesErrorGenerator(int slotID,
+    NP_EXPORT NP_ErrorCode NP_APIC np_configureSerDesErrorGenerator(int slotID,
                                                          int portID,
                                                          serdes_error_rate_t error_rate,
                                                          serdes_error_count_t error_count);
@@ -1950,7 +2060,27 @@ namespace Neuropixels {
      * \param portID Port-ID to use
      * \param enable enable (true) or disable(false) SerDes error generator
      */
-    NP_EXPORT NP_ErrorCode enableSerDesErrorGenerator(int slotID, int portID, bool enable);
+    NP_EXPORT NP_ErrorCode NP_APIC np_enableSerDesErrorGenerator(int slotID, int portID, bool enable);
+
+    /**
+     * @brief Low level function to write a value to a serializer or deserializer register.
+     * When the SerDes link has not been established yet, or a loss-of-lock occurs, the function may return TIMEOUT.
+     * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
+     * @param[in] portID: Id of the port on the basestation.
+     * @param[in] reg: Register address to write to.
+     * @param[in] value: Value to write to register.
+     */
+    NP_EXPORT NP_ErrorCode NP_APIC np_writeSerDesRegister(int slotID, int portID, serdes_device_t serdes, uint8_t reg, uint8_t value);
+
+    /**
+     * @brief Low level function to read a value from a serializer or deserializer register.
+     * When the SerDes link has not been established yet, or a loss-of-lock occurs, the function may return TIMEOUT.
+     * @param[in] slotID: Id of the slot in the PXIe chassis or the virtual slot for OneBox.
+     * @param[in] portID: Id of the port on the basestation.
+     * @param[in] reg: Register address to read from.
+     * @param[out] value: Pointer to result.
+     */
+    NP_EXPORT NP_ErrorCode NP_APIC np_readSerDesRegister(int slotID, int portID, serdes_device_t serdes, uint8_t reg, uint8_t* value);
 
 // Debug 
 
@@ -2004,6 +2134,8 @@ namespace Neuropixels {
      * 
      * Example csv file content: \n 
      * 21050005          \n
+     * 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 \n
+     * 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 \n
      * 0, 0,  0.0, 4.0   \n
      * 0, 1,  0.0, 4.0   \n
      * 0, 2,  0.0, 4.0   \n
@@ -2040,6 +2172,8 @@ namespace Neuropixels {
      * @param[in] dockID: Ignored.
      * @param[in] filename: Comma separated text file (csv) containing following data:
      *       first line : probe serial number
+     *       second line: attenuation factors for blue wavelength (14 values, one per emission site)
+     *       third line : attenuation factors for red wavelength (14 values, one per emission site
      *       next lines: 'wavelengthindex', 'thermal_switch_index', 'off_mA', 'on_mA'
      *        wavelengthindex    : 0 = blue(450nm), 1 = red(638nm)
      *        thermal_switch_index :
@@ -2049,7 +2183,7 @@ namespace Neuropixels {
      *                9..14: 4_1, 4_2, 4_3, 4_4, 4_5, 4_6, 4_7, 4_8
      *        off_mA/on_mA : on/off current setting.
      */
-    NP_EXPORT NP_ErrorCode setOpticalCalibration(int slotID, int portID, int dockID, const char* filename);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setOpticalCalibration(int slotID, int portID, int dockID, const char* filename);
     /**
      * \brief Program calibration current for a single optical thermal switch.
      * 
@@ -2065,7 +2199,7 @@ namespace Neuropixels {
      * @param[in] On_mA:  ON current for the target switch.
      * @param[in] Off_mA: OFF current for the target switch.
      */
-    NP_EXPORT NP_ErrorCode setOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermal_switch_index, double On_mA, double Off_mA);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermal_switch_index, double On_mA, double Off_mA);
     /**
      * \brief Get the calibration currents for a single optical thermal switch.
      * 
@@ -2081,7 +2215,7 @@ namespace Neuropixels {
      * @param[out] On_mA:  ON current for the target switch.
      * @param[out] Off_mA: OFF current for the target switch.
      */
-    NP_EXPORT NP_ErrorCode getOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermal_switch_index, double* On_mA, double* Off_mA);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermal_switch_index, double* On_mA, double* Off_mA);
     /**
      * \brief Activate an optical emission site.
      * 
@@ -2091,7 +2225,7 @@ namespace Neuropixels {
      * @param[in] wavelength: Optical path selection.
      * @param[in] site:   Emission site index (0..13) or -1 to disable the optical path.
      */
-    NP_EXPORT NP_ErrorCode setEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int site);
+    NP_EXPORT NP_ErrorCode NP_APIC np_setEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int site);
     /**
      * \brief activate an optical emission site.
      * 
@@ -2101,7 +2235,7 @@ namespace Neuropixels {
      * @param[in] wavelength: Optical path selection.
      * @param[out] site: Get the active emission site index (0..13, or -1 if the path is disabled).
      */
-    NP_EXPORT NP_ErrorCode getEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int* site);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int* site);
     /**
      * \brief get the light power attenuation factor for an emission site
      * 
@@ -2112,7 +2246,7 @@ namespace Neuropixels {
      * @param[in] site:   Emission site index (0..13) or -1 to disable the optical path.
      * @param[out] attenuation: Get the laser power attenuation factor.
      */
-    NP_EXPORT NP_ErrorCode getEmissionSiteAttenuation(int slotID, int portID, int dockID, wavelength_t wavelength, int site, double* attenuation);
+    NP_EXPORT NP_ErrorCode NP_APIC np_getEmissionSiteAttenuation(int slotID, int portID, int dockID, wavelength_t wavelength, int site, double* attenuation);
     /**
      * \brief Disable an optical emission path.
      * 
@@ -2123,7 +2257,7 @@ namespace Neuropixels {
      * @param[in] dockID: Ignored.
      * @param[in] wavelength: Optical path selection.
      */
-    NP_EXPORT NP_ErrorCode disableEmissionPath(int slotID, int portID, int dockID, wavelength_t wavelength);
+    NP_EXPORT NP_ErrorCode NP_APIC np_disableEmissionPath(int slotID, int portID, int dockID, wavelength_t wavelength);
 
     /**** Neuropixels IMU ********************************************************************************************************************************/
 
@@ -2168,17 +2302,17 @@ namespace Neuropixels {
     } IMUPacket;
 #pragma pack(pop)
 
-    NP_EXPORT NP_ErrorCode IMU_detect(int slot, int port, bool* detected);
-    NP_EXPORT NP_ErrorCode IMU_enable(int slot, int port, bool enable);
-    NP_EXPORT NP_ErrorCode IMU_setAccelerometerSampleRateDivider(int slot, int port, uint16_t divider);
-    NP_EXPORT NP_ErrorCode IMU_setAccelerometerScale(int slot, int port, accelerometer_scale_t scale);
-    NP_EXPORT NP_ErrorCode IMU_setGyroscopeSampleRateDivider(int slot, int port, uint8_t divider);
-    NP_EXPORT NP_ErrorCode IMU_setGyroscopeScale(int slot, int port, gyroscope_scale_t scale);
-    NP_EXPORT NP_ErrorCode IMU_readPackets(int slot, int port, int packets_requested, IMUPacket* packets, int* packets_read);
-    NP_EXPORT NP_ErrorCode IMU_getFIFOStatus(int slot, int port, int* packets_available, int* headroom);
-    NP_EXPORT NP_ErrorCode IMU_getPllTimeBaseCorrection(int slot, int port, int* ppl_timebasecorrection);
-    NP_EXPORT NP_ErrorCode IMU_DfuRead(int slot, int port, uint8_t* data, size_t len, size_t* bytes_read);
-    NP_EXPORT NP_ErrorCode IMU_DfuWrite(int slot, int port, const uint8_t* data, size_t len, size_t* bytes_written);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_detect(int slot, int port, bool* detected);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_enable(int slot, int port, bool enable);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setAccelerometerSampleRateDivider(int slot, int port, uint16_t divider);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setAccelerometerScale(int slot, int port, accelerometer_scale_t scale);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setGyroscopeSampleRateDivider(int slot, int port, uint8_t divider);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setGyroscopeScale(int slot, int port, gyroscope_scale_t scale);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_readPackets(int slot, int port, int packets_requested, IMUPacket* packets, int* packets_read);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_getFIFOStatus(int slot, int port, int* packets_available, int* headroom);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_getPllTimeBaseCorrection(int slot, int port, int* ppl_timebasecorrection);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_DfuRead(int slot, int port, uint8_t* data, size_t len, size_t* bytes_read);
+    NP_EXPORT NP_ErrorCode NP_APIC np_IMU_DfuWrite(int slot, int port, const uint8_t* data, size_t len, size_t* bytes_written);
 
     /***** Debug support functions ************************************************************************************************************************/
 
@@ -2187,14 +2321,14 @@ namespace Neuropixels {
      *
      * @param level Highest level of reported messages
      */
-    NP_EXPORT void         dbg_setlevel(int level);
+    NP_EXPORT void NP_APIC  np_dbg_setlevel(int level);
 
     /**
      * Get the current logging level
      *
      * @return Current logging level
      */
-    NP_EXPORT int          dbg_getlevel(void);
+    NP_EXPORT int NP_APIC   np_dbg_getlevel(void);
 
     /**
      * Configure a logging callback.
@@ -2212,14 +2346,14 @@ namespace Neuropixels {
      * @param minlevel Highest level of reported messages
      * @param callback Callback (use nullptr to remove previously installed callback)
      */
-    NP_EXPORT void         dbg_setlogcallback(int minlevel, void(*callback)(int level, time_t ts, const char* module, const char* msg));
+    NP_EXPORT void NP_APIC np_dbg_setlogcallback(int minlevel, void(*callback)(int level, time_t ts, const char* module, const char* msg));
 
     /**
      * Reset stream processor and source ID statistics of a slot.
      *
      * @param slotID Target slot
      */
-    NP_EXPORT NP_ErrorCode dbg_stats_reset(int slotID);
+    NP_EXPORT NP_ErrorCode NP_APIC np_dbg_stats_reset(int slotID);
 
     /**
      * Read stream processor statistics.
@@ -2227,7 +2361,7 @@ namespace Neuropixels {
      * @param slotID Target slot
      * @param stats Pointer to result
      */
-    NP_EXPORT NP_ErrorCode dbg_diagstats_read(int slotID, struct np_diagstats* stats);
+    NP_EXPORT NP_ErrorCode NP_APIC np_dbg_diagstats_read(int slotID, struct np_diagstats* stats);
 
     /**
      * Read statics for given source ID.
@@ -2236,191 +2370,8 @@ namespace Neuropixels {
      * @param sourceID Source ID
      * @param stats Pointer to result
      */
-    NP_EXPORT NP_ErrorCode dbg_sourcestats_read(int slotID, uint8_t sourceID, struct np_sourcestats* stats);
+    NP_EXPORT NP_ErrorCode NP_APIC np_dbg_sourcestats_read(int slotID, uint8_t sourceID, struct np_sourcestats* stats);
 
-#define NP_APIC __stdcall
-    extern "C" {
-        //NeuropixAPI.h
-        NP_EXPORT void         NP_APIC np_getAPIVersion(int* version_major, int* version_minor, int* version_patch);
-        NP_EXPORT size_t       NP_APIC np_getAPIVersionFull(char* buffer, size_t size);
-        NP_EXPORT void         NP_APIC np_getMinimumFtdiDriverVersion(int* version_major, int* version_minor, int* version_build);
-        NP_EXPORT void         NP_APIC np_checkFtdiDriver(ftdi_driver_version_t* required,ftdi_driver_version_t* current,bool* is_driver_present,bool* is_version_ok);
-        NP_EXPORT void         NP_APIC np_checkBasestationSupported(int slotID, firmware_Info* carrier, firmware_Info* bsc, bool* carrier_supported, bool* bsc_supported);
-        NP_EXPORT size_t       NP_APIC np_getLastErrorMessage(char* buffer, size_t buffer_size);
-        NP_EXPORT const char*  NP_APIC np_getErrorMessage(NP_ErrorCode code);
-        NP_EXPORT int          NP_APIC np_getDeviceList(struct basestationID* list, int count);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getDeviceInfo(int slotID, struct basestationID* info);
-        NP_EXPORT bool         NP_APIC np_tryGetSlotID(const basestationID* bsid, int* slotID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_scanBS(void);
-        NP_EXPORT NP_ErrorCode NP_APIC np_mapBS(int serial_number, int slot);
-        NP_EXPORT NP_ErrorCode NP_APIC np_unmapBS(int slot);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setParameter(np_parameter_t paramID, int value);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getParameter(np_parameter_t paramid, int* value);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setParameter_double(np_parameter_t paramid, double value);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getParameter_double(np_parameter_t paramid, double* value);
-        NP_EXPORT char**       NP_APIC np_probeInfo_GetAllFieldNames(size_t* numFields);
-        NP_EXPORT NP_ErrorCode NP_APIC np_probeInfo_QueryPn(const char* queryStr, probeinfo_result_t* qResult);
-        NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_Count(probeinfo_result_t qResult, size_t* count);
-        NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_GetValueByField(probeinfo_result_t qResult, const char* fieldName, char** fieldValue);
-        NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_GetValueCpyByField(probeinfo_result_t qResult, const char* fieldName, char* fieldValue, const size_t maxStrLen);
-        NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_GetAllFieldsAndValues(probeinfo_result_t qResult, char*** fields, char*** values, size_t* num_fields);
-        NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_Free(probeinfo_result_t* qResult);
-        NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_NextRecord(probeinfo_result_t qResult, bool* success);
-        NP_EXPORT NP_ErrorCode NP_APIC np_probeInfoResult_Reset(probeinfo_result_t qResult);
-        NP_EXPORT NP_ErrorCode NP_APIC np_detectBS(int slotID, bool* detected);
-        NP_EXPORT NP_ErrorCode NP_APIC np_openBS(int slotID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_closeBS(int slotID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_arm(int slotID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setSWTrigger(int slotID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setSWTriggerEx(int slotID, swtriggerflags_t trigger_flags);
-        NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_set(int slotID, switchmatrixoutput_t output, switchmatrixinput_t input, bool connect);
-        NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_get(int slotID, switchmatrixoutput_t output, switchmatrixinput_t input, bool* isconnected);
-        NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_clear(int slotID, switchmatrixoutput_t output);
-        NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_setInputInversion(int slotID, switchmatrixinput_t input, bool invert);
-        NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_getInputInversion(int slotID, switchmatrixinput_t input, bool* invert);
-        NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_setOutputInversion(int slotID, switchmatrixoutput_t output, bool invert);
-        NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_getOutputInversion(int slotID, switchmatrixoutput_t output, bool* invert);
-        NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_setOutputTriggerEdge(int slotID, switchmatrixoutput_t output, triggeredge_t edge);
-        NP_EXPORT NP_ErrorCode NP_APIC np_switchmatrix_getOutputTriggerEdge(int slotID, switchmatrixoutput_t output, triggeredge_t* edge);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setSyncClockFrequency(int slotID, double frequency);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getSyncClockFrequency(int slotID, double* frequency);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setSyncClockPeriod(int slotID, int period_ms);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getSyncClockPeriod(int slotID, int* period_ms);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setDataMode(int slotID, int portID, np_datamode_t mode);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getDataMode(int slotID, int portID, np_datamode_t* mode);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bs_getTemperature(int slotID, double* temperature_degC);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bs_getFirmwareInfo(int slotID, struct firmware_Info* info);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bs_updateFirmware(int slotID, const char* filename, int(*callback)(size_t bytes_written));
-        NP_EXPORT NP_ErrorCode NP_APIC np_bs_resetFirmware(int slotID, int (*callback)(size_t bytes_written));
-        NP_EXPORT NP_ErrorCode NP_APIC np_bsc_resetFirmware(int slotID, int (*callback)(size_t bytes_written));
-        NP_EXPORT NP_ErrorCode NP_APIC np_bs_getFirmwareSize(int slotID, size_t* size);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bsc_getFirmwareSize(int slotID, size_t* size);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bsc_getTemperature(int slotID, double* temperature_degC);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bsc_getFirmwareInfo(int slotID, struct firmware_Info* info);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bsc_updateFirmware(int slotID, const char* filename, int(*callback)(size_t bytes_written));
-        NP_EXPORT NP_ErrorCode NP_APIC np_ob_getFirmwareInfo(int slotID, struct firmware_Info* info);
-        NP_EXPORT NP_ErrorCode NP_APIC np_hs_getFirmwareInfo(int slotID, int portID, firmware_Info* info);
-        NP_EXPORT NP_ErrorCode NP_APIC np_hs_updateFirmware(int slotID, int portID, const char* filename, bool read_check);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getBSCSupportedPortCount(int slotID, int* count);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getHSSupportedProbeCount(int slotID, int portID, int* count);
-        NP_EXPORT NP_ErrorCode NP_APIC np_openPort(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_closePort(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_detectHeadStage(int slotID, int portID, bool* detected);
-        NP_EXPORT NP_ErrorCode NP_APIC np_detectFlex(int slotID, int portID, int dockID, bool* detected);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setHSLed(int slotID, int portID, bool enable);
-        NP_EXPORT NP_ErrorCode NP_APIC np_openProbe(int slotID, int portID, int dockID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_closeProbe(int slotID, int portID, int dockID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_init(int slotID, int portID, int dockID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_writeProbeConfiguration(int slotID, int portID, int dockID, bool read_check);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getCommittedProbeConfiguration(int slotID, int portID, int dockID, int channel_count, ProbeChannelConfiguration* configuration);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setADCCalibration(int slotID, int portID, const char* filename);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setGainCalibration(int slotID, int portID, int dockID, const char* filename);
-        NP_EXPORT NP_ErrorCode NP_APIC np_readElectrodeData(int slotID, int portID, int dockID, struct electrodePacket* packets, int* actual_amount, int requested_amount);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getElectrodeDataFifoState(int slotID, int portID, int dockID, int* packets_available, int* headroom);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setTestSignal(int slotID, int portID, int dockID, bool enable);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setOPMODE(int slotID, int portID, int dockID, probe_opmode_t mode);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setCALMODE(int slotID, int portID, int dockID, testinputmode_t mode);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setREC_NRESET(int slotID, int portID, bool state);
-        NP_EXPORT NP_ErrorCode NP_APIC np_readPacket(int slotID, int portID, int dockID, streamsource_t source, struct PacketInfo* pck_info, int16_t* data, int requested_channel_count, int* actual_read);
-        NP_EXPORT NP_ErrorCode NP_APIC np_readPackets(int slotID, int portID, int dockID, streamsource_t source, struct PacketInfo* pck_info, int16_t* data, int channel_count, int packet_count, int* packets_read);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getPacketFifoStatus(int slotID, int portID, int dockID, streamsource_t source, int* packets_available, int* headroom);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setGain(int slotID, int portID, int dockID, int channel, int ap_gain_select, int lfg_gain_select);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getGain(int slotID, int portID, int dockID, int channel, int* ap_gain_select, int* lfg_gain_select);
-        NP_EXPORT NP_ErrorCode NP_APIC np_selectElectrode(int slotID, int portID, int dockID, int channel, int shank, int bank);
-        NP_EXPORT NP_ErrorCode NP_APIC np_selectElectrodeMask(int slotID, int portID, int dockID, int channel, int shank, electrodebanks_t bank_mask);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setReference(int slotID, int portID, int dockID, int channel, int shank, channelreference_t reference, int int_ref_electrode_bank);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setAPCornerFrequency(int slotID, int portID, int dockID, int channel, bool disable_high_pass);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setStdb(int slotID, int portID, int dockID, int channel, bool standby);
-        NP_EXPORT NP_ErrorCode NP_APIC np_selectColumnPattern(int slotID, int portID, int dockID, columnpattern_t pattern);
-        NP_EXPORT NP_ErrorCode NP_APIC np_selectElectrodeGroup(int slotID, int portID, int dockID, int channel_group, int bank);
-        NP_EXPORT NP_ErrorCode NP_APIC np_selectElectrodeGroupMask(int slotID, int portID, int dockID, int channel_group, electrodebanks_t mask);
-        NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_writeBuffer(int slotID, const int16_t* data, int len);
-        NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_arm(int slotID, bool single_shot);
-        NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_stop(int slotID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_setSampleFrequency(int slotID, double frequency_Hz);
-        NP_EXPORT NP_ErrorCode NP_APIC np_waveplayer_getSampleFrequency(int slotID, double* frequency_Hz);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_read(int slotID, int ADC_channel, double* voltage);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_readComparator(int slotID, int ADC_channel, bool* state);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_readComparators(int slotID, uint32_t* flags);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_enableProbe(int slotID, bool enable);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getStreamConversionFactor(int slotID, double* lsb_to_voltage, int* bit_depth);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_setComparatorThreshold(int slotID, int ADC_channel, double v_low, double v_high);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getComparatorThreshold(int slotID, int ADC_channel, double* v_low, double* v_high);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_setVoltageRange(int slotID, ADCrange_t range);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getVoltageRange(int slotID, ADCrange_t* range);
-        NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setVoltage(int slotID, int DAC_channel, double voltage);
-        NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setVoltages(int slotID, uint16_t DAC_channel_mask, double* voltages);
-        NP_EXPORT NP_ErrorCode NP_APIC np_DAC_enableOutput(int slotID, int DAC_channel, bool state);
-        NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setDigitalLevels(int slotID, int DAC_channel, double v_high, double v_low);
-        NP_EXPORT NP_ErrorCode NP_APIC np_DAC_setProbeSniffer(int slotID, int DAC_channel, int portID, int dockID, int channel, streamsource_t source_type);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_readPackets(int slotID, struct PacketInfo* pck_info, int16_t* data, int channel_count, int packet_count, int* packets_read);
-        NP_EXPORT NP_ErrorCode NP_APIC np_ADC_getPacketFifoStatus(int slotID, int* packets_available, int* headroom);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistBS(int slotID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistHB(int slotID, int portID, int dockID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistStartPRBS(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistStopPRBS(int slotID, int portID, int* prbs_err);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistReadPRBS(int slotID, int portID, int* prbs_err);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistI2CMM(int slotID, int portID, int dockID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistEEPROM(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistSR(int slotID, int portID, int dockID, uint8_t* shanksOkMask=NULL);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistPSB(int slotID, int portID, int dockID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistNoise(int slotID, int portID, int dockID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_bistSignal(int slotID, int portID, int dockID);
-
-        NP_EXPORT NP_ErrorCode NP_APIC np_HST_GetVersion(int slotID, int portID, int* version_major, int* version_minor);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestVDDA1V2(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestVDDD1V2(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestVDDA1V8(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestVDDD1V8(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestOscillator(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestMCLK(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestPCLK(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestPSB(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestI2C(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestNRST(int slotID, int portID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_HSTestREC_NRESET(int slotID, int portID);
-
-        //NeuropixAPI_configuration.h
-        NP_EXPORT NP_ErrorCode NP_APIC np_getBasestationDriverID(int slotID, char* name, size_t len);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getHeadstageDriverID(int slotID, int portID, char* name, size_t len);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getFlexDriverID(int slotID, int portID, int dockID, char* name, size_t len);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getProbeDriverID(int slotID, int portID, int dockID, char* name, size_t len);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getBSCHardwareID(int slotID, struct HardwareID* pHwid);\
-        NP_EXPORT NP_ErrorCode NP_APIC np_getHeadstageHardwareID(int slotID, int portID, struct HardwareID* pHwid);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getFlexHardwareID(int slotID, int portID, int dockID, struct HardwareID* pHwid);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getProbeHardwareID(int slotID, int portID, int dockID, struct HardwareID* pHwid);
-        NP_EXPORT NP_ErrorCode NP_APIC np_configureSerDesErrorGenerator(int slotID, int portID, serdes_error_rate_t error_rate, serdes_error_count_t error_count);
-        NP_EXPORT NP_ErrorCode NP_APIC np_enableSerDesErrorGenerator(int slotID, int portID, bool enable);
-
-        //NeuropixAPI_debug.h
-        NP_EXPORT void         NP_APIC np_dbg_setlevel(int level);
-        NP_EXPORT int          NP_APIC np_dbg_getlevel(void);
-        NP_EXPORT void         NP_APIC np_dbg_setlogcallback(int minlevel, void(*callback)(int level, time_t ts, const char* module, const char* msg));
-        NP_EXPORT NP_ErrorCode NP_APIC np_dbg_stats_reset(int slotID);
-        NP_EXPORT NP_ErrorCode NP_APIC np_dbg_diagstats_read(int slotID, struct np_diagstats* stats);
-        NP_EXPORT NP_ErrorCode NP_APIC np_dbg_sourcestats_read(int slotID, uint8_t sourceID, struct np_sourcestats* stats);
-
-        // Opto specific
-        NP_EXPORT NP_ErrorCode NP_APIC np_setOpticalCalibration(int slotID, int portID, int dockID, const char* filename);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermal_switch_index, double On_mA, double Off_mA);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getOpticalSwitchCalibration(int slotID, int portID, int dockID, wavelength_t wavelength, int thermal_switch_index, double* On_mA, double* Off_mA);
-        NP_EXPORT NP_ErrorCode NP_APIC np_setEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int site);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getEmissionSite(int slotID, int portID, int dockID, wavelength_t wavelength, int* site);
-        NP_EXPORT NP_ErrorCode NP_APIC np_getEmissionSiteAttenuation(int slotID, int portID, int dockID, wavelength_t wavelength, int site, double* attenuation);
-        NP_EXPORT NP_ErrorCode NP_APIC np_disableEmissionPath(int slotID, int portID, int dockID, wavelength_t wavelength);
-
-        // Neuropixels IMU
-        // TODO: IMU integration - subject to change
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_detect(int slot, int port, bool* detected);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_enable(int slot, int port, bool enable);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setAccelerometerSampleRateDivider(int slot, int port, uint16_t divider);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setAccelerometerScale(int slot, int port, accelerometer_scale_t scale);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setGyroscopeSampleRateDivider(int slot, int port, uint8_t divider);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_setGyroscopeScale(int slot, int port, gyroscope_scale_t scale);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_readPackets(int slot, int port, int packets_requested, IMUPacket* packets, int* packets_read);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_getFIFOStatus(int slot, int port, int* packets_available, int* headroom);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_getPllTimeBaseCorrection(int slot, int port, int* ppl_timebasecorrection);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_DfuRead(int slot, int port, uint8_t* data, size_t len, size_t* bytes_read);
-        NP_EXPORT NP_ErrorCode NP_APIC np_IMU_DfuWrite(int slot, int port, const uint8_t* data, size_t len, size_t* bytes_written);
-    }
+#ifdef __cplusplus
 } // namespace Neuropixels
+#endif

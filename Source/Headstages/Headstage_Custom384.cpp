@@ -28,7 +28,7 @@
 
 void Headstage_Custom384::getInfo()
 {
-    errorCode = Neuropixels::getHeadstageHardwareID (basestation->slot,
+    errorCode = Neuropixels::np_getHeadstageHardwareID (basestation->slot,
                                                      port,
                                                      &info.hardwareID);
 
@@ -40,7 +40,7 @@ void Headstage_Custom384::getInfo()
 
 void Flex1_Custom::getInfo()
 {
-    errorCode = Neuropixels::getFlexHardwareID (headstage->basestation->slot,
+    errorCode = Neuropixels::np_getFlexHardwareID (headstage->basestation->slot,
                                                 headstage->port,
                                                 dock,
                                                 &info.hardwareID);

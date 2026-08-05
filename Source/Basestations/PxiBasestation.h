@@ -89,7 +89,7 @@ public:
     void run()
     {
         LOGC ("Arming PXI slot ", slot, "...");
-        Neuropixels::arm (slot);
+        Neuropixels::np_arm (slot);
         LOGC ("Arming complete.");
     }
 
