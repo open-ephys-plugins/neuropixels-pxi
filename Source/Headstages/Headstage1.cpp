@@ -89,8 +89,10 @@ Headstage1::Headstage1 (Basestation* bs_, int port) : Headstage (bs_, port)
             return;
         }
 
-        if (String (partNumber).equalsIgnoreCase ("NP1300"))
+        if (String (partNumber).equalsIgnoreCase ("NP1300") || String (partNumber).equalsIgnoreCase ("NP1400"))
+        {
             probes.add (new NeuropixelsOpto (basestation, this, flexCables[0]));
+        }
         else if (String (partNumber).equalsIgnoreCase ("NP1110"))
         {
             probes.add (new Neuropixels_UHD (basestation, this, flexCables[0]));

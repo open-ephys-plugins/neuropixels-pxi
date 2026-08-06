@@ -329,7 +329,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
         currentHeight += 125;
 
-        if (probe->info.part_number == "NP1300") // Neuropixels Opto
+        if (probe->info.part_number == "NP1300" || probe->info.part_number == "NP1400") // Neuropixels Opto
         {
             redEmissionSiteLabel = std::make_unique<Label> ("RED EMISSION SITE", "RED EMISSION SITE");
             redEmissionSiteLabel->setFont (FontOptions ("Inter", "Regular", 13.0f));
@@ -1330,7 +1330,7 @@ void NeuropixInterface::paint (Graphics& g)
 {
     if (probe != nullptr)
     {
-        if (probe->info.part_number != "NP1300") // Neuropixels Opto
+        if (probe->info.part_number != "NP1300" && probe->info.part_number != "NP1400") // Neuropixels Opto
             drawLegend (g);
 
         g.setColour (findColour (ThemeColours::componentParentBackground).withAlpha (0.5f));

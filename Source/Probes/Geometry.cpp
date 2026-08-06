@@ -125,7 +125,7 @@ bool Geometry::forPartNumber (String PN,
 {
     bool found_valid_part_number = true;
 
-    if (PN.equalsIgnoreCase ("NP1300"))
+    if (PN.equalsIgnoreCase ("NP1300") || PN.equalsIgnoreCase ("NP1400"))
         OPTO (em, esm, pm);
     else
         found_valid_part_number = false;
