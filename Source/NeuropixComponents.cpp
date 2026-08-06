@@ -23,7 +23,8 @@
 
 #include "NeuropixComponents.h"
 
-float FirmwareUpdater::totalFirmwareBytes = 0;
+size_t FirmwareUpdater::totalFirmwareBytes = 0;
+size_t FirmwareUpdater::completedFirmwareBytes = 0;
 FirmwareUpdater* FirmwareUpdater::currentThread = nullptr;
 
 Probe::Probe (Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_)
@@ -239,84 +240,104 @@ Array<int> Probe::getHalfBankOverlapSelection (const String& config, int electro
     return selection;
 }
 
-FirmwareUpdater::FirmwareUpdater (Basestation* basestation_, File firmwareFile_, FirmwareType type)
+FirmwareUpdater::FirmwareUpdater (Basestation* basestation_)
     : ThreadWithProgressWindow ("Firmware Update...", true, false),
-      basestation (basestation_),
-      firmwareType (type)
+      basestation (basestation_)
 {
     FirmwareUpdater::currentThread = this;
-
-    FirmwareUpdater::totalFirmwareBytes = (float) firmwareFile_.getSize();
-
-    firmwareFilePath = firmwareFile_.getFullPathName();
-
-    LOGD ("Firmware path: ", firmwareFilePath);
-
-    if (firmwareType == FirmwareType::BSC_FIRMWARE)
-    {
-        this->setStatusMessage ("Updating BSC firmware...");
-    }
-    else
-    {
-        this->setStatusMessage ("Updating BS firmware...");
-    }
+    FirmwareUpdater::totalFirmwareBytes = 0;
+    FirmwareUpdater::completedFirmwareBytes = 0;
+    setStatusMessage ("Preparing firmware update...");
 
     runThread();
+    FirmwareUpdater::currentThread = nullptr;
 
-    if (firmwareType == FirmwareType::BSC_FIRMWARE)
-        AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon, "Successful firmware update", String ("Basestation connect board firmware updated successfully. Please update the basestation firmware now."));
+    if (updateResult == Neuropixels::SUCCESS)
+    {
+        AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon,
+                                          "Successful firmware update",
+                                          "The basestation and basestation connect board firmware were updated successfully. "
+                                          "Please restart your computer and power cycle the PXI chassis for the changes to take effect.");
+    }
     else
-        AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon, "Successful firmware update", String ("Please restart your computer and power cycle the PXI chassis for the changes to take effect."));
+    {
+        const String message = failedOperation + " failed: " + String (Neuropixels::np_getErrorMessage (updateResult));
+        LOGE (message);
+        AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon, "Firmware update failed", message);
+    }
 }
 
 void FirmwareUpdater::run()
 {
-    if (firmwareType == FirmwareType::BSC_FIRMWARE)
+    if (basestation->type == BasestationType::SIMULATED)
     {
-        if (basestation->type == BasestationType::SIMULATED)
+        setStatusMessage ("Updating BS firmware (1 of 2)...");
+        for (int step = 0; step < 20; step++)
         {
-            for (int i = 0; i < 20; i++)
-            {
-                setProgress (0.05 * i);
-                std::this_thread::sleep_for (std::chrono::milliseconds (100));
-            }
+            setProgress (0.025 * step);
+            std::this_thread::sleep_for (std::chrono::milliseconds (100));
         }
-        else
+
+        setStatusMessage ("Updating BSC firmware (2 of 2)...");
+        for (int step = 0; step < 20; step++)
         {
-            Neuropixels::np_bsc_updateFirmware (basestation->slot,
-                                             firmwareFilePath.getCharPointer(),
-                                             firmwareUpdateCallback,
-                                             false);
+            setProgress (0.5 + 0.025 * step);
+            std::this_thread::sleep_for (std::chrono::milliseconds (100));
         }
+
+        setProgress (1.0);
+        return;
     }
 
-    else
-    { // BS_FIRMWARE
+    size_t bsFirmwareBytes = 0;
+    size_t bscFirmwareBytes = 0;
 
-        if (basestation->type == BasestationType::SIMULATED)
-        {
-            for (int i = 0; i < 20; i++)
-            {
-                setProgress (0.05 * i);
-                std::this_thread::sleep_for (std::chrono::milliseconds (100));
-            }
-        }
-        else
-        {
-            Neuropixels::np_bs_updateFirmware (basestation->slot,
-                                            firmwareFilePath.getCharPointer(),
-                                            firmwareUpdateCallback,
-                                            false);
-        }
+    updateResult = Neuropixels::np_bs_getFirmwareSize (basestation->slot, &bsFirmwareBytes);
+    if (updateResult != Neuropixels::SUCCESS)
+    {
+        failedOperation = "Reading the built-in BS firmware size";
+        return;
     }
+
+    updateResult = Neuropixels::np_bsc_getFirmwareSize (basestation->slot, &bscFirmwareBytes);
+    if (updateResult != Neuropixels::SUCCESS)
+    {
+        failedOperation = "Reading the built-in BSC firmware size";
+        return;
+    }
+
+    totalFirmwareBytes = bsFirmwareBytes + bscFirmwareBytes;
+    if (totalFirmwareBytes == 0)
+    {
+        updateResult = Neuropixels::FAILED;
+        failedOperation = "Reading the built-in firmware sizes";
+        return;
+    }
+
+    setStatusMessage ("Updating BS firmware (1 of 2)...");
+    completedFirmwareBytes = 0;
+    updateResult = Neuropixels::np_bs_resetFirmware (basestation->slot, firmwareUpdateCallback);
+    if (updateResult != Neuropixels::SUCCESS)
+    {
+        failedOperation = "BS firmware update";
+        return;
+    }
+
+    setProgress (double (bsFirmwareBytes) / double (totalFirmwareBytes));
+    std::this_thread::sleep_for (std::chrono::milliseconds (1000)); // wait for the BS to reset before updating the BSC firmware
+    setStatusMessage ("Updating BSC firmware (2 of 2)...");
+    completedFirmwareBytes = bsFirmwareBytes;
+    updateResult = Neuropixels::np_bsc_resetFirmware (basestation->slot, firmwareUpdateCallback);
+    if (updateResult != Neuropixels::SUCCESS)
+    {
+        failedOperation = "BSC firmware update";
+        return;
+    }
+
+    setProgress (1.0);
 }
 
-void Basestation::updateBscFirmware (File file)
+void Basestation::updateFirmware()
 {
-    std::unique_ptr<FirmwareUpdater> firmwareUpdater = std::make_unique<FirmwareUpdater> ((Basestation*) this, file, FirmwareType::BSC_FIRMWARE);
-}
-
-void Basestation::updateBsFirmware (File file)
-{
-    std::unique_ptr<FirmwareUpdater> firmwareUpdater = std::make_unique<FirmwareUpdater> ((Basestation*) this, file, FirmwareType::BS_FIRMWARE);
+    std::unique_ptr<FirmwareUpdater> firmwareUpdater = std::make_unique<FirmwareUpdater> ((Basestation*) this);
 }

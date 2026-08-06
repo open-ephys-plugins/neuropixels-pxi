@@ -150,8 +150,6 @@ private:
 
     // Combo box - basestation settings
     std::unique_ptr<ComboBox> bistComboBox;
-    std::unique_ptr<ComboBox> bscFirmwareComboBox;
-    std::unique_ptr<ComboBox> bsFirmwareComboBox;
 
     // Combo box - probe settings
     std::unique_ptr<ComboBox> loadImroComboBox;
@@ -173,8 +171,7 @@ private:
     std::unique_ptr<Label> blueEmissionSiteLabel;
 
     std::unique_ptr<Label> bistLabel;
-    std::unique_ptr<Label> bscFirmwareLabel;
-    std::unique_ptr<Label> bsFirmwareLabel;
+    std::unique_ptr<Label> firmwareUpdateLabel;
     std::unique_ptr<Label> firmwareInstructionsLabel;
 
     std::unique_ptr<Label> probeSettingsLabel;
@@ -197,8 +194,7 @@ private:
 
     std::unique_ptr<UtilityButton> annotationButton;
     std::unique_ptr<UtilityButton> bistButton;
-    std::unique_ptr<UtilityButton> bsFirmwareButton;
-    std::unique_ptr<UtilityButton> bscFirmwareButton;
+    std::unique_ptr<UtilityButton> firmwareUpdateButton;
     std::unique_ptr<UtilityButton> firmwareToggleButton;
 
     std::unique_ptr<UtilityButton> copyButton;

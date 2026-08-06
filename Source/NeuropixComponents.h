@@ -202,12 +202,6 @@ enum class BIST
     BS = 8
 };
 
-enum class FirmwareType
-{
-    BS_FIRMWARE,
-    BSC_FIRMWARE
-};
-
 enum class AdcComparatorState
 {
     COMPARATOR_OFF = 1,
@@ -687,7 +681,7 @@ class FirmwareUpdater : public ThreadWithProgressWindow
 {
 public:
     /** Constructor */
-    FirmwareUpdater (Basestation* basestation, File firmwareFile, FirmwareType type);
+    FirmwareUpdater (Basestation* basestation);
 
     /** Destructor */
     ~FirmwareUpdater() {}
@@ -698,17 +692,19 @@ public:
     /** Callback to update progress bar*/
     static int firmwareUpdateCallback (size_t bytes)
     {
-        currentThread->setProgress (float (bytes) / totalFirmwareBytes);
+        if (currentThread != nullptr)
+            currentThread->setProgress (double (completedFirmwareBytes + bytes) / double (totalFirmwareBytes));
 
         return 1;
     }
 
     static FirmwareUpdater* currentThread;
-    static float totalFirmwareBytes;
+    static size_t totalFirmwareBytes;
+    static size_t completedFirmwareBytes;
 
     Basestation* basestation;
-    FirmwareType firmwareType;
-    String firmwareFilePath;
+    Neuropixels::NP_ErrorCode updateResult = Neuropixels::SUCCESS;
+    String failedOperation;
 };
 
 /** Represents a data acquisition device */
@@ -722,9 +718,6 @@ public:
         neuropixThread = neuropixThread_;
         slot = slot_;
         slot_c = (unsigned char) slot_;
-
-        bsFirmwarePath = "";
-        bscFirmwarePath = "";
 
         for (int p = 0; p < 4; p++)
         {
@@ -779,11 +772,8 @@ public:
 
     // ----------- OTHER METHODS ----------- //
 
-    /** Launches FirmwareUpdater to update the BSC firmware */
-    void updateBscFirmware (File file);
-
-    /** Launches FirmwareUpdater to update the BS firmware */
-    void updateBsFirmware (File file);
+    /** Launches FirmwareUpdater to install the API-compatible BS and BSC firmware */
+    void updateFirmware();
 
     /** Checks the status of any initialization threads */
     virtual bool isBusy() { return false; }
@@ -897,8 +887,6 @@ protected:
 
     StringArray customPortNames;
 
-    String bscFirmwarePath;
-    String bsFirmwarePath;
 };
 
 /** Represents a basestation connect board */

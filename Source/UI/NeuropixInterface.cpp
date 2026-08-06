@@ -529,63 +529,25 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     if (thread->type == PXI)
         addAndMakeVisible (firmwareToggleButton.get());
 
-    bscFirmwareComboBox = std::make_unique<ComboBox> ("bscFirmwareComboBox");
-    bscFirmwareComboBox->setBounds (700, verticalOffset + 70, 375, 22);
-    bscFirmwareComboBox->addListener (this);
-    bscFirmwareComboBox->addItem ("Select file...", 1);
+    firmwareUpdateLabel = std::make_unique<Label> ("FIRMWARE UPDATE", "Install API-compatible built-in firmware (BS first, then BSC).");
+    firmwareUpdateLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
+    firmwareUpdateLabel->setBounds (700, verticalOffset + 43, 600, 20);
 
     if (thread->type == PXI)
-        addChildComponent (bscFirmwareComboBox.get());
+        addChildComponent (firmwareUpdateLabel.get());
 
-    bscFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD");
-    bscFirmwareButton->setRadius (3.0f);
-    bscFirmwareButton->setBounds (1080, verticalOffset + 70, 60, 22);
-    bscFirmwareButton->addListener (this);
-    bscFirmwareButton->setTooltip ("Upload firmware to selected basestation connect board");
-
-    if (thread->type == PXI)
-        addChildComponent (bscFirmwareButton.get());
-
-    if (basestation->type == BasestationType::OPTO)
-        bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String (OPTO_BSC_FIRMWARE_FILENAME) + ") : ");
-    else
-        bscFirmwareLabel = std::make_unique<Label> ("BSC FIRMWARE", "1. Update basestation connect board firmware (" + String (BSC_FIRMWARE_FILENAME) + ") : ");
-    bscFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
-    bscFirmwareLabel->setBounds (700, verticalOffset + 43, 500, 20);
+    firmwareUpdateButton = std::make_unique<UtilityButton> ("UPDATE");
+    firmwareUpdateButton->setRadius (3.0f);
+    firmwareUpdateButton->setBounds (700, verticalOffset + 70, 80, 22);
+    firmwareUpdateButton->addListener (this);
+    firmwareUpdateButton->setTooltip ("Update the basestation and connect board firmware");
 
     if (thread->type == PXI)
-        addChildComponent (bscFirmwareLabel.get());
+        addChildComponent (firmwareUpdateButton.get());
 
-    bsFirmwareComboBox = std::make_unique<ComboBox> ("bscFirmwareComboBox");
-    bsFirmwareComboBox->setBounds (700, verticalOffset + 140, 375, 22);
-    bsFirmwareComboBox->addListener (this);
-    bsFirmwareComboBox->addItem ("Select file...", 1);
-
-    if (thread->type == PXI)
-        addChildComponent (bsFirmwareComboBox.get());
-
-    bsFirmwareButton = std::make_unique<UtilityButton> ("UPLOAD");
-    bsFirmwareButton->setRadius (3.0f);
-    bsFirmwareButton->setBounds (1080, verticalOffset + 140, 60, 22);
-    bsFirmwareButton->addListener (this);
-    bsFirmwareButton->setTooltip ("Upload firmware to selected basestation");
-
-    if (thread->type == PXI)
-        addChildComponent (bsFirmwareButton.get());
-
-    if (basestation->type == BasestationType::OPTO)
-        bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String (OPTO_BS_FIRMWARE_FILENAME) + "): ");
-    else
-        bsFirmwareLabel = std::make_unique<Label> ("BS FIRMWARE", "2. Update basestation firmware (" + String (BS_FIRMWARE_FILENAME) + "): ");
-    bsFirmwareLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
-    bsFirmwareLabel->setBounds (700, verticalOffset + 113, 500, 20);
-
-    if (thread->type == PXI)
-        addChildComponent (bsFirmwareLabel.get());
-
-    firmwareInstructionsLabel = std::make_unique<Label> ("FIRMWARE INSTRUCTIONS", "3. Power cycle computer and PXI chassis");
+    firmwareInstructionsLabel = std::make_unique<Label> ("FIRMWARE INSTRUCTIONS", "Restart the computer and power cycle the PXI chassis after a successful update.");
     firmwareInstructionsLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
-    firmwareInstructionsLabel->setBounds (700, verticalOffset + 183, 500, 20);
+    firmwareInstructionsLabel->setBounds (700, verticalOffset + 103, 650, 20);
 
     if (thread->type == PXI)
         addChildComponent (firmwareInstructionsLabel.get());
@@ -771,68 +733,6 @@ void NeuropixInterface::comboBoxChanged (ComboBox* comboBox)
         else if (comboBox == filterComboBox.get())
         {
             updateProbeSettingsInBackground();
-        }
-        else if (comboBox == bscFirmwareComboBox.get())
-        {
-            if (comboBox->getSelectedId() == 1)
-            {
-                String dialogBoxTitle;
-                String filePatternsAllowed;
-
-                if (basestation->type == BasestationType::OPTO)
-                {
-                    dialogBoxTitle = "Select an OPTO_QBSC .bin file to load.";
-                    filePatternsAllowed = OPTO_BSC_FIRMWARE_FILENAME;
-                }
-                else
-                {
-                    dialogBoxTitle = "Select a QBSC .bin file to load.";
-                    filePatternsAllowed = BSC_FIRMWARE_FILENAME;
-                }
-
-                FileChooser fileChooser (dialogBoxTitle, File(), filePatternsAllowed);
-
-                if (fileChooser.browseForFileToOpen())
-                {
-                    comboBox->addItem (fileChooser.getResult().getFullPathName(), comboBox->getNumItems() + 1);
-                    comboBox->setSelectedId (comboBox->getNumItems());
-                }
-                else
-                {
-                    comboBox->setSelectedId (0);
-                }
-            }
-        }
-        else if (comboBox == bsFirmwareComboBox.get())
-        {
-            if (comboBox->getSelectedId() == 1)
-            {
-                String dialogBoxTitle;
-                String filePatternsAllowed;
-
-                if (basestation->type == BasestationType::OPTO)
-                {
-                    dialogBoxTitle = "Select a BS .bin file to load.";
-                    filePatternsAllowed = OPTO_BS_FIRMWARE_FILENAME;
-                }
-                else
-                {
-                    dialogBoxTitle = "Select a BS .bin file to load.";
-                    filePatternsAllowed = BS_FIRMWARE_FILENAME;
-                }
-
-                FileChooser fileChooser (dialogBoxTitle, File(), filePatternsAllowed);
-
-                if (fileChooser.browseForFileToOpen())
-                {
-                    comboBox->addItem (fileChooser.getResult().getFullPathName(), comboBox->getNumItems() + 1);
-                    comboBox->setSelectedId (comboBox->getNumItems());
-                }
-                else
-                {
-                    comboBox->setSelectedId (0);
-                }
-            }
         }
         else if (comboBox == filterComboBox.get())
         {
@@ -1129,44 +1029,20 @@ void NeuropixInterface::buttonClicked (Button* button)
     {
         bool state = button->getToggleState();
 
-        bscFirmwareButton->setVisible (state);
-        bscFirmwareComboBox->setVisible (state);
-        bscFirmwareLabel->setVisible (state);
-
-        bsFirmwareButton->setVisible (state);
-        bsFirmwareComboBox->setVisible (state);
-        bsFirmwareLabel->setVisible (state);
-
+        firmwareUpdateButton->setVisible (state);
+        firmwareUpdateLabel->setVisible (state);
         firmwareInstructionsLabel->setVisible (state);
 
         if (state)
-            viewport->setMinimumContentWidth (1150);
+            viewport->setMinimumContentWidth (1350);
         else
             viewport->setMinimumContentWidth (1000);
 
         repaint();
     }
-    else if (button == bsFirmwareButton.get())
+    else if (button == firmwareUpdateButton.get())
     {
-        if (bsFirmwareComboBox->getSelectedId() > 1)
-        {
-            basestation->updateBsFirmware (File (bsFirmwareComboBox->getText()));
-        }
-        else
-        {
-            CoreServices::sendStatusMessage ("No file selected.");
-        }
-    }
-    else if (button == bscFirmwareButton.get())
-    {
-        if (bscFirmwareComboBox->getSelectedId() > 1)
-        {
-            basestation->updateBscFirmware (File (bscFirmwareComboBox->getText()));
-        }
-        else
-        {
-            CoreServices::sendStatusMessage ("No file selected.");
-        }
+        basestation->updateFirmware();
     }
 }
 
@@ -1386,17 +1262,8 @@ void NeuropixInterface::startAcquisition()
     if (firmwareToggleButton != nullptr)
         firmwareToggleButton->setEnabled (enabledState);
 
-    if (bscFirmwareComboBox != nullptr)
-        bscFirmwareComboBox->setEnabled (enabledState);
-
-    if (bsFirmwareComboBox != nullptr)
-        bsFirmwareComboBox->setEnabled (enabledState);
-
-    if (bsFirmwareButton != nullptr)
-        bsFirmwareButton->setEnabled (enabledState);
-
-    if (bscFirmwareButton != nullptr)
-        bscFirmwareButton->setEnabled (enabledState);
+    if (firmwareUpdateButton != nullptr)
+        firmwareUpdateButton->setEnabled (enabledState);
 
     if (mode == ACTIVITY_VIEW)
         probeBrowser->startTimer (100);
@@ -1455,17 +1322,8 @@ void NeuropixInterface::stopAcquisition()
     if (firmwareToggleButton != nullptr)
         firmwareToggleButton->setEnabled (enabledState);
 
-    if (bscFirmwareComboBox != nullptr)
-        bscFirmwareComboBox->setEnabled (enabledState);
-
-    if (bsFirmwareComboBox != nullptr)
-        bsFirmwareComboBox->setEnabled (enabledState);
-
-    if (bsFirmwareButton != nullptr)
-        bsFirmwareButton->setEnabled (enabledState);
-
-    if (bscFirmwareButton != nullptr)
-        bscFirmwareButton->setEnabled (enabledState);
+    if (firmwareUpdateButton != nullptr)
+        firmwareUpdateButton->setEnabled (enabledState);
 }
 
 void NeuropixInterface::paint (Graphics& g)
