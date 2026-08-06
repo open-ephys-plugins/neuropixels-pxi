@@ -154,29 +154,25 @@ void Neuropixels_QuadBase::initialize (bool signalChainIsLoading)
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
 
-    if (errorCode == Neuropixels::PROBE_DEGRADATION_ERROR || errorCode == Neuropixels::PROBE_CONFIGURATION_FAILURE)
+    uint8_t shanksOkMask = 0;
+    errorCode = runConfigurationBistAndRestore (&shanksOkMask);
+
+    if (! canContinueAfterProbeConfiguration (errorCode, "bistConfig"))
+        return;
+
+    for (int shank = 0; shank < 4; shank++)
     {
-        uint8_t shanksOkMask = 0;
-        errorCode = runConfigurationBistAndRestore (&shanksOkMask);
-
-        if (! canContinueAfterProbeConfiguration (errorCode, "bistConfig"))
-            return;
-
-        for (int shank = 0; shank < 4; shank++)
+        if (((shanksOkMask >> shank) & 1) == 0)
         {
-            if (((shanksOkMask >> shank) & 1) == 0)
-            {
-                LOGC ("Shank ", shank + 1, " appears to be broken.");
+            LOGC ("Shank ", shank + 1, " appears to be broken.");
 
-                for (int i = 0; i < electrodeMetadata.size(); i++)
-                {
-                    if (electrodeMetadata.getReference (i).shank == shank)
-                        electrodeMetadata.getReference (i).shank_is_programmable = false;
-                }
+            for (int i = 0; i < electrodeMetadata.size(); i++)
+            {
+                if (electrodeMetadata.getReference (i).shank == shank)
+                    electrodeMetadata.getReference (i).shank_is_programmable = false;
             }
         }
     }
-
 }
 
 void Neuropixels_QuadBase::calibrate()

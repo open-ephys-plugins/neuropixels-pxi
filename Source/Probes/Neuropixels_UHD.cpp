@@ -156,6 +156,11 @@ void Neuropixels_UHD::initialize (bool signalChainIsLoading)
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
 
+    errorCode = runConfigurationBistAndRestore();
+
+    if (! canContinueAfterProbeConfiguration (errorCode, "bistConfig"))
+        return;
+
     if (errorCode == Neuropixels::PROBE_DEGRADATION_ERROR)
     {
         LOGC ("Probe degradation detected; marking the shank unprogrammable.");

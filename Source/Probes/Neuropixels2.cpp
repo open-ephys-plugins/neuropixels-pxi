@@ -189,31 +189,36 @@ void Neuropixels2::initialize (bool signalChainIsLoading)
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
 
-    if (errorCode == Neuropixels::PROBE_DEGRADATION_ERROR)
+    if (settings.probeType == ProbeType::NP2_4)
     {
-        if (settings.probeType == ProbeType::NP2_4)
+        uint8_t shanksOkMask = 0;
+        errorCode = runConfigurationBistAndRestore (&shanksOkMask);
+
+        if (! canContinueAfterProbeConfiguration (errorCode, "bistConfig"))
+            return;
+
+        for (int shank = 0; shank < 4; shank++)
         {
-            uint8_t shanksOkMask = 0;
-            errorCode = runConfigurationBistAndRestore (&shanksOkMask);
-
-            if (! canContinueAfterProbeConfiguration (errorCode, "bistConfig"))
-                return;
-
-            for (int shank = 0; shank < 4; shank++)
+            if (((shanksOkMask >> shank) & 1) == 0)
             {
-                if (((shanksOkMask >> shank) & 1) == 0)
-                {
-                    LOGC ("Shank ", shank + 1, " appears to be broken.");
+                LOGC ("Shank ", shank + 1, " appears to be broken.");
 
-                    for (int i = 0; i < electrodeMetadata.size(); i++)
-                    {
-                        if (electrodeMetadata.getReference (i).shank == shank)
-                            electrodeMetadata.getReference (i).shank_is_programmable = false;
-                    }
+                for (int i = 0; i < electrodeMetadata.size(); i++)
+                {
+                    if (electrodeMetadata.getReference (i).shank == shank)
+                        electrodeMetadata.getReference (i).shank_is_programmable = false;
                 }
             }
         }
-        else
+    }
+    else
+    {
+        errorCode = runConfigurationBistAndRestore();
+
+        if (! canContinueAfterProbeConfiguration (errorCode, "bistConfig"))
+            return;
+
+        if (errorCode == Neuropixels::PROBE_DEGRADATION_ERROR)
         {
             LOGC ("Probe degradation detected; marking the shank unprogrammable.");
 
