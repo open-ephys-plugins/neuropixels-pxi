@@ -171,7 +171,7 @@ bool Neuropixels_NHP_Active::close()
 
 void Neuropixels_NHP_Active::initialize (bool signalChainIsLoading)
 {
-    errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, true);
+    errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, false);
 
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;

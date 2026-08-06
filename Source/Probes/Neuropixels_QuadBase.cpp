@@ -148,7 +148,7 @@ bool Neuropixels_QuadBase::close()
 
 void Neuropixels_QuadBase::initialize (bool signalChainIsLoading)
 {
-    errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, true);
+    errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, false);
 
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;

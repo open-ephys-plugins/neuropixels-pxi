@@ -149,7 +149,7 @@ void CustomPassiveProbe::initialize (bool signalChainIsLoading)
     errorCode = Neuropixels::np_init (basestation->slot,
                                       headstage->port,
                                       dock,
-                                      true);
+                                      false);
 
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
