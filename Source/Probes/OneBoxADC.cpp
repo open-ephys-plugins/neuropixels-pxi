@@ -64,9 +64,6 @@ OneBoxADC::OneBoxADC (Basestation* bs, OneBoxDAC* dac_) : DataSource (bs),
 
 void OneBoxADC::initialize (bool signalChainIsLoading)
 {
-    
-
-
 }
 
 void OneBoxADC::startAcquisition()
@@ -174,23 +171,23 @@ void OneBoxADC::setAdcThresholdLevel (AdcThresholdLevel level, int channel)
     {
         case AdcThresholdLevel::ONE_VOLT:
             Neuropixels::np_ADC_setComparatorThreshold (basestation->slot,
-                                                     channel,
-                                                     0.5f,
-                                                     1.0f);
+                                                        channel,
+                                                        0.5f,
+                                                        1.0f);
             thresholdLevels[channel] = AdcThresholdLevel::ONE_VOLT;
             break;
         case AdcThresholdLevel::THREE_VOLTS:
             Neuropixels::np_ADC_setComparatorThreshold (basestation->slot,
-                                                     channel,
-                                                     1.5f,
-                                                     3.0f);
+                                                        channel,
+                                                        1.5f,
+                                                        3.0f);
             thresholdLevels[channel] = AdcThresholdLevel::THREE_VOLTS;
             break;
         default:
             Neuropixels::np_ADC_setComparatorThreshold (basestation->slot,
-                                                     channel,
-                                                     0.5f,
-                                                     1.0f);
+                                                        channel,
+                                                        0.5f,
+                                                        1.0f);
             thresholdLevels[channel] = AdcThresholdLevel::ONE_VOLT;
     }
 }
@@ -272,11 +269,11 @@ void OneBoxADC::run()
         uint64 event_codes[MAXPACKETS];
 
         errorCode = Neuropixels::np_ADC_readPackets (basestation->slot,
-                                                  &packetInfo[0],
-                                                  &data[0],
-                                                  NUM_ADCS_AND_COMPARATORS,
-                                                  count,
-                                                  &count);
+                                                     &packetInfo[0],
+                                                     &data[0],
+                                                     NUM_ADCS_AND_COMPARATORS,
+                                                     count,
+                                                     &count);
 
         if (errorCode == Neuropixels::SUCCESS && count > 0)
         {

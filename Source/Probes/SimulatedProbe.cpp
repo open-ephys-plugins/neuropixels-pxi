@@ -30,7 +30,7 @@ int64 SimulatedProbe::globalTimerStart = Time::getMillisecondCounterHiRes();
 
 int SimulatedProbe::getGlobalEventCode()
 {
-    double currentMsModS = fmod(Time::getMillisecondCounterHiRes() - globalTimerStart, 1000.0);
+    double currentMsModS = fmod (Time::getMillisecondCounterHiRes() - globalTimerStart, 1000.0);
     return (currentMsModS < 500) ? 1 : 0;
 }
 
@@ -889,7 +889,6 @@ bool SimulatedProbe::runBist (BIST bistType)
 
 void SimulatedProbe::run()
 {
-
     while (! threadShouldExit())
     {
         int64 start = Time::getHighResolutionTicks();
@@ -926,8 +925,6 @@ void SimulatedProbe::run()
 
             if (sendSync)
                 lfpSamples[(384 * MAXPACKETS) + packetNum] = (float) eventCode;
-
-
         }
 
         apBuffer->addToBuffer (apSamples, ap_timestamps, timestamp_s, event_codes, 12 * MAXPACKETS);

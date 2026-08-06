@@ -31,9 +31,9 @@
 void NeuropixelsOpto::getInfo()
 {
     errorCode = checkError (Neuropixels::np_getProbeHardwareID (headstage->basestation->slot,
-                                                             headstage->port,
-                                                             dock,
-                                                             &info.hardwareID),
+                                                                headstage->port,
+                                                                dock,
+                                                                &info.hardwareID),
                             "getProbeHardwareID");
 
     info.version = String (info.hardwareID.version_Major)
@@ -155,7 +155,6 @@ bool NeuropixelsOpto::close()
 void NeuropixelsOpto::initialize (bool signalChainIsLoading)
 {
     errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, true);
-    LOGD ("Neuropixels::init: errorCode: ", errorCode);
 
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
@@ -324,11 +323,11 @@ void NeuropixelsOpto::selectElectrodes()
             //LOGD("Setting probe: ", headstage->port, " ch: ", settings.selectedChannel[ch], " to bank: ", settings.availableBanks.indexOf(settings.selectedBank[ch]));
 
             ec = Neuropixels::np_selectElectrode (basestation->slot,
-                                               headstage->port,
-                                               dock,
-                                               settings.selectedChannel[ch],
-                                               settings.selectedShank[ch],
-                                               settings.availableBanks.indexOf (settings.selectedBank[ch]));
+                                                  headstage->port,
+                                                  dock,
+                                                  settings.selectedChannel[ch],
+                                                  settings.selectedShank[ch],
+                                                  settings.availableBanks.indexOf (settings.selectedBank[ch]));
         }
     }
 }
@@ -387,10 +386,10 @@ void NeuropixelsOpto::setApFilterState()
 {
     for (int channel = 0; channel < 384; channel++)
         Neuropixels::np_setAPCornerFrequency (basestation->slot,
-                                           headstage->port,
-                                           dock,
-                                           channel,
-                                           ! settings.apFilterState); // true if disabled
+                                              headstage->port,
+                                              dock,
+                                              channel,
+                                              ! settings.apFilterState); // true if disabled
 }
 
 void NeuropixelsOpto::setAllGains()
@@ -598,7 +597,6 @@ void NeuropixelsOpto::run()
 
 bool NeuropixelsOpto::runBist (BIST bistType)
 {
-
     int slot = basestation->slot;
     int port = headstage->port;
 

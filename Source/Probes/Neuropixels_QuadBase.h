@@ -46,7 +46,6 @@ public:
     DataBuffer* buffer;
 
 private:
-
     int SKIP;
 
     float apSamples[(384 * 4 + 1) * MAXPACKETS];

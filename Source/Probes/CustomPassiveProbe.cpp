@@ -31,9 +31,9 @@
 void CustomPassiveProbe::getInfo()
 {
     errorCode = checkError (Neuropixels::np_getProbeHardwareID (headstage->basestation->slot,
-                                                             headstage->port,
-                                                             dock,
-                                                             &info.hardwareID),
+                                                                headstage->port,
+                                                                dock,
+                                                                &info.hardwareID),
                             "getProbeHardwareID");
 
     info.version = String (info.hardwareID.version_Major)
@@ -115,8 +115,8 @@ bool CustomPassiveProbe::open()
 {
     LOGC ("Opening probe...");
     errorCode = checkError (Neuropixels::np_openProbe (basestation->slot,
-                                                    headstage->port,
-                                                    dock),
+                                                       headstage->port,
+                                                       dock),
                             "openProbe");
 
     LOGC ("openProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
@@ -136,8 +136,8 @@ bool CustomPassiveProbe::open()
 bool CustomPassiveProbe::close()
 {
     errorCode = checkError (Neuropixels::np_closeProbe (basestation->slot,
-                                                     headstage->port,
-                                                     dock),
+                                                        headstage->port,
+                                                        dock),
                             "closeProbe");
     LOGD ("closeProbe: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
@@ -146,24 +146,23 @@ bool CustomPassiveProbe::close()
 
 void CustomPassiveProbe::initialize (bool signalChainIsLoading)
 {
-    errorCode = checkError (Neuropixels::np_init (basestation->slot,
-                                               headstage->port,
-                                               dock,
-                                               true),
-                            "init");
+    errorCode = Neuropixels::np_init (basestation->slot,
+                                      headstage->port,
+                                      dock,
+                                      true);
 
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
 
     checkError (Neuropixels::np_setOPMODE (basestation->slot,
-                                        headstage->port,
-                                        dock,
-                                        Neuropixels::RECORDING),
+                                           headstage->port,
+                                           dock,
+                                           Neuropixels::RECORDING),
                 "setOpMode");
 
     checkError (Neuropixels::np_setHSLed (basestation->slot,
-                                       headstage->port,
-                                       false),
+                                          headstage->port,
+                                          false),
                 "setHSLed");
 }
 
@@ -254,11 +253,11 @@ void CustomPassiveProbe::printSettings()
     int lfpGainIndex;
 
     Neuropixels::np_getGain (basestation->slot,
-                          headstage->port,
-                          dock,
-                          32,
-                          &apGainIndex,
-                          &lfpGainIndex);
+                             headstage->port,
+                             dock,
+                             32,
+                             &apGainIndex,
+                             &lfpGainIndex);
 
     LOGD ("Current settings for probe on slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " AP=", settings.availableApGains[apGainIndex], " LFP=", settings.availableLfpGains[lfpGainIndex], " REF=", settings.availableReferences[settings.referenceIndex]);
 }
@@ -277,10 +276,10 @@ void CustomPassiveProbe::setApFilterState()
 {
     for (int channel = 0; channel < 384; channel++)
         checkError (Neuropixels::np_setAPCornerFrequency (basestation->slot,
-                                                       headstage->port,
-                                                       dock,
-                                                       channel,
-                                                       ! settings.apFilterState), // true if disabled
+                                                          headstage->port,
+                                                          dock,
+                                                          channel,
+                                                          ! settings.apFilterState), // true if disabled
                     "setAPCornerFrequency");
 }
 
@@ -291,11 +290,11 @@ void CustomPassiveProbe::setAllGains()
     for (int channel = 0; channel < 384; channel++)
     {
         checkError (Neuropixels::np_setGain (basestation->slot,
-                                          headstage->port,
-                                          dock,
-                                          channel,
-                                          settings.apGainIndex,
-                                          settings.lfpGainIndex),
+                                             headstage->port,
+                                             dock,
+                                             channel,
+                                             settings.apGainIndex,
+                                             settings.lfpGainIndex),
                     "setGain");
     }
 }
@@ -330,12 +329,12 @@ void CustomPassiveProbe::setAllReferences()
 
     for (int channel = 0; channel < 384; channel++)
         checkError (Neuropixels::np_setReference (basestation->slot,
-                                               headstage->port,
-                                               dock,
-                                               channel,
-                                               0,
-                                               refId,
-                                               refElectrodeBank),
+                                                  headstage->port,
+                                                  dock,
+                                                  channel,
+                                                  0,
+                                                  refId,
+                                                  refElectrodeBank),
                     "setReference");
 }
 
@@ -345,9 +344,9 @@ void CustomPassiveProbe::writeConfiguration()
         basestation->waitForThreadToExit();
 
     errorCode = checkError (Neuropixels::np_writeProbeConfiguration (basestation->slot,
-                                                                  headstage->port,
-                                                                  dock,
-                                                                  false),
+                                                                     headstage->port,
+                                                                     dock,
+                                                                     false),
                             "writeProbeConfiguration");
 
     if (errorCode == Neuropixels::SUCCESS)
@@ -506,7 +505,6 @@ void CustomPassiveProbe::run()
 
 bool CustomPassiveProbe::runBist (BIST bistType)
 {
-
     int slot = basestation->slot;
     int port = headstage->port;
 
@@ -583,7 +581,6 @@ bool CustomPassiveProbe::runBist (BIST bistType)
     setApFilterState();
     selectElectrodes();
     writeConfiguration();
-
 
     return returnValue;
 }

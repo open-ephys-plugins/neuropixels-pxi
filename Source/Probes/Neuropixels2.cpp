@@ -31,9 +31,9 @@
 void Neuropixels2::getInfo()
 {
     errorCode = checkError (Neuropixels::np_getProbeHardwareID (headstage->basestation->slot,
-                                                             headstage->port,
-                                                             dock,
-                                                             &info.hardwareID),
+                                                                headstage->port,
+                                                                dock,
+                                                                &info.hardwareID),
                             "getProbeHardwareID");
 
     info.version = String (info.hardwareID.version_Major)
@@ -139,10 +139,10 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("All Shanks 1153-1248");
         }
 
-        if (info.part_number.equalsIgnoreCase ("NP2013") || 
-            info.part_number.equalsIgnoreCase ("NP2014") || 
-            info.part_number.equalsIgnoreCase ("NP2003") || 
-            info.part_number.equalsIgnoreCase ("NP2004"))
+        if (info.part_number.equalsIgnoreCase ("NP2013")
+            || info.part_number.equalsIgnoreCase ("NP2014")
+            || info.part_number.equalsIgnoreCase ("NP2003")
+            || info.part_number.equalsIgnoreCase ("NP2004"))
         {
             availableReferences.add ("Ground");
         }
@@ -183,8 +183,7 @@ bool Neuropixels2::close()
 
 void Neuropixels2::initialize (bool signalChainIsLoading)
 {
-    errorCode = checkError (Neuropixels::np_init (basestation->slot, headstage->port, dock, true),
-                "init: slot: " + String (basestation->slot) + " port: " + String (headstage->port) + " dock: " + String (dock));
+    errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, true);
 
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
@@ -300,25 +299,23 @@ void Neuropixels2::calibrate()
         LOGD ("Successfully wrote probe config ");
     }
 
-    checkError(Neuropixels::np_setHSLed (basestation->slot, headstage->port, false), "np_setHSLed");
-
-  
+    checkError (Neuropixels::np_setHSLed (basestation->slot, headstage->port, false), "np_setHSLed");
 }
 
 void Neuropixels2::selectElectrodes()
 {
-
     if (settings.selectedBank.size() == 0)
         return;
 
     for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
     {
-        checkError(Neuropixels::np_selectElectrode (basestation->slot,
-                                           headstage->port,
-                                           dock,
-                                           settings.selectedChannel[ch],
-                                           settings.selectedShank[ch],
-                                           settings.availableBanks.indexOf (settings.selectedBank[ch])), "selectElectrode");
+        checkError (Neuropixels::np_selectElectrode (basestation->slot,
+                                                     headstage->port,
+                                                     dock,
+                                                     settings.selectedChannel[ch],
+                                                     settings.selectedShank[ch],
+                                                     settings.availableBanks.indexOf (settings.selectedBank[ch])),
+                    "selectElectrode");
     }
 
     LOGD ("Updated electrode settings for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock);
@@ -705,12 +702,12 @@ void Neuropixels2::setAllReferences()
         for (int shank = 0; shank < 4; shank++)
         {
             Neuropixels::np_setReference (basestation->slot,
-                                       headstage->port,
-                                       dock,
-                                       0,
-                                       shank,
-                                       Neuropixels::NONE_REF,
-                                       0);
+                                          headstage->port,
+                                          dock,
+                                          0,
+                                          shank,
+                                          Neuropixels::NONE_REF,
+                                          0);
         }
     }
 
@@ -726,27 +723,23 @@ void Neuropixels2::setAllReferences()
         }
 
         errorCode = Neuropixels::np_setReference (basestation->slot,
-                                                           headstage->port,
-                                                           dock,
-                                                           settings.selectedChannel[channel_idx],
-                                                           shank,
-                                                           refId,
-                                                           refElectrodeBank);
-
+                                                  headstage->port,
+                                                  dock,
+                                                  settings.selectedChannel[channel_idx],
+                                                  shank,
+                                                  refId,
+                                                  refElectrodeBank);
     }
 
     if (errorCode != Neuropixels::SUCCESS)
     {
         LOGE ("Failed to set reference for slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " to ", selectedRef);
     }
-        
 }
 
 void Neuropixels2::writeConfiguration()
 {
-
-    errorCode = checkError(Neuropixels::np_writeProbeConfiguration (basestation->slot, headstage->port, dock, false) , "writeProbeConfiguration");
-
+    errorCode = checkError (Neuropixels::np_writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
 }
 
 void Neuropixels2::startAcquisition()
@@ -871,7 +864,6 @@ void Neuropixels2::run()
 
 bool Neuropixels2::runBist (BIST bistType)
 {
-
     int slot = basestation->slot;
     int port = headstage->port;
 

@@ -124,7 +124,6 @@ bool Neuropixels_NHP_Passive::close()
 void Neuropixels_NHP_Passive::initialize (bool signalChainIsLoading)
 {
     errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, true);
-    LOGD ("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
 
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
@@ -242,10 +241,10 @@ void Neuropixels_NHP_Passive::setApFilterState()
 {
     for (int channel = 0; channel < 128; channel++)
         Neuropixels::np_setAPCornerFrequency (basestation->slot,
-                                           headstage->port,
-                                           dock,
-                                           channel,
-                                           ! settings.apFilterState); // true if disabled
+                                              headstage->port,
+                                              dock,
+                                              channel,
+                                              ! settings.apFilterState); // true if disabled
 }
 
 void Neuropixels_NHP_Passive::setAllGains()

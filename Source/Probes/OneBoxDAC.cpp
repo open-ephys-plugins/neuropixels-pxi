@@ -35,8 +35,8 @@ OneBoxDAC::OneBoxDAC (Basestation* bs_) : DataSource (bs_)
 
 void OneBoxDAC::initialize (bool signalChainIsLoading)
 {
-    checkError(Neuropixels::np_waveplayer_setSampleFrequency (basestation->slot,
-                                                            30000.0f),
+    checkError (Neuropixels::np_waveplayer_setSampleFrequency (basestation->slot,
+                                                               30000.0f),
                 "waveplayer_setSampleFrequency");
 }
 
@@ -48,7 +48,6 @@ void OneBoxDAC::setWaveform (Array<float> samples)
 
     for (auto sample : samples)
     {
-       
         float this_sample = sample;
 
         if (this_sample > 5.0f)
@@ -67,9 +66,9 @@ void OneBoxDAC::setWaveform (Array<float> samples)
     for (int i = 0; i < 100; i++)
         samples_t.add (0);
 
-    checkError(Neuropixels::np_waveplayer_writeBuffer (basestation->slot, samples_t.getRawDataPointer(), samples_t.size()), "waveplayer_writeBuffer");
+    checkError (Neuropixels::np_waveplayer_writeBuffer (basestation->slot, samples_t.getRawDataPointer(), samples_t.size()), "waveplayer_writeBuffer");
 
-    checkError(Neuropixels::np_waveplayer_arm (basestation->slot, true), "waveplayer_arm");
+    checkError (Neuropixels::np_waveplayer_arm (basestation->slot, true), "waveplayer_arm");
 }
 
 void OneBoxDAC::playWaveform()

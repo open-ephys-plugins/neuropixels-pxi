@@ -31,9 +31,9 @@
 void Neuropixels_QuadBase::getInfo()
 {
     errorCode = checkError (Neuropixels::np_getProbeHardwareID (headstage->basestation->slot,
-                                                             headstage->port,
-                                                             dock,
-                                                             &info.hardwareID),
+                                                                headstage->port,
+                                                                dock,
+                                                                &info.hardwareID),
                             "getProbeHardwareID");
 
     info.version = String (info.hardwareID.version_Major)
@@ -148,8 +148,7 @@ bool Neuropixels_QuadBase::close()
 
 void Neuropixels_QuadBase::initialize (bool signalChainIsLoading)
 {
-    errorCode = checkError (Neuropixels::np_init (basestation->slot, headstage->port, dock, true), "init");
-    LOGD ("init: slot: ", basestation->slot, " port: ", headstage->port, " dock: ", dock, " errorCode: ", errorCode);
+    errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, true);
 
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
@@ -253,11 +252,11 @@ void Neuropixels_QuadBase::selectElectrodes()
     for (int ch = 0; ch < settings.selectedChannel.size(); ch++)
     {
         errorCode = checkError (Neuropixels::np_selectElectrode (basestation->slot,
-                                                              headstage->port,
-                                                              dock,
-                                                              settings.selectedChannel[ch] + 384 * settings.selectedShank[ch],
-                                                              settings.selectedShank[ch],
-                                                              settings.availableBanks.indexOf (settings.selectedBank[ch])),
+                                                                 headstage->port,
+                                                                 dock,
+                                                                 settings.selectedChannel[ch] + 384 * settings.selectedShank[ch],
+                                                                 settings.selectedShank[ch],
+                                                                 settings.availableBanks.indexOf (settings.selectedBank[ch])),
                                 "selectElectrode");
 
         if (errorCode != Neuropixels::SUCCESS)
@@ -380,12 +379,12 @@ void Neuropixels_QuadBase::setAllReferences()
     for (int shank = 0; shank < 4; shank++)
     {
         checkError (Neuropixels::np_setReference (basestation->slot,
-                                               headstage->port,
-                                               dock,
-                                               0,
-                                               shank,
-                                               Neuropixels::NONE_REF,
-                                               0),
+                                                  headstage->port,
+                                                  dock,
+                                                  0,
+                                                  shank,
+                                                  Neuropixels::NONE_REF,
+                                                  0),
                     "setReference");
     }
 
@@ -395,12 +394,12 @@ void Neuropixels_QuadBase::setAllReferences()
         for (int channel = 0; channel < 384; channel++)
         {
             if (checkError (Neuropixels::np_setReference (basestation->slot,
-                                                       headstage->port,
-                                                       dock,
-                                                       channel + 384 * shank,
-                                                       shank,
-                                                       refId,
-                                                       refElectrodeBank),
+                                                          headstage->port,
+                                                          dock,
+                                                          channel + 384 * shank,
+                                                          shank,
+                                                          refId,
+                                                          refElectrodeBank),
                             "setReference")
                 != Neuropixels::SUCCESS)
             {
@@ -413,9 +412,9 @@ void Neuropixels_QuadBase::setAllReferences()
 void Neuropixels_QuadBase::writeConfiguration()
 {
     checkError (Neuropixels::np_writeProbeConfiguration (basestation->slot,
-                                                      headstage->port,
-                                                      dock,
-                                                      false),
+                                                         headstage->port,
+                                                         dock,
+                                                         false),
                 "writeProbeConfiguration");
 }
 

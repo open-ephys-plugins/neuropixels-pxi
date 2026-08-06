@@ -31,9 +31,9 @@
 void Neuropixels_UHD::getInfo()
 {
     errorCode = checkError (Neuropixels::np_getProbeHardwareID (headstage->basestation->slot,
-                                                             headstage->port,
-                                                             dock,
-                                                             &info.hardwareID),
+                                                                headstage->port,
+                                                                dock,
+                                                                &info.hardwareID),
                             "getProbeHardwareID");
 
     info.version = String (info.hardwareID.version_Major)
@@ -77,7 +77,7 @@ Neuropixels_UHD::Neuropixels_UHD (Basestation* bs, Headstage* hs, Flex* fl) : Pr
         availableElectrodeConfigurations.add ("1 x 384: Tip Half"); // 16
         availableElectrodeConfigurations.add ("1 x 384: Base Half"); // 17
         availableElectrodeConfigurations.add ("2 x 192"); // 18
-        availableElectrodeConfigurations.add ("4 x 96");  // 19
+        availableElectrodeConfigurations.add ("4 x 96"); // 19
         availableElectrodeConfigurations.add ("2 x 2 x 96"); // 20
 
         settings.availableElectrodeConfigurations = availableElectrodeConfigurations;
@@ -151,7 +151,6 @@ bool Neuropixels_UHD::close()
 void Neuropixels_UHD::initialize (bool signalChainIsLoading)
 {
     errorCode = Neuropixels::np_init (basestation->slot, headstage->port, dock, true);
-    LOGD ("Neuropixels::init: errorCode: ", errorCode);
 
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
@@ -320,8 +319,7 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
                         basestation->slot,
                         headstage->port,
                         dock,
-                        Neuropixels::ALL
-                        ),
+                        Neuropixels::ALL),
                     "selectColumnPattern - ALL");
     }
     else
@@ -403,7 +401,6 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     }
     else if (index == 19) // 4 x 96
     {
-
         LOGC ("Neuropixels UHD selecting 4 x 96 configuration");
 
         // Select G2, G6, G10, G14, G18, G22 from bank 0
@@ -450,7 +447,6 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
     }
     else if (index == 20) // 2 x 2 x 96
     {
-
         LOGC ("Neuropixels UHD selecting 2 x 2 x 96 configuration");
 
         // Select G2, G6, G10, G14, G18, G22 from bank 1
@@ -545,12 +541,12 @@ Array<int> Neuropixels_UHD::selectElectrodeConfiguration (String electrodeConfig
 void Neuropixels_UHD::setApFilterState()
 {
     for (int channel = 0; channel < 384; channel++)
-        checkError(Neuropixels::np_setAPCornerFrequency (basestation->slot,
-                                           headstage->port,
-                                           dock,
-                                           channel,
-                                           ! settings.apFilterState), // true if disabled
-            "setAPCornerFrequency");
+        checkError (Neuropixels::np_setAPCornerFrequency (basestation->slot,
+                                                          headstage->port,
+                                                          dock,
+                                                          channel,
+                                                          ! settings.apFilterState), // true if disabled
+                    "setAPCornerFrequency");
 }
 
 void Neuropixels_UHD::setAllGains()
@@ -559,12 +555,13 @@ void Neuropixels_UHD::setAllGains()
 
     for (int channel = 0; channel < 384; channel++)
     {
-        checkError(Neuropixels::np_setGain (basestation->slot,
-            headstage->port,
-            dock,
-            channel,
-            settings.apGainIndex,
-            settings.lfpGainIndex), "setGain");
+        checkError (Neuropixels::np_setGain (basestation->slot,
+                                             headstage->port,
+                                             dock,
+                                             channel,
+                                             settings.apGainIndex,
+                                             settings.lfpGainIndex),
+                    "setGain");
     }
 }
 
@@ -597,7 +594,7 @@ void Neuropixels_UHD::setAllReferences()
     }
 
     for (int channel = 0; channel < 384; channel++)
-        checkError(Neuropixels::np_setReference (basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank), "setReference");
+        checkError (Neuropixels::np_setReference (basestation->slot, headstage->port, dock, channel, 0, refId, refElectrodeBank), "setReference");
 }
 
 void Neuropixels_UHD::writeConfiguration()
@@ -605,7 +602,7 @@ void Neuropixels_UHD::writeConfiguration()
     if (basestation->isBusy())
         basestation->waitForThreadToExit();
 
-    errorCode = checkError(Neuropixels::np_writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
+    errorCode = checkError (Neuropixels::np_writeProbeConfiguration (basestation->slot, headstage->port, dock, false), "writeProbeConfiguration");
 
     if (errorCode == Neuropixels::SUCCESS)
     {
@@ -842,7 +839,6 @@ bool Neuropixels_UHD::runBist (BIST bistType)
     setApFilterState();
     selectElectrodes();
     writeConfiguration();
-
 
     return returnValue;
 }

@@ -95,7 +95,6 @@ public:
     void run() override; // acquire data
 
 private:
-
     int SKIP;
 
     float apSamples[385 * MAXPACKETS];

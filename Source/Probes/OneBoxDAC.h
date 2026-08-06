@@ -87,7 +87,6 @@ public:
 
     /** Disables DAC output channel */
     void enableOutput (int chan);
-
 };
 
 #endif // __ONEBOX_DAC_H_2C4C2D67__
