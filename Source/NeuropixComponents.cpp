@@ -121,6 +121,26 @@ Neuropixels::NP_ErrorCode Probe::runConfigurationBistAndRestore (uint8_t* shankO
     return restoreResult == Neuropixels::SUCCESS ? bistResult : restoreResult;
 }
 
+void Probe::logDegradedShanks (uint8_t shankOkMask)
+{
+    if (probeMetadata.shank_count > 1)
+    {
+        String degradedShanks;
+
+        for (int shank = 0; shank < probeMetadata.shank_count; shank++)
+        {
+            if (((shankOkMask >> shank) & 1) == 0)
+                degradedShanks += (degradedShanks.isEmpty() ? "" : ", ") + String (shank + 1);
+        }
+
+        LOGC ("Shank(s) appear to be broken: ", degradedShanks);
+    }
+    else
+    {
+        LOGC ("Probe degradation detected; shank appears to be broken.");
+    }
+}
+
 void Probe::updateOffsets (float* samples, int64 timestamp, bool isApBand)
 {
     if (isApBand && timestamp > 30000 * 5) // wait for amplifiers to settle

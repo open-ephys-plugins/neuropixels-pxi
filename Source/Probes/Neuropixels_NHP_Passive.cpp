@@ -466,7 +466,13 @@ bool Neuropixels_NHP_Passive::runBist (BIST bistType)
         }
         case BIST::CONFIG:
         {
-            returnValue = runConfigurationBistAndRestore() == Neuropixels::SUCCESS;
+            uint8_t shankOkMask = 0;
+            Neuropixels::NP_ErrorCode bistResult = runConfigurationBistAndRestore (&shankOkMask);
+
+            if (bistResult == Neuropixels::PROBE_DEGRADATION_ERROR)
+                logDegradedShanks (shankOkMask);
+
+            returnValue = bistResult == Neuropixels::SUCCESS;
             break;
         }
         case BIST::EEPROM:

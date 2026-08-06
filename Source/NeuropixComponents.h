@@ -665,6 +665,7 @@ protected:
 
     bool canContinueAfterProbeConfiguration (Neuropixels::NP_ErrorCode result, const String& operation);
     Neuropixels::NP_ErrorCode runConfigurationBistAndRestore (uint8_t* shankOkMask = nullptr);
+    void logDegradedShanks (uint8_t shankOkMask);
 
     void refreshActivityViewMapping();
     static Array<int> getHalfBankOverlapSelection (const String& config, int electrodeOffset = 0);
