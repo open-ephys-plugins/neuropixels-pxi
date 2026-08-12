@@ -78,8 +78,14 @@ public:
     /** Destructor */
     ~NeuropixInterface();
 
-    /** Draws the legend */
+    /** Draws the panels and legend */
     void paint (Graphics& g);
+
+    /** Positions the dashboard components */
+    void resized() override;
+
+    /** Called when the theme has changed */
+    void lookAndFeelChanged() override;
 
     /** Listener methods*/
     void buttonClicked (Button*);
@@ -155,9 +161,9 @@ private:
     std::unique_ptr<ComboBox> loadImroComboBox;
 
     // LABELS
-    std::unique_ptr<Viewport> infoLabelView;
     std::unique_ptr<Label> nameLabel;
-    std::unique_ptr<Label> infoLabel;
+    std::unique_ptr<TextEditor> infoLabel;
+    std::unique_ptr<Label> probeStatusLabel;
     std::unique_ptr<Label> calibrationStatusValue;
     std::unique_ptr<Label> lfpGainLabel;
     std::unique_ptr<Label> apGainLabel;
@@ -211,6 +217,22 @@ private:
 
     VisualizationMode mode;
 
+    // Panel bounds, computed in resized()
+    Rectangle<int> probeOverviewBounds;
+    Rectangle<int> probeControlBounds;
+    Rectangle<int> deviceInfoBounds;
+    Rectangle<int> selfTestBounds;
+    Rectangle<int> probeSettingsBounds;
+    Rectangle<int> electrodeLegendBounds;
+
+    // Layout helpers
+    void layoutProbeControls (Rectangle<int> area);
+    void layoutDeviceInfo (Rectangle<int> area);
+    void layoutSelfTests (Rectangle<int> area);
+    void layoutProbeSettings (Rectangle<int> area);
+    void layoutBasestationInterface();
+
+    void drawPanel (Graphics& g, Rectangle<int> area, const String& title);
     void drawLegend (Graphics& g);
     void drawAnnotations (Graphics& g);
 
