@@ -51,7 +51,6 @@ constexpr int PROBE_CONTROL_WIDTH = 280;
 constexpr int DEVICE_COLUMN_WIDTH = 360;
 constexpr int PROBE_SETTINGS_HEIGHT = 90;
 constexpr int SELF_TEST_HEIGHT = 120;
-constexpr int SELF_TEST_HEIGHT_EXPANDED = 220;
 constexpr int MIN_CONTENT_WIDTH = 1300;
 } // namespace
 
@@ -475,34 +474,17 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     }
 
     // FIRMWARE
-    firmwareToggleButton = std::make_unique<UtilityButton> ("UPDATE FIRMWARE...");
-    firmwareToggleButton->setRadius (3.0f);
-    firmwareToggleButton->addListener (this);
-    firmwareToggleButton->setClickingTogglesState (true);
-    firmwareToggleButton->setEnabled (true);
-
-    if (thread->type == PXI)
-        addAndMakeVisible (firmwareToggleButton.get());
-
-    firmwareUpdateLabel = std::make_unique<Label> ("FIRMWARE UPDATE", "Install API-compatible built-in firmware (BS first, then BSC).");
-    firmwareUpdateLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
-
-    if (thread->type == PXI)
-        addChildComponent (firmwareUpdateLabel.get());
-
-    firmwareUpdateButton = std::make_unique<UtilityButton> ("UPDATE");
-    firmwareUpdateButton->setRadius (3.0f);
+    firmwareUpdateButton = std::make_unique<TextButton> ("UPDATE FIRMWARE ...");
     firmwareUpdateButton->addListener (this);
-    firmwareUpdateButton->setTooltip ("Update the basestation and connect board firmware");
+
+    const bool firmwareUpdateRequired = basestation->isFirmwareUpdateRequired();
+    firmwareUpdateButton->setEnabled (firmwareUpdateRequired);
+    firmwareUpdateButton->setTooltip (firmwareUpdateRequired
+                                          ? "Install API-compatible built-in firmware (BS first, then BSC)"
+                                          : "Basestation firmware is already up to date");
 
     if (thread->type == PXI)
-        addChildComponent (firmwareUpdateButton.get());
-
-    firmwareInstructionsLabel = std::make_unique<Label> ("FIRMWARE INSTRUCTIONS", "Restart the computer and power cycle the PXI chassis after a successful update.");
-    firmwareInstructionsLabel->setFont (FontOptions ("Inter", "Medium", 15.0f));
-
-    if (thread->type == PXI)
-        addChildComponent (firmwareInstructionsLabel.get());
+        addAndMakeVisible (firmwareUpdateButton.get());
 
     // PROBE INFO
     nameLabel = std::make_unique<Label> ("MAIN", "NAME");
@@ -511,7 +493,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     addAndMakeVisible (nameLabel.get());
 
     infoLabel = std::make_unique<TextEditor> ("INFO");
-    infoLabel->setMultiLine (true);
+    infoLabel->setMultiLine (true, false);
     infoLabel->setReadOnly (true);
     infoLabel->setScrollbarsShown (true);
     infoLabel->setCaretVisible (false);
@@ -641,8 +623,10 @@ void NeuropixInterface::updateInfoString()
 
         infoString += "Flex: " + probe->flex->info.part_number;
         infoString += "\n";
-        infoString += "\n";
     }
+
+    auto infoTextLines = StringArray::fromLines (infoString).size();
+    infoTextHeight = infoTextLines * infoLabel->getFont().getHeight() + 2 * infoLabel->getTopIndent();
 
     infoLabel->setText (infoString, false);
     nameLabel->setText (nameString, dontSendNotification);
@@ -989,21 +973,20 @@ void NeuropixInterface::buttonClicked (Button* button)
     {
         canvas->applyParametersToAllProbes (getProbeSettings());
     }
-    else if (button == firmwareToggleButton.get())
-    {
-        bool state = button->getToggleState();
-
-        firmwareUpdateButton->setVisible (state);
-        firmwareUpdateLabel->setVisible (state);
-        firmwareInstructionsLabel->setVisible (state);
-
-        resized(); // the self-test panel grows to fit the firmware controls
-
-        repaint();
-    }
     else if (button == firmwareUpdateButton.get())
     {
-        basestation->updateFirmware();
+        const bool shouldProceed = AlertWindow::showOkCancelBox (AlertWindow::QuestionIcon,
+                                                                 "Update firmware",
+                                                                 "This will install API-compatible built-in firmware (BS first, then BSC) "
+                                                                 "to the basestation on slot " + String (basestation->slot) + ". Do you want to continue?",
+                                                                 "Continue",
+                                                                 "Cancel");
+
+        if (shouldProceed)
+        {
+            firmwareUpdateButton->setEnabled (false);
+            basestation->updateFirmware();
+        }
     }
 }
 
@@ -1220,11 +1203,8 @@ void NeuropixInterface::startAcquisition()
     if (loadImroComboBox != nullptr)
         loadImroComboBox->setEnabled (enabledState);
 
-    if (firmwareToggleButton != nullptr)
-        firmwareToggleButton->setEnabled (enabledState);
-
     if (firmwareUpdateButton != nullptr)
-        firmwareUpdateButton->setEnabled (enabledState);
+        firmwareUpdateButton->setEnabled (false);
 
     if (mode == ACTIVITY_VIEW)
         probeBrowser->startTimer (100);
@@ -1280,11 +1260,8 @@ void NeuropixInterface::stopAcquisition()
     if (loadImroComboBox != nullptr)
         loadImroComboBox->setEnabled (enabledState);
 
-    if (firmwareToggleButton != nullptr)
-        firmwareToggleButton->setEnabled (enabledState);
-
     if (firmwareUpdateButton != nullptr)
-        firmwareUpdateButton->setEnabled (enabledState);
+        firmwareUpdateButton->setEnabled (basestation->isFirmwareUpdateRequired());
 }
 
 void NeuropixInterface::resized()
@@ -1309,8 +1286,7 @@ void NeuropixInterface::resized()
     probeOverviewBounds = bounds;
 
     // Right column: device info on top, self tests below
-    const bool firmwareExpanded = firmwareToggleButton->isVisible() && firmwareToggleButton->getToggleState();
-    selfTestBounds = deviceColumn.removeFromBottom (firmwareExpanded ? SELF_TEST_HEIGHT_EXPANDED : SELF_TEST_HEIGHT);
+    selfTestBounds = deviceColumn.removeFromBottom (SELF_TEST_HEIGHT);
     deviceColumn.removeFromBottom (PANEL_GAP);
     deviceInfoBounds = deviceColumn;
 
@@ -1441,7 +1417,7 @@ void NeuropixInterface::layoutDeviceInfo (Rectangle<int> area)
     nameLabel->setBounds (area.removeFromTop (40));
     area.removeFromTop (PANEL_TITLE_GAP);
 
-    infoLabel->setBounds (area.withHeight (jmin (infoLabel->getTextHeight(), area.getHeight())));
+    infoLabel->setBounds (area.withHeight (jmin (int(infoTextHeight), area.getHeight())));
 }
 
 void NeuropixInterface::layoutSelfTests (Rectangle<int> area)
@@ -1454,16 +1430,10 @@ void NeuropixInterface::layoutSelfTests (Rectangle<int> area)
         bistButton->setBounds (row.removeFromRight (50));
         row.removeFromRight (8);
         bistComboBox->setBounds (row);
-        area.removeFromTop (10);
+        area.removeFromTop (20);
     }
 
-    firmwareToggleButton->setBounds (area.removeFromTop (24).withWidth (160));
-    area.removeFromTop (8);
-    firmwareUpdateLabel->setBounds (area.removeFromTop (30));
-    area.removeFromTop (4);
-    firmwareUpdateButton->setBounds (area.removeFromTop (ROW_HEIGHT).withWidth (80));
-    area.removeFromTop (6);
-    firmwareInstructionsLabel->setBounds (area.removeFromTop (30));
+    firmwareUpdateButton->setBounds (area.removeFromTop (24).withWidth (160));
 }
 
 void NeuropixInterface::layoutProbeSettings (Rectangle<int> area)
@@ -1505,10 +1475,7 @@ void NeuropixInterface::layoutBasestationInterface()
 
     const int x = bounds.getX();
     const int y = infoLabel->getBottom() + 20;
-    firmwareToggleButton->setBounds (x, y, 160, 24);
-    firmwareUpdateLabel->setBounds (x, y + 43, 600, 20);
-    firmwareUpdateButton->setBounds (x, y + 70, 80, 22);
-    firmwareInstructionsLabel->setBounds (x, y + 103, 650, 20);
+    firmwareUpdateButton->setBounds (x, y, 160, 24);
 }
 
 void NeuropixInterface::paint (Graphics& g)

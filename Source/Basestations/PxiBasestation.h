@@ -160,6 +160,9 @@ public:
     /** Checks for firmware compatibility with API version */
     void checkFirmwareVersion() override;
 
+    /** Returns true if the firmware version is older than what's expected by the API */
+    bool isFirmwareUpdateRequired() override;
+
     /** Holds list of connected PXI slots */
     static Array<int> connected_slots;
 
@@ -169,6 +172,8 @@ private:
     std::unique_ptr<ArmBasestation> armBasestation;
 
     bool invertOutput = false;
+    bool bsSupported = true;
+    bool bscSupported = true;
 };
 
 class BasestationConnectBoard_v3 : public BasestationConnectBoard

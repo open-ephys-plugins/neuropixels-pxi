@@ -277,7 +277,8 @@ FirmwareUpdater::FirmwareUpdater (Basestation* basestation_)
         AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon,
                                           "Successful firmware update",
                                           "The basestation and basestation connect board firmware were updated successfully. "
-                                          "Please restart your computer and power cycle the PXI chassis for the changes to take effect.");
+                                          "Please restart your computer and power cycle the PXI chassis for the changes to take effect."
+                                          "\n\nIf there are multiple basestations in the PXI chassis, please update the firmware on each of them before restarting your computer.");
     }
     else
     {

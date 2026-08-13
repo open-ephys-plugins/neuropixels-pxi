@@ -112,6 +112,9 @@ public:
     /** Returns the fraction of the basestation FIFO that is filled */
     float getFillPercentage() override;
 
+    /** Returns true to test firmware update interface in the simulated basestation */
+    bool isFirmwareUpdateRequired() override { return true; }
+
     /** Probes for each slot */
     ProbeType simulatedProbeTypes[4];
 

@@ -403,8 +403,6 @@ void PxiBasestation::checkFirmwareVersion()
 {
     Neuropixels::firmware_Info requiredBsFirmware {};
     Neuropixels::firmware_Info requiredBscFirmware {};
-    bool bsSupported = false;
-    bool bscSupported = false;
 
     const auto result = Neuropixels::np_checkBasestationSupported (slot,
                                                                   &requiredBsFirmware,
@@ -440,6 +438,11 @@ void PxiBasestation::checkFirmwareVersion()
     message += "\nUse Update Firmware in the basestation settings interface to install the API-compatible built-in firmware.";
     LOGC (message);
     AlertWindow::showMessageBox (AlertWindow::WarningIcon, "Unsupported firmware on slot " + String (slot), message, "OK");
+}
+
+bool PxiBasestation::isFirmwareUpdateRequired()
+{
+    return !bsSupported || !bscSupported;
 }
 
 bool PxiBasestation::isBusy()

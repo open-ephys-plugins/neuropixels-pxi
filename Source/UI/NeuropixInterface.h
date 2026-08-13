@@ -177,8 +177,6 @@ private:
     std::unique_ptr<Label> blueEmissionSiteLabel;
 
     std::unique_ptr<Label> bistLabel;
-    std::unique_ptr<Label> firmwareUpdateLabel;
-    std::unique_ptr<Label> firmwareInstructionsLabel;
 
     std::unique_ptr<Label> probeSettingsLabel;
 
@@ -200,8 +198,7 @@ private:
 
     std::unique_ptr<UtilityButton> annotationButton;
     std::unique_ptr<UtilityButton> bistButton;
-    std::unique_ptr<UtilityButton> firmwareUpdateButton;
-    std::unique_ptr<UtilityButton> firmwareToggleButton;
+    std::unique_ptr<TextButton> firmwareUpdateButton;
 
     std::unique_ptr<UtilityButton> copyButton;
     std::unique_ptr<UtilityButton> pasteButton;
@@ -224,6 +221,8 @@ private:
     Rectangle<int> selfTestBounds;
     Rectangle<int> probeSettingsBounds;
     Rectangle<int> electrodeLegendBounds;
+
+    int infoTextHeight = 0;
 
     // Layout helpers
     void layoutProbeControls (Rectangle<int> area);
