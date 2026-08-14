@@ -83,6 +83,13 @@ public:
     /** Set max peak-to-peak amplitude */
     void setMaxPeakToPeakAmplitude (float);
 
+    /** Logical canvas size used by Interactive-mode drawing and hit-testing */
+    int getNaturalWidth() const { return 390 + shankOffset; }
+    int getNaturalHeight() const { return lowerBound + 40; }
+
+    /** Uniform factor by which the logical canvas is scaled to fill the bounds */
+    float getDisplayScale() const;
+
     ActivityToView activityToView;
     float maxPeakToPeakAmplitude;
 
@@ -139,6 +146,9 @@ private:
     Array<int> getElectrodesWithinBounds (int x, int y, int w, int h);
     String getElectrodeInfoString (int index);
     int findElectrodeIndexForRow (int row) const;
+
+    /** Convert a mouse event from component coordinates to the logical canvas */
+    MouseEvent toLogicalSpace (const MouseEvent& event) const;
 
     void handleLeftMouseDown (const MouseEvent& event);
     void handleRightMouseDown (const MouseEvent& event);

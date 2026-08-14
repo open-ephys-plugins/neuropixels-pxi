@@ -236,6 +236,37 @@ ProbeBrowser::~ProbeBrowser()
 {
 }
 
+float ProbeBrowser::getDisplayScale() const
+{
+    if (displayMode == DisplayMode::OverviewOnly || getWidth() <= 0 || getHeight() <= 0)
+        return 1.0f;
+
+    return jmax (0.001f,
+                 jmin ((float) getWidth() / (float) getNaturalWidth(),
+                       (float) getHeight() / (float) getNaturalHeight()));
+}
+
+MouseEvent ProbeBrowser::toLogicalSpace (const MouseEvent& event) const
+{
+    const float scale = getDisplayScale();
+
+    return MouseEvent (event.source,
+                       event.position / scale,
+                       event.mods,
+                       event.pressure,
+                       event.orientation,
+                       event.rotation,
+                       event.tiltX,
+                       event.tiltY,
+                       event.eventComponent,
+                       event.originalComponent,
+                       event.eventTime,
+                       event.getMouseDownPosition().toFloat() / scale,
+                       event.mouseDownTime,
+                       event.getNumberOfClicks(),
+                       event.mouseWasDraggedSinceMouseDown());
+}
+
 String ProbeBrowser::getTooltip()
 {
     if (hoveredElectrodeIndex >= 0 && hoveredElectrodeIndex < parent->electrodeMetadata.size())
@@ -244,13 +275,15 @@ String ProbeBrowser::getTooltip()
     return {};
 }
 
-void ProbeBrowser::mouseMove (const MouseEvent& event)
+void ProbeBrowser::mouseMove (const MouseEvent& rawEvent)
 {
     if (displayMode == DisplayMode::OverviewOnly)
     {
         cursorType = MouseCursor::NormalCursor;
         return;
     }
+
+    const MouseEvent event = toLogicalSpace (rawEvent);
 
     const float y = event.y;
     const float x = event.x;
@@ -471,10 +504,12 @@ void ProbeBrowser::mouseUp (const MouseEvent& event)
     }
 }
 
-void ProbeBrowser::mouseDown (const MouseEvent& event)
+void ProbeBrowser::mouseDown (const MouseEvent& rawEvent)
 {
     if (displayMode == DisplayMode::OverviewOnly)
         return;
+
+    const MouseEvent event = toLogicalSpace (rawEvent);
 
     initialOffset = zoomOffset;
     initialHeight = zoomHeight;
@@ -559,10 +594,12 @@ void ProbeBrowser::handleRightMouseDown (const MouseEvent& event)
     // }
 }
 
-void ProbeBrowser::mouseDrag (const MouseEvent& event)
+void ProbeBrowser::mouseDrag (const MouseEvent& rawEvent)
 {
     if (displayMode == DisplayMode::OverviewOnly)
         return;
+
+    const MouseEvent event = toLogicalSpace (rawEvent);
 
     if (isOverZoomRegion)
     {
@@ -668,10 +705,12 @@ void ProbeBrowser::clampZoomValues()
         zoomOffset = 0;
 }
 
-void ProbeBrowser::mouseWheelMove (const MouseEvent& event, const MouseWheelDetails& wheel)
+void ProbeBrowser::mouseWheelMove (const MouseEvent& rawEvent, const MouseWheelDetails& wheel)
 {
     if (displayMode == DisplayMode::OverviewOnly)
         return;
+
+    const MouseEvent event = toLogicalSpace (rawEvent);
 
     if (event.x > 140 && event.x < 490)
     {
@@ -884,6 +923,13 @@ void ProbeBrowser::paint (Graphics& g)
 
     const int LEFT_BORDER = parent->probeMetadata.columns_per_shank >= 8 ? 63 : 70;
 
+    // Scale the logical canvas uniformly to fill the component bounds; text
+    // and line thicknesses are mostly compensated so they grow only with the
+    // fourth root of that scale, staying legible without becoming oversized
+    const float displayScale = getDisplayScale();
+    g.addTransform (AffineTransform::scale (displayScale));
+    const float px = std::pow (displayScale, 0.25f) / displayScale;
+
     // Draw zoomed-out channels
     int channelSpan = SHANK_HEIGHT;
     int pixelGap = (parent->probeMetadata.columns_per_shank > 8) ? 1 : 2;
@@ -897,18 +943,18 @@ void ProbeBrowser::paint (Graphics& g)
         int shank = parent->electrodeMetadata[i].shank;
         int row = parent->electrodeMetadata[i].row_index;
 
-        for (int px = 0; px < pixelHeight; ++px)
+        for (int pixel = 0; pixel < pixelHeight; ++pixel)
         {
             int x = LEFT_BORDER + col * pixelGap + shank * INTERSHANK_DISTANCE;
             int y = TOP_BORDER + channelSpan
                     - int (float (row) * miniRowHeight)
-                    - px;
+                    - pixel;
             g.fillRect (x, y, 1, 1);
         }
     }
 
     // Draw channel numbers and tick marks
-    g.setFont (FontOptions (12.0f));
+    g.setFont (FontOptions (12.0f * px));
 
     g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.5f));
     g.drawText ("Y Pos (um)", 5.0f, 10.0f, 60.0f, 12.0f, Justification::right, false);
@@ -924,16 +970,16 @@ void ProbeBrowser::paint (Graphics& g)
         int eid = ch == 0 ? ch : ch + 1;
         float depth = parent->electrodeMetadata[eid].ypos;
         g.drawText (String (depth), 6.0f, i - 6.0f, 35.0f, 12.0f, Justification::right, false);
-        g.drawLine (46.0f, i, 58.0f, i);
-        g.drawLine (84.0f + shankOffset, i, 94.0f + shankOffset, i);
+        g.drawLine (46.0f, i, 58.0f, i, px);
+        g.drawLine (84.0f + shankOffset, i, 94.0f + shankOffset, i, px);
         g.drawText (String (ch), 99.0f + shankOffset, i - 6.0f, 100.0f, 12.0f, Justification::left, false);
         ch += channelLabelSkip;
     }
 
     // Draw top channel tick and label
     g.drawText (String (parent->electrodeMetadata.getLast().ypos), 6.0f, TOP_BORDER - 6.0f, 35.0f, 12.0f, Justification::right, false);
-    g.drawLine (46.0f, TOP_BORDER, 58.0f, TOP_BORDER);
-    g.drawLine (84.0f + shankOffset, TOP_BORDER, 94.0f + shankOffset, TOP_BORDER);
+    g.drawLine (46.0f, TOP_BORDER, 58.0f, TOP_BORDER, px);
+    g.drawLine (84.0f + shankOffset, TOP_BORDER, 94.0f + shankOffset, TOP_BORDER, px);
     g.drawText (String (parent->probeMetadata.electrodes_per_shank), 99.0f + shankOffset, TOP_BORDER - 6.0f, 100.0f, 12.0f, Justification::left, false);
 
     // Draw shank outlines
@@ -942,7 +988,7 @@ void ProbeBrowser::paint (Graphics& g)
     {
         Path outline = parent->probeMetadata.shankOutline;
         outline.applyTransform (AffineTransform::translation (INTERSHANK_DISTANCE * i, 0.0f));
-        g.strokePath (outline, PathStrokeType (1.0));
+        g.strokePath (outline, PathStrokeType (px));
     }
 
     // Calculate zoomed area parameters
@@ -975,7 +1021,7 @@ void ProbeBrowser::paint (Graphics& g)
             if (parent->electrodeMetadata[i].isSelected)
             {
                 g.setColour (findColour (ThemeColours::componentBackground).contrasting());
-                g.drawRect (xLoc, yLoc, electrodeHeight, electrodeHeight);
+                g.drawRect (xLoc, yLoc, electrodeHeight, electrodeHeight, px);
             }
 
             g.setColour (getElectrodeColour (i));
@@ -1000,8 +1046,8 @@ void ProbeBrowser::paint (Graphics& g)
     lowerBorder.lineTo (140 + shankOffset, lowerBound + 16);
     lowerBorder.lineTo (370 + shankOffset, lowerBound + 16);
 
-    g.strokePath (upperBorder, PathStrokeType (2.0));
-    g.strokePath (lowerBorder, PathStrokeType (2.0));
+    g.strokePath (upperBorder, PathStrokeType (2.0f * px));
+    g.strokePath (lowerBorder, PathStrokeType (2.0f * px));
 
     // Calculate selection area edges
     float shankWidth = electrodeHeight * parent->probeMetadata.columns_per_shank;
@@ -1016,7 +1062,7 @@ void ProbeBrowser::paint (Graphics& g)
     if (bankCount > 1)
     {
         g.setColour (findColour (ThemeColours::defaultText));
-        g.setFont (FontOptions (15.0f));
+        g.setFont (FontOptions (15.0f * px));
 
         for (int bi = 0; bi < bankCount; ++bi)
         {
@@ -1049,7 +1095,7 @@ void ProbeBrowser::paint (Graphics& g)
                 continue; // bank not visible in this zoom
 
             // Draw small horizontal tick and label near the zoomed-in electrodes
-            g.drawLine (leftEdge - electrodeHeight, y, rightEdge + electrodeHeight, y);
+            g.drawLine (leftEdge - electrodeHeight, y, rightEdge + electrodeHeight, y, px);
             g.drawText (bankToString (b), leftEdge - electrodeHeight - 25, (int) y - 8, 15, 16, Justification::left, false);
         }
     }
@@ -1086,7 +1132,7 @@ void ProbeBrowser::paint (Graphics& g)
 
         // use lower alpha so ticks are less visually dominant
         g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.40f));
-        g.setFont (FontOptions (12.0f));
+        g.setFont (FontOptions (12.0f * px));
 
         const float tickLength = jmin (12.0f, electrodeHeight);
         const float tickXStart = leftEdge - tickLength - 2.0f; // starting X for ticks just left of the electrode area
@@ -1112,7 +1158,7 @@ void ProbeBrowser::paint (Graphics& g)
                 continue;
 
             // draw a short tick to the left of the electrode area
-            g.drawLine (tickXStart, y, tickXStart + tickLength, y);
+            g.drawLine (tickXStart, y, tickXStart + tickLength, y, px);
 
             // draw the label to the left of the tick, right-justified
             String label = String (depth) + " µm";
@@ -1126,7 +1172,7 @@ void ProbeBrowser::paint (Graphics& g)
     if (isSelectionActive)
     {
         g.setColour (findColour (ThemeColours::componentBackground).contrasting().withAlpha (0.5f));
-        g.drawRect (selectionBox);
+        g.drawRect (selectionBox.toFloat(), px);
     }
 }
 
