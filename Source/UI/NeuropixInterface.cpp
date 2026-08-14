@@ -1597,7 +1597,7 @@ void NeuropixInterface::drawLegend (Graphics& g)
 
     g.setFont (legendFont);
 
-    int x = electrodeLegendBounds.getX();
+    int x = electrodeLegendBounds.getX() + PANEL_PADDING;
     int y = electrodeLegendBounds.getY() + 4;
 
     if (heading.isNotEmpty())
@@ -1617,7 +1617,7 @@ void NeuropixInterface::drawLegend (Graphics& g)
 
         if (x + itemWidth > electrodeLegendBounds.getRight() && x > electrodeLegendBounds.getX())
         {
-            x = electrodeLegendBounds.getX();
+            x = electrodeLegendBounds.getX() + PANEL_PADDING;
             y += rowHeight;
         }
 

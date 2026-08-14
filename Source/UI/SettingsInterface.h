@@ -64,7 +64,7 @@ public:
         if (getWidth() > minContentWidth + 12)
             contentWidth = getWidth() - 12;
 
-        int contentHeight = getHeight() > 820 ? getHeight() : 820;
+        int contentHeight = getHeight() > 780 ? getHeight() : 780;
 
         viewport->getViewedComponent()->setSize (contentWidth, contentHeight);
     }
