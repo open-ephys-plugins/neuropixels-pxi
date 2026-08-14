@@ -211,5 +211,5 @@ private:
     float lastSurveySecondsPerConfig { 2.0f };
     float currentMaxPeakToPeak { 500.0f };
     Array<float> amplitudeOptions { 250.0f, 500.0f, 750.0f, 1000.0f };
-    Array<float> timeOptions { 2.0f, 5.0f, 10.0f, 30.0f, 60.0f, 300.0f, 600.0f }; // in seconds
+    Array<float> timeOptions { 2.0f, 5.0f, 10.0f, 30.0f, 60.0f, 120.0f, 180.0f, 240.0f, 300.0f, 600.0f }; // in seconds
 };

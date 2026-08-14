@@ -668,7 +668,7 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     addAndMakeVisible (*panelToggleButton);
 
     secondsPerBankComboBox = std::make_unique<ComboBox> ("Seconds Per Bank");
-    const std::array<const char*, 7> timeLabels { "2 s", "5 s", "10 s", "30 s", "1 min", "5 mins", "10 mins" };
+    const std::array<const char*, 10> timeLabels { "2 s", "5 s", "10 s", "30 s", "1 min", "2 mins", "3 mins", "4 mins", "5 mins", "10 mins" };
     for (int i = 0; i < timeOptions.size(); ++i)
         secondsPerBankComboBox->addItem (timeLabels[i], i + 1);
     secondsPerBankComboBox->setSelectedId (1, dontSendNotification); // Default to 2s

@@ -529,7 +529,7 @@ void ProbeBrowser::handleLeftMouseDown (const MouseEvent& event)
     if (displayMode == DisplayMode::OverviewOnly)
         return;
 
-    if (event.x > 190 && event.x < 440)
+    if (event.x > 140 + shankOffset && event.x < (getRight() / getDisplayScale()))
     {
         if (! event.mods.isShiftDown())
         {
@@ -712,7 +712,7 @@ void ProbeBrowser::mouseWheelMove (const MouseEvent& rawEvent, const MouseWheelD
 
     const MouseEvent event = toLogicalSpace (rawEvent);
 
-    if (event.x > 140 && event.x < 370 + shankOffset
+    if (event.x > 140 + shankOffset && event.x < 370 + shankOffset
         && event.y > 16 && event.y < lowerBound + 16)
     {
         if (wheel.deltaY > 0)
