@@ -712,7 +712,8 @@ void ProbeBrowser::mouseWheelMove (const MouseEvent& rawEvent, const MouseWheelD
 
     const MouseEvent event = toLogicalSpace (rawEvent);
 
-    if (event.x > 140 && event.x < 490)
+    if (event.x > 140 && event.x < 370 + shankOffset
+        && event.y > 16 && event.y < lowerBound + 16)
     {
         if (wheel.deltaY > 0)
             zoomOffset += 2;
@@ -725,6 +726,11 @@ void ProbeBrowser::mouseWheelMove (const MouseEvent& rawEvent, const MouseWheelD
             zoomOffset = 0;
 
         repaint();
+    }
+    else
+    {
+        if (auto parent = getParentComponent())
+            parent->mouseWheelMove (rawEvent, wheel);
     }
 }
 
@@ -956,9 +962,9 @@ void ProbeBrowser::paint (Graphics& g)
     // Draw channel numbers and tick marks
     g.setFont (FontOptions (12.0f * px));
 
-    g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.5f));
-    g.drawText ("Y Pos (um)", 5.0f, 10.0f, 60.0f, 12.0f, Justification::right, false);
-    g.drawText ("Electrode", 84.0f + shankOffset, 10.0f, 100.0f, 12.0f, Justification::left, false);
+    g.setColour (findColour (ThemeColours::defaultText).withAlpha (0.65f));
+    g.drawFittedText ("Y Pos (um)", 5.0f, 10.0f, 60.0f, 12.0f, Justification::right, 1);
+    g.drawFittedText ("Electrode", 84.0f + shankOffset, 10.0f, 100.0f, 12.0f, Justification::left, 1);
 
     g.setColour (findColour (ThemeColours::defaultText));
 
