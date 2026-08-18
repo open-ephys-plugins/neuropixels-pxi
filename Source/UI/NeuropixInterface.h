@@ -221,6 +221,7 @@ private:
     Rectangle<int> selfTestBounds;
     Rectangle<int> probeSettingsBounds;
     Rectangle<int> electrodeLegendBounds;
+    Rectangle<int> basestationInterfaceBounds;
 
     int infoTextHeight = 0;
 

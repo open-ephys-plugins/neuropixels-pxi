@@ -194,7 +194,8 @@ void NeuropixCanvas::populateSourceTabs (Basestation* basestation, CustomTabComp
     {
         BasestationInterface* basestationInterface = new BasestationInterface (basestation, thread, editor, this);
         settingsInterfaces.add (basestationInterface);
-        basestationTab->addTab (" Firmware Update ",
+        const bool firmwareUpdateRequired = basestation->isFirmwareUpdateRequired();
+        basestationTab->addTab (firmwareUpdateRequired ? "Firmware Update" : "No probes detected",
                                 findColour (ThemeColours::componentBackground),
                                 basestationInterface->viewport.get(),
                                 false);
@@ -250,7 +251,16 @@ void NeuropixCanvas::updateSettings()
                     if (dataSource != nullptr)
                         t->setTabName (j, " " + dataSource->getName() + " ");
                     else
-                        t->setTabName (j, "Firmware update");
+                    {
+                        if (basestations[i] != nullptr)
+                        {
+                            Basestation* b = basestations[i];
+                            if (b->isFirmwareUpdateRequired())
+                                t->setTabName (j, "Firmware update");
+                            else
+                                t->setTabName (j, "No probes detected");
+                        }
+                    }
                 }
             }
         }

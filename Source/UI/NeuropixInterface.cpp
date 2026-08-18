@@ -531,7 +531,16 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
 
     // The three-column dashboard needs more horizontal space than the default
     if (probe != nullptr)
+    {
         viewport->setMinimumContentWidth (MIN_CONTENT_WIDTH);
+    }
+    else
+    {
+        int basestationInterfaceHeight = 45 + PANEL_TITLE_GAP + infoTextHeight + 20 + 24 + 2 * PANEL_PADDING;
+        basestationInterfaceBounds = Rectangle<int> (OUTER_MARGIN, OUTER_MARGIN, DEVICE_COLUMN_WIDTH, basestationInterfaceHeight);
+        viewport->setMinimumContentWidth (DEVICE_COLUMN_WIDTH + 2 * OUTER_MARGIN);
+        viewport->setMinimumContentHeight (basestationInterfaceHeight + 2 * OUTER_MARGIN);
+    }
 
     // Ensure initial layout is performed
     resized();
@@ -1467,11 +1476,10 @@ void NeuropixInterface::layoutProbeSettings (Rectangle<int> area)
 
 void NeuropixInterface::layoutBasestationInterface()
 {
-    auto bounds = getLocalBounds().reduced (OUTER_MARGIN + 10);
+    auto bounds = basestationInterfaceBounds.reduced (PANEL_PADDING);
+    nameLabel->setBounds (bounds.getX(), bounds.getY(), bounds.getWidth(), 45);
 
-    nameLabel->setBounds (bounds.getX(), bounds.getY() + 10, 500, 45);
-
-    infoLabel->setBounds (bounds.getX(), nameLabel->getBottom() + 25, 550, 400);
+    infoLabel->setBounds (bounds.getX(), nameLabel->getBottom() + PANEL_TITLE_GAP, bounds.getWidth(), infoTextHeight);
 
     const int x = bounds.getX();
     const int y = infoLabel->getBottom() + 20;
@@ -1481,7 +1489,11 @@ void NeuropixInterface::layoutBasestationInterface()
 void NeuropixInterface::paint (Graphics& g)
 {
     if (probe == nullptr)
+    {
+        drawPanel (g, basestationInterfaceBounds, "");
+
         return;
+    }
 
     drawPanel (g, probeOverviewBounds, "PROBE OVERVIEW");
     drawPanel (g, probeControlBounds, "PROBE CONTROL");
@@ -1505,6 +1517,9 @@ void NeuropixInterface::drawPanel (Graphics& g, Rectangle<int> area, const Strin
 
     g.setColour (findColour (ThemeColours::outline).withAlpha (0.75f));
     g.drawRoundedRectangle (panelBounds, 8.0f, 1.0f);
+
+    if (title.isEmpty())
+        return;
 
     g.setColour (findColour (ThemeColours::defaultText));
     g.setFont (FontOptions ("Inter", "Semi Bold", 16.0f));

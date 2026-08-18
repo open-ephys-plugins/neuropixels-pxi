@@ -64,7 +64,10 @@ public:
         if (getWidth() > minContentWidth + 12)
             contentWidth = getWidth() - 12;
 
-        int contentHeight = getHeight() > 780 ? getHeight() : 780;
+        int contentHeight = minContentHeight;
+
+        if (getHeight() > minContentHeight + 12)
+            contentHeight = getHeight() - 12;
 
         viewport->getViewedComponent()->setSize (contentWidth, contentHeight);
     }
@@ -80,11 +83,18 @@ public:
         resized();
     }
 
+    void setMinimumContentHeight (int height)
+    {
+        minContentHeight = height;
+        resized();
+    }
+
     SettingsInterface* settingsInterface;
 
 private:
     std::unique_ptr<Viewport> viewport;
     int minContentWidth = 1000;
+    int minContentHeight = 780;
 };
 
 /** 
