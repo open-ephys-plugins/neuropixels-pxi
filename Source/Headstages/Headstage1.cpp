@@ -32,8 +32,8 @@
 void Headstage1::getInfo()
 {
     errorCode = Neuropixels::np_getHeadstageHardwareID (basestation->slot,
-                                                     port,
-                                                     &info.hardwareID);
+                                                        port,
+                                                        &info.hardwareID);
 
     info.version = String (info.hardwareID.version_Major)
                    + "." + String (info.hardwareID.version_Minor);
@@ -44,9 +44,9 @@ void Headstage1::getInfo()
 void Flex1::getInfo()
 {
     errorCode = Neuropixels::np_getFlexHardwareID (headstage->basestation->slot,
-                                                headstage->port,
-                                                dock,
-                                                &info.hardwareID);
+                                                   headstage->port,
+                                                   dock,
+                                                   &info.hardwareID);
 
     info.version = String (info.hardwareID.version_Major)
                    + "." + String (info.hardwareID.version_Minor);
@@ -74,9 +74,9 @@ Headstage1::Headstage1 (Basestation* bs_, int port) : Headstage (bs_, port)
         Neuropixels::HardwareID hardwareID;
 
         errorCode = Neuropixels::np_getProbeHardwareID (basestation->slot,
-            port,
-            1,
-            &hardwareID);
+                                                        port,
+                                                        1,
+                                                        &hardwareID);
 
         String partNumber = String (hardwareID.ProductNumber);
 
@@ -97,7 +97,19 @@ Headstage1::Headstage1 (Basestation* bs_, int port) : Headstage (bs_, port)
         {
             probes.add (new Neuropixels_UHD (basestation, this, flexCables[0]));
         }
-        else if (String (partNumber).equalsIgnoreCase ("NP1010") || String (partNumber).equalsIgnoreCase ("NP1011") || String (partNumber).equalsIgnoreCase ("NP1012") || String (partNumber).equalsIgnoreCase ("NP1013") || String (partNumber).equalsIgnoreCase ("NP1015") || String (partNumber).equalsIgnoreCase ("NP1016") || String (partNumber).equalsIgnoreCase ("NP1020") || String (partNumber).equalsIgnoreCase ("NP1022") || String (partNumber).equalsIgnoreCase ("NP1030") || String (partNumber).equalsIgnoreCase ("NP1032"))
+        else if (String (partNumber).equalsIgnoreCase ("NP1010")
+                 || String (partNumber).equalsIgnoreCase ("NP1011")
+                 || String (partNumber).equalsIgnoreCase ("NP1012")
+                 || String (partNumber).equalsIgnoreCase ("NP1013")
+                 || String (partNumber).equalsIgnoreCase ("NP1014")
+                 || String (partNumber).equalsIgnoreCase ("NP1015")
+                 || String (partNumber).equalsIgnoreCase ("NP1016")
+                 || String (partNumber).equalsIgnoreCase ("NP1020")
+                 || String (partNumber).equalsIgnoreCase ("NP1022")
+                 || String (partNumber).equalsIgnoreCase ("NP1030")
+                 || String (partNumber).equalsIgnoreCase ("NP1032")
+                 || String (partNumber).equalsIgnoreCase ("NP1033"))
+
         {
             probes.add (new Neuropixels_NHP_Active (basestation, this, flexCables[0]));
         }
