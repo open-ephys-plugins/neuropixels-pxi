@@ -95,7 +95,8 @@ public:
 
     /** Neuropixels QuadBase
 	*/
-    static void QuadBase (Array<ElectrodeMetadata>& em,
+    static void QuadBase (bool sapiens,
+                          Array<ElectrodeMetadata>& em,
                           ProbeMetadata& pm);
 };
 

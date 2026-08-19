@@ -105,7 +105,10 @@ bool Geometry::forPartNumber (String PN,
         UHDActive (em, pm); // UHD2 - switchable, 8 cols, 6 um spacing
 
     else if (PN.equalsIgnoreCase ("NP2020") || PN.equalsIgnoreCase ("NP2021"))
-        QuadBase (em, pm);
+        QuadBase (false, em, pm);
+
+    else if (PN.equalsIgnoreCase ("NP2022"))
+        QuadBase (true, em, pm);
 
     else
         found_valid_part_number = false;
@@ -7083,13 +7086,18 @@ void Geometry::OPTO (Array<ElectrodeMetadata>& electrodeMetadata,
     }
 }
 
-void Geometry::QuadBase (Array<ElectrodeMetadata>& electrodeMetadata,
+void Geometry::QuadBase (bool sapiens,
+                         Array<ElectrodeMetadata>& electrodeMetadata,
                          ProbeMetadata& probeMetadata)
 {
     int shank_count = 4;
 
     probeMetadata.type = ProbeType::QUAD_BASE;
-    probeMetadata.name = "Neuropixels 2.0 Quad Base";
+
+    if (sapiens)
+        probeMetadata.name = "Neuropixels 2.0 Quad Base - Sapiens";
+    else
+        probeMetadata.name = "Neuropixels 2.0 Quad Base";
 
     Path path;
     path.startNewSubPath (67, 31);
