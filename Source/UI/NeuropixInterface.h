@@ -198,6 +198,7 @@ private:
 
     std::unique_ptr<UtilityButton> annotationButton;
     std::unique_ptr<UtilityButton> bistButton;
+    std::unique_ptr<UtilityButton> runAllBistsButton;
     std::unique_ptr<TextButton> firmwareUpdateButton;
 
     std::unique_ptr<UtilityButton> copyButton;
@@ -235,6 +236,9 @@ private:
     void drawPanel (Graphics& g, Rectangle<int> area, const String& title);
     void drawLegend (Graphics& g);
     void drawAnnotations (Graphics& g);
+
+    /* Runs every built-in self test in sequence and reports the combined results */
+    void runAllBistTests();
 
     /* Thread-safe method to show bad site warning */
     void showDamagedShankWarning();

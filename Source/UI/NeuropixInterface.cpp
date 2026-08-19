@@ -52,6 +52,57 @@ constexpr int DEVICE_COLUMN_WIDTH = 360;
 constexpr int PROBE_SETTINGS_HEIGHT = 90;
 constexpr int SELF_TEST_HEIGHT = 120;
 constexpr int MIN_CONTENT_WIDTH = 1300;
+
+struct BistTestSpec
+{
+    int itemId;
+    String label;
+    BIST bistType;
+};
+
+struct BistResult
+{
+    int itemId;
+    String text;
+    bool passed;
+};
+
+// Runs each BIST test on a background thread while displaying a progress dialog
+class BistTestThread : public ThreadWithProgressWindow
+{
+public:
+    BistTestThread (Probe* probe_, Array<BistTestSpec> tests_)
+        : ThreadWithProgressWindow ("Running self-tests...", true, true),
+          probeToTest (probe_),
+          tests (std::move (tests_))
+    {
+    }
+
+    void run() override
+    {
+        for (int i = 0; i < tests.size() && ! threadShouldExit(); ++i)
+        {
+            const auto& test = tests.getReference (i);
+
+            setStatusMessage ("Running: " + test.label);
+
+            const bool passed = probeToTest->runBist (test.bistType);
+
+            results.add ({ test.itemId, test.label + (passed ? " - PASSED" : " - FAILED"), passed });
+
+            setProgress ((i + 1) / (double) tests.size());
+
+            sleep (100); // Give the UI a chance to update
+        }
+    }
+
+    const Array<BistResult>& getResults() const { return results; }
+
+private:
+    Probe* probeToTest;
+    Array<BistTestSpec> tests;
+    Array<BistResult> results;
+};
 } // namespace
 
 NeuropixInterface::NeuropixInterface (DataSource* p,
@@ -373,6 +424,12 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
         bistButton->setTooltip ("Run selected test");
         addAndMakeVisible (bistButton.get());
 
+        runAllBistsButton = std::make_unique<UtilityButton> ("RUN ALL");
+        runAllBistsButton->setRadius (3.0f);
+        runAllBistsButton->addListener (this);
+        runAllBistsButton->setTooltip ("Run all built-in self tests");
+        addAndMakeVisible (runAllBistsButton.get());
+
         // "BUILT-IN SELF TESTS" title is painted as part of the panel
         bistLabel = std::make_unique<Label> ("BIST", "Built-in self tests:");
         bistLabel->setFont (FontOptions ("Inter", "Regular", 15.0f));
@@ -471,20 +528,21 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     else
     {
         type = SettingsInterface::BASESTATION_SETTINGS_INTERFACE;
+
+        // FIRMWARE (probes can only be detected once the basestation firmware is compatible,
+        // so this control only makes sense on the basestation-level interface)
+        firmwareUpdateButton = std::make_unique<TextButton> ("UPDATE FIRMWARE ...");
+        firmwareUpdateButton->addListener (this);
+
+        const bool firmwareUpdateRequired = basestation->isFirmwareUpdateRequired();
+        firmwareUpdateButton->setEnabled (firmwareUpdateRequired);
+        firmwareUpdateButton->setTooltip (firmwareUpdateRequired
+                                              ? "Install API-compatible built-in firmware (BS first, then BSC)"
+                                              : "Basestation firmware is already up to date");
+
+        if (thread->type == PXI)
+            addAndMakeVisible (firmwareUpdateButton.get());
     }
-
-    // FIRMWARE
-    firmwareUpdateButton = std::make_unique<TextButton> ("UPDATE FIRMWARE ...");
-    firmwareUpdateButton->addListener (this);
-
-    const bool firmwareUpdateRequired = basestation->isFirmwareUpdateRequired();
-    firmwareUpdateButton->setEnabled (firmwareUpdateRequired);
-    firmwareUpdateButton->setTooltip (firmwareUpdateRequired
-                                          ? "Install API-compatible built-in firmware (BS first, then BSC)"
-                                          : "Basestation firmware is already up to date");
-
-    if (thread->type == PXI)
-        addAndMakeVisible (firmwareUpdateButton.get());
 
     // PROBE INFO
     nameLabel = std::make_unique<Label> ("MAIN", "NAME");
@@ -913,6 +971,10 @@ void NeuropixInterface::buttonClicked (Button* button)
             CoreServices::sendStatusMessage ("Cannot run test while acquisition is active.");
         }
     }
+    else if (button == runAllBistsButton.get())
+    {
+        runAllBistTests();
+    }
     else if (button == loadImroButton.get())
     {
         FileChooser fileChooser ("Select an IMRO file to load.", File(), "*.imro");
@@ -997,6 +1059,60 @@ void NeuropixInterface::buttonClicked (Button* button)
             basestation->updateFirmware();
         }
     }
+}
+
+void NeuropixInterface::runAllBistTests()
+{
+    if (editor->acquisitionIsActive)
+    {
+        CoreServices::sendStatusMessage ("Cannot run tests while acquisition is active.");
+        return;
+    }
+
+    if (bistComboBox == nullptr)
+        return;
+
+    Array<BistTestSpec> tests;
+
+    for (int i = 0; i < bistComboBox->getNumItems(); ++i)
+    {
+        const int itemId = bistComboBox->getItemId (i);
+        const int bistIndex = itemId - 1;
+
+        // Skip the "Select a test..." placeholder and any disabled/unlisted entries
+        if (itemId <= 1 || ! isPositiveAndBelow (bistIndex, availableBists.size()))
+            continue;
+
+        String label = bistComboBox->getItemText (i);
+
+        // Strip any result appended by a previous run before running again
+        String previousResult = label.substring (label.length() - 6);
+        if (previousResult.compare ("PASSED") == 0 || previousResult.compare ("FAILED") == 0)
+            label = label.dropLastCharacters (9);
+
+        tests.add ({ itemId, label, availableBists[bistIndex] });
+    }
+
+    if (tests.isEmpty())
+        return;
+
+    BistTestThread testThread (probe, tests);
+
+    const bool completedAllTests = testThread.runThread();
+
+    String report = completedAllTests ? "" : "Self tests cancelled.\n\nCompleted tests:\n\n";
+
+    for (const auto& result : testThread.getResults())
+    {
+        bistComboBox->changeItemText (result.itemId, result.text);
+        report << result.text << "\n";
+    }
+
+    report << "\nCheck console for more details.";
+
+    bistComboBox->setSelectedId (1, dontSendNotification);
+
+    AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon, probe->getName() + " Self Test Results", report);
 }
 
 Array<int> NeuropixInterface::getSelectedElectrodes()
@@ -1194,6 +1310,9 @@ void NeuropixInterface::startAcquisition()
     if (bistButton != nullptr)
         bistButton->setEnabled (enabledState);
 
+    if (runAllBistsButton != nullptr)
+        runAllBistsButton->setEnabled (enabledState);
+
     if (copyButton != nullptr)
         copyButton->setEnabled (enabledState);
 
@@ -1250,6 +1369,9 @@ void NeuropixInterface::stopAcquisition()
 
     if (bistButton != nullptr)
         bistButton->setEnabled (enabledState);
+
+    if (runAllBistsButton != nullptr)
+        runAllBistsButton->setEnabled (enabledState);
 
     if (copyButton != nullptr)
         copyButton->setEnabled (enabledState);
@@ -1442,7 +1564,11 @@ void NeuropixInterface::layoutSelfTests (Rectangle<int> area)
         area.removeFromTop (20);
     }
 
-    firmwareUpdateButton->setBounds (area.removeFromTop (24).withWidth (160));
+    const int centerX = area.getCentreX();
+    auto buttonBounds = area.removeFromTop (24).withWidth (100);
+    buttonBounds.setX (centerX - buttonBounds.getWidth() / 2);
+
+    runAllBistsButton->setBounds (buttonBounds);
 }
 
 void NeuropixInterface::layoutProbeSettings (Rectangle<int> area)
