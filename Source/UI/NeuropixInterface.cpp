@@ -48,7 +48,6 @@ constexpr int ROW_HEIGHT = 22;
 constexpr int SECTION_GAP = 12;
 constexpr int LEGEND_HEIGHT = 44;
 constexpr int PROBE_CONTROL_WIDTH = 280;
-constexpr int DEVICE_COLUMN_WIDTH = 360;
 constexpr int PROBE_SETTINGS_HEIGHT = 90;
 constexpr int SELF_TEST_HEIGHT = 120;
 constexpr int MIN_CONTENT_WIDTH = 1300;
@@ -553,7 +552,7 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     infoLabel = std::make_unique<TextEditor> ("INFO");
     infoLabel->setMultiLine (true, false);
     infoLabel->setReadOnly (true);
-    infoLabel->setScrollbarsShown (true);
+    infoLabel->setScrollbarsShown (false);
     infoLabel->setCaretVisible (false);
     infoLabel->setPopupMenuEnabled (true);
     infoLabel->setFont (FontOptions (15.0f));
@@ -595,26 +594,13 @@ NeuropixInterface::NeuropixInterface (DataSource* p,
     else
     {
         int basestationInterfaceHeight = 45 + PANEL_TITLE_GAP + infoTextHeight + 20 + 24 + 2 * PANEL_PADDING;
-        basestationInterfaceBounds = Rectangle<int> (OUTER_MARGIN, OUTER_MARGIN, DEVICE_COLUMN_WIDTH, basestationInterfaceHeight);
-        viewport->setMinimumContentWidth (DEVICE_COLUMN_WIDTH + 2 * OUTER_MARGIN);
+        basestationInterfaceBounds = Rectangle<int> (OUTER_MARGIN, OUTER_MARGIN, deviceInfoColumnWidth, basestationInterfaceHeight);
+        viewport->setMinimumContentWidth (deviceInfoColumnWidth + 2 * OUTER_MARGIN);
         viewport->setMinimumContentHeight (basestationInterfaceHeight + 2 * OUTER_MARGIN);
     }
 
     // Ensure initial layout is performed
     resized();
-
-    // Check for damaged shanks on Quad Base probes and show warning if any found
-    if (probe != nullptr && probe->type == ProbeType::QUAD_BASE)
-    {
-        for (int i = 0; i < probe->electrodeMetadata.size(); ++i)
-        {
-            if (! probe->electrodeMetadata[i].shank_is_programmable)
-            {
-                showDamagedShankWarning();
-                break;
-            }
-        }
-    }
 }
 
 NeuropixInterface::~NeuropixInterface()
@@ -645,7 +631,7 @@ void NeuropixInterface::updateInfoString()
     {
         nameString = probe->displayName;
 
-        infoString += "Probe Type: " + String (probeTypeToString (probe->type));
+        infoString += "Probe Type: " + probe->name;
         infoString += "\nPart Number: " + probe->info.part_number;
         infoString += "\nS/N: " + String (probe->info.serial_number);
         infoString += "\n";
@@ -692,11 +678,15 @@ void NeuropixInterface::updateInfoString()
         infoString += "\n";
     }
 
-    auto infoTextLines = StringArray::fromLines (infoString).size();
-    infoTextHeight = infoTextLines * infoLabel->getFont().getHeight() + 2 * infoLabel->getTopIndent();
+    const auto infoTextLines = StringArray::fromLines (infoString);
+    infoTextHeight = infoTextLines.size() * infoLabel->getFont().getHeight() + 2 * infoLabel->getTopIndent();
 
     infoLabel->setText (infoString, false);
+
+    deviceInfoColumnWidth = infoLabel->getTextWidth() + infoLabel->getLeftIndent() + 2 * PANEL_PADDING;
+
     nameLabel->setText (nameString, dontSendNotification);
+    resized();
 }
 
 void NeuropixInterface::labelTextChanged (Label* label)
@@ -1227,7 +1217,7 @@ void NeuropixInterface::selectElectrodes (Array<int> electrodes)
 
             for (int j = 0; j < electrodeMetadata.size(); j++)
             {
-                electrodeMetadata.getReference (i).shank_is_programmable = probe->electrodeMetadata.getReference (i).shank_is_programmable;
+                electrodeMetadata.getReference (j).shank_is_programmable = probe->electrodeMetadata.getReference (j).shank_is_programmable;
 
                 if (probe->type == ProbeType::QUAD_BASE)
                 {
@@ -1409,8 +1399,8 @@ void NeuropixInterface::resized()
     probeSettingsBounds = bounds.removeFromBottom (PROBE_SETTINGS_HEIGHT);
     bounds.removeFromBottom (PANEL_GAP);
 
-    // Three main columns: overview takes the space left over by the fixed-width columns
-    auto deviceColumn = bounds.removeFromRight (DEVICE_COLUMN_WIDTH);
+    // Three main columns: overview takes the space left over by the control and info columns
+    auto deviceColumn = bounds.removeFromRight (deviceInfoColumnWidth);
     bounds.removeFromRight (PANEL_GAP);
     probeControlBounds = bounds.removeFromRight (PROBE_CONTROL_WIDTH);
     bounds.removeFromRight (PANEL_GAP);
@@ -1548,7 +1538,7 @@ void NeuropixInterface::layoutDeviceInfo (Rectangle<int> area)
     nameLabel->setBounds (area.removeFromTop (40));
     area.removeFromTop (PANEL_TITLE_GAP);
 
-    infoLabel->setBounds (area.withHeight (jmin (int(infoTextHeight), area.getHeight())));
+    infoLabel->setBounds (area.withHeight (jmin (int (infoTextHeight), area.getHeight())));
 }
 
 void NeuropixInterface::layoutSelfTests (Rectangle<int> area)
@@ -1904,7 +1894,10 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
             }
         }
 
-        if (electrodeFromBrokenShankSelected && probe->type != ProbeType::QUAD_BASE)
+        if (electrodeFromBrokenShankSelected
+            && probe->type != ProbeType::QUAD_BASE
+            && ! canvas->isRestoringSavedSettings()
+            && ! thread->isRefreshing)
         {
             showDamagedShankWarning();
         }
@@ -2471,8 +2464,8 @@ void NeuropixInterface::showDamagedShankWarning()
     if (probe->isSurveyModeActive())
         return;
 
-    String message = "One or more selected electrodes for " + probe->getName() + " are located on a shank that may be damaged. "
-                     "Although data acquisition can proceed, there is no guarantee these electrodes will be selected as intended.";
+    String message = "One or more selected electrodes for " + probe->getName() + " are located on a shank that may be damaged. ";
+    message += "Although data acquisition can proceed, there is no guarantee these electrodes will be selected as intended.";
 
     if (probe->type == ProbeType::NP2_4)
     {

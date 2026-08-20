@@ -24,7 +24,7 @@
 #ifndef __PROBENAMECONFIG_H_F0BD2DD9__
 #define __PROBENAMECONFIG_H_F0BD2DD9__
 
-#include "../../JuceLibraryCode/JuceHeader.h"
+#include <JuceHeader.h>
 
 class ProbeNameConfig;
 class NeuropixThread;

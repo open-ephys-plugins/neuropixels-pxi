@@ -379,8 +379,12 @@ void NeuropixCanvas::saveCustomParametersToXml (XmlElement* xml)
 
 void NeuropixCanvas::loadCustomParametersFromXml (XmlElement* xml)
 {
+    restoringSavedSettings = true;
+
     for (int i = 0; i < settingsInterfaces.size(); i++)
         settingsInterfaces[i]->loadParameters (xml);
+
+    restoringSavedSettings = false;
 }
 
 SettingsUpdater::SettingsUpdater (NeuropixCanvas* canvas_, ProbeSettings p) : ThreadWithProgressWindow ("Updating settings", true, true),

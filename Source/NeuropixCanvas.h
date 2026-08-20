@@ -138,6 +138,8 @@ public:
     /** Loads custom UI settings*/
     void loadCustomParametersFromXml (XmlElement* xml) override;
 
+    bool isRestoringSavedSettings() const { return restoringSavedSettings; }
+
     /** Sets bounds of sub-components*/
     void resized();
 
@@ -156,6 +158,7 @@ private:
 
     Array<int> topLevelTabIndex;
     Array<int> basestationTabIndex;
+    bool restoringSavedSettings = false;
 };
 
 class SettingsUpdater : public ThreadWithProgressWindow

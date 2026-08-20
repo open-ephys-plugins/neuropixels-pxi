@@ -65,7 +65,7 @@ public:
 	*
 		Available with 1 shank or 4 shanks
 
-        Available with 10-bit or 14-bit ADC
+        Available with 12-bit or 14-bit ADC
 
         Available in Sapiens version (P/N = NP2005 or NP2006)
 

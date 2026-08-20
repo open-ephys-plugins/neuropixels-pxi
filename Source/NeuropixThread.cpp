@@ -74,6 +74,13 @@ void Initializer::run()
         // Open PXI basestations first
         if (type == PXI)
         {
+            Neuropixels::NP_ErrorCode ec = Neuropixels::np_setParameter (Neuropixels::NP_PARAM_INPUT_LATENCY_US, 264);
+
+            if (ec != Neuropixels::SUCCESS)
+            {
+                LOGC ("Error setting input latency, error code: ", Neuropixels::np_getErrorMessage (ec));
+            }
+
             int countForType = 0;
             for (int slot = pxiSlotMin; slot <= pxiSlotMax; slot++)
             {
@@ -198,9 +205,9 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
         bool is_driver_present, is_version_ok;
 
         Neuropixels::np_checkFtdiDriver (&requiredFtdiDriverVersion,
-                                      &currentFtdiDriverVersion,
-                                      &is_driver_present,
-                                      &is_version_ok);
+                                         &currentFtdiDriverVersion,
+                                         &is_driver_present,
+                                         &is_version_ok);
 
         LOGC ("Current FTDI driver version: ", currentFtdiDriverVersion.vmajor, ".", currentFtdiDriverVersion.vminor, ".", currentFtdiDriverVersion.vbuild);
         LOGC ("Required FTDI driver version: ", requiredFtdiDriverVersion.vmajor, ".", requiredFtdiDriverVersion.vminor, ".", requiredFtdiDriverVersion.vbuild);
@@ -293,6 +300,10 @@ NeuropixThread::NeuropixThread (SourceNode* sn, DeviceType type_) : DataThread (
     }
 
     updateStreamInfo();
+
+    int inputLatency = 0;
+    const auto ec = Neuropixels::np_getParameter (Neuropixels::NP_PARAM_INPUT_LATENCY_US, &inputLatency);
+    LOGC ("Neuropixels input buffer latency: ", inputLatency, " us");
 }
 
 void NeuropixThread::initializeProbes()
@@ -346,6 +357,52 @@ void NeuropixThread::initializeProbes()
 
         probesInitialized = true;
     }
+
+    // Check for damaged shanks and show warning if any are found
+    String damagedShankMessage;
+
+    for (auto* probe : getProbes())
+    {
+        Array<int> damagedShanks;
+
+        for (const auto& electrode : probe->electrodeMetadata)
+        {
+            if (! electrode.shank_is_programmable && ! damagedShanks.contains (electrode.shank))
+                damagedShanks.add (electrode.shank);
+        }
+
+        if (damagedShanks.isEmpty())
+            continue;
+
+        damagedShankMessage << "\n"
+                << String::fromUTF8 ("\xe2\x80\xa2 ") << probe->getName();
+
+        if (probe->probeMetadata.shank_count > 1)
+        {
+            damagedShankMessage << " (shank" << (damagedShanks.size() > 1 ? "s " : " ");
+
+            for (int i = 0; i < damagedShanks.size(); ++i)
+            {
+                if (i > 0)
+                    damagedShankMessage << ", ";
+
+                damagedShankMessage << damagedShanks[i] + 1;
+            }
+
+            damagedShankMessage << ")";
+        }
+    }
+
+    if (damagedShankMessage.isEmpty())
+        return;
+
+    damagedShankMessage = "The following probes have one or more shanks that may be damaged:\n" + damagedShankMessage
+                          + "\n\nAlthough data acquisition can proceed, there is no guarantee electrodes on these shanks will be selected as intended.";
+
+    MessageManager::callAsync ([damagedShankMessage]()
+                               { AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
+                                                                   "Damaged shanks detected",
+                                                                   damagedShankMessage); });
 }
 
 String NeuropixThread::generateProbeName (int probeIndex, ProbeNameConfig::NamingScheme namingScheme)

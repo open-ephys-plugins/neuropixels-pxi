@@ -225,6 +225,7 @@ private:
     Rectangle<int> basestationInterfaceBounds;
 
     int infoTextHeight = 0;
+    int deviceInfoColumnWidth = 0;
 
     // Layout helpers
     void layoutProbeControls (Rectangle<int> area);

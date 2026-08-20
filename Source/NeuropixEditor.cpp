@@ -455,8 +455,6 @@ void BackgroundLoaderWithProgressWindow::run()
     setStatusMessage ("Checking for hardware changes...");
     LOGC ("Scanning for hardware changes...");
     updateProbeMap();
-
-    thread->isRefreshing = false;
 }
 
 BackgroundLoader::BackgroundLoader (NeuropixThread* thread_, NeuropixEditor* editor_)
@@ -924,6 +922,8 @@ void NeuropixEditor::buttonClicked (Button* button)
                     }
                 }
             }
+
+            thread->isRefreshing = false;
 
             CoreServices::updateSignalChain (this);
         }
