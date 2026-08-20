@@ -213,7 +213,7 @@ public:
                         LOGC ("Neuropixels 2.0 multi-shank probe detected.");
                         settings.probeType = ProbeType::NP2_4;
                     }
-                    else if (value == 2020 || value == 2021)
+                    else if (value == 2020 || value == 2021 || value == 2022)
                     {
                         LOGC ("Neuropixels 2.0 quad base probe detected.");
                         settings.probeType = ProbeType::QUAD_BASE;

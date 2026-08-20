@@ -2273,25 +2273,25 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                         ProbeType type = ProbeType::NP1;
 
                         if (PN.equalsIgnoreCase ("NP1010") || PN.equalsIgnoreCase ("NP1011") || PN.equalsIgnoreCase ("NP1012") || PN.equalsIgnoreCase ("NP1013")
-                            || PN.equalsIgnoreCase ("NP1015") || PN.equalsIgnoreCase ("NP1016"))
+                            || PN.equalsIgnoreCase ("NP1014") || PN.equalsIgnoreCase ("NP1015") || PN.equalsIgnoreCase ("NP1016"))
                             type = ProbeType::NHP10;
 
                         else if (PN.equalsIgnoreCase ("NP1020") || PN.equalsIgnoreCase ("NP1021") || PN.equalsIgnoreCase ("NP1022"))
                             type = ProbeType::NHP25;
 
-                        else if (PN.equalsIgnoreCase ("NP1030") || PN.equalsIgnoreCase ("NP1031") || PN.equalsIgnoreCase ("NP1032"))
+                        else if (PN.equalsIgnoreCase ("NP1030") || PN.equalsIgnoreCase ("NP1031") || PN.equalsIgnoreCase ("NP1032") || PN.equalsIgnoreCase ("NP1033"))
                             type = ProbeType::NHP45;
 
                         else if (PN.equalsIgnoreCase ("NP1200") || PN.equalsIgnoreCase ("NP1210"))
                             type = ProbeType::NHP1;
 
-                        else if (PN.equalsIgnoreCase ("PRB2_1_2_0640_0") || PN.equalsIgnoreCase ("NP2000") || PN.equalsIgnoreCase ("NP2003") || PN.equalsIgnoreCase ("NP2004"))
+                        else if (PN.equalsIgnoreCase ("PRB2_1_2_0640_0") || PN.equalsIgnoreCase ("NP2000") || PN.equalsIgnoreCase ("NP2003") || PN.equalsIgnoreCase ("NP2004") || PN.equalsIgnoreCase ("NP2005") || PN.equalsIgnoreCase ("NP2006"))
                             type = ProbeType::NP2_1;
 
                         else if (PN.equalsIgnoreCase ("PRB2_4_2_0640_0") || PN.equalsIgnoreCase ("NP2010") || PN.equalsIgnoreCase ("NP2013") || PN.equalsIgnoreCase ("NP2014"))
                             type = ProbeType::NP2_4;
 
-                        else if (PN.equalsIgnoreCase ("NP2020"))
+                        else if (PN.equalsIgnoreCase ("NP2020") || PN.equalsIgnoreCase ("NP2021") || PN.equalsIgnoreCase ("NP2022"))
                             type = ProbeType::QUAD_BASE;
 
                         else if (PN.equalsIgnoreCase ("PRB_1_4_0480_1") || PN.equalsIgnoreCase ("PRB_1_4_0480_1_C") || PN.equalsIgnoreCase ("PRB_1_2_0480_2"))
