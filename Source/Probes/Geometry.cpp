@@ -67,19 +67,25 @@ bool Geometry::forPartNumber (String PN,
     else if (PN.equalsIgnoreCase ("PRB2_1_2_0640_0")
              || PN.equalsIgnoreCase ("PRB2_1_4_0480_1")
              || PN.equalsIgnoreCase ("NP2000"))
-        NP2 (1, 14, em, pm); // single shank, 14-bit ADC
+        NP2 (1, 14, false, false, em, pm); // single shank, 14-bit ADC
 
     else if (PN.equalsIgnoreCase ("NP2003")
              || PN.equalsIgnoreCase ("NP2004"))
-        NP2 (1, 12, em, pm); // single shank, 12-bit ADC
+        NP2 (1, 12, false, false, em, pm); // single shank, 12-bit ADC
 
     else if (PN.equalsIgnoreCase ("PRB2_4_2_0640_0")
              || PN.equalsIgnoreCase ("NP2010"))
-        NP2 (4, 14, em, pm); // multi-shank, 14-bit ADC
+        NP2 (4, 14, false, false, em, pm); // multi-shank, 14-bit ADC
 
     else if (PN.equalsIgnoreCase ("NP2013")
              || PN.equalsIgnoreCase ("NP2014"))
-        NP2 (4, 12, em, pm); // multi-shank, 12-bit ADC
+        NP2 (4, 12, false, false, em, pm); // multi-shank, 12-bit ADC
+
+    else if (PN.equalsIgnoreCase ("NP2005"))
+        NP2 (1, 12, false, true, em, pm); // single-shank, 12-bit ADC, linear layout, Sapiens version
+
+    else if (PN.equalsIgnoreCase ("NP2006"))
+        NP2 (1, 12, true, true, em, pm); // single-shank, 12-bit ADC, staggered layout, Sapiens version
 
     else if (PN.equalsIgnoreCase ("PRB_1_4_0480_1")
              || PN.equalsIgnoreCase ("PRB_1_4_0480_1_C")
@@ -219,17 +225,21 @@ void Geometry::NP1 (Array<ElectrodeMetadata>& electrodeMetadata,
     }
 }
 
-void Geometry::NP2 (int shank_count, int adc_bits, Array<ElectrodeMetadata>& electrodeMetadata, ProbeMetadata& probeMetadata)
+void Geometry::NP2 (int shank_count, int adc_bits, bool siteLayout, bool sapiens, Array<ElectrodeMetadata>& electrodeMetadata, ProbeMetadata& probeMetadata)
 {
     if (shank_count == 1)
     {
         probeMetadata.type = ProbeType::NP2_1;
-        probeMetadata.name = "Neuropixels 2.0 - Single Shank";
+
+        if (sapiens)
+            probeMetadata.name = "Neuropixels 2.0 Single Shank - Sapiens";
+        else
+            probeMetadata.name = "Neuropixels 2.0 Single Shank";
     }
     else
     {
         probeMetadata.type = ProbeType::NP2_4;
-        probeMetadata.name = "Neuropixels 2.0 - Multishank";
+        probeMetadata.name = "Neuropixels 2.0 Multishank";
     }
 
     probeMetadata.adc_bits = adc_bits;
@@ -257,6 +267,8 @@ void Geometry::NP2 (int shank_count, int adc_bits, Array<ElectrodeMetadata>& ele
         Bank::OFF //disconnected
     };
 
+    Array<float> staggeredXPositions = { 27.0f, 59.0f, 11.0f, 43.0f };
+
     for (int i = 0; i < probeMetadata.electrodes_per_shank * probeMetadata.shank_count; i++)
     {
         ElectrodeMetadata metadata;
@@ -266,7 +278,15 @@ void Geometry::NP2 (int shank_count, int adc_bits, Array<ElectrodeMetadata>& ele
         metadata.shank = i / probeMetadata.electrodes_per_shank;
         metadata.shank_local_index = i % probeMetadata.electrodes_per_shank;
 
-        metadata.xpos = i % 2 * 32.0f + 27.0f;
+        if (shank_count == 1 && siteLayout) // NP2005 and NP2006 have single shank staggered layout
+        {
+            metadata.xpos = staggeredXPositions[i % 4];
+        }
+        else
+        {
+            metadata.xpos = i % 2 * 32.0f + 27.0f;
+        }
+
         metadata.ypos = (metadata.shank_local_index - (metadata.shank_local_index % 2)) * 7.5f;
         metadata.site_width = 12;
 

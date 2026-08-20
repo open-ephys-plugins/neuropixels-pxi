@@ -193,7 +193,7 @@ public:
                         LOGC ("Neuropixels NHP probe 25 mm probe detected.");
                         settings.probeType = ProbeType::NHP25;
                     }
-                    else if (value >= 1030 && value <= 1032)
+                    else if (value >= 1030 && value <= 1033)
                     {
                         LOGC ("Neuropixels NHP probe 45 mm probe detected.");
                         settings.probeType = ProbeType::NHP45;
@@ -203,7 +203,7 @@ public:
                         LOGC ("Neuropixels NHP passive probe detected.");
                         settings.probeType = ProbeType::NHP1;
                     }
-                    else if (value == 21 || value == 2000 || value == 2003 || value == 2004)
+                    else if (value == 21 || value == 2000 || value == 2003 || value == 2004 || value == 2005 || value == 2006)
                     {
                         LOGC ("Neuropixels 2.0 single shank probe detected.");
                         settings.probeType = ProbeType::NP2_1;

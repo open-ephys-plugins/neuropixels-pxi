@@ -64,8 +64,14 @@ public:
     /** Neuropixels 2.0
 	*
 		Available with 1 shank or 4 shanks
+
+        Available with 10-bit or 14-bit ADC
+
+        Available in Sapiens version (P/N = NP2005 or NP2006)
+
+        Available in 2 site layouts: staggered (true) or straight (false)
 	*/
-    static void NP2 (int shank_count, int adc_bits, Array<ElectrodeMetadata>& em, ProbeMetadata& pm);
+    static void NP2 (int shank_count, int adc_bits, bool siteLayout, bool sapiens, Array<ElectrodeMetadata>& em, ProbeMetadata& pm);
 
     /** Neuropixels UHD Passive
 	*
@@ -94,6 +100,8 @@ public:
                       ProbeMetadata& pm);
 
     /** Neuropixels QuadBase
+     * 
+     *  Available in Sapiens version (P/N = NP2022)
 	*/
     static void QuadBase (bool sapiens,
                           Array<ElectrodeMetadata>& em,
