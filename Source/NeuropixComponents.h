@@ -706,6 +706,44 @@ public:
     Basestation* basestation;
     Neuropixels::NP_ErrorCode updateResult = Neuropixels::SUCCESS;
     String failedOperation;
+
+private:
+    class FirmwareFileSelectionComponent : public Component
+    {
+    public:
+        FirmwareFileSelectionComponent (const String& expectedBsFilename, const String& expectedBscFilename);
+
+        void paint (Graphics& graphics) override;
+        void resized() override;
+
+        File getBsFirmwareFile() const;
+        File getBscFirmwareFile() const;
+
+    private:
+        void configureFileLabel (Label& label, const String& text);
+        void selectFirmwareFile (const String& componentName,
+                                 const String& expectedFilename,
+                                 File& selectedFile,
+                                 Label& fileLabel);
+        void closeDialog (int result);
+
+        const String expectedBsFilename;
+        const String expectedBscFilename;
+        File bsFirmwareFile;
+        File bscFirmwareFile;
+        Label bsFileLabel;
+        Label bscFileLabel;
+        TextButton bsSelectButton;
+        TextButton bscSelectButton;
+        TextButton continueButton;
+        TextButton cancelButton;
+    };
+
+    bool selectManualFirmwareFiles (const String& expectedBsFilename, const String& expectedBscFilename);
+
+    bool manualUpdate = false;
+    File bsFirmwareFile;
+    File bscFirmwareFile;
 };
 
 /** Represents a data acquisition device */

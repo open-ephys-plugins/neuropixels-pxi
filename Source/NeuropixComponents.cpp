@@ -22,6 +22,7 @@
 */
 
 #include "NeuropixComponents.h"
+#include "Basestations/PxiBasestation.h"
 
 size_t FirmwareUpdater::totalFirmwareBytes = 0;
 size_t FirmwareUpdater::completedFirmwareBytes = 0;
@@ -260,6 +261,104 @@ Array<int> Probe::getHalfBankOverlapSelection (const String& config, int electro
     return selection;
 }
 
+FirmwareUpdater::FirmwareFileSelectionComponent::FirmwareFileSelectionComponent (const String& expectedBsFilename_,
+                                                                                  const String& expectedBscFilename_)
+    : expectedBsFilename (expectedBsFilename_),
+      expectedBscFilename (expectedBscFilename_)
+{
+    configureFileLabel (bsFileLabel, "No BS firmware file selected");
+    configureFileLabel (bscFileLabel, "No BSC firmware file selected");
+
+    bsSelectButton.setButtonText ("Select BS File...");
+    bsSelectButton.onClick = [this] { selectFirmwareFile ("BS", expectedBsFilename, bsFirmwareFile, bsFileLabel); };
+    addAndMakeVisible (bsSelectButton);
+
+    bscSelectButton.setButtonText ("Select BSC File...");
+    bscSelectButton.onClick = [this] { selectFirmwareFile ("BSC", expectedBscFilename, bscFirmwareFile, bscFileLabel); };
+    addAndMakeVisible (bscSelectButton);
+
+    continueButton.setButtonText ("Continue");
+    continueButton.setEnabled (false);
+    continueButton.onClick = [this] { closeDialog (1); };
+    addAndMakeVisible (continueButton);
+
+    cancelButton.setButtonText ("Cancel");
+    cancelButton.onClick = [this] { closeDialog (0); };
+    addAndMakeVisible (cancelButton);
+}
+
+void FirmwareUpdater::FirmwareFileSelectionComponent::paint (Graphics& g)
+{
+    g.fillAll (findColour (ThemeColours::componentBackground));
+    g.setColour (findColour (ThemeColours::defaultText));
+    g.setFont (FontOptions ("Inter", "Medium", 16.0f));
+    g.drawText ("BS firmware (" + expectedBsFilename + ")", 20, 16, getWidth() - 220, 28, Justification::centredLeft);
+    g.drawText ("BSC firmware (" + expectedBscFilename + ")", 20, 96, getWidth() - 220, 28, Justification::centredLeft);
+}
+
+void FirmwareUpdater::FirmwareFileSelectionComponent::resized()
+{
+    bsSelectButton.setBounds (getWidth() - 190, 16, 170, 24);
+    bsFileLabel.setBounds (20, 50, getWidth() - 40, 28);
+    bscSelectButton.setBounds (getWidth() - 190, 96, 170, 24);
+    bscFileLabel.setBounds (20, 130, getWidth() - 40, 28);
+    continueButton.setBounds (getWidth() / 2 - 120, getHeight() - 48, 110, 30);
+    cancelButton.setBounds (getWidth() / 2 + 10, getHeight() - 48, 100, 30);
+}
+
+File FirmwareUpdater::FirmwareFileSelectionComponent::getBsFirmwareFile() const
+{
+    return bsFirmwareFile;
+}
+
+File FirmwareUpdater::FirmwareFileSelectionComponent::getBscFirmwareFile() const
+{
+    return bscFirmwareFile;
+}
+
+void FirmwareUpdater::FirmwareFileSelectionComponent::configureFileLabel (Label& label, const String& text)
+{
+    label.setText (text, dontSendNotification);
+    label.setFont (FontOptions ("Inter", "Regular", 14.0f));
+    label.setJustificationType (Justification::centredLeft);
+    label.setMinimumHorizontalScale (0.7f);
+    addAndMakeVisible (label);
+}
+
+void FirmwareUpdater::FirmwareFileSelectionComponent::selectFirmwareFile (const String& componentName,
+                                                                           const String& expectedFilename,
+                                                                           File& selectedFile,
+                                                                           Label& fileLabel)
+{
+    FileChooser fileChooser ("Select the " + componentName + " firmware file (" + expectedFilename + ").",
+                             File(),
+                             expectedFilename);
+
+    if (! fileChooser.browseForFileToOpen())
+        return;
+
+    const File result = fileChooser.getResult();
+    if (result.getFileName() != expectedFilename)
+    {
+        AlertWindow::showMessageBox (AlertWindow::WarningIcon,
+                                     "Incorrect firmware file",
+                                     "The selected " + componentName + " firmware file must be named " + expectedFilename + ".",
+                                     "OK");
+        return;
+    }
+
+    selectedFile = result;
+    fileLabel.setText (result.getFullPathName(), dontSendNotification);
+    fileLabel.setTooltip (result.getFullPathName());
+    continueButton.setEnabled (bsFirmwareFile.existsAsFile() && bscFirmwareFile.existsAsFile());
+}
+
+void FirmwareUpdater::FirmwareFileSelectionComponent::closeDialog (int result)
+{
+    if (DialogWindow* dialogWindow = findParentComponentOfClass<DialogWindow>())
+        dialogWindow->exitModalState (result);
+}
+
 FirmwareUpdater::FirmwareUpdater (Basestation* basestation_)
     : ThreadWithProgressWindow ("Firmware Update...", true, false),
       basestation (basestation_)
@@ -271,6 +370,41 @@ FirmwareUpdater::FirmwareUpdater (Basestation* basestation_)
 
     runThread();
     FirmwareUpdater::currentThread = nullptr;
+
+    if (updateResult != Neuropixels::SUCCESS
+        && (basestation->type == BasestationType::PXI || basestation->type == BasestationType::OPTO))
+    {
+        const String automaticFailure = failedOperation + " failed: " + String (Neuropixels::np_getErrorMessage (updateResult));
+        const bool shouldTryManualUpdate = AlertWindow::showOkCancelBox (
+            AlertWindow::WarningIcon,
+            "Automatic firmware update failed",
+            automaticFailure + "\n\nWould you like to select BS and BSC firmware package files manually?",
+            "Select Firmware Files",
+            "Cancel");
+
+        if (shouldTryManualUpdate)
+        {
+            const String expectedBsFilename = basestation->type == BasestationType::OPTO
+                                                ? OPTO_BS_FIRMWARE_FILENAME
+                                                : BS_FIRMWARE_FILENAME;
+            const String expectedBscFilename = basestation->type == BasestationType::OPTO
+                                                 ? OPTO_BSC_FIRMWARE_FILENAME
+                                                 : BSC_FIRMWARE_FILENAME;
+
+            if (selectManualFirmwareFiles (expectedBsFilename, expectedBscFilename))
+            {
+                manualUpdate = true;
+                updateResult = Neuropixels::SUCCESS;
+                failedOperation.clear();
+                totalFirmwareBytes = 0;
+                completedFirmwareBytes = 0;
+                setStatusMessage ("Preparing manual firmware update...");
+                FirmwareUpdater::currentThread = this;
+                runThread();
+                FirmwareUpdater::currentThread = nullptr;
+            }
+        }
+    }
 
     if (updateResult == Neuropixels::SUCCESS)
     {
@@ -286,6 +420,26 @@ FirmwareUpdater::FirmwareUpdater (Basestation* basestation_)
         LOGE (message);
         AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon, "Firmware update failed", message);
     }
+}
+
+bool FirmwareUpdater::selectManualFirmwareFiles (const String& expectedBsFilename, const String& expectedBscFilename)
+{
+    DialogWindow::LaunchOptions options;
+    auto* selectionComponent = new FirmwareFileSelectionComponent (expectedBsFilename, expectedBscFilename);
+    options.content.setOwned (selectionComponent);
+    options.content->setSize (680, 230);
+    options.dialogTitle = "Select Firmware Files";
+    options.dialogBackgroundColour = selectionComponent->findColour (ThemeColours::componentBackground);
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = false;
+    options.resizable = false;
+
+    if (options.runModal() != 1)
+        return false;
+
+    bsFirmwareFile = selectionComponent->getBsFirmwareFile();
+    bscFirmwareFile = selectionComponent->getBscFirmwareFile();
+    return true;
 }
 
 void FirmwareUpdater::run()
@@ -313,17 +467,27 @@ void FirmwareUpdater::run()
     size_t bsFirmwareBytes = 0;
     size_t bscFirmwareBytes = 0;
 
-    updateResult = Neuropixels::np_bs_getFirmwareSize (basestation->slot, &bsFirmwareBytes);
+    if (manualUpdate)
+        updateResult = Neuropixels::np_getFirmwarePackageSize (bsFirmwareFile.getFullPathName().toRawUTF8(), &bsFirmwareBytes);
+    else
+        updateResult = Neuropixels::np_bs_getFirmwareSize (basestation->slot, &bsFirmwareBytes);
+
     if (updateResult != Neuropixels::SUCCESS)
     {
-        failedOperation = "Reading the built-in BS firmware size";
+        failedOperation = manualUpdate ? "Reading the selected BS firmware package size"
+                                       : "Reading the built-in BS firmware size";
         return;
     }
 
-    updateResult = Neuropixels::np_bsc_getFirmwareSize (basestation->slot, &bscFirmwareBytes);
+    if (manualUpdate)
+        updateResult = Neuropixels::np_getFirmwarePackageSize (bscFirmwareFile.getFullPathName().toRawUTF8(), &bscFirmwareBytes);
+    else
+        updateResult = Neuropixels::np_bsc_getFirmwareSize (basestation->slot, &bscFirmwareBytes);
+
     if (updateResult != Neuropixels::SUCCESS)
     {
-        failedOperation = "Reading the built-in BSC firmware size";
+        failedOperation = manualUpdate ? "Reading the selected BSC firmware package size"
+                                       : "Reading the built-in BSC firmware size";
         return;
     }
 
@@ -337,7 +501,14 @@ void FirmwareUpdater::run()
 
     setStatusMessage ("Updating BS firmware (1 of 2)...");
     completedFirmwareBytes = 0;
-    updateResult = Neuropixels::np_bs_resetFirmware (basestation->slot, firmwareUpdateCallback);
+    if (manualUpdate)
+        updateResult = Neuropixels::np_bs_updateFirmware (basestation->slot,
+                                                          bsFirmwareFile.getFullPathName().toRawUTF8(),
+                                                          firmwareUpdateCallback,
+                                                          false);
+    else
+        updateResult = Neuropixels::np_bs_resetFirmware (basestation->slot, firmwareUpdateCallback);
+
     if (updateResult != Neuropixels::SUCCESS)
     {
         failedOperation = "BS firmware update";
@@ -348,7 +519,14 @@ void FirmwareUpdater::run()
     std::this_thread::sleep_for (std::chrono::milliseconds (1000)); // wait for the BS to reset before updating the BSC firmware
     setStatusMessage ("Updating BSC firmware (2 of 2)...");
     completedFirmwareBytes = bsFirmwareBytes;
-    updateResult = Neuropixels::np_bsc_resetFirmware (basestation->slot, firmwareUpdateCallback);
+    if (manualUpdate)
+        updateResult = Neuropixels::np_bsc_updateFirmware (basestation->slot,
+                                                            bscFirmwareFile.getFullPathName().toRawUTF8(),
+                                                            firmwareUpdateCallback,
+                                                            false);
+    else
+        updateResult = Neuropixels::np_bsc_resetFirmware (basestation->slot, firmwareUpdateCallback);
+
     if (updateResult != Neuropixels::SUCCESS)
     {
         failedOperation = "BSC firmware update";
