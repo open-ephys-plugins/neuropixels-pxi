@@ -54,6 +54,7 @@ void BasestationConnectBoard_v3::getInfo()
     info.version = String (info.hardwareID.version_Major) 
         + "." + String (info.hardwareID.version_Minor);
     info.serial_number = info.hardwareID.SerialNumber;
+    info.part_number = String (info.hardwareID.ProductNumber);
 
     Neuropixels::firmware_Info firmwareInfo;
     Neuropixels::np_bsc_getFirmwareInfo (basestation->slot, &firmwareInfo);
@@ -183,58 +184,44 @@ bool PxiBasestation::open()
 
         // Confirm v3 basestation by BS version 2.0 or greater.
         // If it's less than 2.0, it requires an older API 
-        LOGC ("BS firmware: ", info.boot_version);
+        LOGC ("    BS firmware: ", info.boot_version);
         if (info.boot_version.getFloatValue() < 2.0)
         {
             LOGC ("  Detected v1 basestation firmware on slot ", slot);
             return true;
         }
-            
 
-        // Check for opto basestation
-        LOGC ("BSC firmware: ", basestationConnectBoard->info.boot_version);
-        if (basestationConnectBoard->info.boot_version == OPTO_BSC_FIRMWARE_VERSION)
+        if (auto bsc3 = dynamic_cast<BasestationConnectBoard_v3*> (basestationConnectBoard.get()))
         {
-            LOGC ("  Detected opto basestation connect board on slot ", slot);
-            type = BasestationType::OPTO;
-
-            if (info.boot_version != OPTO_BS_FIRMWARE_VERSION)
+            if (bsc3->getErrorCode() != Neuropixels::SUCCESS)
             {
-                LOGC ("Found basestation firmware version ", info.boot_version);
-                LOGC ("Required version is ", OPTO_BS_FIRMWARE_VERSION);
-                return true; // return early to indicate that the firmware needs to be upgraded
+                LOGE ("  Error getting BSC info on slot ", slot, ": ", Neuropixels::np_getErrorMessage (bsc3->getErrorCode()));
+                return false;
             }
         }
+            
 
-        // Check for original opto basestation connect board
-        if (basestationConnectBoard->info.boot_version == ORIGINAL_OPTO_BSC_FIRMWARE_VERSION)
+        LOGC ("    BSC firmware: ", basestationConnectBoard->info.boot_version);
+        LOGC ("    BSC product #: ", basestationConnectBoard->info.part_number);
+
+        // Determine basestation type based on BSC part number
+        type = BasestationConnectBoard::partNumberToType (basestationConnectBoard->info.part_number);
+
+        if (type == BasestationType::OPTO)
         {
-            LOGC ("  Detected opto basestation connect board on slot ", slot);
-            type = BasestationType::OPTO;
-            return true; // return early to indicate that the firmware needs to be upgraded
-        }
+            LOGC ("    Detected opto basestation connect board on slot ", slot);
 
-        if (basestationConnectBoard->info.boot_version == BSC_FIRMWARE_VERSION)
-        {
-            type = BasestationType::PXI; // PXI basestation connect board
-            LOGC ("  Detected standard basestation connect board on slot ", slot);
-
-            if (! info.boot_version.equalsIgnoreCase (BS_FIRMWARE_VERSION))
+            if (info.boot_version != OPTO_BS_FIRMWARE_VERSION || basestationConnectBoard->info.boot_version != OPTO_BSC_FIRMWARE_VERSION)
             {
-                LOGC ("Found basestation firmware version ", info.boot_version);
-                LOGC ("Required version is ", BS_FIRMWARE_VERSION);
-
                 return true; // return early to indicate that the firmware needs to be upgraded
             }
         }
         else
         {
-            if (type != BasestationType::OPTO)
-            {
-                LOGC ("Found standard basestation connect board firmware version ", basestationConnectBoard->info.boot_version);
-                LOGC ("Required version is ", BSC_FIRMWARE_VERSION);
-                type = BasestationType::PXI;
+            LOGC ("    Detected standard basestation connect board on slot ", slot);
 
+            if (info.boot_version != BS_FIRMWARE_VERSION || basestationConnectBoard->info.boot_version != BSC_FIRMWARE_VERSION)
+            {
                 return true; // return early to indicate that the firmware needs to be upgraded
             }
         }

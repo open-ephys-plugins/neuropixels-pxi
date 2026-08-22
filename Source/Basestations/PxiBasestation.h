@@ -30,10 +30,14 @@
 #define SAMPLECOUNT 64
 
 #define BS_FIRMWARE_VERSION "3.0226"
+#define BS_FIRMWARE_FILENAME "BS_FPGA_B226.npfw"
 #define BSC_FIRMWARE_VERSION "4.0233"
+#define BSC_FIRMWARE_FILENAME "QBSC_FPGA_B233.npfw"
 
-#define OPTO_BS_FIRMWARE_VERSION "3.0196"
-#define OPTO_BSC_FIRMWARE_VERSION "4.017"
+#define OPTO_BS_FIRMWARE_VERSION "3.0.226"
+#define OPTO_BS_FIRMWARE_FILENAME "BS_FPGA_B226.npfw"
+#define OPTO_BSC_FIRMWARE_VERSION "4.0.19"
+#define OPTO_BSC_FIRMWARE_FILENAME "OPTO_BSC_FPGA_B19.npfw"
 #define ORIGINAL_OPTO_BSC_FIRMWARE_VERSION "1.02"
 
 
@@ -184,6 +188,11 @@ public:
 
     /** Returns part number, firmware version, etc.*/
     void getInfo() override;
+
+    Neuropixels::NP_ErrorCode getErrorCode() const
+    {
+        return errorCode;
+    }
 
 private:
     Neuropixels::NP_ErrorCode errorCode;

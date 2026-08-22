@@ -940,6 +940,14 @@ public:
         basestation = bs_;
     }
 
+    static BasestationType partNumberToType (const String& partNumber)
+    {
+        if (partNumber == "NPOPTO_BS_00" || partNumber.isEmpty() || partNumber == "" || partNumber == "<empty>" )
+            return BasestationType::OPTO;
+        else // Default to PXI for all other part numbers (Currently, the only other part number is "NP2_QBSC_00" for PXI)
+            return BasestationType::PXI;
+    }
+
     Basestation* basestation;
 };
 
