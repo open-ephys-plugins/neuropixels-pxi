@@ -108,7 +108,13 @@ Headstage1::Headstage1 (Basestation* bs_, int port) : Headstage (bs_, port)
                  || String (partNumber).equalsIgnoreCase ("NP1022")
                  || String (partNumber).equalsIgnoreCase ("NP1030")
                  || String (partNumber).equalsIgnoreCase ("NP1032")
-                 || String (partNumber).equalsIgnoreCase ("NP1033"))
+                 || String (partNumber).equalsIgnoreCase ("NP1033")
+                 || String (partNumber).equalsIgnoreCase ("NP1040")
+                 || String (partNumber).equalsIgnoreCase ("NP1041")
+                 || String (partNumber).equalsIgnoreCase ("NP1042")
+                 || String (partNumber).equalsIgnoreCase ("NP1050")
+                 || String (partNumber).equalsIgnoreCase ("NP1051")
+            )
 
         {
             probes.add (new Neuropixels_NHP_Active (basestation, this, flexCables[0]));
