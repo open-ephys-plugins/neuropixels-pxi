@@ -112,6 +112,9 @@ OneBox::~OneBox()
         setSyncAsInput();
         close();
 
+        // Unmap the OneBox from its slot to free it for future use
+        checkError (Neuropixels::np_unmapBS (slot), "Error unmapping OneBox at slot " + String (slot));
+
         existing_oneboxes.removeFirstMatchingValue (serial_number);
     }
 
