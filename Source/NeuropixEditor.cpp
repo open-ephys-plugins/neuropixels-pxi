@@ -629,9 +629,9 @@ NeuropixEditor::NeuropixEditor (GenericProcessor* parentNode, NeuropixThread* t)
         {
             mainSyncSelector->setVisible (true);
             //addSyncChannelButton->setVisible (true);
-            refreshButton->setVisible (true);
         }
 
+        refreshButton->setVisible (true);
         inputOutputSyncSelector->setVisible (true);
         desiredWidth = 100 * basestations.size() + 120;
     }
@@ -820,9 +820,7 @@ void NeuropixEditor::stopAcquisition()
 
     addSyncChannelButton->setEnabled (true);
     background->setEnabled (true);
-
-    if(thread->type != ONEBOX)
-        refreshButton->setVisible (true);
+    refreshButton->setVisible (true);
 }
 
 void NeuropixEditor::buttonClicked (Button* button)

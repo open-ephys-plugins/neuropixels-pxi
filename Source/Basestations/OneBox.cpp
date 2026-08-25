@@ -22,6 +22,7 @@
 */
 
 #include "OneBox.h"
+#include "../NeuropixThread.h"
 #include "../Headstages/Headstage1.h"
 #include "../Headstages/Headstage2.h"
 #include "../Headstages/Headstage_Analog128.h"
@@ -397,6 +398,9 @@ int OneBox::getProbeCount()
 
 float OneBox::getFillPercentage()
 {
+    if (neuropixThread->isRefreshing)
+        return 0.0f;
+
     float perc = 0.0;
 
     for (int i = 0; i < getProbeCount(); i++)
