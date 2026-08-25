@@ -116,6 +116,12 @@ OneBox::~OneBox()
         checkError (Neuropixels::np_unmapBS (slot), "Error unmapping OneBox at slot " + String (slot));
 
         existing_oneboxes.removeFirstMatchingValue (serial_number);
+
+        if (existing_oneboxes.isEmpty())
+        {
+            next_available_slot = 20;
+            LOGD ("Reset next available OneBox slot to ", next_available_slot);
+        }
     }
 
 }
