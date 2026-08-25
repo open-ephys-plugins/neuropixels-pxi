@@ -151,18 +151,21 @@ void Neuropixels1::initialize (bool signalChainIsLoading)
     if (! canContinueAfterProbeConfiguration (errorCode, "init"))
         return;
 
-    errorCode = runConfigurationBistAndRestore();
-
-    if (! canContinueAfterProbeConfiguration (errorCode, "bistConfig"))
-        return;
-
-    if (errorCode == Neuropixels::PROBE_DEGRADATION_ERROR)
+    if (! suppressConfigurationBist)
     {
-        LOGC ("Probe degradation detected; marking the shank unprogrammable.");
+        errorCode = runConfigurationBistAndRestore();
 
-        for (int i = 0; i < electrodeMetadata.size(); i++)
+        if (! canContinueAfterProbeConfiguration (errorCode, "bistConfig"))
+            return;
+
+        if (errorCode == Neuropixels::PROBE_DEGRADATION_ERROR)
         {
-            electrodeMetadata.getReference (i).shank_is_programmable = false;
+            LOGC ("Probe degradation detected; marking the shank unprogrammable.");
+
+            for (int i = 0; i < electrodeMetadata.size(); i++)
+            {
+                electrodeMetadata.getReference (i).shank_is_programmable = false;
+            }
         }
     }
 
@@ -624,7 +627,7 @@ bool Neuropixels1::runBist (BIST bistType)
     }
 
     // Re-initialize probe after running
-    initialize (false);
+    reinitializeAfterBist();
     setAllGains();
     setAllReferences();
     setApFilterState();

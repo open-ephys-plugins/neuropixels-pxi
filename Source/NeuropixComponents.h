@@ -667,6 +667,13 @@ protected:
     Neuropixels::NP_ErrorCode runConfigurationBistAndRestore (uint8_t* shankOkMask = nullptr);
     void logDegradedShanks (uint8_t shankOkMask);
 
+    void reinitializeAfterBist()
+    {
+        suppressConfigurationBist = true;
+        initialize (false);
+        suppressConfigurationBist = false;
+    }
+
     void refreshActivityViewMapping();
     static Array<int> getHalfBankOverlapSelection (const String& config, int electrodeOffset = 0);
 
@@ -674,6 +681,7 @@ protected:
     Array<int> gains; // available gain values
     bool isEnabledForSurvey = false;
     bool surveyModeActive = false;
+    bool suppressConfigurationBist = false;
 };
 
 class Basestation;
