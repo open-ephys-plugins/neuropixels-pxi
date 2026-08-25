@@ -314,7 +314,7 @@ private:
 namespace
 {
 static constexpr int surveyProbePanelSpacing = 0;
-static constexpr int leftPanelExpandedWidth = 510;
+static constexpr int leftPanelExpandedWidth = 570;
 static constexpr int leftPanelToggleWidth = 25;
 } // namespace
 
@@ -718,6 +718,7 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     table->getHeader().addColumn ("Banks", Columns::ColBanks, 105);
     table->getHeader().addColumn ("Shanks", Columns::ColShanks, 70);
     table->getHeader().addColumn ("Overlap", Columns::ColOverlap, 60);
+    table->getHeader().addColumn ("Column", Columns::ColSingleColumn, 60);
     table->setAutoSizeMenuOptionShown (false);
     table->getHeader().setInterceptsMouseClicks (false, false);
     table->setOutlineThickness (1);
@@ -824,7 +825,6 @@ void SurveyInterface::paint (Graphics& g)
 
 void SurveyInterface::resized()
 {
-
     const int leftPanelX = 10;
     const int topMargin = 50;
 
@@ -972,6 +972,7 @@ void SurveyInterface::saveParameters (XmlElement* xml)
         probeNode->setAttribute ("type_id", static_cast<int> (row.probe->type));
         probeNode->setAttribute ("selected", row.selected);
         probeNode->setAttribute ("include_overlapping_banks", row.includeOverlappingBanks);
+        probeNode->setAttribute ("include_single_column", row.includeSingleColumn);
 
         const bool useAllBanks = row.chosenBanks.isEmpty();
         if (useAllBanks)
@@ -1092,8 +1093,11 @@ void SurveyInterface::loadParameters (XmlElement* xml)
         auto& row = rows.getReference (matchedRowIndex);
 
         row.selected = probeNode->getBoolAttribute ("selected", row.selected);
+        row.includeSingleColumn = row.hasSingleColumn
+                                  && probeNode->getBoolAttribute ("include_single_column", false);
         row.includeOverlappingBanks = row.hasOverlappingBanks
-                          && probeNode->getBoolAttribute ("include_overlapping_banks", false);
+                                      && ! row.includeSingleColumn
+                                      && probeNode->getBoolAttribute ("include_overlapping_banks", false);
 
         row.chosenBanks.clear();
         String banksString = probeNode->getStringAttribute ("banks", "All");
@@ -1294,10 +1298,10 @@ void SurveyInterface::refreshProbeList()
         for (const auto& config : r.electrodeConfigs)
         {
             if (config.contains (" + "))
-            {
                 r.hasOverlappingBanks = true;
-                break;
-            }
+
+            if (config.containsIgnoreCase ("Single column"))
+                r.hasSingleColumn = true;
         }
 
         // Special case for UHD2: use numeric banks 0-15 instead of Bank enum
@@ -1408,41 +1412,62 @@ void SurveyInterface::launchSurvey()
         }
         t.shankCount = r.shankCount;
 
-        for (const int shank : t.shanks)
+        if (r.includeSingleColumn)
         {
-            for (const Bank bank : t.banks)
+            for (const int shank : t.shanks)
             {
-                const int bankIndex = static_cast<int> (bank);
-                String configPrefix;
-                String bankName;
+                const String requestedConfig = t.shankCount > 1
+                                                   ? "Shank " + String (shank + 1) + " Single column"
+                                                   : "Single column";
 
-                if (r.probe->type == ProbeType::UHD2)
+                for (const auto& availableConfig : t.electrodeConfigs)
                 {
-                    configPrefix = "8 x 48: ";
-                    bankName = String (bankIndex);
+                    if (availableConfig.equalsIgnoreCase (requestedConfig))
+                    {
+                        t.surveyConfigs.add (availableConfig);
+                        break;
+                    }
                 }
-                else
+            }
+        }
+        else
+        {
+            for (const int shank : t.shanks)
+            {
+                for (const Bank bank : t.banks)
                 {
-                    if (t.shankCount > 1)
-                        configPrefix = "Shank " + String (shank + 1) + " ";
+                    const int bankIndex = static_cast<int> (bank);
+                    String configPrefix;
+                    String bankName;
 
-                    bankName = bankToString (bank);
-                }
+                    if (r.probe->type == ProbeType::UHD2)
+                    {
+                        configPrefix = "8 x 48: ";
+                        bankName = String (bankIndex);
+                    }
+                    else
+                    {
+                        if (t.shankCount > 1)
+                            configPrefix = "Shank " + String (shank + 1) + " ";
 
-                const String bankConfig = configPrefix + "Bank " + bankName;
-                if (t.electrodeConfigs.contains (bankConfig))
-                    t.surveyConfigs.add (bankConfig);
+                        bankName = bankToString (bank);
+                    }
 
-                const Bank nextBank = static_cast<Bank> (bankIndex + 1);
-                if (r.includeOverlappingBanks && t.banks.contains (nextBank))
-                {
-                    const String nextBankName = r.probe->type == ProbeType::UHD2
-                                                    ? String (bankIndex + 1)
-                                                    : bankToString (nextBank);
-                    const String overlapConfig = bankConfig + " + " + nextBankName;
+                    const String bankConfig = configPrefix + "Bank " + bankName;
+                    if (t.electrodeConfigs.contains (bankConfig))
+                        t.surveyConfigs.add (bankConfig);
 
-                    if (t.electrodeConfigs.contains (overlapConfig))
-                        t.surveyConfigs.add (overlapConfig);
+                    const Bank nextBank = static_cast<Bank> (bankIndex + 1);
+                    if (r.includeOverlappingBanks && t.banks.contains (nextBank))
+                    {
+                        const String nextBankName = r.probe->type == ProbeType::UHD2
+                                                        ? String (bankIndex + 1)
+                                                        : bankToString (nextBank);
+                        const String overlapConfig = bankConfig + " + " + nextBankName;
+
+                        if (t.electrodeConfigs.contains (overlapConfig))
+                            t.surveyConfigs.add (overlapConfig);
+                    }
                 }
             }
         }
@@ -1760,7 +1785,45 @@ Component* SurveyInterface::refreshComponentForCell (int rowNumber, int columnId
         tb->setToggleState (r.includeOverlappingBanks, dontSendNotification);
         tb->onClick = [this, rowNumber, tb]()
         {
-            rows.getReference (rowNumber).includeOverlappingBanks = tb->getToggleState();
+            auto& row = rows.getReference (rowNumber);
+            row.includeOverlappingBanks = tb->getToggleState();
+
+            if (row.includeOverlappingBanks)
+            {
+                row.includeSingleColumn = false;
+
+                if (auto* singleColumnToggle = dynamic_cast<ToggleButton*> (table->getCellComponent (Columns::ColSingleColumn, rowNumber)))
+                    singleColumnToggle->setToggleState (false, dontSendNotification);
+            }
+
+            table->repaintRow (rowNumber);
+        };
+        return tb;
+    }
+
+    if (columnId == Columns::ColSingleColumn)
+    {
+        ToggleButton* tb = dynamic_cast<ToggleButton*> (existing);
+        if (tb == nullptr)
+            tb = new ToggleButton (" ");
+
+        tb->setTooltip (r.hasSingleColumn ? "Survey one column from Bank A and one column from Bank B in each recording" : "Single-column survey is not available for this probe");
+        tb->setEnabled (r.hasSingleColumn);
+        tb->setToggleState (r.includeSingleColumn, dontSendNotification);
+        tb->onClick = [this, rowNumber, tb]()
+        {
+            auto& row = rows.getReference (rowNumber);
+            row.includeSingleColumn = tb->getToggleState();
+
+            if (row.includeSingleColumn)
+            {
+                row.includeOverlappingBanks = false;
+
+                if (auto* overlapToggle = dynamic_cast<ToggleButton*> (table->getCellComponent (Columns::ColOverlap, rowNumber)))
+                    overlapToggle->setToggleState (false, dontSendNotification);
+            }
+
+            table->repaintRow (rowNumber);
         };
         return tb;
     }

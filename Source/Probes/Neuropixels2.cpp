@@ -91,6 +91,7 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("Bank B + C");
             settings.availableElectrodeConfigurations.add ("Bank C");
             settings.availableElectrodeConfigurations.add ("Bank D");
+            settings.availableElectrodeConfigurations.add ("Single column");
         }
         else
         {
@@ -106,24 +107,28 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank D");
+            settings.availableElectrodeConfigurations.add ("Shank 1 Single column");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank D");
+            settings.availableElectrodeConfigurations.add ("Shank 2 Single column");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank D");
+            settings.availableElectrodeConfigurations.add ("Shank 3 Single column");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank D");
+            settings.availableElectrodeConfigurations.add ("Shank 4 Single column");
             settings.availableElectrodeConfigurations.add ("All Shanks 1-96");
             settings.availableElectrodeConfigurations.add ("All Shanks 97-192");
             settings.availableElectrodeConfigurations.add ("All Shanks 193-288");
@@ -334,6 +339,24 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
             electrodeOffset = (config.substring (6).getIntValue() - 1) * 1280;
 
         return getHalfBankOverlapSelection (config, electrodeOffset);
+    }
+
+    if (config.containsIgnoreCase ("Single column"))
+    {
+        int electrodeOffset = 0;
+
+        if (config.startsWithIgnoreCase ("Shank "))
+            electrodeOffset = (config.substring (6).getIntValue() - 1) * 1280;
+
+        Array<int> selection;
+
+        for (int electrode = electrodeOffset; electrode < electrodeOffset + 384; electrode += 2)
+            selection.add (electrode);
+
+        for (int electrode = electrodeOffset + 385; electrode < electrodeOffset + 768; electrode += 2)
+            selection.add (electrode);
+
+        return selection;
     }
 
     Array<int> selection;

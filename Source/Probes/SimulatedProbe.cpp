@@ -201,6 +201,7 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
             settings.availableElectrodeConfigurations.add ("Bank B + C");
             settings.availableElectrodeConfigurations.add ("Bank C");
             settings.availableElectrodeConfigurations.add ("Bank D");
+            settings.availableElectrodeConfigurations.add ("Single column");
         }
         else
         {
@@ -232,24 +233,28 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank D");
+            settings.availableElectrodeConfigurations.add ("Shank 1 Single column");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank D");
+            settings.availableElectrodeConfigurations.add ("Shank 2 Single column");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank D");
+            settings.availableElectrodeConfigurations.add ("Shank 3 Single column");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank D");
+            settings.availableElectrodeConfigurations.add ("Shank 4 Single column");
             settings.availableElectrodeConfigurations.add ("All Shanks 1-96");
             settings.availableElectrodeConfigurations.add ("All Shanks 97-192");
             settings.availableElectrodeConfigurations.add ("All Shanks 193-288");
@@ -418,12 +423,17 @@ Array<int> SimulatedProbe::selectElectrodeConfiguration (String config)
         for (int i = 4032; i < 4416; i++)
             selection.add (i);
     }
-    else if (config.equalsIgnoreCase ("Single Column"))
+    else if (config.containsIgnoreCase ("Single Column"))
     {
-        for (int i = 0; i < 384; i += 2)
+        int electrodeOffset = 0;
+
+        if (config.startsWithIgnoreCase ("Shank "))
+            electrodeOffset = (config.substring (6).getIntValue() - 1) * 1280;
+
+        for (int i = electrodeOffset; i < electrodeOffset + 384; i += 2)
             selection.add (i);
 
-        for (int i = 385; i < 768; i += 2)
+        for (int i = electrodeOffset + 385; i < electrodeOffset + 768; i += 2)
             selection.add (i);
     }
     else if (config.equalsIgnoreCase ("Tetrodes"))

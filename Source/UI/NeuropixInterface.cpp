@@ -932,6 +932,8 @@ void NeuropixInterface::buttonClicked (Button* button)
                 //Save current probe settings
                 ProbeSettings settings = getProbeSettings();
 
+                MouseCursor::showWaitCursor();
+
                 //Run test
                 bool passed = probe->runBist (availableBists[bistComboBox->getSelectedId() - 1]);
 
@@ -956,6 +958,8 @@ void NeuropixInterface::buttonClicked (Button* button)
                 bistComboBox->changeItemText (bistComboBox->getSelectedId(), testString);
                 bistComboBox->setText (testString);
                 //bistComboBox->setSelectedId(bistComboBox->getSelectedId(), NotificationType::sendNotification);
+
+                MouseCursor::hideWaitCursor();
             }
         }
         else

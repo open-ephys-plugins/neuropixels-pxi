@@ -189,7 +189,8 @@ private:
         ColType = 3,
         ColBanks = 4,
         ColShanks = 5,
-        ColOverlap = 6
+        ColOverlap = 6,
+        ColSingleColumn = 7
     };
 
     struct RowState
@@ -203,6 +204,8 @@ private:
         Array<int> chosenShanks; // empty means all
         bool hasOverlappingBanks { false };
         bool includeOverlappingBanks { false };
+        bool hasSingleColumn { false };
+        bool includeSingleColumn { false };
     };
 
     Array<RowState> rows;
