@@ -48,6 +48,7 @@ constexpr int ROW_HEIGHT = 22;
 constexpr int SECTION_GAP = 12;
 constexpr int LEGEND_HEIGHT = 44;
 constexpr int PROBE_CONTROL_WIDTH = 280;
+constexpr int MIN_DEVICE_INFO_COLUMN_WIDTH = 320;
 constexpr int PROBE_SETTINGS_HEIGHT = 90;
 constexpr int SELF_TEST_HEIGHT = 120;
 constexpr int MIN_CONTENT_WIDTH = 1300;
@@ -684,6 +685,7 @@ void NeuropixInterface::updateInfoString()
     infoLabel->setText (infoString, false);
 
     deviceInfoColumnWidth = infoLabel->getTextWidth() + infoLabel->getLeftIndent() + 2 * PANEL_PADDING;
+    deviceInfoColumnWidth = jmax (deviceInfoColumnWidth, MIN_DEVICE_INFO_COLUMN_WIDTH);
 
     nameLabel->setText (nameString, dontSendNotification);
     resized();
