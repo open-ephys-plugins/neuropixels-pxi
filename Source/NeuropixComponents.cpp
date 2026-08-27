@@ -424,9 +424,9 @@ FirmwareUpdater::FirmwareUpdater (Basestation* basestation_)
 
 bool FirmwareUpdater::selectManualFirmwareFiles (const String& expectedBsFilename, const String& expectedBscFilename)
 {
+    auto selectionComponent = std::make_unique<FirmwareFileSelectionComponent> (expectedBsFilename, expectedBscFilename);
     DialogWindow::LaunchOptions options;
-    auto* selectionComponent = new FirmwareFileSelectionComponent (expectedBsFilename, expectedBscFilename);
-    options.content.setOwned (selectionComponent);
+    options.content.setNonOwned (selectionComponent.get());
     options.content->setSize (680, 230);
     options.dialogTitle = "Select Firmware Files";
     options.dialogBackgroundColour = selectionComponent->findColour (ThemeColours::componentBackground);
