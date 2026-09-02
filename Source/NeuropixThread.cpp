@@ -987,10 +987,39 @@ bool NeuropixThread::startAcquisition()
         LOGD ("Neuropixels settings thread finished.");
     }
 
+    // Determine which PXI basestation will act as the acquisition trigger source.
+    PxiBasestation* acquisitionTriggerSource = nullptr;
+
+    if (type == PXI)
+    {
+        // Find the PXI basestation with the lowest slot number to act as the acquisition trigger source.
+        for (auto basestation : basestations)
+        {
+            if (auto pxiBasestation = dynamic_cast<PxiBasestation*> (basestation))
+            {
+                if (acquisitionTriggerSource == nullptr || pxiBasestation->slot < acquisitionTriggerSource->slot)
+                    acquisitionTriggerSource = pxiBasestation;
+            }
+        }
+
+        // Configure each PXI basestation to either drive or receive the acquisition trigger.
+        for (auto basestation : basestations)
+        {
+            if (auto pxiBasestation = dynamic_cast<PxiBasestation*> (basestation))
+                pxiBasestation->configureAcquisitionTrigger (pxiBasestation == acquisitionTriggerSource);
+        }
+    }
+
+    // Start acquisition on all basestations. 
+    // Ensures all probes are ready to receive data before the acquisition trigger is sent.
     for (int i = 0; i < basestations.size(); i++)
     {
         basestations[i]->startAcquisition();
     }
+
+    // Send the acquisition trigger from the designated source PXI basestation.
+    if (acquisitionTriggerSource != nullptr)
+        acquisitionTriggerSource->sendAcquisitionTrigger();
 
     return true;
 }

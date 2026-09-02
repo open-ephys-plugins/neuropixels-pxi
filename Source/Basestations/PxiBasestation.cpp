@@ -538,8 +538,29 @@ void PxiBasestation::startAcquisition()
         if (probe->isEnabled)
             probe->startAcquisition();
     }
+}
 
-    errorCode = Neuropixels::np_setSWTrigger (slot);
+void PxiBasestation::configureAcquisitionTrigger (bool drivesBackplane)
+{
+    LOGD ("Setting slot ", slot, drivesBackplane ? " as acquisition trigger source." : " to receive acquisition trigger from PXI0.");
+
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_AcquisitionTrigger), "switchmatrix_clear SM_Output_AcquisitionTrigger");
+    checkError (Neuropixels::np_switchmatrix_clear (slot, Neuropixels::SM_Output_PXI0), "switchmatrix_clear SM_Output_PXI0");
+
+    if (drivesBackplane)
+    {
+        checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_PXI0, Neuropixels::SM_Input_SWTrigger1, true), "switchmatrix_set SM_Input_SWTrigger1 --> SM_Output_PXI0");
+        checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_SWTrigger1, true), "switchmatrix_set SM_Input_SWTrigger1 --> SM_Output_AcquisitionTrigger");
+    }
+    else
+    {
+        checkError (Neuropixels::np_switchmatrix_set (slot, Neuropixels::SM_Output_AcquisitionTrigger, Neuropixels::SM_Input_PXI0, true), "switchmatrix_set SM_Input_PXI0 --> SM_Output_AcquisitionTrigger");
+    }
+}
+
+void PxiBasestation::sendAcquisitionTrigger()
+{
+    checkError (Neuropixels::np_setSWTrigger (slot), "setSWTrigger slot " + String (slot));
 }
 
 void PxiBasestation::stopAcquisition()

@@ -146,6 +146,12 @@ public:
     /** Starts probe data streaming */
     void startAcquisition() override;
 
+    /** Routes the shared PXI0 trigger line and optionally drives it from this slot's software trigger */
+    void configureAcquisitionTrigger (bool drivesBackplane);
+
+    /** Sends this slot's software trigger */
+    void sendAcquisitionTrigger();
+
     /** Stops probe data streaming*/
     void stopAcquisition() override;
 
