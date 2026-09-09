@@ -86,12 +86,12 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             availableReferences.add ("Tip");
 
             settings.availableElectrodeConfigurations.add ("Bank A");
-            settings.availableElectrodeConfigurations.add ("Bank A + B");
             settings.availableElectrodeConfigurations.add ("Bank B");
-            settings.availableElectrodeConfigurations.add ("Bank B + C");
             settings.availableElectrodeConfigurations.add ("Bank C");
             settings.availableElectrodeConfigurations.add ("Bank D");
-            settings.availableElectrodeConfigurations.add ("Single column");
+            settings.availableElectrodeConfigurations.add ("A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("B+C (dense)");
         }
         else
         {
@@ -102,33 +102,33 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             availableReferences.add ("4: Tip");
 
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank A");
-            settings.availableElectrodeConfigurations.add ("Shank 1 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank B");
-            settings.availableElectrodeConfigurations.add ("Shank 1 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank D");
-            settings.availableElectrodeConfigurations.add ("Shank 1 Single column");
+            settings.availableElectrodeConfigurations.add ("Shank 1 A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("Shank 1 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 1 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A");
-            settings.availableElectrodeConfigurations.add ("Shank 2 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B");
-            settings.availableElectrodeConfigurations.add ("Shank 2 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank D");
-            settings.availableElectrodeConfigurations.add ("Shank 2 Single column");
+            settings.availableElectrodeConfigurations.add ("Shank 2 A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("Shank 2 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 2 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A");
-            settings.availableElectrodeConfigurations.add ("Shank 3 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B");
-            settings.availableElectrodeConfigurations.add ("Shank 3 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank D");
-            settings.availableElectrodeConfigurations.add ("Shank 3 Single column");
+            settings.availableElectrodeConfigurations.add ("Shank 3 A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("Shank 3 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 3 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A");
-            settings.availableElectrodeConfigurations.add ("Shank 4 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B");
-            settings.availableElectrodeConfigurations.add ("Shank 4 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank D");
-            settings.availableElectrodeConfigurations.add ("Shank 4 Single column");
+            settings.availableElectrodeConfigurations.add ("Shank 4 A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("Shank 4 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 4 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("All Shanks 1-96");
             settings.availableElectrodeConfigurations.add ("All Shanks 97-192");
             settings.availableElectrodeConfigurations.add ("All Shanks 193-288");
@@ -331,7 +331,7 @@ void Neuropixels2::selectElectrodes()
 
 Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
 {
-    if (config.contains (" + "))
+    if (config.containsIgnoreCase ("(dense)"))
     {
         int electrodeOffset = 0;
 
@@ -341,7 +341,7 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
         return getHalfBankOverlapSelection (config, electrodeOffset);
     }
 
-    if (config.containsIgnoreCase ("Single column"))
+    if (config.containsIgnoreCase ("(sparse)"))
     {
         int electrodeOffset = 0;
 

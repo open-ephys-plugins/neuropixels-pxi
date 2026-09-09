@@ -100,34 +100,21 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active (Basestation* bs, Headstage* hs, 
     settings.availableReferences.add ("Tip");
 
     settings.availableElectrodeConfigurations.add ("Bank A");
-    settings.availableElectrodeConfigurations.add ("Bank A + B");
     settings.availableElectrodeConfigurations.add ("Bank B");
-
-    if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
-        settings.availableElectrodeConfigurations.add ("Bank B + C");
-
     settings.availableElectrodeConfigurations.add ("Bank C");
 
     if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
     {
-        settings.availableElectrodeConfigurations.add ("Bank C + D");
         settings.availableElectrodeConfigurations.add ("Bank D");
-        settings.availableElectrodeConfigurations.add ("Bank D + E");
         settings.availableElectrodeConfigurations.add ("Bank E");
-        settings.availableElectrodeConfigurations.add ("Bank E + F");
         settings.availableElectrodeConfigurations.add ("Bank F");
 
         if (type == ProbeType::NHP45)
         {
-            settings.availableElectrodeConfigurations.add ("Bank F + G");
             settings.availableElectrodeConfigurations.add ("Bank G");
-            settings.availableElectrodeConfigurations.add ("Bank G + H");
             settings.availableElectrodeConfigurations.add ("Bank H");
-            settings.availableElectrodeConfigurations.add ("Bank H + I");
             settings.availableElectrodeConfigurations.add ("Bank I");
-            settings.availableElectrodeConfigurations.add ("Bank I + J");
             settings.availableElectrodeConfigurations.add ("Bank J");
-            settings.availableElectrodeConfigurations.add ("Bank J + K");
             settings.availableElectrodeConfigurations.add ("Bank K");
             settings.availableElectrodeConfigurations.add ("Bank L");
         }
@@ -137,7 +124,26 @@ Neuropixels_NHP_Active::Neuropixels_NHP_Active (Basestation* bs, Headstage* hs, 
         }
     }
 
-    settings.availableElectrodeConfigurations.add ("Single Column");
+    settings.availableElectrodeConfigurations.add ("A+B (dense)");
+    settings.availableElectrodeConfigurations.add ("A+B (sparse)");
+
+    if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
+    {
+        settings.availableElectrodeConfigurations.add ("B+C (dense)");
+        settings.availableElectrodeConfigurations.add ("C+D (dense)");
+        settings.availableElectrodeConfigurations.add ("D+E (dense)");
+        settings.availableElectrodeConfigurations.add ("E+F (dense)");
+
+        if (type == ProbeType::NHP45)
+        {
+            settings.availableElectrodeConfigurations.add ("F+G (dense)");
+            settings.availableElectrodeConfigurations.add ("G+H (dense)");
+            settings.availableElectrodeConfigurations.add ("H+I (dense)");
+            settings.availableElectrodeConfigurations.add ("I+J (dense)");
+            settings.availableElectrodeConfigurations.add ("J+K (dense)");
+        }
+    }
+
     settings.availableElectrodeConfigurations.add ("Tetrodes");
 
     open();
@@ -310,7 +316,7 @@ void Neuropixels_NHP_Active::selectElectrodes()
 
 Array<int> Neuropixels_NHP_Active::selectElectrodeConfiguration (String config)
 {
-    if (config.contains (" + "))
+    if (config.containsIgnoreCase ("(dense)"))
         return getHalfBankOverlapSelection (config);
 
     Array<int> selection;
@@ -399,7 +405,7 @@ Array<int> Neuropixels_NHP_Active::selectElectrodeConfiguration (String config)
         for (int i = 4032; i < 4416; i++)
             selection.add (i);
     }
-    else if (config.equalsIgnoreCase ("Single Column"))
+    else if (config.equalsIgnoreCase ("A+B (sparse)"))
     {
         for (int i = 0; i < 384; i += 2)
             selection.add (i);

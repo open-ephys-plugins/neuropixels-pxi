@@ -252,7 +252,8 @@ void Probe::refreshActivityViewMapping()
 Array<int> Probe::getHalfBankOverlapSelection (const String& config, int electrodeOffset)
 {
     Array<int> selection;
-    const int bankIndex = config[config.indexOf ("Bank ") + 5] - 'A';
+    const int firstBankIndex = config.indexOfChar ('+') - 1;
+    const int bankIndex = config.substring (firstBankIndex, firstBankIndex + 1).toUpperCase()[0] - 'A';
     const int firstElectrode = electrodeOffset + bankIndex * 384 + 192;
 
     for (int electrode = firstElectrode; electrode < firstElectrode + 384; ++electrode)

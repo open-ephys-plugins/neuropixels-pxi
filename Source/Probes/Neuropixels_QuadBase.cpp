@@ -90,12 +90,12 @@ Neuropixels_QuadBase::Neuropixels_QuadBase (Basestation* bs, Headstage* hs, Flex
         settings.availableReferences.add ("Ground");
 
         settings.availableElectrodeConfigurations.add ("Bank A");
-        settings.availableElectrodeConfigurations.add ("Bank A + B");
         settings.availableElectrodeConfigurations.add ("Bank B");
-        settings.availableElectrodeConfigurations.add ("Bank B + C");
         settings.availableElectrodeConfigurations.add ("Bank C");
         settings.availableElectrodeConfigurations.add ("Bank D");
-        settings.availableElectrodeConfigurations.add ("Single column");
+        settings.availableElectrodeConfigurations.add ("A+B (dense)");
+        settings.availableElectrodeConfigurations.add ("A+B (sparse)");
+        settings.availableElectrodeConfigurations.add ("B+C (dense)");
         settings.availableElectrodeConfigurations.add ("Tetrodes");
 
         open();
@@ -273,7 +273,7 @@ Array<int> Neuropixels_QuadBase::selectElectrodeConfiguration (String config)
 {
     Array<int> selection;
 
-    if (config.contains (" + "))
+    if (config.containsIgnoreCase ("(dense)"))
     {
         for (int shank = 0; shank < 4; ++shank)
             selection.addArray (getHalfBankOverlapSelection (config, shank * 1280));
@@ -315,7 +315,7 @@ Array<int> Neuropixels_QuadBase::selectElectrodeConfiguration (String config)
         }
     }
 
-    else if (config.equalsIgnoreCase ("Single Column"))
+    else if (config.equalsIgnoreCase ("A+B (sparse)"))
     {
         for (int shank = 0; shank < 4; shank++)
         {

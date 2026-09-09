@@ -718,7 +718,7 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     table->getHeader().addColumn ("Banks", Columns::ColBanks, 105);
     table->getHeader().addColumn ("Shanks", Columns::ColShanks, 70);
     table->getHeader().addColumn ("Overlap", Columns::ColOverlap, 60);
-    table->getHeader().addColumn ("Column", Columns::ColSingleColumn, 60);
+    table->getHeader().addColumn ("Sparse", Columns::ColSingleColumn, 60);
     table->setAutoSizeMenuOptionShown (false);
     table->getHeader().setInterceptsMouseClicks (false, false);
     table->setOutlineThickness (1);
@@ -1297,10 +1297,10 @@ void SurveyInterface::refreshProbeList()
 
         for (const auto& config : r.electrodeConfigs)
         {
-            if (config.contains (" + "))
+            if (config.containsIgnoreCase ("(dense)"))
                 r.hasOverlappingBanks = true;
 
-            if (config.containsIgnoreCase ("Single column"))
+            if (config.containsIgnoreCase ("(sparse)"))
                 r.hasSingleColumn = true;
         }
 
@@ -1417,8 +1417,8 @@ void SurveyInterface::launchSurvey()
             for (const int shank : t.shanks)
             {
                 const String requestedConfig = t.shankCount > 1
-                                                   ? "Shank " + String (shank + 1) + " Single column"
-                                                   : "Single column";
+                                                   ? "Shank " + String (shank + 1) + " A+B (sparse)"
+                                                   : "A+B (sparse)";
 
                 for (const auto& availableConfig : t.electrodeConfigs)
                 {
@@ -1463,7 +1463,7 @@ void SurveyInterface::launchSurvey()
                         const String nextBankName = r.probe->type == ProbeType::UHD2
                                                         ? String (bankIndex + 1)
                                                         : bankToString (nextBank);
-                        const String overlapConfig = bankConfig + " + " + nextBankName;
+                        const String overlapConfig = configPrefix + bankName + "+" + nextBankName + " (dense)";
 
                         if (t.electrodeConfigs.contains (overlapConfig))
                             t.surveyConfigs.add (overlapConfig);

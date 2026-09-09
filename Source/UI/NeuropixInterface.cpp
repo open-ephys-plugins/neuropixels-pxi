@@ -53,6 +53,26 @@ constexpr int PROBE_SETTINGS_HEIGHT = 90;
 constexpr int SELF_TEST_HEIGHT = 120;
 constexpr int MIN_CONTENT_WIDTH = 1300;
 
+String migrateLegacyElectrodeConfigurationName (const String& configurationName)
+{
+    const int bankLabelIndex = configurationName.indexOfIgnoreCase ("Bank ");
+    const int overlapIndex = configurationName.indexOf (" + ");
+
+    if (bankLabelIndex >= 0 && overlapIndex > bankLabelIndex)
+    {
+        const String prefix = configurationName.substring (0, bankLabelIndex);
+        const String firstBank = configurationName.substring (bankLabelIndex + 5, bankLabelIndex + 6).toUpperCase();
+        const String secondBank = configurationName.substring (overlapIndex + 3, overlapIndex + 4).toUpperCase();
+        return prefix + firstBank + "+" + secondBank + " (dense)";
+    }
+
+    const int singleColumnIndex = configurationName.indexOfIgnoreCase ("Single column");
+    if (singleColumnIndex >= 0)
+        return configurationName.substring (0, singleColumnIndex) + "A+B (sparse)";
+
+    return configurationName;
+}
+
 struct BistTestSpec
 {
     int itemId;
@@ -2400,7 +2420,8 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                 if (settings.referenceIndex >= referenceComboBox->getNumItems())
                     settings.referenceIndex = 0;
 
-                String configurationName = matchingNode->getStringAttribute ("electrodeConfigurationPreset", "NONE");
+                String configurationName = migrateLegacyElectrodeConfigurationName (
+                    matchingNode->getStringAttribute ("electrodeConfigurationPreset", "NONE"));
 
                 for (int i = 0; i < electrodeConfigurationComboBox->getNumItems(); i++)
                 {

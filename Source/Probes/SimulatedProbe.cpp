@@ -134,34 +134,21 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
             if (type != ProbeType::UHD1 && type != ProbeType::NHP1)
             {
                 settings.availableElectrodeConfigurations.add ("Bank A");
-                settings.availableElectrodeConfigurations.add ("Bank A + B");
                 settings.availableElectrodeConfigurations.add ("Bank B");
-
-                if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
-                    settings.availableElectrodeConfigurations.add ("Bank B + C");
-
                 settings.availableElectrodeConfigurations.add ("Bank C");
 
                 if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
                 {
-                    settings.availableElectrodeConfigurations.add ("Bank C + D");
                     settings.availableElectrodeConfigurations.add ("Bank D");
-                    settings.availableElectrodeConfigurations.add ("Bank D + E");
                     settings.availableElectrodeConfigurations.add ("Bank E");
-                    settings.availableElectrodeConfigurations.add ("Bank E + F");
                     settings.availableElectrodeConfigurations.add ("Bank F");
 
                     if (type == ProbeType::NHP45)
                     {
-                        settings.availableElectrodeConfigurations.add ("Bank F + G");
                         settings.availableElectrodeConfigurations.add ("Bank G");
-                        settings.availableElectrodeConfigurations.add ("Bank G + H");
                         settings.availableElectrodeConfigurations.add ("Bank H");
-                        settings.availableElectrodeConfigurations.add ("Bank H + I");
                         settings.availableElectrodeConfigurations.add ("Bank I");
-                        settings.availableElectrodeConfigurations.add ("Bank I + J");
                         settings.availableElectrodeConfigurations.add ("Bank J");
-                        settings.availableElectrodeConfigurations.add ("Bank J + K");
                         settings.availableElectrodeConfigurations.add ("Bank K");
                         settings.availableElectrodeConfigurations.add ("Bank L");
                     }
@@ -171,7 +158,26 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
                     }
                 }
 
-                settings.availableElectrodeConfigurations.add ("Single Column");
+                settings.availableElectrodeConfigurations.add ("A+B (dense)");
+                settings.availableElectrodeConfigurations.add ("A+B (sparse)");
+
+                if (type == ProbeType::NHP25 || type == ProbeType::NHP45)
+                {
+                    settings.availableElectrodeConfigurations.add ("B+C (dense)");
+                    settings.availableElectrodeConfigurations.add ("C+D (dense)");
+                    settings.availableElectrodeConfigurations.add ("D+E (dense)");
+                    settings.availableElectrodeConfigurations.add ("E+F (dense)");
+
+                    if (type == ProbeType::NHP45)
+                    {
+                        settings.availableElectrodeConfigurations.add ("F+G (dense)");
+                        settings.availableElectrodeConfigurations.add ("G+H (dense)");
+                        settings.availableElectrodeConfigurations.add ("H+I (dense)");
+                        settings.availableElectrodeConfigurations.add ("I+J (dense)");
+                        settings.availableElectrodeConfigurations.add ("J+K (dense)");
+                    }
+                }
+
                 settings.availableElectrodeConfigurations.add ("Tetrodes");
             }
         }
@@ -196,12 +202,12 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
             settings.availableReferences.add ("Tip");
 
             settings.availableElectrodeConfigurations.add ("Bank A");
-            settings.availableElectrodeConfigurations.add ("Bank A + B");
             settings.availableElectrodeConfigurations.add ("Bank B");
-            settings.availableElectrodeConfigurations.add ("Bank B + C");
             settings.availableElectrodeConfigurations.add ("Bank C");
             settings.availableElectrodeConfigurations.add ("Bank D");
-            settings.availableElectrodeConfigurations.add ("Single column");
+            settings.availableElectrodeConfigurations.add ("A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("B+C (dense)");
         }
         else
         {
@@ -228,33 +234,33 @@ SimulatedProbe::SimulatedProbe (Basestation* bs,
             //settings.availableReferences.add("4: 1280");
 
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank A");
-            settings.availableElectrodeConfigurations.add ("Shank 1 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank B");
-            settings.availableElectrodeConfigurations.add ("Shank 1 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank D");
-            settings.availableElectrodeConfigurations.add ("Shank 1 Single column");
+            settings.availableElectrodeConfigurations.add ("Shank 1 A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("Shank 1 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 1 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A");
-            settings.availableElectrodeConfigurations.add ("Shank 2 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B");
-            settings.availableElectrodeConfigurations.add ("Shank 2 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank D");
-            settings.availableElectrodeConfigurations.add ("Shank 2 Single column");
+            settings.availableElectrodeConfigurations.add ("Shank 2 A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("Shank 2 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 2 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A");
-            settings.availableElectrodeConfigurations.add ("Shank 3 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B");
-            settings.availableElectrodeConfigurations.add ("Shank 3 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank D");
-            settings.availableElectrodeConfigurations.add ("Shank 3 Single column");
+            settings.availableElectrodeConfigurations.add ("Shank 3 A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("Shank 3 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 3 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A");
-            settings.availableElectrodeConfigurations.add ("Shank 4 Bank A + B");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B");
-            settings.availableElectrodeConfigurations.add ("Shank 4 Bank B + C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank C");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank D");
-            settings.availableElectrodeConfigurations.add ("Shank 4 Single column");
+            settings.availableElectrodeConfigurations.add ("Shank 4 A+B (dense)");
+            settings.availableElectrodeConfigurations.add ("Shank 4 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 4 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("All Shanks 1-96");
             settings.availableElectrodeConfigurations.add ("All Shanks 97-192");
             settings.availableElectrodeConfigurations.add ("All Shanks 193-288");
@@ -327,7 +333,7 @@ Array<int> SimulatedProbe::selectElectrodeConfiguration (String config)
 {
     LOGC ("Selecting electrode configuration for simulated probe: ", config);
 
-    if (config.contains (" + ") && type != ProbeType::UHD2)
+    if (config.containsIgnoreCase ("(dense)") && type != ProbeType::UHD2)
     {
         int electrodeOffset = 0;
 
@@ -423,7 +429,7 @@ Array<int> SimulatedProbe::selectElectrodeConfiguration (String config)
         for (int i = 4032; i < 4416; i++)
             selection.add (i);
     }
-    else if (config.containsIgnoreCase ("Single Column"))
+    else if (config.containsIgnoreCase ("(sparse)"))
     {
         int electrodeOffset = 0;
 
