@@ -1662,11 +1662,17 @@ String NeuropixThread::handleConfigMessage (const String& msg)
 
                                         electrodes = probe->selectElectrodeConfiguration (presetName);
 
+                                        if (electrodes.size() == 0)
+                                        {
+                                            LOGD ("Preset not found or no electrodes selected for preset: ", presetName);
+                                            return "Preset not found or no electrodes selected for preset: " + presetName;
+                                        }
+
                                         probe->ui->selectElectrodes (electrodes);
                                     }
                                     else
                                     {
-                                        LOGD ("Selecting electrodes: ")
+                                        LOGD ("Selecting electrodes: ");
 
                                         for (int i = 5; i < parts.size(); i++)
                                         {
