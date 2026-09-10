@@ -91,6 +91,7 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("Bank D");
             settings.availableElectrodeConfigurations.add ("A+B (dense)");
             settings.availableElectrodeConfigurations.add ("A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("A+B+C (sparse)");
             settings.availableElectrodeConfigurations.add ("B+C (dense)");
         }
         else
@@ -107,6 +108,7 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("Shank 1 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 1 A+B (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 1 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 1 A+B+C (sparse)");
             settings.availableElectrodeConfigurations.add ("Shank 1 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank B");
@@ -114,6 +116,7 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("Shank 2 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 2 A+B (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 2 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 2 A+B+C (sparse)");
             settings.availableElectrodeConfigurations.add ("Shank 2 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank B");
@@ -121,6 +124,7 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("Shank 3 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 3 A+B (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 3 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 3 A+B+C (sparse)");
             settings.availableElectrodeConfigurations.add ("Shank 3 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank A");
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank B");
@@ -128,6 +132,7 @@ Neuropixels2::Neuropixels2 (Basestation* bs, Headstage* hs, Flex* fl, int dock) 
             settings.availableElectrodeConfigurations.add ("Shank 4 Bank D");
             settings.availableElectrodeConfigurations.add ("Shank 4 A+B (dense)");
             settings.availableElectrodeConfigurations.add ("Shank 4 A+B (sparse)");
+            settings.availableElectrodeConfigurations.add ("Shank 4 A+B+C (sparse)");
             settings.availableElectrodeConfigurations.add ("Shank 4 B+C (dense)");
             settings.availableElectrodeConfigurations.add ("All Shanks 1-96");
             settings.availableElectrodeConfigurations.add ("All Shanks 97-192");
@@ -339,6 +344,16 @@ Array<int> Neuropixels2::selectElectrodeConfiguration (String config)
             electrodeOffset = (config.substring (6).getIntValue() - 1) * 1280;
 
         return getHalfBankOverlapSelection (config, electrodeOffset);
+    }
+
+    if (config.containsIgnoreCase ("A+B+C (sparse)"))
+    {
+        int shank = 0;
+
+        if (config.startsWithIgnoreCase ("Shank "))
+            shank = config.substring (6).getIntValue() - 1;
+
+        return getThreeBankSparseSelection (shank, probeMetadata.shank_count > 1);
     }
 
     if (config.containsIgnoreCase ("(sparse)"))

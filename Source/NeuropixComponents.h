@@ -676,6 +676,8 @@ protected:
 
     void refreshActivityViewMapping();
     static Array<int> getHalfBankOverlapSelection (const String& config, int electrodeOffset = 0);
+    static Array<int> getNeuropixels1ThreeBankSparseSelection();
+    static Array<int> getThreeBankSparseSelection (int shank, bool useMultishankLayout);
 
     uint64 eventCode;
     Array<int> gains; // available gain values

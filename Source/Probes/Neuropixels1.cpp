@@ -107,6 +107,7 @@ Neuropixels1::Neuropixels1 (Basestation* bs, Headstage* hs, Flex* fl) : Probe (b
         settings.availableElectrodeConfigurations.add ("Bank C");
         settings.availableElectrodeConfigurations.add ("A+B (dense)");
         settings.availableElectrodeConfigurations.add ("A+B (sparse)");
+        settings.availableElectrodeConfigurations.add ("A+B+C (sparse)");
         settings.availableElectrodeConfigurations.add ("Tetrodes");
 
         open();
@@ -292,6 +293,9 @@ Array<int> Neuropixels1::selectElectrodeConfiguration (String config)
 {
     if (config.containsIgnoreCase ("(dense)"))
         return getHalfBankOverlapSelection (config);
+
+    if (config.equalsIgnoreCase ("A+B+C (sparse)"))
+        return getNeuropixels1ThreeBankSparseSelection();
 
     Array<int> selection;
 

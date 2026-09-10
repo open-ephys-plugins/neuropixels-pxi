@@ -95,6 +95,7 @@ Neuropixels_QuadBase::Neuropixels_QuadBase (Basestation* bs, Headstage* hs, Flex
         settings.availableElectrodeConfigurations.add ("Bank D");
         settings.availableElectrodeConfigurations.add ("A+B (dense)");
         settings.availableElectrodeConfigurations.add ("A+B (sparse)");
+        settings.availableElectrodeConfigurations.add ("A+B+C (sparse)");
         settings.availableElectrodeConfigurations.add ("B+C (dense)");
         settings.availableElectrodeConfigurations.add ("Tetrodes");
 
@@ -277,6 +278,22 @@ Array<int> Neuropixels_QuadBase::selectElectrodeConfiguration (String config)
     {
         for (int shank = 0; shank < 4; ++shank)
             selection.addArray (getHalfBankOverlapSelection (config, shank * 1280));
+
+        return selection;
+    }
+
+    if (config.equalsIgnoreCase ("A+B+C (sparse)"))
+    {
+        for (int shank = 0; shank < 4; ++shank)
+        {
+            const int electrodeOffset = shank * 1280;
+
+            for (int bank = 0; bank < 3; ++bank)
+            {
+                for (int electrode = 0; electrode < 128; ++electrode)
+                    selection.add (electrodeOffset + bank * 384 + bank + electrode * 3);
+            }
+        }
 
         return selection;
     }

@@ -262,6 +262,76 @@ Array<int> Probe::getHalfBankOverlapSelection (const String& config, int electro
     return selection;
 }
 
+Array<int> Probe::getNeuropixels1ThreeBankSparseSelection()
+{
+    Array<int> selection;
+    int abSelectionIndex = 0;
+
+    for (int channel = 0; channel < 384; ++channel)
+    {
+        const bool useBankC = channel < 192
+                              && (channel == 0
+                                  || channel * 75 / 191 != (channel - 1) * 75 / 191);
+        int bank = 2;
+
+        if (! useBankC)
+            bank = abSelectionIndex++ % 2;
+
+        selection.add (channel + bank * 384);
+    }
+
+    return selection;
+}
+
+Array<int> Probe::getThreeBankSparseSelection (int shank, bool useMultishankLayout)
+{
+    Array<int> selection;
+    const int electrodeOffset = shank * 1280;
+
+    if (! useMultishankLayout)
+    {
+        static constexpr char singleShankOffsets[] =
+            "3111111212010212110112112122211111121122222111222222322221222121"
+            "2132322222222122232232222222323323233323342333233323232434333333"
+            "1111111112312211311211121231111121012121122112222222211122131221"
+            "2332242222211224222221222322223312333333332233323233224433123333"
+            "2101221201211111012213221211112322122212103222121323231222321222"
+            "1222212132321212222323312332342332323231233123343233313333232333";
+
+        static_assert (sizeof (singleShankOffsets) == 385);
+
+        for (int electrode = 0; electrode < 384; ++electrode)
+            selection.add (electrodeOffset + electrode * 3 + singleShankOffsets[electrode] - '1');
+
+        return selection;
+    }
+
+    static constexpr char shankOneAndTwoOffsets[] =
+        "0111111112222222222222000000002222211111111100000000000000000200"
+        "0000022222222222222222220000000011111111111111111111111111111111"
+        "1222222221111111110000222222220000022222222222222222222222222022"
+        "1111100000000000000000001111111100000000022222222222222222222222"
+        "2000000000000000001111111111111111100000000011111111111111111111"
+        "2222211111111111111111112222222222222222200000000000000000000000";
+    static constexpr char shankThreeAndFourOffsets[] =
+        "0111111112222222222222000000002200011111111100000000000000000000"
+        "0000022222222222222222220000000000000000000000000000000011010011"
+        "1222222221111111110000222222220011100000000011111111111111111111"
+        "1111100000000000000000001111111111111111111111111111111100101100"
+        "2000000000000000001111111111111122222222222222222222222222222222"
+        "2222211111111111111111112222222222222222222222222222222222222222";
+
+    static_assert (sizeof (shankOneAndTwoOffsets) == 385);
+    static_assert (sizeof (shankThreeAndFourOffsets) == 385);
+
+    const char* offsets = shank < 2 ? shankOneAndTwoOffsets : shankThreeAndFourOffsets;
+
+    for (int electrode = 0; electrode < 384; ++electrode)
+        selection.add (electrodeOffset + electrode * 3 + offsets[electrode] - '0');
+
+    return selection;
+}
+
 FirmwareUpdater::FirmwareFileSelectionComponent::FirmwareFileSelectionComponent (const String& expectedBsFilename_,
                                                                                   const String& expectedBscFilename_)
     : expectedBsFilename (expectedBsFilename_),

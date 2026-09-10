@@ -99,24 +99,12 @@ NeuropixelsOpto::NeuropixelsOpto (Basestation* bs, Headstage* hs, Flex* fl) : Pr
         settings.availableReferences.add ("Ext");
         settings.availableReferences.add ("Tip");
 
-        settings.availableBanks = { Bank::A,
-                                    Bank::B,
-                                    Bank::C,
-                                    Bank::D,
-                                    Bank::E,
-                                    Bank::F,
-                                    Bank::G,
-                                    Bank::H,
-                                    Bank::I,
-                                    Bank::J,
-                                    Bank::K,
-                                    Bank::L };
-
         settings.availableElectrodeConfigurations.add ("Bank A");
         settings.availableElectrodeConfigurations.add ("Bank B");
         settings.availableElectrodeConfigurations.add ("Bank C");
-                        settings.availableElectrodeConfigurations.add ("A+B (dense)");
+        settings.availableElectrodeConfigurations.add ("A+B (dense)");
         settings.availableElectrodeConfigurations.add ("A+B (sparse)");
+        settings.availableElectrodeConfigurations.add ("A+B+C (sparse)");
         settings.availableElectrodeConfigurations.add ("Tetrodes");
 
         open();
@@ -339,6 +327,9 @@ Array<int> NeuropixelsOpto::selectElectrodeConfiguration (String config)
 {
     if (config.containsIgnoreCase ("(dense)"))
         return getHalfBankOverlapSelection (config);
+
+    if (config.equalsIgnoreCase ("A+B+C (sparse)"))
+        return getNeuropixels1ThreeBankSparseSelection();
 
     Array<int> selection;
 
