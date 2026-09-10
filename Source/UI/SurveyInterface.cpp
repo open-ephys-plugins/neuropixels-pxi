@@ -718,7 +718,7 @@ SurveyInterface::SurveyInterface (NeuropixThread* t, NeuropixEditor* e, Neuropix
     table->getHeader().addColumn ("Banks", Columns::ColBanks, 105);
     table->getHeader().addColumn ("Shanks", Columns::ColShanks, 70);
     table->getHeader().addColumn ("Overlap", Columns::ColOverlap, 60);
-    table->getHeader().addColumn ("Sparse", Columns::ColSingleColumn, 60);
+    table->getHeader().addColumn ("Sparse", Columns::ColSparse, 60);
     table->setAutoSizeMenuOptionShown (false);
     table->getHeader().setInterceptsMouseClicks (false, false);
     table->setOutlineThickness (1);
@@ -972,7 +972,7 @@ void SurveyInterface::saveParameters (XmlElement* xml)
         probeNode->setAttribute ("type_id", static_cast<int> (row.probe->type));
         probeNode->setAttribute ("selected", row.selected);
         probeNode->setAttribute ("include_overlapping_banks", row.includeOverlappingBanks);
-        probeNode->setAttribute ("include_single_column", row.includeSingleColumn);
+        probeNode->setAttribute ("include_sparse", row.includeSparseConfiguration);
 
         const bool useAllBanks = row.chosenBanks.isEmpty();
         if (useAllBanks)
@@ -1093,10 +1093,12 @@ void SurveyInterface::loadParameters (XmlElement* xml)
         auto& row = rows.getReference (matchedRowIndex);
 
         row.selected = probeNode->getBoolAttribute ("selected", row.selected);
-        row.includeSingleColumn = row.hasSingleColumn
-                                  && probeNode->getBoolAttribute ("include_single_column", false);
+        const bool includeSparse = probeNode->hasAttribute ("include_sparse")
+                                       ? probeNode->getBoolAttribute ("include_sparse", false)
+                                       : probeNode->getBoolAttribute ("include_single_column", false);
+        row.includeSparseConfiguration = row.hasSparseConfiguration && includeSparse;
         row.includeOverlappingBanks = row.hasOverlappingBanks
-                                      && ! row.includeSingleColumn
+                                      && ! row.includeSparseConfiguration
                                       && probeNode->getBoolAttribute ("include_overlapping_banks", false);
 
         row.chosenBanks.clear();
@@ -1300,8 +1302,8 @@ void SurveyInterface::refreshProbeList()
             if (config.containsIgnoreCase ("(dense)"))
                 r.hasOverlappingBanks = true;
 
-            if (config.containsIgnoreCase ("(sparse)"))
-                r.hasSingleColumn = true;
+            if (config.endsWithIgnoreCase ("A+B+C (sparse)"))
+                r.hasSparseConfiguration = true;
         }
 
         // Special case for UHD2: use numeric banks 0-15 instead of Bank enum
@@ -1412,13 +1414,13 @@ void SurveyInterface::launchSurvey()
         }
         t.shankCount = r.shankCount;
 
-        if (r.includeSingleColumn)
+        if (r.includeSparseConfiguration)
         {
             for (const int shank : t.shanks)
             {
                 const String requestedConfig = t.shankCount > 1
-                                                   ? "Shank " + String (shank + 1) + " A+B (sparse)"
-                                                   : "A+B (sparse)";
+                                                   ? "Shank " + String (shank + 1) + " A+B+C (sparse)"
+                                                   : "A+B+C (sparse)";
 
                 for (const auto& availableConfig : t.electrodeConfigs)
                 {
@@ -1790,10 +1792,10 @@ Component* SurveyInterface::refreshComponentForCell (int rowNumber, int columnId
 
             if (row.includeOverlappingBanks)
             {
-                row.includeSingleColumn = false;
+                row.includeSparseConfiguration = false;
 
-                if (auto* singleColumnToggle = dynamic_cast<ToggleButton*> (table->getCellComponent (Columns::ColSingleColumn, rowNumber)))
-                    singleColumnToggle->setToggleState (false, dontSendNotification);
+                if (auto* sparseToggle = dynamic_cast<ToggleButton*> (table->getCellComponent (Columns::ColSparse, rowNumber)))
+                    sparseToggle->setToggleState (false, dontSendNotification);
             }
 
             table->repaintRow (rowNumber);
@@ -1801,21 +1803,21 @@ Component* SurveyInterface::refreshComponentForCell (int rowNumber, int columnId
         return tb;
     }
 
-    if (columnId == Columns::ColSingleColumn)
+    if (columnId == Columns::ColSparse)
     {
         ToggleButton* tb = dynamic_cast<ToggleButton*> (existing);
         if (tb == nullptr)
             tb = new ToggleButton (" ");
 
-        tb->setTooltip (r.hasSingleColumn ? "Survey one column from Bank A and one column from Bank B in each recording" : "Single-column survey is not available for this probe");
-        tb->setEnabled (r.hasSingleColumn);
-        tb->setToggleState (r.includeSingleColumn, dontSendNotification);
+        tb->setTooltip (r.hasSparseConfiguration ? "Survey a sparse electrode configuration across Banks A, B, and C" : "Bank A+B+C sparse survey is not available for this probe");
+        tb->setEnabled (r.hasSparseConfiguration);
+        tb->setToggleState (r.includeSparseConfiguration, dontSendNotification);
         tb->onClick = [this, rowNumber, tb]()
         {
             auto& row = rows.getReference (rowNumber);
-            row.includeSingleColumn = tb->getToggleState();
+            row.includeSparseConfiguration = tb->getToggleState();
 
-            if (row.includeSingleColumn)
+            if (row.includeSparseConfiguration)
             {
                 row.includeOverlappingBanks = false;
 
