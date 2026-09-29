@@ -175,6 +175,7 @@ void NeuropixelsOpto::initialize (bool signalChainIsLoading)
 void NeuropixelsOpto::calibrate()
 {
     LOGD ("Calibrating probe...");
+    beginCalibration();
 
     File baseDirectory = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
     File calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
@@ -191,14 +192,14 @@ void NeuropixelsOpto::calibrate()
     if (! probeDirectory.exists())
     {
         LOGD ("!!! Calibration files not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("Calibration directory not found for this serial number.");
         return;
     }
 
     if (! probeDirectory.hasReadAccess())
     {
         LOGE ("No read access to calibration directory: ", probeDirectory.getFullPathName());
-        isCalibrated = false;
+        failCalibration ("Calibration directory cannot be read - " + probeDirectory.getFullPathName());
         return;
     }
 
@@ -206,7 +207,7 @@ void NeuropixelsOpto::calibrate()
     if (! adcPath.existsAsFile())
     {
         LOGE ("ADC calibration file not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("ADC calibration file not found - " + adcPath.getFileName());
         return;
     }
 
@@ -214,7 +215,7 @@ void NeuropixelsOpto::calibrate()
     if (! gainPath.existsAsFile())
     {
         LOGE ("Gain calibration file not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("Gain calibration file not found - " + gainPath.getFileName());
         return;
     }
 
@@ -222,7 +223,7 @@ void NeuropixelsOpto::calibrate()
     if (! opticalPath.existsAsFile())
     {
         LOGE ("Optical calibration file not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("Optical calibration file not found - " + opticalPath.getFileName());
         return;
     }
 
@@ -241,7 +242,7 @@ void NeuropixelsOpto::calibrate()
     else
     {
         LOGD ("!!! Unsuccessful ADC calibration, failed with error code: ", errorCode);
-        isCalibrated = false;
+        failCalibration ("ADC calibration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
         return;
     }
 
@@ -256,11 +257,11 @@ void NeuropixelsOpto::calibrate()
     else
     {
         LOGD ("!!! Unsuccessful gain calibration, failed with error code: ", errorCode);
-        isCalibrated = false;
+        failCalibration ("Gain calibration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
         return;
     }
 
-    LOGDD ("Optical calibration file: ", adcFile);
+    LOGDD ("Optical calibration file: ", opticalFile);
 
     errorCode = Neuropixels::np_setOpticalCalibration (basestation->slot, headstage->port, dock, opticalFile.toRawUTF8());
 
@@ -271,11 +272,11 @@ void NeuropixelsOpto::calibrate()
     else
     {
         LOGD ("!!! Unsuccessful optical calibration, failed with error code: ", errorCode);
-        isCalibrated = false;
+        failCalibration ("Optical calibration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
         return;
     }
 
-    isCalibrated = true;
+    completeCalibration();
 }
 
 void NeuropixelsOpto::setEmissionSite (Neuropixels::wavelength_t wavelength, int site)

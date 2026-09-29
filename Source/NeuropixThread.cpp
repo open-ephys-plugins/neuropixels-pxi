@@ -375,7 +375,7 @@ void NeuropixThread::initializeProbes()
             continue;
 
         damagedShankMessage << "\n"
-                << String::fromUTF8 ("\xe2\x80\xa2 ") << probe->getName();
+                            << String::fromUTF8 ("\xe2\x80\xa2 ") << probe->getName();
 
         if (probe->probeMetadata.shank_count > 1)
         {
@@ -628,36 +628,53 @@ void NeuropixThread::applyProbeSettingsQueue()
     // Show warning if any probes are uncalibrated
     if (uncalibratedProbes.size() > 0 && ! calibrationWarningShown)
     {
-        String message = "Missing calibration files for the following probe(s):\n\n";
+        String calibrationFailures;
 
         for (auto probe : uncalibratedProbes)
         {
-            message += String::fromUTF8 (" \xe2\x80\xa2 ") + probe->name + " (serial number: " + String (probe->info.serial_number) + ")\n";
+            const String reason = probe->getCalibrationFailureReason().isNotEmpty()
+                                      ? probe->getCalibrationFailureReason()
+                                      : "Unknown calibration failure.";
+
+            if (calibrationFailures.isNotEmpty())
+                calibrationFailures += "\n\n";
+
+            calibrationFailures += probe->name
+                                   + " (SN: " + String (probe->info.serial_number) + ")\n"
+                                   + reason;
         }
 
-        message += "\nADC and gain calibration files for each probe must be placed in the probe-specific folder named \"<probe_serial_number>\" inside the CalibrationInfo directory linked below. ";
-        message += "The GUI will proceed without calibration. The plugin must be deleted and re-inserted once calibration files have been added";
+        const String message = "Calibration data could not be loaded for the probe(s) listed below. "
+                               "Verify that each calibration file is stored in the corresponding \"<probe_serial_number>\" folder inside the \"CalibrationInfo\" directory. "
+                               "The GUI will continue without calibration. "
+                               "After resolving the issue, remove and reinsert the plugin or restart the GUI to reload the calibration data.";
 
         // Show alert window on the message thread asynchronously
-        MessageManager::callAsync ([this, message]
-                                   { AlertWindow alertWindow ("Calibration files not found", message, MessageBoxIconType::WarningIcon, nullptr);
-                                   auto folder = CoreServices::getSavedStateDirectory().getChildFile ("CalibrationInfo");
-                                   folder.createDirectory(); // ensure base directory exists
-                                   auto hyperlink = std::make_unique<HyperlinkButton> ("CalibrationInfo directory", URL());
-                                   hyperlink->setName ("");
-                                   hyperlink->setSize (200, 22);
-                                   hyperlink->setTooltip (folder.getFullPathName());
-                                   hyperlink->setWantsKeyboardFocus (false);
-                                   hyperlink->setJustificationType (Justification::centred);
-                                   hyperlink->setColour (HyperlinkButton::ColourIds::textColourId, Colours::deepskyblue);
-                                   hyperlink->onClick = [folder]
-                                   {
-                                       folder.startAsProcess();
-                                   };
+        MessageManager::callAsync ([message, calibrationFailures]
+                                   { AlertWindow alertWindow ("Probe calibration failed", message, MessageBoxIconType::WarningIcon, nullptr);
+                                    alertWindow.addTextBlock (calibrationFailures);
 
-                                   alertWindow.addCustomComponent (hyperlink.get());
-                                   alertWindow.addButton ("OK", 1, KeyPress (KeyPress::returnKey), KeyPress (KeyPress::escapeKey));
-                                   alertWindow.runModalLoop(); });
+                                    auto guiVersion = JUCEApplication::getInstance()->getApplicationVersion();
+
+                                    auto folder = CoreServices::getSavedStateDirectory().getChildFile ("CalibrationInfo");
+                                    folder.createDirectory(); // ensure base directory exists
+                                    auto hyperlink = std::make_unique<HyperlinkButton> ("Open CalibrationInfo directory", URL());
+                                    hyperlink->setName ("");
+                                    hyperlink->setSize (200, 22);
+                                    hyperlink->changeWidthToFitText();
+                                    hyperlink->setTooltip (folder.getFullPathName());
+                                    hyperlink->setWantsKeyboardFocus (false);
+                                    hyperlink->setJustificationType (Justification::centred);
+                                    if (guiVersion.compareNatural ("1.1.0") < 0)
+                                        hyperlink->setColour (HyperlinkButton::ColourIds::textColourId, Colours::deepskyblue);
+                                    hyperlink->onClick = [folder]
+                                    {
+                                        folder.startAsProcess();
+                                    };
+
+                                    alertWindow.addCustomComponent (hyperlink.get());
+                                    alertWindow.addButton ("OK", 1, KeyPress (KeyPress::returnKey), KeyPress (KeyPress::escapeKey));
+                                    alertWindow.runModalLoop(); });
 
         uncalibratedProbes.clear();
         calibrationWarningShown = true;
@@ -1010,7 +1027,7 @@ bool NeuropixThread::startAcquisition()
         }
     }
 
-    // Start acquisition on all basestations. 
+    // Start acquisition on all basestations.
     // Ensures all probes are ready to receive data before the acquisition trigger is sent.
     for (int i = 0; i < basestations.size(); i++)
     {

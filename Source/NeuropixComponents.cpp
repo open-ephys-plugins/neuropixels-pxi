@@ -52,6 +52,23 @@ Probe::Probe (Basestation* bs_, Headstage* hs_, Flex* fl_, int dock_)
     }
 }
 
+void Probe::beginCalibration()
+{
+    isCalibrated = false;
+    calibrationFailureReason.clear();
+}
+
+void Probe::failCalibration (const String& reason)
+{
+    isCalibrated = false;
+    calibrationFailureReason = reason;
+}
+
+void Probe::completeCalibration()
+{
+    isCalibrated = calibrationFailureReason.isEmpty();
+}
+
 bool Probe::canContinueAfterProbeConfiguration (Neuropixels::NP_ErrorCode result, const String& operation)
 {
     if (result == Neuropixels::SUCCESS)

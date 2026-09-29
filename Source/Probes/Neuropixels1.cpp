@@ -180,6 +180,7 @@ void Neuropixels1::initialize (bool signalChainIsLoading)
 void Neuropixels1::calibrate()
 {
     LOGD ("Calibrating probe...");
+    beginCalibration();
 
     File baseDirectory = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
     File calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
@@ -196,14 +197,14 @@ void Neuropixels1::calibrate()
     if (! probeDirectory.exists())
     {
         LOGD ("!!! Calibration files not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("Calibration directory not found for this serial number.");
         return;
     }
 
     if (! probeDirectory.hasReadAccess())
     {
         LOGE ("No read access to calibration directory: ", probeDirectory.getFullPathName());
-        isCalibrated = false;
+        failCalibration ("Calibration directory cannot be read - " + probeDirectory.getFullPathName());
         return;
     }
 
@@ -211,7 +212,7 @@ void Neuropixels1::calibrate()
     if (! adcPath.existsAsFile())
     {
         LOGE ("ADC calibration file not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("ADC calibration file not found - " + adcPath.getFileName());
         return;
     }
 
@@ -219,7 +220,7 @@ void Neuropixels1::calibrate()
     if (! gainPath.existsAsFile())
     {
         LOGE ("Gain calibration file not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("Gain calibration file not found - " + gainPath.getFileName());
         return;
     }
 
@@ -235,8 +236,8 @@ void Neuropixels1::calibrate()
     }
     else
     {
-        LOGD ("!!! Unsuccessful ADC calibration, failed with error code: ", errorCode);
-        isCalibrated = false;
+        LOGE ("Unsuccessful ADC calibration for probe serial number: ", String (info.serial_number), ", failed with error: ", Neuropixels::np_getErrorMessage(errorCode));
+        failCalibration ("ADC calibration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
         return;
     }
 
@@ -250,12 +251,12 @@ void Neuropixels1::calibrate()
     }
     else
     {
-        LOGD ("!!! Unsuccessful gain calibration, failed with error code: ", errorCode);
-        isCalibrated = false;
+        LOGE ("Unsuccessful gain calibration for probe serial number: ", String (info.serial_number), ", failed with error: ", Neuropixels::np_getErrorMessage(errorCode));
+        failCalibration ("Gain calibration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
         return;
     }
 
-    isCalibrated = true;
+    completeCalibration();
 }
 
 void Neuropixels1::printSettings()

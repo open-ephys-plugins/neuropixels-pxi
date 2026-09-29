@@ -137,6 +137,8 @@ void Neuropixels_NHP_Passive::initialize (bool signalChainIsLoading)
 
 void Neuropixels_NHP_Passive::calibrate()
 {
+    beginCalibration();
+
     File baseDirectory = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
     File calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
     File probeDirectory = calibrationDirectory.getChildFile (String (info.serial_number));
@@ -152,14 +154,14 @@ void Neuropixels_NHP_Passive::calibrate()
     if (! probeDirectory.exists())
     {
         LOGD ("!!! Calibration files not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("Calibration directory not found for this serial number.");
         return;
     }
 
     if (! probeDirectory.hasReadAccess())
     {
         LOGE ("No read access to calibration directory: ", probeDirectory.getFullPathName());
-        isCalibrated = false;
+        failCalibration ("Calibration directory cannot be read - " + probeDirectory.getFullPathName());
         return;
     }
 
@@ -167,7 +169,7 @@ void Neuropixels_NHP_Passive::calibrate()
     if (! adcPath.existsAsFile())
     {
         LOGE ("ADC calibration file not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("ADC calibration file not found - " + adcPath.getFileName());
         return;
     }
 
@@ -175,7 +177,7 @@ void Neuropixels_NHP_Passive::calibrate()
     if (! gainPath.existsAsFile())
     {
         LOGE ("Gain calibration file not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("Gain calibration file not found - " + gainPath.getFileName());
         return;
     }
 
@@ -192,7 +194,7 @@ void Neuropixels_NHP_Passive::calibrate()
     else
     {
         LOGD ("Unsuccessful ADC calibration, failed with error code: ", errorCode);
-        isCalibrated = false;
+        failCalibration ("ADC calibration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
         return;
     }
 
@@ -207,7 +209,7 @@ void Neuropixels_NHP_Passive::calibrate()
     else
     {
         LOGD ("Unsuccessful gain calibration, failed with error code: ", errorCode);
-        isCalibrated = false;
+        failCalibration ("Gain calibration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
         return;
     }
 
@@ -216,13 +218,15 @@ void Neuropixels_NHP_Passive::calibrate()
     if (! errorCode == Neuropixels::SUCCESS)
     {
         LOGD ("Failed to write probe config w/ error code: ", errorCode);
+        failCalibration ("Writing the calibrated probe configuration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
+        return;
     }
     else
     {
         LOGD ("Successfully wrote probe config ");
     }
 
-    isCalibrated = true;
+    completeCalibration();
 }
 
 void Neuropixels_NHP_Passive::selectElectrodes()

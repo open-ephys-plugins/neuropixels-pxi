@@ -323,8 +323,10 @@ void SimulatedProbe::initialize (bool signalChainIsLoading)
 
 void SimulatedProbe::calibrate()
 {
+    beginCalibration();
     std::this_thread::sleep_for (std::chrono::milliseconds (1));
     LOGC ("Calibrating simulated probe.");
+    completeCalibration();
 }
 
 void SimulatedProbe::selectElectrodes()

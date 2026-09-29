@@ -477,6 +477,7 @@ public:
     // ---------------------------------------- //
 
     String getName() { return displayName; }
+    const String& getCalibrationFailureReason() const { return calibrationFailureReason; }
 
     Headstage* headstage; // owned by Basestation
     Flex* flex; // owned by Headstage
@@ -663,6 +664,10 @@ protected:
     std::unique_ptr<ActivityView> apView;
     std::unique_ptr<ActivityView> lfpView;
 
+    void beginCalibration();
+    void failCalibration (const String& reason);
+    void completeCalibration();
+
     bool canContinueAfterProbeConfiguration (Neuropixels::NP_ErrorCode result, const String& operation);
     Neuropixels::NP_ErrorCode runConfigurationBistAndRestore (uint8_t* shankOkMask = nullptr);
     void logDegradedShanks (uint8_t shankOkMask);
@@ -684,6 +689,7 @@ protected:
     bool isEnabledForSurvey = false;
     bool surveyModeActive = false;
     bool suppressConfigurationBist = false;
+    String calibrationFailureReason;
 };
 
 class Basestation;

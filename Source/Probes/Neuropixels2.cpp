@@ -248,6 +248,7 @@ void Neuropixels2::initialize (bool signalChainIsLoading)
 void Neuropixels2::calibrate()
 {
     LOGD ("Calibrating probe...");
+    beginCalibration();
 
     File baseDirectory = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
     File calibrationDirectory = baseDirectory.getChildFile ("CalibrationInfo");
@@ -264,14 +265,14 @@ void Neuropixels2::calibrate()
     if (! probeDirectory.exists())
     {
         LOGD ("!!! Calibration files not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("Calibration directory not found for this serial number.");
         return;
     }
 
     if (! probeDirectory.hasReadAccess())
     {
         LOGE ("No read access to calibration directory: ", probeDirectory.getFullPathName());
-        isCalibrated = false;
+        failCalibration ("Calibration directory cannot be read - " + probeDirectory.getFullPathName());
         return;
     }
 
@@ -279,7 +280,7 @@ void Neuropixels2::calibrate()
     if (! gainPath.existsAsFile())
     {
         LOGE ("Gain calibration file not found for probe serial number: ", info.serial_number);
-        isCalibrated = false;
+        failCalibration ("Gain calibration file not found - " + gainPath.getFileName());
         return;
     }
 
@@ -287,7 +288,7 @@ void Neuropixels2::calibrate()
 
     LOGD ("Gain file: ", gainFile);
 
-    errorCode = checkError (Neuropixels::np_setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8()), "setGainCalibration");
+    errorCode = Neuropixels::np_setGainCalibration (basestation->slot, headstage->port, dock, gainFile.toRawUTF8());
 
     if (errorCode == 0)
     {
@@ -295,23 +296,25 @@ void Neuropixels2::calibrate()
     }
     else
     {
-        LOGD ("Unsuccessful gain calibration, failed with error code: ", errorCode);
-        isCalibrated = false;
+        LOGE ("Unsuccessful gain calibration for probe serial number: ", String (info.serial_number), ", failed with error: ", Neuropixels::np_getErrorMessage(errorCode));
+        failCalibration ("Gain calibration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
+        return;
     }
 
     errorCode = Neuropixels::np_writeProbeConfiguration (basestation->slot, headstage->port, dock, false);
 
-    if (! errorCode == Neuropixels::SUCCESS)
+    if (errorCode != Neuropixels::SUCCESS)
     {
-        isCalibrated = false;
-        LOGD ("Failed to write probe config w/ error code: ", errorCode);
+        LOGE ("Failed to write probe config w/ error: ", Neuropixels::np_getErrorMessage(errorCode));
+        failCalibration ("Writing the calibrated probe configuration failed - " + String (Neuropixels::np_getErrorMessage (errorCode)));
+        return;
     }
     else
     {
-        isCalibrated = true;
         LOGD ("Successfully wrote probe config ");
     }
 
+    completeCalibration();
     checkError (Neuropixels::np_setHSLed (basestation->slot, headstage->port, false), "np_setHSLed");
 }
 
