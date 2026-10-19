@@ -244,6 +244,8 @@ private:
     /* Thread-safe method to show bad site warning */
     void showDamagedShankWarning();
 
+    bool validateQuadBaseSettings (const ProbeSettings& settings, const String& action);
+
     Array<Annotation> annotations;
 
     Array<int> getSelectedElectrodes();

@@ -250,6 +250,20 @@ public:
 
                     // std::cout << std::endl;
 
+                    if (settings.probeType == ProbeType::QUAD_BASE)
+                    {
+                        if (values.size() != 5
+                            || values[0] < 0 || values[0] >= 384
+                            || values[1] < 0 || values[1] >= 4
+                            || values[2] < 0 || values[2] >= 4
+                            || values[4] < 0 || values[4] >= 1280)
+                            return false;
+
+                        for (const auto& token : strvals)
+                            if (token.isEmpty() || ! token.containsOnly ("0123456789"))
+                                return false;
+                    }
+
                     parseValues (values, settings.probeType, settings);
                 }
             }
@@ -397,7 +411,8 @@ public:
             settings.selectedShank.add (values[1]);
             settings.selectedBank.add (bank);
             settings.referenceIndex = values[3];
-            settings.selectedElectrode.add (values[4]);
+            // IMRO stores shank-local indices; Quad Base settings use global indices.
+            settings.selectedElectrode.add (values[4] + (probeType == ProbeType::QUAD_BASE ? 1280 * values[1] : 0));
         }
     }
 

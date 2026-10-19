@@ -32,11 +32,32 @@
 
 #include "../Formats/IMRO.h"
 #include "../Formats/ProbeInterfaceJson.h"
+#include "../Formats/QuadBaseMapping.h"
 
 #include "../Basestations/PxiBasestation.h"
 
 namespace
 {
+QuadBaseMapping::Mapping getQuadBaseGeometry (const Array<ElectrodeMetadata>& electrodes)
+{
+    QuadBaseMapping::Mapping geometry;
+    geometry.reserve ((size_t) electrodes.size());
+    for (const auto& electrode : electrodes)
+        geometry.push_back ({ electrode.channel, electrode.shank, (int) electrode.bank, electrode.global_index });
+    return geometry;
+}
+
+void reportInvalidQuadBaseSettings (const String& action, const String& reason)
+{
+    const String message = action + ": " + reason
+                           + "\nNo partial probe mapping was applied or saved. Verify all four groups before recording.";
+    LOGE (message);
+    CoreServices::sendStatusMessage (message);
+    MessageManager::callAsync ([message]()
+                               { AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
+                                                                   "Invalid Quad Base mapping",
+                                                                   message); });
+}
 // Dashboard layout metrics
 constexpr int OUTER_MARGIN = 20;
 constexpr int PANEL_GAP = 16;
@@ -727,6 +748,8 @@ void NeuropixInterface::lookAndFeelChanged()
 void NeuropixInterface::updateProbeSettingsInBackground()
 {
     ProbeSettings settings = getProbeSettings();
+    if (! validateQuadBaseSettings (settings, "Cannot update probe settings"))
+        return;
 
     probe->updateSettings (settings);
 
@@ -1798,12 +1821,19 @@ void NeuropixInterface::applyProbeSettingsFromImro (File imroFile)
 
     if (! success)
     {
+        if (probe->type == ProbeType::QUAD_BASE)
+            reportInvalidQuadBaseSettings ("Cannot load IMRO for " + probe->getName(), "The IMRO file could not be parsed.");
         loadImroComboBox->setSelectedId (1);
         return;
     }
 
     if (settings.probeType == probe->type)
     {
+        if (! validateQuadBaseSettings (settings, "Cannot load IMRO"))
+        {
+            loadImroComboBox->setSelectedId (1, dontSendNotification);
+            return;
+        }
         if (! imroFiles.contains (imroFile.getFullPathName()))
         {
             imroFiles.add (imroFile.getFullPathName());
@@ -1811,9 +1841,11 @@ void NeuropixInterface::applyProbeSettingsFromImro (File imroFile)
             loadImroComboBox->addItem (imroFile.getFileName(), imroFiles.size() + 1);
         }
 
-        electrodeConfigurationComboBox->setSelectedId (1);
-        applyProbeSettings (settings);
-        CoreServices::updateSignalChain (editor);
+        electrodeConfigurationComboBox->setSelectedId (1, probe->type == ProbeType::QUAD_BASE ? dontSendNotification : sendNotificationAsync);
+        if (applyProbeSettings (settings))
+        {
+            CoreServices::updateSignalChain (editor);
+        }
     }
     else
     {
@@ -1831,6 +1863,36 @@ void NeuropixInterface::applyProbeSettingsFromImro (File imroFile)
     loadImroComboBox->setSelectedId (1);
 }
 
+bool NeuropixInterface::validateQuadBaseSettings (const ProbeSettings& settings, const String& action)
+{
+    if (probe->type != ProbeType::QUAD_BASE)
+        return true;
+
+    const int count = settings.selectedChannel.size();
+    String error;
+    if (settings.selectedBank.size() != count
+        || settings.selectedShank.size() != count
+        || settings.selectedElectrode.size() != count)
+    {
+        error = "Channel, bank, group, and electrode arrays have different lengths.";
+    }
+    else
+    {
+        QuadBaseMapping::Mapping selection;
+        selection.reserve ((size_t) count);
+        for (int i = 0; i < count; ++i)
+            selection.push_back ({ settings.selectedChannel[i], settings.selectedShank[i],
+                                   (int) settings.selectedBank[i], settings.selectedElectrode[i] });
+        error = QuadBaseMapping::validate (selection, getQuadBaseGeometry (probe->electrodeMetadata));
+    }
+
+    if (error.isEmpty())
+        return true;
+
+    reportInvalidQuadBaseSettings (action + " for " + probe->getName(), error);
+    return false;
+}
+
 bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdateProbe)
 {
     if (p.probeType != probe->type)
@@ -1846,6 +1908,8 @@ bool NeuropixInterface::applyProbeSettings (ProbeSettings p, bool shouldUpdatePr
     }
 
     LOGD ("NeuropixInterface applying probe settings for ", p.probe->name, " shouldUpdate: ", shouldUpdateProbe);
+    if (! validateQuadBaseSettings (p, "Cannot apply probe settings"))
+        return false;
 
     // update display
     if (apGainComboBox != 0)
@@ -2017,6 +2081,9 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
     if (probe != nullptr)
     {
         LOGD ("Saving Neuropix display.");
+        const ProbeSettings p = getProbeSettings();
+        if (! validateQuadBaseSettings (p, "Cannot save probe metadata; this probe will be omitted from the saved configuration"))
+            return;
 
         int numElectrodeGroups = probe->type == ProbeType::QUAD_BASE ? 4 : 1;
 
@@ -2108,8 +2175,6 @@ void NeuropixInterface::saveParameters (XmlElement* xml)
             XmlElement* xposNode = xmlNode->createNewChildElement ("ELECTRODE_XPOS");
             XmlElement* yposNode = xmlNode->createNewChildElement ("ELECTRODE_YPOS");
             XmlElement* electrodeNode = xmlNode->createNewChildElement ("ELECTRODE_INDEX");
-
-            ProbeSettings p = getProbeSettings();
 
             // Create sorted indices based on channel number
             Array<int> sortedIndices;
@@ -2226,7 +2291,8 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
         String mySerialNumber = String (probe->info.serial_number);
 
         // first, set defaults
-        ProbeSettings settings; // = ProbeSettings(probe->settings);
+        ProbeSettings settings = probe->settings;
+        settings.clearElectrodeSelection();
         settings.probe = probe;
         settings.probeType = probe->type;
         settings.apFilterState = probe->settings.apFilterState;
@@ -2265,11 +2331,38 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
         }
 
         Array<XmlElement*> matchingNodes;
+        if (probe->type == ProbeType::QUAD_BASE)
+        {
+            matchingNodes = QuadBaseMapping::findProbeNodes (*xml, mySerialNumber,
+                                                           probe->basestation->slot,
+                                                           probe->headstage->port,
+                                                           probe->dock);
+            // Parse every group before changing either the model or the UI.
+            if (! matchingNodes.isEmpty())
+            {
+                QuadBaseMapping::Mapping selection;
+                String error;
+                if (! QuadBaseMapping::readParameters (matchingNodes, getQuadBaseGeometry (electrodeMetadata), selection, error))
+                {
+                    reportInvalidQuadBaseSettings ("Cannot restore " + probe->getName(), error);
+                    return;
+                }
+
+                settings.clearElectrodeSelection();
+                for (const auto& entry : selection)
+                {
+                    settings.selectedChannel.add (entry.channel);
+                    settings.selectedBank.add (static_cast<Bank> (entry.bank));
+                    settings.selectedShank.add (entry.shank);
+                    settings.selectedElectrode.add (entry.electrode);
+                }
+            }
+        }
 
         // find by serial number
         forEachXmlChildElement (*xml, xmlNode)
         {
-            if (xmlNode->hasTagName ("NP_PROBE"))
+            if (probe->type != ProbeType::QUAD_BASE && xmlNode->hasTagName ("NP_PROBE"))
             {
                 if (xmlNode->getStringAttribute ("probe_serial_number").equalsIgnoreCase (mySerialNumber))
                 {
@@ -2280,7 +2373,7 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
         }
 
         // if not, search for matching port
-        if (matchingNodes.size() == 0)
+        if (probe->type != ProbeType::QUAD_BASE && matchingNodes.size() == 0)
         {
             forEachXmlChildElement (*xml, xmlNode)
             {
@@ -2337,7 +2430,7 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
         {
             XmlElement* matchingNode = matchingNodes[nodeIndex];
 
-            if (matchingNode->getChildByName ("CHANNELS"))
+            if (probe->type != ProbeType::QUAD_BASE && matchingNode->getChildByName ("CHANNELS"))
             {
                 if (nodeIndex == 0)
                 {
@@ -2375,27 +2468,6 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
                                 {
                                     settings.selectedElectrode.add (j);
                                 }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < 384; i++)
-                    {
-                        settings.selectedChannel.add (i);
-
-                        String bankInfo = status->getStringAttribute ("CH" + String (i) + "_" + String (nodeIndex));
-                        Bank bank = static_cast<Bank> (bankInfo.substring (0, 1).getIntValue());
-
-                        settings.selectedBank.add (bank);
-                        settings.selectedShank.add (nodeIndex);
-
-                        for (int j = 0; j < electrodeMetadata.size(); j++)
-                        {
-                            if (electrodeMetadata[j].channel == i && electrodeMetadata[j].bank == bank && electrodeMetadata[j].shank == nodeIndex)
-                            {
-                                settings.selectedElectrode.add (j);
                             }
                         }
                     }
@@ -2477,9 +2549,16 @@ void NeuropixInterface::loadParameters (XmlElement* xml)
             }
         }
 
-        probe->updateSettings (settings);
-
-        applyProbeSettings (settings, false);
+        if (probe->type == ProbeType::QUAD_BASE)
+        {
+            if (applyProbeSettings (settings, false))
+                probe->updateSettings (settings);
+        }
+        else
+        {
+            probe->updateSettings (settings);
+            applyProbeSettings (settings, false);
+        }
     }
 }
 
