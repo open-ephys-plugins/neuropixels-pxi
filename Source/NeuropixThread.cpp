@@ -1183,6 +1183,82 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
     devices->clear();
     configurationObjects->clear();
 
+    auto addStringMetadata = [] (DeviceInfo* device,
+                                const String& name,
+                                const String& description,
+                                const String& identifier,
+                                const String& text)
+    {
+        const unsigned int length = static_cast<unsigned int> (text.getNumBytesAsUTF8() + 1);
+        MetadataDescriptor descriptor (MetadataDescriptor::MetadataType::CHAR,
+                                       length,
+                                       name,
+                                       description,
+                                       identifier);
+        MetadataValue value (MetadataDescriptor::MetadataType::CHAR, length);
+        value.setValue (text);
+        device->addMetadata (descriptor, value);
+    };
+
+    Array<DeviceInfo*> basestationDevices;
+
+    for (auto basestation : basestations)
+    {
+        const bool isOneBox = basestation->type == BasestationType::ONEBOX;
+        const auto* connectBoard = basestation->basestationConnectBoard.get();
+        const auto& hardwareInfo = ! isOneBox && connectBoard != nullptr
+                                       ? connectBoard->info
+                                       : basestation->info;
+
+        String name = "Neuropixels PXI Basestation";
+        if (isOneBox)
+            name = "OneBox";
+        else if (basestation->type == BasestationType::OPTO)
+            name = "Neuropixels Opto Basestation";
+        else if (basestation->type == BasestationType::SIMULATED)
+            name = "Simulated Basestation";
+
+        const String serialNumber = isOneBox
+                                        ? String (static_cast<OneBox*> (basestation)->serial_number)
+                                        : String (hardwareInfo.serial_number);
+
+        DeviceInfo::Settings deviceSettings {
+            name,
+            "Neuropixels basestation",
+            hardwareInfo.part_number,
+            serialNumber,
+            "imec"
+        };
+
+        DeviceInfo* device = new DeviceInfo (deviceSettings);
+        devices->add (device);
+        basestationDevices.add (device);
+
+        addStringMetadata (device,
+                           "firmware_version",
+                           "Basestation firmware version",
+                           "neuropixels.basestation.firmware_version",
+                           basestation->info.boot_version);
+
+        if (! isOneBox && connectBoard != nullptr)
+        {
+            addStringMetadata (device,
+                               "bsc_firmware_version",
+                               "Basestation connect board firmware version",
+                               "neuropixels.basestation.bsc_firmware_version",
+                               connectBoard->info.boot_version);
+        }
+
+        MetadataDescriptor slotDescriptor (MetadataDescriptor::MetadataType::UINT16,
+                                           1,
+                                           "slot",
+                                           "Basestation slot",
+                                           "neuropixels.basestation.slot");
+        MetadataValue slotValue (MetadataDescriptor::MetadataType::UINT16, 1);
+        slotValue.setValue ((uint16) basestation->slot);
+        device->addMetadata (slotDescriptor, slotValue);
+    }
+
     int probeIdx = 0;
 
     for (int i = 0; i < sourceStreams.size(); i++)
@@ -1456,6 +1532,25 @@ void NeuropixThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
             value.setValue ((uint16) info.probe->probeMetadata.num_adcs);
 
             device->addMetadata (descriptor, value);
+
+            const int basestationIndex = basestations.indexOf (info.probe->basestation);
+            if (basestationIndex >= 0)
+            {
+                addStringMetadata (device,
+                                   "basestation_uuid",
+                                   "UUID of the associated basestation device",
+                                   "neuropixels.basestation.uuid",
+                                   basestationDevices[basestationIndex]->getUniqueId().toString());
+            }
+
+            MetadataDescriptor portDescriptor (MetadataDescriptor::MetadataType::UINT16,
+                                               1,
+                                               "port",
+                                               "Basestation port connected to this probe",
+                                               "neuropixels.port");
+            MetadataValue portValue (MetadataDescriptor::MetadataType::UINT16, 1);
+            portValue.setValue ((uint16) info.probe->port);
+            device->addMetadata (portDescriptor, portValue);
 
             devices->add (device); // unique device object owned by SourceNode
 
