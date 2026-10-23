@@ -240,15 +240,12 @@ void Geometry::NP2 (int shank_count, int adc_bits, bool siteLayout, bool sapiens
     {
         probeMetadata.type = ProbeType::NP2_1;
 
-        if (sapiens)
-            probeMetadata.name = "Neuropixels 2.0 Single Shank - Sapiens";
-        else
-            probeMetadata.name = "Neuropixels 2.0 Single Shank";
+        probeMetadata.name = "Neuropixels 2.0 - Single Shank";
     }
     else
     {
         probeMetadata.type = ProbeType::NP2_4;
-        probeMetadata.name = "Neuropixels 2.0 Multishank";
+        probeMetadata.name = "Neuropixels 2.0 - Multishank";
     }
 
     probeMetadata.adc_bits = adc_bits;
@@ -7123,10 +7120,7 @@ void Geometry::QuadBase (bool sapiens,
 
     probeMetadata.type = ProbeType::QUAD_BASE;
 
-    if (sapiens)
-        probeMetadata.name = "Neuropixels 2.0 Quad Base - Sapiens";
-    else
-        probeMetadata.name = "Neuropixels 2.0 Quad Base";
+    probeMetadata.name = "Neuropixels 2.0 Quad Base";
 
     Path path;
     path.startNewSubPath (67, 31);
