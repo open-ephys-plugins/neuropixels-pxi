@@ -1,5 +1,5 @@
 /********************************
- * Copyright (C) Imec 2025      *
+ * Copyright (C) Imec 2026      *
  *                              *
  * Neuropixels C/C++ API header *
  ********************************/
@@ -11,9 +11,16 @@
 
 #pragma once
 
+#ifdef __cplusplus
+#include <ctime>
+#include <cstdint>
+#include <cstddef>
+#else
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <time.h>
+#endif
 
 #ifdef NP_DLL_EXPORT
 #define NP_EXPORT extern "C" __declspec(dllexport)
@@ -430,7 +437,8 @@ namespace Neuropixels {
      * \brief Maps a specific basestation device to a slot.
      *
      * If a device with the specified platform and serial number is discovered (using #np_scanBS), it will be automatically
-     * mapped to the specified slot.
+     * mapped to the specified slot. Mapping a device that is already mapped to the same slot succeeds without changing
+     * the existing mapping. Mapping it to another slot, or mapping another device to an occupied slot, returns WRONG_SLOT.
      * Note: A PXI basestation device is automatically mapped to a slot corresponding to its PXI geographic location
      *
      * @param[in] serial_number: Serial number of the basestation.
@@ -988,7 +996,7 @@ namespace Neuropixels {
     /**
      * \brief Resets the connected probe to the default settings.
      * 
-    * Loads the default settings for configuration registers and memory map; and
+     * Loads the default settings for configuration registers and memory map; and 
      * subsequently initialize the probe in recording mode:
      *  - Configure the probe shank to the default electrode configuration.
      *  - Configure the probe base to the default channel configuration.
@@ -1831,7 +1839,9 @@ namespace Neuropixels {
      * shank/base pair.
      *
      * Note 1: this test overwrites and does not restore the data stored in the SR chains before the test.
-     * Use `np_writeProbeConfiguration` to restore the configuration.
+     * Use `np_writeProbeConfiguration` to restore the configuration. Because the SR chains are overwritten,
+     * any previously committed configuration is cleared, so `np_getCommittedProbeConfiguration` will return
+     * `NODATA` until `np_writeProbeConfiguration` is called again.
      *
      * Note 2: the test will always be executed for the whole probe, **unless** unexpected failures occur.
      * This means that the value of the shankOkMask is valid if and only if one of the following error codes is
